@@ -9,14 +9,16 @@
 - Forward + backward only, with no optimizer step. Optimizer/ZeRO memory is computed analytically from the reported param counts.
 - Micro-batches 1, 2, 4, 8, 16, each with gradient checkpointing off and on. Stops at the first OOM.
 
-**Hardware:** 1× RTX A6000 48 GB (`nvidia.com/rtxa6000`), image `pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime`.
+**Hardware:** 1× L40 or L40S 48 GB (`nvidia.com/gpu` + `gpu.product` affinity), image `pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime`. Manifest: `job-l40.yaml`.
+- The first attempt (`job.yaml`, 1× RTX A6000) sat Pending for ~1 h with no free A6000. It was deleted unrun, and the user approved switching cards.
+- Timings on an L40 are not A6000 timings. Converting speed requires an assumed L40:A6000 throughput ratio, and that ratio gets labeled as an assumption. Memory numbers transfer directly.
 
 **Command:**
 ```
 kubectl create configmap stacking-encoders-bench-src -n aria-world --from-file=../../src/bench_fastwam_step.py
-kubectl apply -f job.yaml
-kubectl logs -n aria-world job/stacking-encoders-fastwam-step-bench > results/job.log
-kubectl delete job -n aria-world stacking-encoders-fastwam-step-bench
+kubectl apply -f job-l40.yaml
+kubectl logs -n aria-world job/stacking-encoders-fastwam-step-bench-l40 > results/job.log
+kubectl delete job -n aria-world stacking-encoders-fastwam-step-bench-l40
 kubectl delete configmap -n aria-world stacking-encoders-bench-src
 ```
 
