@@ -60,7 +60,27 @@ def build_model(fastwam_root: str, ckpt: bool, num_layers: int | None = None):
                 else []
             ),
         )
-    model = instantiate(cfg.model, model_dtype=torch.bfloat16, device="cuda")
+    # Build directly on the GPU so host RAM stays small (the pod requests ~16 GiB;
+    # a CPU fp32 build of the 6B model needs ~25 GB). Fall back to a CPU build in
+    # bf16 (~12 GB) if the GPU-context build hits a device-placement error.
+    try:
+        with torch.device("cuda"):
+            model = instantiate(cfg.model, model_dtype=torch.bfloat16, device="cuda")
+        build_mode = "gpu_context"
+    except torch.OutOfMemoryError:
+        raise
+    except Exception as e:  # noqa: BLE001
+        print(f"[bench] GPU-context build failed ({type(e).__name__}: {e}); retrying CPU build in bf16", flush=True)
+        gc.collect()
+        torch.cuda.empty_cache()
+        prev_dtype = torch.get_default_dtype()
+        torch.set_default_dtype(torch.bfloat16)
+        try:
+            model = instantiate(cfg.model, model_dtype=torch.bfloat16, device="cuda")
+        finally:
+            torch.set_default_dtype(prev_dtype)
+        build_mode = "cpu_bf16_fallback"
+    model.build_mode = build_mode
     # Mirror Wan22Trainer._apply_dit_only_train_mode: only MoT (video+action experts) + proprio encoder train.
     model.requires_grad_(False)
     model.dit.requires_grad_(True)
@@ -135,6 +155,7 @@ def main():
         "params_trainable": n_train,
         "weights_resident_gib": weights_gib,
         "model_build_s": build_s,
+        "build_mode": getattr(model, "build_mode", "unknown"),
         "warmup": args.warmup,
         "iters": args.iters,
         "seed": args.seed,
