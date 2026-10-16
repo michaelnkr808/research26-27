@@ -22,8 +22,8 @@
 - Languages, libraries, hardware:
 - Environment file:
 - Experiment tracker (W&B / MLflow / local logs):
-- Compute budget (GPU-hours / API $):
-- Checkpoint storage location:
+- Compute budget (GPU-hours / API $): TBD (user). All GPU work runs on NRP Nautilus under `../_standards/08-compute-nautilus.md` (that file is in progress as of 2026-10-16).
+- Checkpoint storage location: TBD. Personal PVC is only 20 GB, so cached features and checkpoints probably need CephFS or Ceph S3 (speculative sizing).
 
 ## Conventions
 - Notation or terminology:

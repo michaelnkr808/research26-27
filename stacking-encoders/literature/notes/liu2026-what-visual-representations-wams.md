@@ -1,7 +1,7 @@
 # What Visual Representations Do World Action Models Need? (Liu et al., 2026)
 - **Link/DOI:** https://arxiv.org/abs/2610.13024 (v1, 2026-10-09)
 - **Tier:** 2 (preprint, not peer reviewed)
-- **Read depth:** skimmed. Extracted from the arXiv HTML with an agent tool on 2026-10-15. **A human must read the paper itself before anything here is cited** (std 02).
+- **Read depth:** read by the user (confirmed 2026-10-16). The notes below were extracted by an agent on 2026-10-15; the numbers still need a check against the PDF before they go into a writeup.
 - **Claim:** Adding frozen external visual features to a WAM (Wan 2.2-based) improves robustness. DINOv3 alone gives most of the gain, and further stacking adds little.
 - **Method:** 13 frozen encoders (9 general-purpose, 4 specialized: SAM 3, VGGT-Ω, HRP, DynaFLIP). 5 fusion mechanisms; channel-wise concatenation is the default. Progressive composition (RQ3, App. E). Benchmarks: LIBERO, LIBERO-Plus (7 perturbation categories), RoboCasa GR1, RoboTwin 2.0, real Galbot G1.
 - **Numbers as extracted (spot-check against the PDF):** LIBERO-Plus total: VAE-only 74.7, +DINOv3 84.0, R2-WAM (DINOv3+UniTok+V-JEPA 2.1) 87.3, +HRP 87.7. Adding C-RADIOv4 to DINOv3 gives 78.6 (hurts). Adding SAM 3 or VGGT-Ω to DINOv3 gives "little change". SigLIP 2 effects range from -0.4 to +1.8 depending on base. General-purpose avg 82.2 vs specialized 80.0.
