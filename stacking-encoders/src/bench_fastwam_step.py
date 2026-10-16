@@ -13,6 +13,10 @@ this script reports.
 Usage (inside the FastWAM repo root, so its configs resolve):
     python bench_fastwam_step.py --fastwam-root . --ckpt false --batches 1 2 4 8 16
 Prints one line starting with RESULT_JSON at the end.
+
+--num-layers N builds the same architecture with N (of 30) layers so it fits on
+24 GB cards. Time and memory scale ~linearly in N; fitting several N and
+extrapolating to 30 is an estimate, not a measurement of the full model.
 """
 
 from __future__ import annotations
@@ -32,7 +36,7 @@ def str2bool(v: str) -> bool:
     return str(v).strip().lower() in {"1", "true", "yes", "y"}
 
 
-def build_model(fastwam_root: str, ckpt: bool):
+def build_model(fastwam_root: str, ckpt: bool, num_layers: int | None = None):
     from hydra import compose, initialize_config_dir
     from hydra.utils import instantiate
 
@@ -49,7 +53,12 @@ def build_model(fastwam_root: str, ckpt: bool):
                 "model.skip_dit_load_from_pretrain=true",
                 "model.load_text_encoder=false",
                 "model.action_dit_pretrained_path=null",
-            ],
+            ]
+            + (
+                [f"model.video_dit_config.num_layers={num_layers}", f"model.action_dit_config.num_layers={num_layers}"]
+                if num_layers is not None
+                else []
+            ),
         )
     model = instantiate(cfg.model, model_dtype=torch.bfloat16, device="cuda")
     # Mirror Wan22Trainer._apply_dit_only_train_mode: only MoT (video+action experts) + proprio encoder train.
@@ -98,11 +107,13 @@ def main():
     ap.add_argument("--warmup", type=int, default=2)
     ap.add_argument("--iters", type=int, default=5)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--num-layers", type=int, default=None,
+                    help="override layer count (video and action experts) to fit small GPUs; full model is 30")
     args = ap.parse_args()
 
     torch.manual_seed(args.seed)
     t_build = time.perf_counter()
-    model, cfg = build_model(args.fastwam_root, args.ckpt)
+    model, cfg = build_model(args.fastwam_root, args.ckpt, args.num_layers)
     build_s = time.perf_counter() - t_build
 
     n_total = sum(p.numel() for p in model.parameters())
@@ -119,6 +130,7 @@ def main():
             ["git", "-C", args.fastwam_root, "rev-parse", "HEAD"], capture_output=True, text=True
         ).stdout.strip(),
         "grad_checkpointing": args.ckpt,
+        "num_layers": args.num_layers if args.num_layers is not None else 30,
         "params_total": n_total,
         "params_trainable": n_train,
         "weights_resident_gib": weights_gib,

@@ -31,5 +31,10 @@ kubectl delete configmap -n aria-world stacking-encoders-bench-src
 - Throughput with checkpointing ≈ 1–1.5 samples/s/GPU. Basis: ~3.2e13 FLOPs/sample (6·5B·882 video tokens + VAE), ×1.33 for recompute, at ~50 TFLOPS effective on an A6000.
 - Implied full LIBERO run (20k steps × global batch 128 = 2.56M samples) on 8× A6000: ~3–4 days. Excludes ZeRO communication overhead and evaluation.
 
+## v4: 24 GB layer-scaled variant (`job-24gb.yaml`)
+- Same benchmark, built with 2/4/8 of 30 layers (`--num-layers`) on a 3090/4090/A5000, then extrapolated linearly to 30.
+- Prediction (speculative): time and memory per layer are linear to within ~10%, and the 8-layer, checkpointing-off model fits B≥4 on 24 GB.
+- Caveat: an extrapolation, not a measurement of the full model. Fixed costs (VAE, embeddings, head) appear as the intercept of the fit.
+
 ## Outcome
 (pending)
