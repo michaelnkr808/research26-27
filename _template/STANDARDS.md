@@ -24,6 +24,7 @@
 - Experiment tracker (W&B / MLflow / local logs):
 - Compute budget (GPU-hours / API $):
 - Checkpoint storage location:
+- Nautilus setup (see `_standards/08`): PVC + storage class, image, allowed GPU types:
 
 ## Conventions
 - Notation or terminology:

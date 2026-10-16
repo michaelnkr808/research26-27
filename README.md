@@ -19,6 +19,7 @@ This is the root of all research for the 2026–27 cycle. Each **research direct
 | [`_standards/05-ai-assisted-work.md`](_standards/05-ai-assisted-work.md) | Agent session protocol, truthfulness rules, verification gates, git conventions |
 | [`_standards/06-integrity-and-ethics.md`](_standards/06-integrity-and-ethics.md) | Honesty, attribution, data ethics, and negative results |
 | [`_standards/07-ml-practices.md`](_standards/07-ml-practices.md) | Evaluation hygiene, seeds, ablations, experiment tracking, compute budgets |
+| [`_standards/08-compute-nautilus.md`](_standards/08-compute-nautilus.md) | NRP Nautilus cluster: workload types, GPU utilization policy, storage, data movement, Job template |
 
 ## Layout of a research direction
 
