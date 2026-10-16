@@ -9,7 +9,7 @@
 - Forward + backward only, with no optimizer step. Optimizer/ZeRO memory is computed analytically from the reported param counts.
 - Micro-batches 1, 2, 4, 8, 16, each with gradient checkpointing off and on. Stops at the first OOM.
 
-**Hardware:** 1× L40 or L40S 48 GB (`nvidia.com/gpu` + `gpu.product` affinity), image `pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime`. Manifest: `job-l40.yaml`.
+**Hardware:** 1× L40 or L40S 48 GB (`nvidia.com/gpu` + `gpu.product` affinity), image `pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime`. Manifests: `job-l40.yaml` and `job-a40.yaml` (`nvidia.com/a40`). Both are submitted; the first to start is kept and the other deleted. The GPU actually used is recorded in the log's `nvidia-smi` output.
 - The first attempt (`job.yaml`, 1× RTX A6000) sat Pending for ~1 h with no free A6000. It was deleted unrun, and the user approved switching cards.
 - Timings on an L40 are not A6000 timings. Converting speed requires an assumed L40:A6000 throughput ratio, and that ratio gets labeled as an assumption. Memory numbers transfer directly.
 
