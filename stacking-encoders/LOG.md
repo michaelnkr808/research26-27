@@ -63,3 +63,12 @@
 - Before any multi-GPU run: one B per process, and measure the optimizer step + ZeRO overhead.
 - Not a finding yet. Single run; needs user review before it goes in the README key findings.
 **Open questions:** How does Fast-WAM fit micro-batch 16/GPU? Can VAE latents be precomputed to save ~30%?
+
+## 2026-10-17 (b) [agent]
+**Goal:** Review the A6000 bench and pick the next direction.
+**Did:** Re-checked the bench numbers against `results/job.log` (they match the 10-17 entry; no new run). Fetched the liu2026what project page. Wrote `decisions/001-ground-truth-model.md` (accepted by user). Updated the paper note.
+**Found:**
+- verified: no code or checkpoints for liu2026what. The page says R²-WAM predicts future encoder features through shared visual tokens. That is a different use of encoders than a feature-input proxy.
+- verified: the composition values are in a figure image only. Exact per-config numbers need reading off the PDF figure or appendix tables.
+**Decided:** Ground truth = small proxy policy on cached frozen features, scored by LIBERO/LIBERO-Plus rollouts, multi-seed. First test: does the proxy reproduce the paper's orderings? User is not filing the A100 form for now.
+**Next:** (1) Extract the paper's composition numbers from the PDF into a table (human check). (2) List which encoders have downloadable weights. (3) Write the feature-extraction script for Phase 1 diagnostics. No cluster Job without user go-ahead.
