@@ -1,0 +1,532 @@
+Fri Oct 16 23:35:36 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.09              KMD Version: 615.71.09     CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA RTX A6000               On  |   00000000:03:00.0 Off |                  Off |
+| 30%   32C    P8             28W /  300W |       1MiB /  49140MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+  DEPRECATION: Building 'antlr4-python3-runtime' using the legacy setup.py bdist_wheel mechanism, which will be removed in a future version. pip 25.3 will enforce this behaviour change. A possible replacement is to use the standardized build interface by setting the `--use-pep517` option, (possibly combined with `--no-build-isolation`), or adding a `pyproject.toml` file to the source tree of 'antlr4-python3-runtime'. Discussion can be found at https://github.com/pypa/pip/issues/6334
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+=== pip freeze
+accelerate==1.12.0
+antlr4-python3-runtime==4.9.3
+archspec @ file:///home/conda/feedstock_root/build_artifacts/archspec_1737352602016/work
+asttokens @ file:///home/conda/feedstock_root/build_artifacts/asttokens_1733250440834/work
+astunparse==1.6.3
+attrs @ file:///home/conda/feedstock_root/build_artifacts/attrs_1741918516150/work
+beautifulsoup4 @ file:///home/conda/feedstock_root/build_artifacts/beautifulsoup4_1744783198182/work
+boltons @ file:///home/conda/feedstock_root/build_artifacts/boltons_1733827268945/work
+boto3==1.35.99
+botocore==1.35.99
+Brotli @ file:///home/conda/feedstock_root/build_artifacts/brotli-split_1725267488082/work
+certifi @ file:///home/conda/feedstock_root/build_artifacts/certifi_1746569525376/work/certifi
+cffi @ file:///home/conda/feedstock_root/build_artifacts/cffi_1725560564262/work
+chardet @ file:///home/conda/feedstock_root/build_artifacts/chardet_1741797914774/work
+charset-normalizer @ file:///home/conda/feedstock_root/build_artifacts/charset-normalizer_1746214863626/work
+click @ file:///home/conda/feedstock_root/build_artifacts/click_1747811314515/work
+cmake==4.0.2
+colorama @ file:///home/conda/feedstock_root/build_artifacts/colorama_1733218098505/work
+conda @ file:///home/conda/feedstock_root/build_artifacts/conda_1748334230838/work/conda-src
+conda-build @ file:///home/conda/feedstock_root/build_artifacts/conda-build_1748431289756/work
+conda-libmamba-solver @ file:///home/conda/feedstock_root/build_artifacts/conda-libmamba-solver_1742219570693/work/src
+conda-package-handling @ file:///home/conda/feedstock_root/build_artifacts/conda-package-handling_1736345463896/work
+conda_index @ file:///home/conda/feedstock_root/build_artifacts/conda-index_1748375757308/work
+conda_package_streaming @ file:///home/conda/feedstock_root/build_artifacts/conda-package-streaming_1741620732069/work
+decorator @ file:///home/conda/feedstock_root/build_artifacts/decorator_1740384970518/work
+distro @ file:///home/conda/feedstock_root/build_artifacts/distro_1734729835256/work
+dnspython==2.7.0
+einops==0.8.1
+evalidate @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_evalidate_1746793833/work
+exceptiongroup @ file:///home/conda/feedstock_root/build_artifacts/exceptiongroup_1746947292760/work
+executing @ file:///home/conda/feedstock_root/build_artifacts/executing_1745502089858/work
+expecttest==0.3.0
+filelock @ file:///home/conda/feedstock_root/build_artifacts/filelock_1741969488311/work
+frozendict @ file:///home/conda/feedstock_root/build_artifacts/frozendict_1728841334936/work
+fsspec==2025.5.1
+ftfy==6.3.1
+h2 @ file:///home/conda/feedstock_root/build_artifacts/h2_1738578511449/work
+hpack @ file:///home/conda/feedstock_root/build_artifacts/hpack_1737618293087/work
+huggingface-hub==0.29.2
+hydra-core==1.3.2
+hyperframe @ file:///home/conda/feedstock_root/build_artifacts/hyperframe_1737618333194/work
+hypothesis==6.135.0
+idna @ file:///home/conda/feedstock_root/build_artifacts/idna_1733211830134/work
+imageio==2.37.0
+imageio-ffmpeg==0.6.0
+importlib_resources @ file:///home/conda/feedstock_root/build_artifacts/importlib_resources_1736252299705/work
+ipython @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_ipython_1748713870/work
+ipython_pygments_lexers @ file:///home/conda/feedstock_root/build_artifacts/ipython_pygments_lexers_1737123620466/work
+jedi @ file:///home/conda/feedstock_root/build_artifacts/jedi_1733300866624/work
+Jinja2 @ file:///home/conda/feedstock_root/build_artifacts/jinja2_1741263328855/work
+jmespath==1.1.0
+jsonpatch @ file:///home/conda/feedstock_root/build_artifacts/jsonpatch_1733814567314/work
+jsonpointer @ file:///home/conda/feedstock_root/build_artifacts/jsonpointer_1725302941992/work
+jsonschema @ file:///home/conda/feedstock_root/build_artifacts/jsonschema_1748294245630/work
+jsonschema-specifications @ file:///tmp/tmpuvkyqc9y/src
+libarchive-c @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_python-libarchive-c_1747927321/work
+libmambapy @ file:///home/conda/feedstock_root/build_artifacts/mamba-split_1746515836725/work/libmambapy
+lief @ file:///home/conda/feedstock_root/build_artifacts/lief_1743551769507/work/api/python
+lintrunner==0.12.7
+markdown-it-py==4.2.0
+MarkupSafe @ file:///home/conda/feedstock_root/build_artifacts/markupsafe_1733219680183/work
+matplotlib-inline @ file:///home/conda/feedstock_root/build_artifacts/matplotlib-inline_1733416936468/work
+mdurl==0.1.2
+menuinst @ file:///home/conda/feedstock_root/build_artifacts/menuinst_1731146975675/work
+modelscope==1.34.0
+mpmath==1.3.0
+msgpack @ file:///home/conda/feedstock_root/build_artifacts/msgpack-python_1725974992554/work
+networkx==3.5
+ninja==1.11.1.4
+numpy @ file:///home/conda/feedstock_root/build_artifacts/numpy_1747544639841/work/dist/numpy-2.2.6-cp311-cp311-linux_x86_64.whl#sha256=d4f76e4f9939f09d6b8021a56dbd088095917d586ead71ad13dbe44bb22d3dfa
+nvidia-cublas-cu12==12.8.3.14
+nvidia-cuda-cupti-cu12==12.8.57
+nvidia-cuda-nvrtc-cu12==12.8.61
+nvidia-cuda-runtime-cu12==12.8.57
+nvidia-cudnn-cu12==9.7.1.26
+nvidia-cufft-cu12==11.3.3.41
+nvidia-cufile-cu12==1.13.0.11
+nvidia-curand-cu12==10.3.9.55
+nvidia-cusolver-cu12==11.7.2.55
+nvidia-cusparse-cu12==12.5.7.53
+nvidia-cusparselt-cu12==0.6.3
+nvidia-nccl-cu12==2.26.2
+nvidia-nvjitlink-cu12==12.8.61
+nvidia-nvtx-cu12==12.8.55
+omegaconf==2.3.0
+optree==0.16.0
+packaging @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_packaging_1745345660/work
+parso @ file:///home/conda/feedstock_root/build_artifacts/parso_1733271261340/work
+pexpect @ file:///home/conda/feedstock_root/build_artifacts/pexpect_1733301927746/work
+pickleshare @ file:///home/conda/feedstock_root/build_artifacts/pickleshare_1733327343728/work
+pillow==11.0.0
+pkginfo @ file:///home/conda/feedstock_root/build_artifacts/pkginfo_1739984581450/work
+pkgutil_resolve_name @ file:///home/conda/feedstock_root/build_artifacts/pkgutil-resolve-name_1733344503739/work
+platformdirs @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_platformdirs_1746710438/work
+pluggy @ file:///home/conda/feedstock_root/build_artifacts/pluggy_1733222765875/work
+prompt_toolkit @ file:///home/conda/feedstock_root/build_artifacts/prompt-toolkit_1744724089886/work
+psutil @ file:///home/conda/feedstock_root/build_artifacts/psutil_1740663149797/work
+ptyprocess @ file:///home/conda/feedstock_root/build_artifacts/ptyprocess_1733302279685/work/dist/ptyprocess-0.7.0-py2.py3-none-any.whl#sha256=92c32ff62b5fd8cf325bec5ab90d7be3d2a8ca8c8a3813ff487a8d2002630d1f
+pure_eval @ file:///home/conda/feedstock_root/build_artifacts/pure_eval_1733569405015/work
+pycosat @ file:///home/conda/feedstock_root/build_artifacts/pycosat_1732588400443/work
+pycparser @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_pycparser_1733195786/work
+Pygments @ file:///home/conda/feedstock_root/build_artifacts/pygments_1736243443484/work
+PySocks @ file:///home/conda/feedstock_root/build_artifacts/pysocks_1733217236728/work
+python-dateutil==2.9.0.post0
+python-etcd==0.4.5
+pytz @ file:///home/conda/feedstock_root/build_artifacts/pytz_1742920838005/work
+PyYAML @ file:///home/conda/feedstock_root/build_artifacts/pyyaml_1737454647378/work
+referencing @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_referencing_1737836872/work
+regex==2025.11.3
+requests @ file:///home/conda/feedstock_root/build_artifacts/requests_1733217035951/work
+rich==14.2.0
+rpds-py @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_rpds-py_1747837968/work
+ruamel.yaml @ file:///home/conda/feedstock_root/build_artifacts/ruamel.yaml_1748629995798/work
+ruamel.yaml.clib @ file:///home/conda/feedstock_root/build_artifacts/ruamel.yaml.clib_1728724459810/work
+s3transfer==0.10.4
+safetensors==0.5.3
+six==1.17.0
+sortedcontainers==2.4.0
+soupsieve @ file:///home/conda/feedstock_root/build_artifacts/soupsieve_1746563585861/work
+stack_data @ file:///home/conda/feedstock_root/build_artifacts/stack_data_1733569443808/work
+sympy==1.14.0
+termcolor==2.5.0
+tokenizers==0.21.4
+torch==2.7.1+cu128
+torchaudio==2.7.1+cu128
+torchelastic==0.2.2
+torchvision==0.22.1+cu128
+tqdm @ file:///home/conda/feedstock_root/build_artifacts/tqdm_1735661334605/work
+traitlets @ file:///home/conda/feedstock_root/build_artifacts/traitlets_1733367359838/work
+transformers==4.49.0
+triton==3.3.1
+truststore @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_truststore_1739009763/work
+types-dataclasses==0.6.6
+typing_extensions==4.15.0
+urllib3 @ file:///home/conda/feedstock_root/build_artifacts/urllib3_1744323578849/work
+wcwidth @ file:///home/conda/feedstock_root/build_artifacts/wcwidth_1733231326287/work
+zipp @ file:///home/conda/feedstock_root/build_artifacts/zipp_1748277385522/work
+zstandard==0.23.0
+=== bench grad_checkpointing=false
+Downloading Model from https://www.modelscope.cn to directory: /work/checkpoints/DiffSynth-Studio/Wan-Series-Converted-Safetensors
+2026-10-16 23:36:01,099 - modelscope - INFO - Got 1 files, start to download ...
+Processing 1 items:   0%|          | 0.00/1.00 [00:00<?, ?it/s]
+Downloading [Wan2.2_VAE.safetensors]:   0%|          | 0.00/1.31G [00:00<?, ?B/s][A
+Downloading [Wan2.2_VAE.safetensors]:   0%|          | 1.00M/1.31G [00:00<18:30, 1.27MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:   1%|          | 7.00M/1.31G [00:01<03:01, 7.72MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:   1%|          | 12.0M/1.31G [00:01<02:03, 11.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:   1%|▏         | 18.0M/1.31G [00:01<01:33, 14.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:   2%|▏         | 23.0M/1.31G [00:01<01:26, 15.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:   2%|▏         | 29.0M/1.31G [00:02<01:03, 21.5MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:   2%|▏         | 32.0M/1.31G [00:02<01:05, 21.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:   3%|▎         | 39.0M/1.31G [00:02<00:46, 29.2MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:   3%|▎         | 44.0M/1.31G [00:02<00:40, 33.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:   4%|▎         | 49.0M/1.31G [00:02<00:37, 35.7MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:   4%|▍         | 57.0M/1.31G [00:02<00:29, 46.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:   5%|▍         | 63.0M/1.31G [00:02<00:38, 34.6MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:   5%|▌         | 68.0M/1.31G [00:03<00:47, 28.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:   5%|▌         | 73.0M/1.31G [00:03<00:53, 25.1MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:   6%|▌         | 83.0M/1.31G [00:03<00:37, 35.7MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:   7%|▋         | 88.0M/1.31G [00:03<00:38, 33.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:   7%|▋         | 94.0M/1.31G [00:04<00:44, 29.5MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:   8%|▊         | 102M/1.31G [00:04<00:44, 29.2MB/s] [A
+Downloading [Wan2.2_VAE.safetensors]:   8%|▊         | 111M/1.31G [00:04<00:43, 29.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:   9%|▉         | 118M/1.31G [00:05<00:44, 28.6MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:   9%|▉         | 127M/1.31G [00:05<00:44, 29.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  10%|█         | 135M/1.31G [00:05<00:44, 28.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  11%|█         | 144M/1.31G [00:05<00:42, 29.5MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  11%|█▏        | 152M/1.31G [00:06<00:41, 29.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  12%|█▏        | 159M/1.31G [00:06<00:43, 28.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  12%|█▏        | 168M/1.31G [00:06<00:33, 36.7MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  13%|█▎        | 173M/1.31G [00:06<00:34, 35.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  13%|█▎        | 180M/1.31G [00:07<00:40, 30.5MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  14%|█▍        | 188M/1.31G [00:07<00:40, 30.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  14%|█▍        | 194M/1.31G [00:07<00:43, 27.7MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  15%|█▌        | 202M/1.31G [00:07<00:34, 34.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  15%|█▌        | 206M/1.31G [00:07<00:37, 31.5MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  16%|█▌        | 213M/1.31G [00:08<00:41, 28.7MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  16%|█▋        | 220M/1.31G [00:08<00:42, 27.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  17%|█▋        | 225M/1.31G [00:08<00:46, 25.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  17%|█▋        | 234M/1.31G [00:08<00:34, 34.1MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  18%|█▊        | 239M/1.31G [00:09<00:35, 32.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  18%|█▊        | 243M/1.31G [00:09<00:33, 34.1MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  18%|█▊        | 247M/1.31G [00:09<00:43, 26.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  19%|█▊        | 251M/1.31G [00:09<00:52, 22.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  19%|█▉        | 260M/1.31G [00:10<00:45, 25.2MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  20%|█▉        | 266M/1.31G [00:10<00:46, 24.1MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  20%|██        | 269M/1.31G [00:10<00:55, 20.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  21%|██        | 281M/1.31G [00:10<00:41, 27.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  22%|██▏       | 292M/1.31G [00:11<00:36, 30.5MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  22%|██▏       | 296M/1.31G [00:11<00:42, 25.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  22%|██▏       | 302M/1.31G [00:11<00:43, 24.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  23%|██▎       | 313M/1.31G [00:12<00:36, 29.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  24%|██▎       | 318M/1.31G [00:12<00:40, 26.7MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  24%|██▍       | 325M/1.31G [00:12<00:33, 31.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  24%|██▍       | 329M/1.31G [00:12<00:35, 29.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  25%|██▌       | 337M/1.31G [00:13<00:38, 27.2MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  26%|██▌       | 348M/1.31G [00:13<00:33, 31.6MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  26%|██▌       | 352M/1.31G [00:13<00:39, 26.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  26%|██▋       | 356M/1.31G [00:13<00:44, 23.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  27%|██▋       | 361M/1.31G [00:14<00:47, 21.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  27%|██▋       | 368M/1.31G [00:14<00:44, 22.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  28%|██▊       | 375M/1.31G [00:14<00:43, 23.6MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  28%|██▊       | 380M/1.31G [00:15<00:45, 22.1MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  29%|██▉       | 387M/1.31G [00:15<00:44, 22.7MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  29%|██▉       | 390M/1.31G [00:15<00:51, 19.6MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  29%|██▉       | 395M/1.31G [00:15<00:51, 19.2MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  30%|██▉       | 399M/1.31G [00:16<00:54, 18.2MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  30%|███       | 405M/1.31G [00:16<00:52, 18.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  30%|███       | 409M/1.31G [00:16<00:54, 18.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  31%|███       | 414M/1.31G [00:16<00:43, 22.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  31%|███       | 417M/1.31G [00:17<00:46, 20.7MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  31%|███       | 420M/1.31G [00:17<00:45, 21.5MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  32%|███▏      | 424M/1.31G [00:17<00:39, 24.7MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  32%|███▏      | 428M/1.31G [00:17<00:35, 27.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  32%|███▏      | 431M/1.31G [00:17<00:39, 24.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  32%|███▏      | 434M/1.31G [00:17<00:51, 18.6MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  33%|███▎      | 437M/1.31G [00:18<00:59, 15.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  33%|███▎      | 443M/1.31G [00:18<00:52, 18.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  34%|███▎      | 451M/1.31G [00:18<00:43, 21.5MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  34%|███▍      | 457M/1.31G [00:18<00:42, 21.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  34%|███▍      | 463M/1.31G [00:19<00:41, 22.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  35%|███▍      | 466M/1.31G [00:19<00:49, 18.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  35%|███▌      | 471M/1.31G [00:19<00:48, 18.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  35%|███▌      | 474M/1.31G [00:20<00:54, 16.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  36%|███▌      | 478M/1.31G [00:20<00:55, 16.5MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  36%|███▌      | 484M/1.31G [00:20<00:49, 18.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  36%|███▋      | 488M/1.31G [00:20<00:50, 17.6MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  37%|███▋      | 493M/1.31G [00:21<00:41, 21.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  37%|███▋      | 496M/1.31G [00:21<00:43, 20.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  37%|███▋      | 499M/1.31G [00:21<00:40, 21.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  38%|███▊      | 505M/1.31G [00:21<00:30, 28.6MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  38%|███▊      | 510M/1.31G [00:21<00:26, 32.5MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  38%|███▊      | 516M/1.31G [00:21<00:23, 37.7MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  39%|███▊      | 520M/1.31G [00:21<00:22, 38.6MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  39%|███▉      | 527M/1.31G [00:21<00:18, 46.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  40%|███▉      | 534M/1.31G [00:21<00:16, 52.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  40%|████      | 540M/1.31G [00:22<00:16, 49.7MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  41%|████      | 546M/1.31G [00:22<00:16, 51.1MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  41%|████      | 552M/1.31G [00:22<00:16, 50.2MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  42%|████▏     | 560M/1.31G [00:22<00:14, 58.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  42%|████▏     | 566M/1.31G [00:22<00:20, 39.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  43%|████▎     | 572M/1.31G [00:23<00:24, 32.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  43%|████▎     | 582M/1.31G [00:23<00:24, 33.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  44%|████▍     | 589M/1.31G [00:23<00:26, 30.5MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  44%|████▍     | 598M/1.31G [00:23<00:25, 31.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  45%|████▌     | 606M/1.31G [00:24<00:25, 30.2MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  46%|████▌     | 613M/1.31G [00:24<00:26, 29.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  46%|████▌     | 619M/1.31G [00:24<00:28, 26.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  47%|████▋     | 626M/1.31G [00:24<00:23, 32.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  47%|████▋     | 630M/1.31G [00:25<00:25, 29.5MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  48%|████▊     | 639M/1.31G [00:25<00:25, 29.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  48%|████▊     | 644M/1.31G [00:25<00:28, 25.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  49%|████▊     | 652M/1.31G [00:25<00:27, 26.7MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  49%|████▉     | 658M/1.31G [00:26<00:28, 25.5MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  50%|████▉     | 666M/1.31G [00:26<00:26, 26.6MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  50%|█████     | 676M/1.31G [00:26<00:20, 34.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  51%|█████     | 680M/1.31G [00:26<00:20, 34.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  51%|█████     | 687M/1.31G [00:27<00:23, 29.5MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  52%|█████▏    | 695M/1.31G [00:27<00:23, 29.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  52%|█████▏    | 703M/1.31G [00:27<00:23, 28.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  53%|█████▎    | 709M/1.31G [00:28<00:24, 27.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  54%|█████▎    | 721M/1.31G [00:28<00:20, 31.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  55%|█████▍    | 733M/1.31G [00:28<00:18, 35.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  55%|█████▍    | 738M/1.31G [00:28<00:21, 30.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  55%|█████▌    | 744M/1.31G [00:29<00:22, 27.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  56%|█████▌    | 751M/1.31G [00:29<00:18, 33.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  56%|█████▌    | 755M/1.31G [00:29<00:19, 32.2MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  56%|█████▋    | 759M/1.31G [00:29<00:20, 29.7MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  57%|█████▋    | 763M/1.31G [00:29<00:21, 27.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  57%|█████▋    | 766M/1.31G [00:30<00:28, 20.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  57%|█████▋    | 769M/1.31G [00:30<00:29, 20.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  58%|█████▊    | 773M/1.31G [00:30<00:33, 18.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  58%|█████▊    | 780M/1.31G [00:30<00:29, 20.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  58%|█████▊    | 784M/1.31G [00:31<00:31, 18.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  59%|█████▉    | 790M/1.31G [00:31<00:29, 19.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  59%|█████▉    | 796M/1.31G [00:31<00:22, 25.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  59%|█████▉    | 799M/1.31G [00:31<00:22, 25.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  60%|█████▉    | 802M/1.31G [00:31<00:24, 23.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  60%|█████▉    | 806M/1.31G [00:31<00:21, 26.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  61%|██████    | 814M/1.31G [00:32<00:14, 38.6MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  61%|██████    | 819M/1.31G [00:32<00:13, 40.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  61%|██████▏   | 824M/1.31G [00:32<00:13, 41.5MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  62%|██████▏   | 829M/1.31G [00:32<00:12, 42.1MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  62%|██████▏   | 834M/1.31G [00:32<00:18, 28.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  63%|██████▎   | 842M/1.31G [00:33<00:18, 27.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  63%|██████▎   | 849M/1.31G [00:33<00:19, 26.7MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  64%|██████▎   | 856M/1.31G [00:33<00:19, 26.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  64%|██████▍   | 863M/1.31G [00:33<00:18, 26.7MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  65%|██████▍   | 871M/1.31G [00:34<00:14, 33.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  65%|██████▌   | 875M/1.31G [00:34<00:15, 31.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  65%|██████▌   | 879M/1.31G [00:34<00:19, 24.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  66%|██████▌   | 886M/1.31G [00:34<00:19, 24.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  66%|██████▋   | 893M/1.31G [00:35<00:18, 25.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  67%|██████▋   | 901M/1.31G [00:35<00:13, 33.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  67%|██████▋   | 906M/1.31G [00:35<00:14, 32.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  68%|██████▊   | 910M/1.31G [00:35<00:18, 25.1MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  68%|██████▊   | 917M/1.31G [00:35<00:17, 25.7MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  69%|██████▊   | 924M/1.31G [00:36<00:17, 25.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  69%|██████▉   | 932M/1.31G [00:36<00:16, 26.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  70%|██████▉   | 938M/1.31G [00:36<00:16, 25.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  70%|███████   | 945M/1.31G [00:37<00:16, 25.1MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  71%|███████   | 950M/1.31G [00:37<00:17, 23.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  71%|███████▏  | 958M/1.31G [00:37<00:16, 24.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  72%|███████▏  | 963M/1.31G [00:37<00:17, 23.2MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  72%|███████▏  | 972M/1.31G [00:38<00:15, 25.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  73%|███████▎  | 979M/1.31G [00:38<00:14, 26.1MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  74%|███████▎  | 991M/1.31G [00:38<00:11, 31.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  74%|███████▍  | 999M/1.31G [00:39<00:11, 30.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  75%|███████▍  | 0.98G/1.31G [00:39<00:11, 29.7MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  75%|███████▌  | 0.99G/1.31G [00:39<00:09, 36.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  76%|███████▌  | 1.00G/1.31G [00:39<00:09, 34.7MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  76%|███████▋  | 1.00G/1.31G [00:39<00:10, 31.1MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  77%|███████▋  | 1.01G/1.31G [00:40<00:10, 30.1MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  77%|███████▋  | 1.02G/1.31G [00:40<00:11, 26.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  78%|███████▊  | 1.02G/1.31G [00:40<00:12, 25.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  78%|███████▊  | 1.03G/1.31G [00:41<00:12, 23.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  79%|███████▉  | 1.03G/1.31G [00:41<00:09, 30.2MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  79%|███████▉  | 1.04G/1.31G [00:41<00:10, 28.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  79%|███████▉  | 1.04G/1.31G [00:41<00:10, 28.2MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  80%|███████▉  | 1.04G/1.31G [00:41<00:10, 27.2MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  80%|███████▉  | 1.05G/1.31G [00:41<00:10, 27.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  80%|████████  | 1.05G/1.31G [00:41<00:10, 27.2MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  80%|████████  | 1.05G/1.31G [00:42<00:09, 29.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  81%|████████  | 1.06G/1.31G [00:42<00:12, 21.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  81%|████████  | 1.06G/1.31G [00:42<00:15, 17.5MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  81%|████████▏ | 1.07G/1.31G [00:42<00:12, 20.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  82%|████████▏ | 1.07G/1.31G [00:43<00:12, 21.1MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  82%|████████▏ | 1.08G/1.31G [00:43<00:10, 22.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  83%|████████▎ | 1.09G/1.31G [00:43<00:10, 22.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  83%|████████▎ | 1.09G/1.31G [00:43<00:09, 24.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  84%|████████▍ | 1.10G/1.31G [00:44<00:09, 24.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  84%|████████▍ | 1.11G/1.31G [00:44<00:08, 25.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  85%|████████▍ | 1.11G/1.31G [00:44<00:08, 25.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  85%|████████▌ | 1.12G/1.31G [00:45<00:08, 23.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  86%|████████▌ | 1.13G/1.31G [00:45<00:07, 26.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  86%|████████▋ | 1.13G/1.31G [00:45<00:07, 26.6MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  87%|████████▋ | 1.14G/1.31G [00:45<00:05, 33.7MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  87%|████████▋ | 1.15G/1.31G [00:45<00:05, 32.5MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  88%|████████▊ | 1.16G/1.31G [00:46<00:05, 30.1MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  89%|████████▊ | 1.16G/1.31G [00:46<00:05, 29.9MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  89%|████████▉ | 1.17G/1.31G [00:46<00:05, 28.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  90%|████████▉ | 1.18G/1.31G [00:47<00:05, 26.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  90%|█████████ | 1.18G/1.31G [00:47<00:05, 25.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  91%|█████████ | 1.19G/1.31G [00:47<00:05, 25.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  91%|█████████ | 1.19G/1.31G [00:48<00:05, 24.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  92%|█████████▏| 1.20G/1.31G [00:48<00:04, 26.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  92%|█████████▏| 1.21G/1.31G [00:48<00:04, 27.1MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  93%|█████████▎| 1.22G/1.31G [00:48<00:03, 26.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  93%|█████████▎| 1.23G/1.31G [00:48<00:02, 33.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  94%|█████████▎| 1.23G/1.31G [00:49<00:02, 33.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  94%|█████████▍| 1.24G/1.31G [00:49<00:02, 28.5MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  95%|█████████▍| 1.24G/1.31G [00:49<00:02, 27.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  95%|█████████▌| 1.25G/1.31G [00:50<00:02, 27.8MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  96%|█████████▌| 1.26G/1.31G [00:50<00:02, 26.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  96%|█████████▋| 1.26G/1.31G [00:50<00:02, 26.1MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  97%|█████████▋| 1.28G/1.31G [00:50<00:01, 31.3MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  98%|█████████▊| 1.29G/1.31G [00:51<00:00, 34.0MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  99%|█████████▉| 1.30G/1.31G [00:51<00:00, 36.4MB/s][A
+Downloading [Wan2.2_VAE.safetensors]:  99%|█████████▉| 1.30G/1.31G [00:51<00:00, 31.6MB/s][A
+Downloading [Wan2.2_VAE.safetensors]: 100%|█████████▉| 1.31G/1.31G [00:52<00:00, 26.9MB/s][ADownloading [Wan2.2_VAE.safetensors]: 100%|██████████| 1.31G/1.31G [00:52<00:00, 27.0MB/s]
+Processing 1 items: 100%|██████████| 1.00/1.00 [00:52<00:00, 52.1s/it]Processing 1 items: 100%|██████████| 1.00/1.00 [00:52<00:00, 52.1s/it]
+2026-10-16 23:36:53,246 - modelscope - INFO - Download model 'DiffSynth-Studio/Wan-Series-Converted-Safetensors' successfully.
+[bench] gpu=NVIDIA RTX A6000 params_total=6.725B trainable=6.021B weights=12.5GiB ckpt=False
+[bench] B=1 step_median=0.808s (1.24 samp/s) vae=0.251s peak=23.9GiB
+[bench] B=2 step_median=1.525s (1.31 samp/s) vae=0.479s peak=29.0GiB
+Traceback (most recent call last):
+  File "/bench/bench_fastwam_step.py", line 210, in <module>
+    main()
+  File "/bench/bench_fastwam_step.py", line 182, in main
+    vt, _ = timed(vae_only, 1, args.iters)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/bench/bench_fastwam_step.py", line 109, in timed
+    fn()
+  File "/bench/bench_fastwam_step.py", line 173, in vae_only
+    model.build_inputs(sample)
+  File "/work/FastWAM/src/fastwam/models/wan22/fastwam.py", line 340, in build_inputs
+    input_latents = self._encode_video_latents(input_video, tiled=tiled)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/work/FastWAM/src/fastwam/models/wan22/fastwam.py", line 257, in _encode_video_latents
+    return self._vae_encode_compiled(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/torch/_dynamo/eval_frame.py", line 655, in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/work/FastWAM/src/fastwam/models/wan22/wan_video_vae.py", line 1291, in encode
+    def encode(self, x, scale):
+  File "/opt/conda/lib/python3.11/site-packages/torch/_dynamo/eval_frame.py", line 838, in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/torch/_functorch/aot_autograd.py", line 1209, in forward
+    return compiled_fn(full_args)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 328, in runtime_wrapper
+    all_outs = call_func_at_runtime_with_args(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/torch/_functorch/_aot_autograd/utils.py", line 126, in call_func_at_runtime_with_args
+    out = normalize_as_list(f(args))
+                            ^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 689, in inner_fn
+    outs = compiled_fn(args)
+           ^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 495, in wrapper
+    return compiled_fn(runtime_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/torch/_inductor/cudagraph_trees.py", line 371, in deferred_cudagraphify
+    return fn(inputs)
+           ^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/torch/_inductor/utils.py", line 2404, in run
+    return model(new_inputs)
+           ^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/torch/_inductor/cudagraph_trees.py", line 1997, in run
+    out = self._run(new_inputs, function_id)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/torch/_inductor/cudagraph_trees.py", line 2139, in _run
+    return self.run(new_inputs, function_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/torch/_inductor/cudagraph_trees.py", line 1997, in run
+    out = self._run(new_inputs, function_id)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/torch/_inductor/cudagraph_trees.py", line 2121, in _run
+    return self.execute_node(child, new_inputs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/torch/_inductor/cudagraph_trees.py", line 2239, in execute_node
+    return node.run(new_inputs)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/torch/_inductor/cudagraph_trees.py", line 1093, in run
+    self._copy_inputs_and_remove_from_src(self.reconstructed_inputs, new_inputs)
+  File "/opt/conda/lib/python3.11/site-packages/torch/_inductor/cudagraph_trees.py", line 1056, in _copy_inputs_and_remove_from_src
+    torch._foreach_copy_(dst_tensors, src_tensors)
+RuntimeError: The size of tensor a (2) must match the size of tensor b (4) at non-singleton dimension 0
+=== bench grad_checkpointing=false FAILED (exit 1)
+=== bench grad_checkpointing=true
+[bench] GPU-context build failed (InstantiationException: Error in call to target 'fastwam.runtime.create_fastwam':
+ValueError('Wan MoT gradient checkpointing is not supported by the compiled tensor core.')
+full_key: model); retrying CPU build in bf16
+Traceback (most recent call last):
+  File "/opt/conda/lib/python3.11/site-packages/hydra/_internal/instantiate/_instantiate2.py", line 92, in _call_target
+    return _target_(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/FastWAM/src/fastwam/runtime.py", line 137, in create_fastwam
+    return FastWAM.from_wan22_pretrained(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/FastWAM/src/fastwam/models/wan22/fastwam.py", line 151, in from_wan22_pretrained
+    mot = MoT(
+          ^^^^
+  File "/work/FastWAM/src/fastwam/models/wan22/mot.py", line 29, in __init__
+    raise ValueError("Wan MoT gradient checkpointing is not supported by the compiled tensor core.")
+ValueError: Wan MoT gradient checkpointing is not supported by the compiled tensor core.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/bench/bench_fastwam_step.py", line 68, in build_model
+    model = instantiate(cfg.model, model_dtype=torch.bfloat16, device="cuda")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/hydra/_internal/instantiate/_instantiate2.py", line 226, in instantiate
+    return instantiate_node(
+           ^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/hydra/_internal/instantiate/_instantiate2.py", line 347, in instantiate_node
+    return _call_target(_target_, partial, args, kwargs, full_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/hydra/_internal/instantiate/_instantiate2.py", line 97, in _call_target
+    raise InstantiationException(msg) from e
+hydra.errors.InstantiationException: Error in call to target 'fastwam.runtime.create_fastwam':
+ValueError('Wan MoT gradient checkpointing is not supported by the compiled tensor core.')
+full_key: model
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/conda/lib/python3.11/site-packages/hydra/_internal/instantiate/_instantiate2.py", line 92, in _call_target
+    return _target_(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/FastWAM/src/fastwam/runtime.py", line 137, in create_fastwam
+    return FastWAM.from_wan22_pretrained(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/FastWAM/src/fastwam/models/wan22/fastwam.py", line 151, in from_wan22_pretrained
+    mot = MoT(
+          ^^^^
+  File "/work/FastWAM/src/fastwam/models/wan22/mot.py", line 29, in __init__
+    raise ValueError("Wan MoT gradient checkpointing is not supported by the compiled tensor core.")
+ValueError: Wan MoT gradient checkpointing is not supported by the compiled tensor core.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/bench/bench_fastwam_step.py", line 210, in <module>
+    main()
+  File "/bench/bench_fastwam_step.py", line 136, in main
+    model, cfg = build_model(args.fastwam_root, args.ckpt, args.num_layers)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/bench/bench_fastwam_step.py", line 79, in build_model
+    model = instantiate(cfg.model, model_dtype=torch.bfloat16, device="cuda")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/hydra/_internal/instantiate/_instantiate2.py", line 226, in instantiate
+    return instantiate_node(
+           ^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/hydra/_internal/instantiate/_instantiate2.py", line 347, in instantiate_node
+    return _call_target(_target_, partial, args, kwargs, full_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/hydra/_internal/instantiate/_instantiate2.py", line 97, in _call_target
+    raise InstantiationException(msg) from e
+hydra.errors.InstantiationException: Error in call to target 'fastwam.runtime.create_fastwam':
+ValueError('Wan MoT gradient checkpointing is not supported by the compiled tensor core.')
+full_key: model
+=== bench grad_checkpointing=true FAILED (exit 1)
+=== done
