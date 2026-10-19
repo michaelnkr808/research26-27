@@ -5,6 +5,15 @@
 - **Claim:** Adding frozen external visual features to a WAM (Wan 2.2-based) improves robustness. DINOv3 alone gives most of the gain, and further stacking adds little.
 - **Method:** 13 frozen encoders (9 general-purpose, 4 specialized: SAM 3, VGGT-Ω, HRP, DynaFLIP). 5 fusion mechanisms; channel-wise concatenation is the default. Progressive composition (RQ3, App. E). Benchmarks: LIBERO, LIBERO-Plus (7 perturbation categories), RoboCasa GR1, RoboTwin 2.0, real Galbot G1.
 - **Numbers as extracted (spot-check against the PDF):** LIBERO-Plus total: VAE-only 74.7, +DINOv3 84.0, R2-WAM (DINOv3+UniTok+V-JEPA 2.1) 87.3, +HRP 87.7. Adding C-RADIOv4 to DINOv3 gives 78.6 (hurts). Adding SAM 3 or VGGT-Ω to DINOv3 gives "little change". SigLIP 2 effects range from -0.4 to +1.8 depending on base. General-purpose avg 82.2 vs specialized 80.0.
+- **Checked against the arXiv HTML v1 (2026-10-18, agent, by script):**
+  - verified: Table 1 and Table 10 transcriptions match the HTML exactly.
+  - verified: the general-purpose vs specialized averages (82.2 vs 80.0) recompute from Table 1.
+  - verified, App. C.2: "Results use one trained checkpoint per configuration." The RQ1 and RQ3 SDs are "across three evaluation seeds".
+  - verified, App. E.3: Table 10 uses "one fixed trained checkpoint, evaluated with seeds 41, 42, and 43". The SD "reflects evaluation-seed variability for a fixed trained checkpoint".
+  - verified, App. C.2: overall LP success = total successes / total episodes (10,030 per seed).
+  - verified, App. C.1, Table 7: LIBERO training uses 1,712 episodes, not the full 2,000. Images are 224×224 per view, global batch 128.
+  - verified, App. B.1: the **default** formulation is joint video–action denoising. Fast-WAM-style direct prediction is one of three formulations. The 2026-10-16 (b) log entry implied direct prediction was the base model.
+  - verified, App. A: "primarily large (L) variants", Qwen3.5-4B, final-layer token features. No exact checkpoints are named.
 - **Evidence strength / limitations:** One trained checkpoint per config; the 3 seeds are evaluation seeds only, so training variance is unmeasured. Many composition deltas are under 2 points. Complementarity is explained qualitatively ("overlap in pretraining objectives can limit complementary gains"), with no similarity metric. One backbone. Compute not stated. **No code or checkpoints released** (verified 2026-10-17: the project page https://kailiu18.github.io/R-2WAM.github.io/ links only the paper and the website source; user confirmed).
 - **Relevance to us:** Direct motivation. Their composition table is a free (but noisy, small-n) pilot target for any predictive metric.
 - **Key quotes:** "The composition results suggest that overlap in pretraining objectives can limit complementary gains." (Sec. 4.4, as extracted; page unchecked)

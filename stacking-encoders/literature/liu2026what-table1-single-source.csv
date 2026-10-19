@@ -1,4 +1,4 @@
-# Transcribed from liu2026what Table 1 (RQ1, single-source, LIBERO-Plus, channel-wise concat), from a user-supplied screenshot, 2026-10-17. Agent transcription; human check pending. mean,std over 3 EVALUATION seeds (one training run per row).
+# Transcribed from liu2026what Table 1 (RQ1, single-source, LIBERO-Plus, channel-wise concat), from a user-supplied screenshot, 2026-10-17. Agent transcription; all 14 rows checked cell-by-cell against the arXiv HTML v1 by script, 2026-10-18 (match). mean,std over 3 EVALUATION seeds (one training run per row).
 source,group,subgroup,camera,camera_sd,robot,robot_sd,lang,lang_sd,light,light_sd,bkg,bkg_sd,noise,noise_sd,layout,layout_sd,total,total_sd
 VAE-only,baseline,,51.2,0.6,77.8,0.8,91.1,1.2,94.3,2.4,62.0,1.4,66.6,1.2,82.4,0.2,74.7,0.5
 DINOv3,general,visual-ssl,64.2,1.4,82.5,0.9,93.8,0.8,98.5,0.4,83.9,0.4,86.0,0.3,83.6,0.8,84.0,0.4

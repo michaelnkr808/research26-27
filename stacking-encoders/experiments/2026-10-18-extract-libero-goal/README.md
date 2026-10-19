@@ -8,7 +8,7 @@
 - Variants: the paper says only "primarily large (L) variants" (App. A, verified against the arXiv HTML 2026-10-18). SigLIP 2-L at 384 px is our pick. RADIO has no L, so SO400M. **Neither is confirmed to be the paper's exact checkpoint.**
 - Both cams, every frame, rotate-180 on, 4×4 grid + mean + global, stored as fp16. Compute in **fp16** (fp16 autocast for RADIO), not bf16, so that Turing cards (2080 Ti) can run it.
 
-**Hardware:** 1× `nvidia.com/gpu`, Turing or newer (product list in `job.yaml`), 2 CPU / 10 Gi. Prometheus at about 23:40Z on 2026-10-18 showed no free Ampere+ GPU on a node with ≥2 CPU and ≥10 Gi left. Only 2080 Ti (2) and older Pascal cards qualified. The 3 free A6000s sat on a node with 0.07 CPU left.
+**Hardware:** 1× `nvidia.com/gpu`, Turing or newer (product list in `job.yaml`), 2 CPU / 10 Gi. Prometheus, checked minutes before submission (2026-10-19 ~06:45Z), showed no free Ampere+ GPU on a node with ≥2 CPU and ≥10 Gi left. Only 2080 Ti (2) and older Pascal cards qualified. The 3 free A6000s sat on a node with 0.07 CPU left.
 
 **Local checks before submitting (CPU, Mac, scratch venv with the same pins as the Job):**
 - verified: both encoders run end to end on 1 demo (`turn_on_the_stove`, 80 steps × 2 cams). No NaNs. SigLIP 2-L global 1024-d; RADIO summary 2304-d, tokens 1152-d.
@@ -31,3 +31,13 @@ The features stay on the PVC (`/persistent/stacking-encoders/features/`). They'r
 - Storage: about 3.3 GB (SigLIP 2-L) + 3.9 GB (RADIO) ≈ 7.2 GB on the PVC. The Job stops early if fewer than 10 GB are free.
 - Throughput on a 2080 Ti in fp16: about 100–300 frames/s per encoder, so 5–15 min per encoder. Wall-clock under 45 min including pip and the 6.4 GB download.
 - GPU utilization may fall below 100%, because frames are read and resized in the main process with no DataLoader. Check the dashboard at 30–40 min.
+
+## Results (2026-10-19; Job ran 06:53–07:47Z, 53 min wall-clock)
+- verified: completed with exit 0 and no non-finite-feature errors. Ran on a **NVIDIA TITAN RTX** 24 GB (`unseenu.crbs.ucsd.edu`). Log in `results/job.log`.
+- verified: **127,456 frames** per encoder (63,728 steps × 2 cams, 500 demos). That's 43% more than my 89k prediction, because the other 9 tasks have longer demos than `turn_on_the_stove`.
+- verified: throughput in fp16 on the TITAN RTX was **~142 frames/s for SigLIP 2-L** (15 min) and **~62 frames/s for C-RADIOv4-SO400M** (34 min). The download (6.4 GB) took 16 s; pip plus image pull took ~3 min.
+- verified: storage is **4.4 G (SigLIP 2-L) + 5.2 G (RADIO)**. The PVC is now 9.7 G used, 11 G free.
+- verified (Prometheus `DCGM_FI_DEV_GPU_UTIL`, 1-min samples): GPU utilization was 90–99% during extraction, 87% mean including the ~3 min setup at 0%. Above the 40% policy line.
+- Estimated vs. actual GPU-hours: predicted under 0.75 h, actual 0.88 h (1 GPU × 53 min).
+- Cleanup: Job and ConfigMap deleted; namespace has no pods or Jobs. Features remain on `michael-persistent`.
+- speculative sizing for all 4 LIBERO suites (×4 frames, assuming similar demo lengths): ~38 GB for these 2 encoders alone. That doesn't fit the 20 GB PVC, so the full extraction needs CephFS or a bigger volume.

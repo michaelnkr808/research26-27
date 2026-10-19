@@ -1,4 +1,4 @@
-# Transcribed from liu2026what Table 10 (RQ3 composition, LIBERO-Plus total success %), from a user-supplied screenshot, 2026-10-17. Agent transcription; human check pending. Seeds are EVALUATION seeds of one trained checkpoint per row.
+# Transcribed from liu2026what Table 10 (RQ3 composition, LIBERO-Plus total success %), from a user-supplied screenshot, 2026-10-17. Agent transcription; all 16 rows checked against the arXiv HTML v1 by script, 2026-10-18 (match). Seeds are EVALUATION seeds of one trained checkpoint per row.
 # D=DINOv3 V=V-JEPA 2.1 L=SigLIP 2 S=SAM 3 G=VGGT-Omega H=HRP U=UniTok R=C-RADIOv4
 combo,seed41,seed42,seed43,mean,sd
 D+V,85.13,84.62,85.03,84.93,0.28

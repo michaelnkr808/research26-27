@@ -1,6 +1,6 @@
 # Stacking Encoders
 
-**Status:** exploring. Ground truth will come from a proxy policy (decisions/001). Next: Phase 1 diagnostics and the paper-reproduction check (see LOG 2026-10-17 b).
+**Status:** exploring. Ground truth will come from a proxy policy (decisions/001). First features cached (libero_goal, SigLIP 2-L + C-RADIOv4). Next: HF token for DINOv3, first diagnostics on the cached features, and a storage decision for the 4-suite run (see LOG 2026-10-18/19).
 **Question (draft, not yet confirmed):** Can cheap diagnostics on frozen vision encoders, computed on robot data, predict (a) which encoder combinations improve a World Action Model (WAM) before training, and (b) why general-purpose encoders match or beat specialists?
 **What done looks like:** A ranked metric that predicts combo gains better than simple baselines (best-single-encoder, objective-overlap heuristic), evaluated against multi-seed WAM training runs. Or a documented negative result.
 
@@ -14,3 +14,6 @@
 - `literature/`: paper notes and references.bib
 - `experiments/2026-10-16-fastwam-step-bench/`: 1-GPU Fast-WAM training-step benchmark. A6000: ~1.3 samples/s/GPU, unreviewed, not a finding.
 - `src/bench_fastwam_step.py`: the benchmark script
+- `src/extract_features.py`: Phase 1 frozen-feature extraction (LIBERO HDF5 → per-encoder HDF5)
+- `experiments/2026-10-18-extract-libero-goal/`: first extraction Job. Features are on PVC `michael-persistent` at `/persistent/stacking-encoders/features/`.
+- `literature/liu2026what-table{1,10}-*.csv`: paper tables, checked against the arXiv HTML 2026-10-18
