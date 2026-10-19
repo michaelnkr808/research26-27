@@ -69,7 +69,7 @@ Also: **never force-delete pods** (*"Never force Delete Pods."*). A pod stuck in
 
 ## Storage [NRP unless tagged]
 - **RBD (`rook-ceph-block*`)**: ReadWriteOnce, one pod at a time. Fine for conda/pip envs and compiling. Recommended for data that doesn't need to be shared.
-- **CephFS (`rook-cephfs*`)**: ReadWriteMany. Good for large files such as checkpoints. **Installing conda/pip on CephFS is prohibited.** It handles many small files badly, so don't write the same file from several pods at once.
+- **CephFS (`rook-cephfs*`)**: ReadWriteMany. Good for large files such as checkpoints. **Installing conda/pip on CephFS is prohibited.** It handles many small files badly, so don't write the same file from several pods at once. Details in the next section.
 - **Ceph S3**: the right home for large datasets (over 100 GB) and the fastest way in and out of the cluster.
 - **Local NVMe** (`emptyDir` + `ephemeral-storage` request): for I/O-heavy training, stage data from Ceph to local disk with an init container. It can be hundreds of times faster than Ceph.
 - Pick storage and compute in the **same region**, via the `topology.kubernetes.io/region` affinity.
@@ -78,6 +78,53 @@ Also: **never force-delete pods** (*"Never force Delete Pods."*). A pod stuck in
 - [lab] **The PVC is shared, so check ownership before deleting anything at the top level.** We once deleted a labmate's `/persistent/scenescript`. Agents: **never delete PVC data without asking**, per the verification gates in `05`.
 - [lab] Because the volumes are ReadWriteOnce, a `cp-pod` can't attach while a GPU pod (or a labmate's pod) holds the volume. Tear one down first.
 - [lab] Conda caches fill the PVC fast. Set `CONDA_PKGS_DIRS=/tmp/conda-pkgs` so the cache lands on the pod's overlay disk.
+
+## CephFS in detail [NRP unless tagged]
+Sources: `userdocs/storage/ceph.md`, `storage/intro.md`, `storage/purging.md`, `running/io-jobs.md` and `running/gui-desktop.md` in the site repo, commit `f926199`, checked 2026-10-19.
+
+**What it is.** CephFS is a shared POSIX filesystem (ReadWriteMany) that many pods can mount at once. The docs call it *"the primary way of storing data in nautilus"* and say it has the largest storage pool. Most classes use spinning drives with NVMe metadata.
+
+**Storage classes.** Pick the one in the same region as your compute.
+
+| StorageClass | Region | Who can use it |
+|---|---|---|
+| `rook-cephfs` | US West | Anyone. Our default. |
+| `rook-cephfs-central` | US Central | Anyone |
+| `rook-cephfs-east` | US East (mixed drives) | Anyone |
+| `rook-cephfs-south-east` | US South East | Anyone |
+| `rook-cephfs-pacific` | Hawaii + Guam | Anyone |
+| `rook-cephfs-fullerton` | US West (local) | Anyone (no restriction listed) |
+| `rook-cephfs-haosu` | US West (local) | **Restricted:** Hao Su and Ravi cluster. Don't use. |
+| `rook-cephfs-tide` | US West (local) | **Restricted:** SDSU Tide cluster. Don't use. |
+| `rook-cephfs-ucsd` | US West (local), all NVMe | Has its own policy: *"very fast and small"*. Data is for running computation only and can be purged *"at admin's discretion without any notifications"*. Use it for scratch, never as the only copy. |
+
+**When to use it.**
+- It's good at large files and parallel streams. The intro page says it has *"a much higher read/write performance than RBD, especially if you are able to open multiple parallel streams to a file and aggregate many small files to a few large files."* Checkpoints and packed feature files (HDF5, tar shards) are the intended use.
+- It's bad at many small files, because every file goes through the metadata servers. **No conda/pip installs and no code compilation on CephFS.** Put envs on RBD.
+- The docs disagree with themselves on speed. `ceph.md` says RBD *"provides fastest access to the data, and is preferred for all datasets not needing shared access"*, while `intro.md` says RBD has higher IOPS but slower overall read/write than CephFS. Our reading (speculative): RBD wins for small random I/O, CephFS wins for large sequential reads. Choose CephFS when several pods need the data at once.
+- Per-file size limit: 16 TB. The docs give no per-volume or per-namespace CephFS cap.
+- For hot training loops, CephFS is still remote. Stage the data to local NVMe with an init container (see the RBD/Local NVMe notes above and `running/io-jobs.md`).
+
+**Writing safely.** From `ceph.md`:
+- **Never open the same file for writing from several pods in parallel.** It can lock the file for other clients and corrupt the data or the filesystem.
+- Give each writer its own file, for example one shard per Job or rank, then merge in a single step.
+- Close files as soon as you're done, rather than holding handles open.
+- If several clients need to change the same data, work on a copy, or use versioned filenames or an explicit lock.
+
+**Mounting.**
+- Create the PVC with `storageClassName: rook-cephfs` and `accessModes: [ReadWriteMany]`, and wait for `kubectl get pvc <name>` to show `Bound`.
+- Add region affinity so the pod runs near the storage: `topology.kubernetes.io/region In [us-west]` for `rook-cephfs`. List the labels with `kubectl get nodes -L topology.kubernetes.io/region`. Verified 2026-10-19: 288 nodes carry `us-west`. [lab, speculative] The affinity also shrinks the GPU pool, so if a Job won't schedule, weigh latency against waiting.
+- Don't mount CephFS as a home directory. The GUI-desktop page says *"NEVER MOUNT TO `/home/ubuntu`"*. Mount it under a subfolder such as `/mnt/persistent`.
+- If the node holding a Ceph mount goes offline, the pod stays stuck until the node comes back. Ceph does not migrate it; only Linstor does. Combined with the "never force-delete pods" rule, a stuck pod means waiting.
+
+**Sizing and cleanup.**
+- Volumes created since December 2020 can be grown by editing `spec.resources.requests.storage` on the PVC. Start with a modest size and expand later. The docs say nothing about shrinking, so assume you can't.
+- Same rules as other Ceph storage: not archival, purged after 6 months unaccessed, and use `find -delete` rather than `rm -rf` for folders with more than 10k files.
+- Usage dashboard: [Ceph cluster on Grafana](https://grafana.nrp-nautilus.io/d/r6lloPJmz/ceph-cluster).
+
+**Not in the docs** (checked 2026-10-19): CephFS quotas per namespace, expected throughput numbers, or any backup or snapshot guarantee. We haven't measured throughput on our namespace yet.
+
+[lab] First planned use: `stacking-encoders/data/pvc-features-cephfs.yaml` (100Gi `rook-cephfs`, shared feature cache). As of 2026-10-19 it is drafted but not created.
 
 ## Moving data
 - `kubectl cp` is **for small files only**. It goes through the API server, and more than a few MB can hurt the cluster [NRP]. [lab] In practice it drops streams above about 10 MB.
