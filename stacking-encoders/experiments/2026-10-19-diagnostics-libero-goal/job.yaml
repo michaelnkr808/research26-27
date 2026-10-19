@@ -44,8 +44,8 @@ spec:
           date -u
           echo "=== diagnostics"
           python /src/diagnostics.py --feats /persistent/stacking-encoders/features --suite libero_goal \
-            --raw /work/data/libero_goal --encoders siglip2 c-radiov4 --out $OUT/libero_goal-siglip2-cradiov4.json
-          echo "=== result json"; cat $OUT/libero_goal-siglip2-cradiov4.json
+            --raw /work/data/libero_goal --encoders siglip2 c-radiov4 --out $OUT/libero_goal-siglip2-cradiov4-run2.json
+          echo "=== result json"; cat $OUT/libero_goal-siglip2-cradiov4-run2.json
           date -u; echo "=== done"
         env:
         - {name: SRC_GIT_COMMIT, value: d6e3905692585898a400436359492cb2150f6294}

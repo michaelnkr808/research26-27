@@ -169,40 +169,56 @@ def ridge_fit(x, y, alpha):
 
 
 def ridge_select(x, y, split):
-    """Pick alpha on val, refit on train+val, return (test R^2 per dim, alpha, predictor)."""
+    """Pick alpha on val, refit on train+val, return (test R^2 per dim, alpha, predictor, val R^2 per alpha)."""
     tr, va, te = split == "train", split == "val", split == "test"
-    best = None
+    best, val_curve = None, {}
     for a in ALPHAS:
         w, b = ridge_fit(x[tr], y[tr], a)
         score = r2(y[va], x[va] @ w + b).mean()
+        val_curve[a] = float(score)
         if best is None or score > best[0]:
             best = (score, a)
     alpha = best[1]
     trva = tr | va
     w, b = ridge_fit(x[trva], y[trva], alpha)
-    return r2(y[te], x[te] @ w + b), alpha, (w, b)
+    return r2(y[te], x[te] @ w + b), alpha, (w, b), val_curve
 
 
 def probe(x, actions, split):
-    per_dim, alpha, _ = ridge_select(x, actions, split)
-    return {"r2_mean": float(per_dim.mean()), "r2_per_dim": [float(v) for v in per_dim], "alpha": alpha}
+    per_dim, alpha, _, val_curve = ridge_select(x, actions, split)
+    return {"r2_mean": float(per_dim.mean()), "r2_per_dim": [float(v) for v in per_dim], "alpha": alpha,
+            "val_r2_by_alpha": val_curve}
 
 
-def residualize(xb, xa, split, alpha=1e-6):
+def residualize(xb, xa, split, rel_tol=1e-8):
     """Part of B not linearly predictable from A (map fit on train+val, applied everywhere).
 
-    Near-unregularized on purpose: a ridge-shrunk map leaves a scaled copy of the predictable part
+    Unregularized on purpose: a ridge-shrunk map leaves a scaled copy of the predictable part
     in the residual, which standardization then restores (caught by a synthetic test 2026-10-19).
+    Solved as a float64 pseudo-inverse that drops eigen-directions of A'A below rel_tol * max, so a
+    rank-deficient A can't blow the weights up (the first full run gave resid R^2 = 0.000 everywhere,
+    with a float32 solve at alpha 1e-6; suspected cause, see LOG 2026-10-19).
     Needs n_train >> dim(A) (full libero_goal: ~51k frames vs <= 4.6k dims); returns None below 10x,
     where the map overfits (a 12-demo local run gave test R^2 in the -1000s).
     pred(A->B) is reported from a val-tuned ridge instead, so it is an honest test R^2.
     """
     trva = split != "test"
-    pred_r2, _, _ = ridge_select(xa, xb, split)
+    pred_r2 = ridge_select(xa, xb, split)[0]
     if trva.sum() < 10 * xa.shape[1]:
-        return None, float(pred_r2.mean()), alpha
-    w, b = ridge_fit(xa[trva], xb[trva], alpha)
-    return xb - (xa @ w + b), float(pred_r2.mean()), alpha
+        return None, float(pred_r2.mean()), {}
+    xa64, xb64 = xa[trva].astype(np.float64), xb[trva].astype(np.float64)
+    mu_a, mu_b = xa64.mean(0), xb64.mean(0)
+    xa64 -= mu_a
+    evals, evecs = np.linalg.eigh(xa64.T @ xa64)
+    keep = evals > rel_tol * evals.max()
+    v = evecs[:, keep] / evals[keep]
+    w = v @ (evecs[:, keep].T @ (xa64.T @ (xb64 - mu_b)))
+    resid = (xb.astype(np.float64) - mu_b - (xa.astype(np.float64) - mu_a) @ w).astype(np.float32)
+    info = {"rank_kept": int(keep.sum()), "dim_A": int(xa.shape[1]),
+            "eig_ratio_kept": float(evals[keep].min() / evals.max()),
+            "max_abs_w": float(np.abs(w).max()),
+            "resid_var_frac_trva": float(resid[trva].var(0).sum() / xb[trva].var(0).sum())}
+    return resid, float(pred_r2.mean()), info
 
 
 # ---------------------------------------------------------------------------
@@ -262,16 +278,21 @@ def main():
             if both_key not in res["probes"]:
                 res["probes"][both_key] = probe(np.concatenate([xs[a], xs[b]], axis=1), actions, split)
             both = res["probes"][both_key]
-            resid, pred_r2, _ = residualize(xs[b], xs[a], split)
-            rp = probe(standardize(resid, train), actions, split)["r2_mean"] if resid is not None else None
+            resid, pred_r2, info = residualize(xs[b], xs[a], split)
+            rp = probe(standardize(resid, train), actions, split) if resid is not None else None
+            rp_raw = probe(resid, actions, split) if resid is not None else None  # unstandardized residual
             res["pairs"][key] = {
                 "gain_B_given_A": both["r2_mean"] - res["probes"][f"{a}|{t}"]["r2_mean"],
-                "resid_B_given_A_r2": rp,
+                "resid_B_given_A_r2": rp and rp["r2_mean"],
+                "resid_B_given_A_alpha": rp and rp["alpha"],
+                "resid_B_given_A_val_curve": rp and rp["val_r2_by_alpha"],
+                "resid_raw_B_given_A_r2": rp_raw and rp_raw["r2_mean"],
                 "pred_A_to_B_r2": pred_r2,
+                "resid_map": info,
             }
-            rp_s = f"{rp:.3f}" if rp is not None else "skipped (n < 10 dim)"
+            rp_s = f"{rp['r2_mean']:.3f} (alpha {rp['alpha']:g}), raw {rp_raw['r2_mean']:.3f}" if rp else "skipped (n < 10 dim)"
             print(f"[diag] {t}: A={a} B={b} gain(B|A) {res['pairs'][key]['gain_B_given_A']:+.3f} "
-                  f"resid(B|A) R2 {rp_s} pred(A->B) R2 {pred_r2:.3f}", flush=True)
+                  f"resid(B|A) R2 {rp_s} pred(A->B) R2 {pred_r2:.3f} map {info}", flush=True)
 
     res["seconds"] = time.time() - t0
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
