@@ -32,7 +32,7 @@ spec:
           mkdir -p $OUT /persistent/stacking-encoders/logs
           LOG=/persistent/stacking-encoders/logs/diag-libero-goal-$(date +%Y%m%d-%H%M%S).log
           exec > >(tee -a $LOG) 2>&1
-          nproc; free -g
+          nproc; head -2 /proc/meminfo   # python:slim has no procps (`free` gave exit 127 on the first submit)
           pip install --no-cache-dir -q numpy==2.2.6 h5py==3.16.0 huggingface-hub==0.36.2
           echo "=== pip freeze"; pip freeze
           echo "=== download libero_goal (actions/proprio)"; date -u
