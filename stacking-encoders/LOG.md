@@ -154,3 +154,17 @@
 - verified (same page): CephFS has a per-file size limit of 16 TB. No per-volume or per-namespace CephFS cap is documented.
 - Implication: `data/pvc-features-cephfs.yaml` is unaffected, but any Job that mounts it should add `us-west` region affinity (see `_standards/08`, "CephFS in detail").
 **Next:** unchanged from (b). (1) User OKs creating the CephFS PVC.
+
+## 2026-10-19 (c) [agent]
+**Goal:** Implement the decided metric change (gain + demo-level bootstrap CIs, drop resid), confirm the HF Secret, and prepare the storage decision.
+**Did:**
+- `src/diagnostics.py` (7dc80ca): removed resid(B|A). Added demo-level bootstrap CIs (1,000 draws by default): probes are kept fixed, test demos are resampled with replacement, and the same draws are used for every probe. Gives CIs for each probe R², each gain, and the asymmetry R²(B) − R²(A).
+- `src/test_diagnostics.py`: new synthetic tests. Bootstrap R² from per-demo statistics matches an explicit resample exactly. With demo-correlated data, the informative-B gain CI is +0.175..+0.247 and the redundant-C CI is −0.001..−0.001. All pass.
+- Smoke run of the full script on the 12-demo local set (from scratchpad): runs end to end. The numbers are meaningless with ~2 test demos.
+- User created the `stacking-encoders-hf` Secret themselves. verified (kubectl metadata only): it exists (23:05Z) with one key `HF_TOKEN` of token-like length.
+**Found:**
+- verified (user): access granted to DINOv3, SAM 3, and VGGT-Ω.
+- verified (kubectl): other lab members have personal 50Gi RBD PVCs. Ours would be the first CephFS PVC in `aria-world`. No storage quota is visible.
+- Limit: the CIs cover test-demo sampling only, not probe-training variability.
+- numpy 2.2 on macOS prints spurious matmul RuntimeWarnings (recalled: a known Accelerate issue). Results are unaffected (CKA self = 1, all asserts pass).
+**Next (all need user go-ahead):** (1) Create the CephFS PVC `stacking-encoders-features` (`data/pvc-features-cephfs.yaml`). (2) CPU diagnostics rerun Job with CIs on the libero_goal features (can read `michael-persistent`). (3) Copy Job for the libero_goal features to CephFS, checksum-verified, originals kept. (4) DINOv3 extraction Job using the Secret.

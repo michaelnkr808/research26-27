@@ -23,3 +23,11 @@
 - Wrote `src/diagnostics.py` + synthetic tests and ran it as a CPU Job. Action-probe R²: proprio 0.28, SigLIP 0.61, RADIO 0.67, both 0.68. Gains are asymmetric (+0.069 vs +0.008). CKA 0.72–0.94. The residual-information metric returned 0 on real data (probe overfits; speculative cause: within-demo frame correlation).
 - Open for the user: drop resid(B|A) in favor of gain(B|A)? Add demo-level bootstrap CIs; DINOv3 license + HF token Secret.
 - See: stacking-encoders/LOG.md (2026-10-18/19 and 2026-10-19), stacking-encoders/experiments/2026-10-18-extract-libero-goal/README.md, stacking-encoders/experiments/2026-10-19-diagnostics-libero-goal/README.md
+
+## 2026-10-19 — stacking-encoders: metric decided (gain + bootstrap CIs), HF access, CephFS drafted
+
+- User decided to drop the residual-information metric and use gain(B|A) with demo-level bootstrap CIs. Implemented and tested in `src/diagnostics.py`. Explained gain as the "unique to B" slice: shared 0.60, RADIO-only 0.07, SigLIP-only 0.01.
+- HF access granted for DINOv3, SAM 3, and VGGT-Ω. The user created the `stacking-encoders-hf` Secret.
+- Drafted a 100Gi CephFS volume for features, following the NRP docs. Dry run passed; not created.
+- Waiting on go-aheads: create the volume, rerun diagnostics with CIs, copy the libero_goal features, run DINOv3 extraction.
+- See: stacking-encoders/LOG.md (2026-10-19 (b), (c)), stacking-encoders/data/pvc-features-cephfs.yaml

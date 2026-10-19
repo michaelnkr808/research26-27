@@ -1,6 +1,6 @@
 # Stacking Encoders
 
-**Status:** exploring. Ground truth will come from a proxy policy (decisions/001). First features cached (libero_goal, SigLIP 2-L + C-RADIOv4). First diagnostics run (SigLIP 2-L vs C-RADIOv4 on libero_goal). The residual-information metric failed on real data. Metric decided: gain(B|A) with demo-level bootstrap CIs; resid dropped. Next: implement CIs and rerun, create the CephFS feature PVC (drafted, not created), DINOv3 once the HF Secret exists (see LOG 2026-10-19 (b)).
+**Status:** exploring. Ground truth will come from a proxy policy (decisions/001). First features cached (libero_goal, SigLIP 2-L + C-RADIOv4). First diagnostics run (SigLIP 2-L vs C-RADIOv4 on libero_goal). The residual-information metric failed on real data. Metric decided and implemented: gain(B|A) with demo-level bootstrap CIs; resid dropped. HF Secret exists; DINOv3, SAM 3, and VGGT-Ω access granted. Next (on go-ahead): create the CephFS feature PVC, rerun diagnostics with CIs, copy features, DINOv3 extraction (see LOG 2026-10-19 (c)).
 **Question (draft, not yet confirmed):** Can cheap diagnostics on frozen vision encoders, computed on robot data, predict (a) which encoder combinations improve a World Action Model (WAM) before training, and (b) why general-purpose encoders match or beat specialists?
 **What done looks like:** A ranked metric that predicts combo gains better than simple baselines (best-single-encoder, objective-overlap heuristic), evaluated against multi-seed WAM training runs. Or a documented negative result.
 
