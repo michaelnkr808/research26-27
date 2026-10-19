@@ -48,7 +48,7 @@ spec:
           echo "=== result json"; cat $OUT/libero_goal-siglip2-cradiov4-run2.json
           date -u; echo "=== done"
         env:
-        - {name: SRC_GIT_COMMIT, value: d6e3905692585898a400436359492cb2150f6294}
+        - {name: SRC_GIT_COMMIT, value: a89ece69eabbb4193d60c94266def0f8724e6e10}
         - {name: PYTHONUNBUFFERED, value: "1"}
         - {name: OMP_NUM_THREADS, value: "4"}
         - {name: OPENBLAS_NUM_THREADS, value: "4"}
