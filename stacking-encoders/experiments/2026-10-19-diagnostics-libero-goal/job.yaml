@@ -1,0 +1,68 @@
+# Phase 1 pilot diagnostics (CPU only): CKA + action probes on the cached libero_goal features (SigLIP 2-L, C-RADIOv4).
+# Follows _standards/08: Job (not pod), runs a real command and exits, NO sleep, no GPU, kept off GPU nodes,
+# limits within 20% of requests, activeDeadlineSeconds caps runtime. No tolerations.
+# Script is mounted from ConfigMap `stacking-encoders-diag-src` (created from ../../src/diagnostics.py).
+# Reads features from PVC michael-persistent; downloads libero_goal again only for actions/proprio.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-diag-libero-goal
+  namespace: aria-world
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 10800        # 3 h hard cap (includes time Pending)
+  ttlSecondsAfterFinished: 86400      # safety net; delete manually after collecting logs
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}   # CPU-only: stay off GPU nodes
+      containers:
+      - name: main
+        image: python:3.11.14-slim
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          OUT=/persistent/stacking-encoders/diagnostics
+          mkdir -p $OUT /persistent/stacking-encoders/logs
+          LOG=/persistent/stacking-encoders/logs/diag-libero-goal-$(date +%Y%m%d-%H%M%S).log
+          exec > >(tee -a $LOG) 2>&1
+          nproc; free -g
+          pip install --no-cache-dir -q numpy==2.2.6 h5py==3.16.0 huggingface-hub==0.36.2
+          echo "=== pip freeze"; pip freeze
+          echo "=== download libero_goal (actions/proprio)"; date -u
+          python - <<'PY'
+          from huggingface_hub import snapshot_download
+          snapshot_download("yifengzhu-hf/LIBERO-datasets", repo_type="dataset", revision="main",
+                            allow_patterns=["libero_goal/*.hdf5"], local_dir="/work/data")
+          PY
+          date -u
+          echo "=== diagnostics"
+          python /src/diagnostics.py --feats /persistent/stacking-encoders/features --suite libero_goal \
+            --raw /work/data/libero_goal --encoders siglip2 c-radiov4 --out $OUT/libero_goal-siglip2-cradiov4.json
+          echo "=== result json"; cat $OUT/libero_goal-siglip2-cradiov4.json
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: d6e3905692585898a400436359492cb2150f6294}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: OMP_NUM_THREADS, value: "4"}
+        - {name: OPENBLAS_NUM_THREADS, value: "4"}
+        resources:                    # limits within 20% of requests
+          requests: {cpu: "4", memory: 16Gi, ephemeral-storage: 10Gi}
+          limits:   {cpu: "4", memory: 19Gi, ephemeral-storage: 12Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: persistent-vol, mountPath: /persistent}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 12Gi}
+      - name: src
+        configMap: {name: stacking-encoders-diag-src}
+      - name: persistent-vol
+        persistentVolumeClaim: {claimName: michael-persistent}
