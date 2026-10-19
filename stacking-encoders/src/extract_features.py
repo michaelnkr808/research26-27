@@ -117,13 +117,16 @@ def load_cradiov4(device, dtype, variant=None):
     # Pin the remote code: trust_remote_code runs files from the HF repo.
     revision = None if variant else "c0457f5dc26ca145f954cd4fc5bb6114e5705ad8"  # checked 2026-10-17
     model = AutoModel.from_pretrained(hf_id, trust_remote_code=True, revision=revision).to(device).eval()
-    model = model.to(dtype)
+    # Weights stay fp32: casting the module to fp16 fails (its remote code upcasts some inputs to
+    # fp32, giving a float/Half matmul mismatch). Reduced precision goes through autocast instead.
+    amp = dtype != torch.float32
 
     @torch.no_grad()
     def encode(frames):
         # RADIO normalizes internally; it expects RGB in [0, 1].
-        x = _to_float_nchw(frames, enc.resolution, None, None, device, dtype)
-        summary, spatial = model(x)
+        x = _to_float_nchw(frames, enc.resolution, None, None, device, torch.float32)
+        with torch.autocast(device_type=torch.device(device).type, dtype=dtype, enabled=amp):
+            summary, spatial = model(x)
         return summary, _tokens_to_grid(spatial)
 
     enc.encode = encode
@@ -146,6 +149,8 @@ _not_yet("hrp", "no public release found 2026-10-17")
 
 
 def git_commit():
+    if os.environ.get("SRC_GIT_COMMIT"):  # set by cluster Jobs, where the script comes from a ConfigMap
+        return os.environ["SRC_GIT_COMMIT"]
     try:
         return subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=Path(__file__).parent,
                                        text=True, stderr=subprocess.DEVNULL).strip()
@@ -186,6 +191,8 @@ def extract_file(enc, src, dst, args):
                 outs = {"global": [], "mean": [], "grid": []}
                 for i in range(0, len(frames), args.batch_size):
                     glob, grid = enc.encode(frames[i: i + args.batch_size])
+                    if not (torch.isfinite(glob).all() and torch.isfinite(grid).all()):
+                        raise FloatingPointError(f"non-finite features: {src.name} {demo} {cam} batch {i}")
                     for k, v in pool(glob, grid, args.grid).items():
                         outs[k].append(v.cpu().numpy().astype(np.float16))
                 for k, v in outs.items():
