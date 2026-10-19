@@ -15,3 +15,11 @@
 - Wrote `src/extract_features.py` and smoke-tested it locally on real LIBERO data (SigLIP 2, C-RADIOv4). LIBERO frames need a 180° rotation.
 - Blocked on the user: HF gated access (DINOv3, SAM 3, VGGT-Ω) and an `hf-token` k8s Secret. Then a 1-GPU extraction Job, on go-ahead.
 - See: stacking-encoders/decisions/001-ground-truth-model.md, stacking-encoders/literature/encoder-weights.md, stacking-encoders/LOG.md
+
+## 2026-10-19 — stacking-encoders: first cached features + first diagnostics (pilot)
+
+- Checked both of Liu et al.'s tables against the arXiv HTML: exact match. My "seed discrepancy" in the catch-up was wrong. The paper uses one trained checkpoint per config; the 3 seeds are evaluation seeds. Also found that the paper's default WAM is joint video–action denoising, not Fast-WAM direct prediction.
+- Ran the first GPU extraction Job (TITAN RTX, fp16, 53 min, 90–99% util): SigLIP 2-L + C-RADIOv4 for libero_goal, 127k frames, 9.6 GB on the 20 GB PVC. 4 suites won't fit, so a storage decision is pending (CephFS recommended).
+- Wrote `src/diagnostics.py` + synthetic tests and ran it as a CPU Job. Action-probe R²: proprio 0.28, SigLIP 0.61, RADIO 0.67, both 0.68. Gains are asymmetric (+0.069 vs +0.008). CKA 0.72–0.94. The residual-information metric returned 0 on real data (probe overfits; speculative cause: within-demo frame correlation).
+- Open for the user: drop resid(B|A) in favor of gain(B|A)? Add demo-level bootstrap CIs; DINOv3 license + HF token Secret.
+- See: stacking-encoders/LOG.md (2026-10-18/19 and 2026-10-19), stacking-encoders/experiments/2026-10-18-extract-libero-goal/README.md, stacking-encoders/experiments/2026-10-19-diagnostics-libero-goal/README.md
