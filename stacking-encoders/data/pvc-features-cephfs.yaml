@@ -1,0 +1,19 @@
+# Shared feature cache for Phase 1 (frozen-encoder features, LIBERO suites).
+# CephFS (ReadWriteMany): large HDF5 files, readable by several Jobs at once.
+# NRP rules (../_standards/08, Storage): no conda/pip installs on CephFS; never have two pods write
+# the same file; not archival (purged after 6 months unaccessed), so results also go in the repo.
+# rook-cephfs is the US West pool (nrp.ai/documentation/userdocs/storage/ceph, checked 2026-10-19).
+# Size: ~38 GB estimated for 4 suites x 2 encoders (speculative), plus room for DINOv3 and more encoders.
+# Create only on user go-ahead:  kubectl apply -f data/pvc-features-cephfs.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: stacking-encoders-features
+  namespace: aria-world
+spec:
+  storageClassName: rook-cephfs
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
