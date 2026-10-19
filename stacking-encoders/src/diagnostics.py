@@ -5,11 +5,16 @@ For every pair of encoders (A, B) this computes:
     and feature type, on a fixed random frame subsample. Symmetric.
   - Action probes: ridge regression from features (both cams concatenated) to the 7-d action
     at the same timestep. Test R^2 for A, B and A+B (concatenation).
-  - gain(B|A) = R^2(A+B) - R^2(A). Asymmetric. This is the probe-level analogue of a combo gain.
-  - resid(B|A): R^2 of an action probe trained on the part of B that a ridge map from A cannot
-    predict. Asymmetric "information in B not linearly available from A" (H1 in LOG 2026-10-15).
+  - gain(B|A) = R^2(A+B) - R^2(A). Asymmetric. This is the probe-level analogue of a combo gain,
+    and the action information in B not linearly available from A.
   - pred(A->B): R^2 of predicting B from A (how much of B is linearly redundant given A).
 Plus a proprioception probe (joint + gripper states) as a reference point.
+
+Every probe R^2 and gain gets a 95% demo-level bootstrap CI: the fitted probes are kept fixed and
+the test demos are resampled with replacement (whole demos, never frames), the same draws for every
+probe, so gains are paired differences. resid(B|A) (a probe on the part of B a map from A can't
+predict) was dropped 2026-10-19: under OLS it targets the same quantity as gain, and on real data its
+probe overfit to R^2 ~0 (LOG 2026-10-19, decision 2026-10-19 (b)).
 
 Splits are by demo, never by frame (frames within a demo are highly correlated): per task file,
 demos sorted by index, the last 20% are test, the 20% before that are validation (ridge alpha
@@ -181,44 +186,56 @@ def ridge_select(x, y, split):
     alpha = best[1]
     trva = tr | va
     w, b = ridge_fit(x[trva], y[trva], alpha)
-    return r2(y[te], x[te] @ w + b), alpha, (w, b), val_curve
+    yhat = x[te] @ w + b
+    return r2(y[te], yhat), alpha, yhat, val_curve
 
 
 def probe(x, actions, split):
-    per_dim, alpha, _, val_curve = ridge_select(x, actions, split)
+    """Probe summary for the JSON, plus the test predictions (kept out of the JSON) for the bootstrap."""
+    per_dim, alpha, yhat, val_curve = ridge_select(x, actions, split)
     return {"r2_mean": float(per_dim.mean()), "r2_per_dim": [float(v) for v in per_dim], "alpha": alpha,
-            "val_r2_by_alpha": val_curve}
+            "val_r2_by_alpha": val_curve}, yhat
 
 
-def residualize(xb, xa, split, rel_tol=1e-8):
-    """Part of B not linearly predictable from A (map fit on train+val, applied everywhere).
+# ---------------------------------------------------------------------------
+# Demo-level bootstrap
+# ---------------------------------------------------------------------------
 
-    Unregularized on purpose: a ridge-shrunk map leaves a scaled copy of the predictable part
-    in the residual, which standardization then restores (caught by a synthetic test 2026-10-19).
-    Solved as a float64 pseudo-inverse that drops eigen-directions of A'A below rel_tol * max, so a
-    rank-deficient A can't blow the weights up (the first full run gave resid R^2 = 0.000 everywhere,
-    with a float32 solve at alpha 1e-6; suspected cause, see LOG 2026-10-19).
-    Needs n_train >> dim(A) (full libero_goal: ~51k frames vs <= 4.6k dims); returns None below 10x,
-    where the map overfits (a 12-demo local run gave test R^2 in the -1000s).
-    pred(A->B) is reported from a val-tuned ridge instead, so it is an honest test R^2.
+def demo_stats(y, yhat, groups):
+    """Per-demo sufficient statistics for R^2: frame count, sum y, sum y^2, sum (y - yhat)^2 (per dim)."""
+    ug, g = np.unique(groups, return_inverse=True)
+    k = len(ug)
+    y, err = y.astype(np.float64), (y - yhat).astype(np.float64) ** 2
+    sums = lambda v: np.stack([np.bincount(g, weights=v[:, j], minlength=k) for j in range(v.shape[1])], 1)
+    return np.bincount(g, minlength=k).astype(np.float64), sums(y), sums(y * y), sums(err)
+
+
+def r2_from_stats(w, n, sy, syy, sres):
+    """Mean-over-dims R^2 of the frames in demos weighted by w (bootstrap counts); w is (draws, demos)."""
+    nn, s1, s2, sr = w @ n, w @ sy, w @ syy, w @ sres
+    ss_tot = s2 - s1 ** 2 / nn[:, None]
+    return (1 - sr / np.maximum(ss_tot, 1e-12)).mean(1)
+
+
+def bootstrap_r2(y, preds, groups, n_boot=1000, seed=0):
+    """Bootstrap R^2 draws for each predictor in preds ({name: test predictions}).
+
+    Resamples test demos with replacement; every predictor sees the same draws, so differences
+    between predictors (gains) are paired. Returns {name: (n_boot,) array}.
     """
-    trva = split != "test"
-    pred_r2 = ridge_select(xa, xb, split)[0]
-    if trva.sum() < 10 * xa.shape[1]:
-        return None, float(pred_r2.mean()), {}
-    xa64, xb64 = xa[trva].astype(np.float64), xb[trva].astype(np.float64)
-    mu_a, mu_b = xa64.mean(0), xb64.mean(0)
-    xa64 -= mu_a
-    evals, evecs = np.linalg.eigh(xa64.T @ xa64)
-    keep = evals > rel_tol * evals.max()
-    v = evecs[:, keep] / evals[keep]
-    w = v @ (evecs[:, keep].T @ (xa64.T @ (xb64 - mu_b)))
-    resid = (xb.astype(np.float64) - mu_b - (xa.astype(np.float64) - mu_a) @ w).astype(np.float32)
-    info = {"rank_kept": int(keep.sum()), "dim_A": int(xa.shape[1]),
-            "eig_ratio_kept": float(evals[keep].min() / evals.max()),
-            "max_abs_w": float(np.abs(w).max()),
-            "resid_var_frac_trva": float(resid[trva].var(0).sum() / xb[trva].var(0).sum())}
-    return resid, float(pred_r2.mean()), info
+    k = len(np.unique(groups))
+    rng = np.random.default_rng(seed)
+    w = rng.multinomial(k, np.full(k, 1.0 / k), size=n_boot).astype(np.float64)
+    out = {}
+    for name, yhat in preds.items():
+        n, sy, syy, sres = demo_stats(y, yhat, groups)
+        out[name] = r2_from_stats(w, n, sy, syy, sres)
+    return out
+
+
+def ci(draws, level=0.95):
+    lo, hi = np.quantile(draws, [(1 - level) / 2, (1 + level) / 2])
+    return [float(lo), float(hi)]
 
 
 # ---------------------------------------------------------------------------
@@ -233,17 +250,21 @@ def main():
     p.add_argument("--probe-types", nargs="+", default=["global", "mean"],
                    help="feature types for probes (grid is CKA-only: too wide for primal ridge)")
     p.add_argument("--cka-n", type=int, default=5000, help="frames subsampled for CKA")
+    p.add_argument("--n-boot", type=int, default=1000, help="demo-level bootstrap draws for CIs")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--out", required=True)
     args = p.parse_args()
 
     t0 = time.time()
     feats, actions, proprio, split, index, meta, files = load(args)
+    groups = np.repeat(np.arange(len(index)), [n for _, _, n in index])  # demo id per frame
+    test = split == "test"
     counts = {s: int((split == s).sum()) for s in ("train", "val", "test")}
     print(f"[diag] {len(actions)} frames from {len(files)} files, split {counts}", flush=True)
     res = {"suite": args.suite, "files": files, "n_frames": len(actions), "split_frames": counts,
            "encoders": {e: meta[e] for e in args.encoders}, "git_commit": git_commit(),
-           "alphas": ALPHAS, "seed": args.seed, "cka": {}, "probes": {}, "pairs": {}}
+           "alphas": ALPHAS, "seed": args.seed, "n_boot": args.n_boot,
+           "n_test_demos": int(len(np.unique(groups[test]))), "cka": {}, "probes": {}, "pairs": {}}
 
     # CKA on a fixed frame subsample (same frames for every pair).
     rng = np.random.default_rng(args.seed)
@@ -265,34 +286,38 @@ def main():
     print(f"[diag] CKA sanity ({e0} mean): self {res['cka_sanity']['self']}, shuffled {res['cka_sanity']['shuffled']}", flush=True)
 
     train = split == "train"
-    res["probes"]["proprio"] = probe(standardize(proprio, train), actions, split)
+    preds = {}  # probe key -> test predictions, for the bootstrap
+    res["probes"]["proprio"], preds["proprio"] = probe(standardize(proprio, train), actions, split)
     print(f"[diag] probe proprio: R2 {res['probes']['proprio']['r2_mean']:.3f}", flush=True)
     for t in args.probe_types:
         xs = {e: standardize(np.concatenate([feats[e][t][c] for c in CAMS], axis=1), train) for e in args.encoders}
         for e in args.encoders:
-            res["probes"][f"{e}|{t}"] = probe(xs[e], actions, split)
+            res["probes"][f"{e}|{t}"], preds[f"{e}|{t}"] = probe(xs[e], actions, split)
             print(f"[diag] probe {e} {t}: R2 {res['probes'][f'{e}|{t}']['r2_mean']:.3f}", flush=True)
-        for a, b in itertools.permutations(args.encoders, 2):
-            key = f"{a}|{b}|{t}"
+        for a, b in itertools.combinations(args.encoders, 2):
             both_key = f"{min(a, b)}+{max(a, b)}|{t}"  # concatenation is symmetric; compute once per pair
-            if both_key not in res["probes"]:
-                res["probes"][both_key] = probe(np.concatenate([xs[a], xs[b]], axis=1), actions, split)
-            both = res["probes"][both_key]
-            resid, pred_r2, info = residualize(xs[b], xs[a], split)
-            rp = probe(standardize(resid, train), actions, split) if resid is not None else None
-            rp_raw = probe(resid, actions, split) if resid is not None else None  # unstandardized residual
-            res["pairs"][key] = {
-                "gain_B_given_A": both["r2_mean"] - res["probes"][f"{a}|{t}"]["r2_mean"],
-                "resid_B_given_A_r2": rp and rp["r2_mean"],
-                "resid_B_given_A_alpha": rp and rp["alpha"],
-                "resid_B_given_A_val_curve": rp and rp["val_r2_by_alpha"],
-                "resid_raw_B_given_A_r2": rp_raw and rp_raw["r2_mean"],
-                "pred_A_to_B_r2": pred_r2,
-                "resid_map": info,
+            res["probes"][both_key], preds[both_key] = probe(np.concatenate([xs[a], xs[b]], axis=1), actions, split)
+        for a, b in itertools.permutations(args.encoders, 2):
+            res["pairs"][f"{a}|{b}|{t}"] = {
+                "gain_B_given_A": res["probes"][f"{min(a, b)}+{max(a, b)}|{t}"]["r2_mean"] - res["probes"][f"{a}|{t}"]["r2_mean"],
+                "pred_A_to_B_r2": float(ridge_select(xs[a], xs[b], split)[0].mean()),
             }
-            rp_s = f"{rp['r2_mean']:.3f} (alpha {rp['alpha']:g}), raw {rp_raw['r2_mean']:.3f}" if rp else "skipped (n < 10 dim)"
-            print(f"[diag] {t}: A={a} B={b} gain(B|A) {res['pairs'][key]['gain_B_given_A']:+.3f} "
-                  f"resid(B|A) R2 {rp_s} pred(A->B) R2 {pred_r2:.3f} map {info}", flush=True)
+
+    # Demo-level bootstrap CIs (same draws for every probe, so gains are paired differences).
+    draws = bootstrap_r2(actions[test], preds, groups[test], args.n_boot, args.seed)
+    for k, d in draws.items():
+        res["probes"][k]["r2_ci95"] = ci(d)
+        print(f"[diag] probe {k}: R2 {res['probes'][k]['r2_mean']:.3f} CI95 {ci(d)[0]:.3f}..{ci(d)[1]:.3f}", flush=True)
+    for key, pr in res["pairs"].items():
+        a, b, t = key.split("|")
+        g = draws[f"{min(a, b)}+{max(a, b)}|{t}"] - draws[f"{a}|{t}"]
+        pr["gain_ci95"] = ci(g)
+        print(f"[diag] {t}: A={a} B={b} gain(B|A) {pr['gain_B_given_A']:+.3f} CI95 {pr['gain_ci95'][0]:+.3f}..{pr['gain_ci95'][1]:+.3f} "
+              f"pred(A->B) R2 {pr['pred_A_to_B_r2']:.3f}", flush=True)
+    # gain(B|A) - gain(A|B) = R^2(B) - R^2(A): is the asymmetry itself resolved?
+    for a, b in itertools.combinations(args.encoders, 2):
+        for t in args.probe_types:
+            res["pairs"][f"{a}|{b}|{t}"]["asym_ci95"] = ci(draws[f"{b}|{t}"] - draws[f"{a}|{t}"])
 
     res["seconds"] = time.time() - t0
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
