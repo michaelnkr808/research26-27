@@ -133,6 +133,56 @@ def load_cradiov4(device, dtype, variant=None):
     return enc
 
 
+@register("sam3")
+def load_sam3(device, dtype, variant=None):
+    # Needs transformers >= 5.0 (Sam3 is not in 4.57). Uses the ViT backbone only (pre-FPN-neck, 1024-d).
+    from transformers import AutoImageProcessor, Sam3Model
+    hf_id = variant or "facebook/sam3"  # gated: accept license on HF
+    proc = AutoImageProcessor.from_pretrained(hf_id)
+    res = proc.size["height"]  # 1008 (72 x 72 patches of 14)
+    enc = _HFEncoder("sam3", hf_id, res, device, dtype)
+    backbone = Sam3Model.from_pretrained(hf_id, dtype=dtype).vision_encoder.backbone.to(device).eval()
+
+    @torch.no_grad()
+    def encode(frames):
+        x = _to_float_nchw(frames, res, proc.image_mean, proc.image_std, device, dtype)
+        h = backbone(pixel_values=x).last_hidden_state
+        # No summary token: "global" is the patch-token mean, so it duplicates "mean" for this encoder.
+        return h.mean(dim=1), _tokens_to_grid(h)
+
+    enc.encode = encode
+    return enc
+
+
+@register("vggt-omega")
+def load_vggt_omega(device, dtype, variant=None):
+    # Needs the vggt_omega package (github.com/facebookresearch/vggt-omega). Each frame is encoded as its own
+    # 1-frame sequence. Features are the final aggregator layer as the model's heads consume it: frame-attention
+    # and global-attention tokens concatenated (2 x 1024 = 2048-d). "global" is the camera token.
+    from huggingface_hub import hf_hub_download
+    from vggt_omega.models import VGGTOmega
+    fname = variant or "vggt_omega_1b_512.pt"  # gated: accept license on HF
+    enc = _HFEncoder("vggt-omega", f"facebook/VGGT-Omega/{fname}", 512, device, dtype)
+    model = VGGTOmega(enable_camera=False, enable_depth=False)
+    state = torch.load(hf_hub_download("facebook/VGGT-Omega", fname), map_location="cpu")
+    aggregator_state = {k[len("aggregator."):]: v for k, v in state.items() if k.startswith("aggregator.")}
+    model.aggregator.load_state_dict(aggregator_state)  # strict: every aggregator weight must be in the file
+    aggregator = model.aggregator.to(device).eval()
+    amp = dtype != torch.float32
+
+    @torch.no_grad()
+    def encode(frames):
+        # The aggregator normalizes internally (ImageNet mean/std); it expects RGB in [0, 1], shape (B, S, 3, H, W).
+        x = _to_float_nchw(frames, enc.resolution, None, None, device, torch.float32)
+        with torch.autocast(device_type=torch.device(device).type, dtype=dtype, enabled=amp):
+            outputs, start = aggregator(x.unsqueeze(1))
+        h = outputs[-1][:, 0]  # (N, tokens, 2048)
+        return h[:, 0], _tokens_to_grid(h[:, start:])
+
+    enc.encode = encode
+    return enc
+
+
 def _not_yet(name, how):
     def loader(device, dtype, variant=None):
         raise NotImplementedError(f"{name}: loader not written yet. Weights: {how}")
@@ -140,8 +190,6 @@ def _not_yet(name, how):
 
 
 _not_yet("vjepa2.1", "official .pt files via github.com/facebookresearch/vjepa2 (needs its model code)")
-_not_yet("vggt-omega", "facebook/VGGT-Omega (gated, needs vggt package)")
-_not_yet("sam3", "facebook/sam3 (gated)")
 _not_yet("unitok", "FoundationVision/unitok_tokenizer (needs UniTok repo code)")
 _not_yet("hrp", "no public release found 2026-10-17")
 

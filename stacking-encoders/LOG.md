@@ -186,3 +186,15 @@
 **Decision needed (user):** (1) Approve decision 002? (2) Pick a primary hypothesis (agent suggests H-B). Both are verification gates (scope/question).
 **Next:** User reviews the hypotheses draft before Thursday 2026-10-22. On go-ahead: DINOv3 extraction for libero_goal (D is the base of every pair), then SAM 3 / VGGT-Ω, then the diagnostics rerun with CIs for the 7-pair tally. The earlier pending go-aheads (CephFS PVC, copy Job) can wait unless many encoders are extracted.
 **Open questions:** What does the mentor consider the closest prior work beyond agostinelli2022? Is a 7-pair, single-checkpoint tally acceptable as a first check?
+
+## 2026-10-19 (e) [agent] (pre-registration, written before any tally run)
+**Goal:** Feasibility tally (decision 002, accepted by user 2026-10-19). libero_goal only, base D = DINOv3 ViT-L/16, partners L, R, then S, G (V, U, H only if cheap). No policy training. No hypothesis is argued (user instruction): this produces numbers for a manual tally against the 7 liu2026what Table 10 deltas.
+**Fixed before seeing any D results:**
+- **Primary feature type: global** (as in the pilot). Mean-pooled is secondary. Grid is CKA-only (unchanged).
+- Same frames and same demo split as the pilot. Per task file, demos sorted by index: last 20% test, previous 20% val, rest train. 63,728 timesteps, 2 cams. Rotate 180°, fp16 features, `src/diagnostics.py` unchanged apart from its inputs.
+- Per pair (D, B): debiased linear CKA (5,000 frames, seed 0), probe test R² for D, B, D+B, gain(B|D), gain(D|B), demo-level bootstrap 95% CIs (1,000 draws, seed 0).
+- Ridge α is selected on validation **separately for every probe**, including each concatenation (grid 1e-2…1e5), then refit on train+val. No matched-dimension control; dimension mismatches are reported, not corrected.
+- Tally columns: CKA(D,B) (global; agentview and wrist reported separately), gain(B|D) [CI], gain(D|B) [CI], paper delta vs D alone = 84.0. Observations are qualitative only; no significance claims (n ≤ 7).
+- Encoder variants (choices, not confirmed to match the paper): DINOv3 `facebook/dinov3-vitl16-pretrain-lvd1689m` at 224; SAM 3 `facebook/sam3` ViT backbone, pre-neck, at 1008 (no summary token, so global = patch mean); VGGT-Ω `vggt_omega_1b_512.pt` at 512, final aggregator layer (2048-d: frame + global-attention tokens concatenated), global = camera token.
+**Did so far:** Wrote `sam3` and `vggt-omega` loaders in `src/extract_features.py`. Smoke-tested D/S/G with **random weights** on CPU (scratch venv: transformers 5.18.0, torch 2.7.1, vggt-omega @ 48b23c8). verified: shapes D global 1024 / tokens 14×14; S 1024 / 72×72; G 2048 / 16×16 at 256. Outputs finite. Real gated weights not yet loaded anywhere.
+**Note:** this log has two entries headed "2026-10-19 (c)". The second (bootstrap implementation) is the one the README means. Left as-is (append-only).

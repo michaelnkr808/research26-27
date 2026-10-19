@@ -1,6 +1,6 @@
 # 002 — Feasibility tally (1 suite, 5–8 encoders, no training) before any proxy-policy training
 - **Date:** 2026-10-19
-- **Status:** proposed (needs user approval; it changes scope and sequencing, a `05` verification gate)
+- **Status:** accepted (user, 2026-10-19)
 - **Context:** PhD mentor feedback (2026-10-19, see `writing/hypotheses-draft.md`):
   - Define the hypothesis and "complementarity" first.
   - Start with 1 dataset and 5–10 encoders; check CKA and tally similarities and differences by hand.
