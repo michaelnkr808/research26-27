@@ -1,6 +1,6 @@
 # Stacking Encoders
 
-**Status:** exploring. Ground truth will come from a proxy policy (decisions/001). First features cached (libero_goal, SigLIP 2-L + C-RADIOv4). Next: HF token for DINOv3, first diagnostics on the cached features, and a storage decision for the 4-suite run (see LOG 2026-10-18/19).
+**Status:** exploring. Ground truth will come from a proxy policy (decisions/001). First features cached (libero_goal, SigLIP 2-L + C-RADIOv4). First diagnostics run (SigLIP 2-L vs C-RADIOv4 on libero_goal). The residual-information metric failed on real data. Next: decide on the metric change, add bootstrap CIs, DINOv3 once the HF token exists (see LOG 2026-10-19).
 **Question (draft, not yet confirmed):** Can cheap diagnostics on frozen vision encoders, computed on robot data, predict (a) which encoder combinations improve a World Action Model (WAM) before training, and (b) why general-purpose encoders match or beat specialists?
 **What done looks like:** A ranked metric that predicts combo gains better than simple baselines (best-single-encoder, objective-overlap heuristic), evaluated against multi-seed WAM training runs. Or a documented negative result.
 
@@ -16,4 +16,5 @@
 - `src/bench_fastwam_step.py`: the benchmark script
 - `src/extract_features.py`: Phase 1 frozen-feature extraction (LIBERO HDF5 → per-encoder HDF5)
 - `experiments/2026-10-18-extract-libero-goal/`: first extraction Job. Features are on PVC `michael-persistent` at `/persistent/stacking-encoders/features/`.
+- `src/diagnostics.py`, `src/test_diagnostics.py`: Phase 1 diagnostics + synthetic tests; `experiments/2026-10-19-diagnostics-libero-goal/`: first results (pilot)
 - `literature/liu2026what-table{1,10}-*.csv`: paper tables, checked against the arXiv HTML 2026-10-18

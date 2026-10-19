@@ -36,3 +36,46 @@ kubectl delete configmap -n aria-world stacking-encoders-diag-src
 - Single-encoder probe R² is 0.3–0.6, with SigLIP 2-L and RADIO within 0.05 of each other. Mean features probe about as well as global ones.
 - Debiased CKA, SigLIP 2-L vs RADIO, is 0.4–0.7 on mean features. RADIO is distilled in part from SigLIP2-g, so overlap is expected.
 - gain(B|A) is small in both directions (< 0.05 R²). resid(B|A) is well below the single-encoder R².
+
+## Results (2026-10-19; one pair, one suite: a pipeline pilot, not a finding)
+**Runs:**
+- Submit 0 (10:23Z): failed in ~1 s, twice (backoffLimit 1). Exit 127: `free` isn't in `python:slim`. No compute used.
+- Run 1 (10:24–10:43Z, commit d6e3905): `results/run1-*`.
+- Run 2 (10:46–11:53Z, commit a89ece6): `results/run2-*`. The same metrics, except the residual map is a float64 pseudo-inverse, and the run logs each probe's val R² per α plus residual-map statistics.
+- All other numbers are identical between runs 1 and 2. Cleanup done: Job and ConfigMap deleted, namespace empty.
+
+**Data:** verified: 63,728 timesteps, 10 tasks, split by demo: 38,464 train / 12,416 val / 12,848 test frames.
+
+**Action-probe test R²** (mean over 7 action dims; verified, both runs):
+
+| features | proprio | SigLIP 2-L | C-RADIOv4 | both | gain(+RADIO \| SigLIP) | gain(+SigLIP \| RADIO) |
+|---|---|---|---|---|---|---|
+| global | 0.279 | 0.609 | 0.670 | 0.678 | +0.069 | +0.008 |
+| mean | – | 0.645 | 0.668 | 0.682 | +0.037 | +0.014 |
+
+**pred(A→B)** (test R² of a linear map from one encoder to the other): SigLIP→RADIO 0.79 global / 0.84 mean; RADIO→SigLIP 0.72 / 0.76.
+
+**Debiased CKA, SigLIP 2-L vs RADIO** (5,000 frames; biased ≈ debiased):
+
+| | global | mean | grid |
+|---|---|---|---|
+| agentview | 0.72 | 0.82 | 0.88 |
+| wrist | 0.84 | 0.88 | 0.94 |
+
+Sanity: self = 1, shuffled ≈ 0.
+
+**resid(B|A) failed:** −0.000 in all 4 directions in both runs.
+- Run 2 rules out the solver. The map is full rank (or 2 dims dropped), max |w| 0.7–4.8, and the residual keeps 11–18% of B's variance.
+- The residual probe's val R² is negative at every α (−0.62 at α = 0.01, rising to −0.0002 at α = 1e5). The probe overfits the residual and finds no signal that generalizes to new demos.
+- speculative cause: frames within a demo are near-duplicates, so the effective sample size is ~300 train demos, not 38k frames. That's far too few for a 2–4.6k-dim probe on a weak residual signal. The synthetic tests used i.i.d. frames, so they couldn't catch this.
+- Methods note (verified by algebra, recalled standard result): under OLS, probing the residual of B given A explains the same variance as gain(B|A). So resid adds little beyond gain anyway.
+
+**Against the predictions:**
+- Proprio 0.28 was inside its range.
+- Single-encoder R² 0.61–0.67 was above the predicted 0.3–0.6, and the encoders differed by up to 0.061 (predicted < 0.05).
+- CKA 0.72–0.94 was above the predicted 0.4–0.7.
+- Gains were < 0.05 except +0.069 (RADIO given SigLIP, global).
+
+**Not measured:** uncertainty. The gain differences (e.g. +0.008 vs +0.069) need demo-level bootstrap CIs before anyone reads them.
+
+GPU-hours: 0 (CPU only; ~1.5 h of 4-CPU time across both runs).
