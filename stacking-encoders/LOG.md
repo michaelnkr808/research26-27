@@ -168,3 +168,21 @@
 - Limit: the CIs cover test-demo sampling only, not probe-training variability.
 - numpy 2.2 on macOS prints spurious matmul RuntimeWarnings (recalled: a known Accelerate issue). Results are unaffected (CKA self = 1, all asserts pass).
 **Next (all need user go-ahead):** (1) Create the CephFS PVC `stacking-encoders-features` (`data/pvc-features-cephfs.yaml`). (2) CPU diagnostics rerun Job with CIs on the libero_goal features (can read `michael-persistent`). (3) Copy Job for the libero_goal features to CephFS, checksum-verified, originals kept. (4) DINOv3 extraction Job using the Secret.
+
+## 2026-10-19 (d) [agent]
+**Goal:** Update the direction's docs and specs for the PhD mentor's feedback (Slack, 2026-10-19), and help shape the hypothesis. No experiments run, no cluster actions.
+**Did:**
+- Read agostinelli2022 (arXiv v2 PDF; the mentor's link). Wrote `literature/notes/agostinelli2022-transferability-ensembles.md` and a BibTeX entry.
+- Wrote `writing/hypotheses-draft.md`: mentor feedback, similarity vs complementarity definitions, candidate hypotheses H-A..H-D, the 7-pair feasibility tally, a novelty statement draft, and Thursday prep.
+- Wrote `decisions/002-feasibility-before-proxy-training.md` (**proposed**). Added a sequencing note to 001.
+- Updated `README.md` (goal: publish; question reframed around conditional complementarity; plan) and filled the empty `STANDARDS.md` sections (scope, sources, baselines, metrics, stats, pitfalls, notation).
+**Found:**
+- verified (agostinelli2022, Sec. 3.4/4.1):
+  - Their ensembles average the outputs of separately fine-tuned models.
+  - MS-LEEP assumes independent sources and reduces to a sum of single-model LEEP scores, so it has no interaction term.
+  - LEEP-family metrics need label-space predictions.
+- speculative: those three points are where our work can differ (feature fusion that can hurt; foundation encoders without label spaces; asymmetric conditional gain). The broader related-work check (Cambrian-1, Theia, feature-based LogME/H-score variants) is not done.
+- verified (arithmetic on the transcribed Table 10, D alone = 84.0): the 7 two-encoder deltas are D+V +0.93, D+L +1.83, D+S +0.49, D+G +0.40, D+H +0.48, D+U +2.12, D+R −5.41.
+**Decision needed (user):** (1) Approve decision 002? (2) Pick a primary hypothesis (agent suggests H-B). Both are verification gates (scope/question).
+**Next:** User reviews the hypotheses draft before Thursday 2026-10-22. On go-ahead: DINOv3 extraction for libero_goal (D is the base of every pair), then SAM 3 / VGGT-Ω, then the diagnostics rerun with CIs for the 7-pair tally. The earlier pending go-aheads (CephFS PVC, copy Job) can wait unless many encoders are extracted.
+**Open questions:** What does the mentor consider the closest prior work beyond agostinelli2022? Is a 7-pair, single-checkpoint tally acceptable as a first check?
