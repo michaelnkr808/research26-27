@@ -146,3 +146,11 @@
 - verified (kubectl): the namespace has 5 PVCs, all `rook-ceph-block`. No storage quota entries are visible.
 - verified (NRP docs): `rook-cephfs` is US West, ReadWriteMany; conda/pip installs are prohibited. The docs give no region label value and no CephFS size limit.
 **Next:** (1) User OKs creating the CephFS PVC. (2) Implement bootstrap CIs and remove resid locally, then ask before the CPU rerun Job. (3) User creates the HF token Secret; then a DINOv3 extraction Job on go-ahead.
+
+## 2026-10-19 (c) [agent]
+**Goal:** Correct the NRP-docs claim in the 2026-10-19 (b) entry.
+**Correction to 2026-10-19 (b), "Found", NRP docs line:** "The docs give no region label value and no CephFS size limit" was wrong on both counts.
+- verified (NRP docs, `userdocs/storage/intro.md`, site commit `f926199`): the region-affinity example uses `topology.kubernetes.io/region In [us-west]`. That matches `rook-cephfs` (US West). verified (kubectl, 2026-10-19): 288 nodes carry `us-west`.
+- verified (same page): CephFS has a per-file size limit of 16 TB. No per-volume or per-namespace CephFS cap is documented.
+- Implication: `data/pvc-features-cephfs.yaml` is unaffected, but any Job that mounts it should add `us-west` region affinity (see `_standards/08`, "CephFS in detail").
+**Next:** unchanged from (b). (1) User OKs creating the CephFS PVC.
