@@ -14,7 +14,8 @@ metadata:
   namespace: aria-world
 spec:
   backoffLimit: 1                     # retry resumes: finished files are skipped (dst exists)
-  activeDeadlineSeconds: 32400        # 9 h hard cap (includes time Pending); estimate ~6 h on a 2080 Ti (speculative)
+  activeDeadlineSeconds: 46800        # 13 h hard cap (includes time Pending). Measured try 2 (2080 Ti): VGGT-Omega 11.9 frames/s;
+                                      # SAM 3 estimated ~4-5 frames/s (speculative), so ~1.5 h + ~7-8 h left
   ttlSecondsAfterFinished: 86400      # safety net; delete manually after collecting logs
   template:
     spec:
@@ -81,12 +82,12 @@ spec:
           }
           run dinov3 float32 64
           run vggt-omega float16 16
-          run sam3 float16 16
+          run sam3 float16 8
           echo "=== outputs"; du -sh $OUT/*/libero_goal || true; df -h /mnt/features; date -u
           if [ -n "$FAILED" ]; then echo "=== done with failures:$FAILED"; exit 1; fi
           echo "=== done"
         env:
-        - {name: SRC_GIT_COMMIT, value: 0cd09b5e745978cb4c61003959aa090674cbbca5}   # commit of the ConfigMap'd script
+        - {name: SRC_GIT_COMMIT, value: 9e3bdb261eaf6f8a86398a1bdf1517414fb4f6b9}   # commit of the ConfigMap'd script
         - name: HF_TOKEN
           valueFrom:
             secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
@@ -94,8 +95,10 @@ spec:
         - {name: MPLBACKEND, value: Agg}
         - {name: PYTHONUNBUFFERED, value: "1"}
         resources:                    # limits within 20% of requests
-          requests: {cpu: "2", memory: 16Gi, nvidia.com/gpu: "1", ephemeral-storage: 24Gi}
-          limits:   {cpu: "2", memory: 19Gi, nvidia.com/gpu: "1", ephemeral-storage: 28Gi}
+          # Sized from try 2 (Prometheus): ~1.0 core used; host RSS ~1.0 GiB once weights are on the GPU (DINOv3 stage).
+          # NRP checks memory use within 20-150% of the request, so the request must stay small (16Gi in try 2 was ~6%).
+          requests: {cpu: "1", memory: 4Gi, nvidia.com/gpu: "1", ephemeral-storage: 24Gi}
+          limits:   {cpu: "1200m", memory: 4800Mi, nvidia.com/gpu: "1", ephemeral-storage: 28Gi}
         volumeMounts:
         - {name: work, mountPath: /work}
         - {name: src, mountPath: /src, readOnly: true}
