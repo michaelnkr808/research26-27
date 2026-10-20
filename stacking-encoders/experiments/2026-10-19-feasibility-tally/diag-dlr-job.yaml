@@ -1,0 +1,82 @@
+# Feasibility tally diagnostics (CPU only), pairs (D, L) and (D, R): CKA, action probes, gain(B|D), gain(D|B), demo-level
+# bootstrap CIs, from the unchanged src/diagnostics.py (one invocation per pair; same split, CKA frames and bootstrap draws
+# in every invocation because they depend only on the data and seed 0).
+# Follows _standards/08: Job (not pod), runs a real command and exits, NO sleep, no GPU, kept off GPU nodes,
+# limits within 20% of requests, activeDeadlineSeconds caps runtime. No tolerations.
+# Script is mounted from ConfigMap `stacking-encoders-diag-src` (created from ../../src/diagnostics.py).
+# Features: DINOv3 from CephFS PVC stacking-encoders-features; SigLIP 2-L and C-RADIOv4 from PVC michael-persistent
+# (the pilot's cache). Symlinked into one --feats root. Downloads libero_goal again only for actions/proprio.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-diag-tally-dlr
+  namespace: aria-world
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 14400        # 4 h hard cap (includes time Pending); estimate ~1.5-2 h (speculative)
+  ttlSecondsAfterFinished: 86400      # safety net; delete manually after collecting logs
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}   # CPU-only: stay off GPU nodes
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}                 # near rook-cephfs
+      containers:
+      - name: main
+        image: python:3.11.14-slim
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          OUT=/mnt/features/stacking-encoders/diagnostics
+          mkdir -p $OUT /mnt/features/stacking-encoders/logs
+          LOG=/mnt/features/stacking-encoders/logs/diag-tally-dlr-$(date +%Y%m%d-%H%M%S).log
+          exec > >(tee -a $LOG) 2>&1
+          nproc; head -2 /proc/meminfo   # python:slim has no procps
+          pip install --no-cache-dir -q numpy==2.2.6 h5py==3.16.0 huggingface-hub==0.36.2
+          echo "=== pip freeze"; pip freeze
+          mkdir -p /work/feats
+          ln -s /mnt/features/stacking-encoders/features/dinov3 /work/feats/dinov3
+          ln -s /persistent/stacking-encoders/features/siglip2 /work/feats/siglip2
+          ln -s /persistent/stacking-encoders/features/c-radiov4 /work/feats/c-radiov4
+          ls -la /work/feats; du -shL /work/feats/*/libero_goal
+          echo "=== download libero_goal (actions/proprio)"; date -u
+          python - <<'PY'
+          from huggingface_hub import snapshot_download
+          snapshot_download("yifengzhu-hf/LIBERO-datasets", repo_type="dataset", revision="main",
+                            allow_patterns=["libero_goal/*.hdf5"], local_dir="/work/data")
+          PY
+          date -u
+          for B in siglip2 c-radiov4; do
+            echo "=== diagnostics dinov3 + $B"; date -u
+            python /src/diagnostics.py --feats /work/feats --suite libero_goal --raw /work/data/libero_goal \
+              --encoders dinov3 $B --n-boot 1000 --seed 0 --out $OUT/tally-libero_goal-dinov3-$B.json
+          done
+          for B in siglip2 c-radiov4; do echo "=== result json $B"; cat $OUT/tally-libero_goal-dinov3-$B.json; echo; done
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: 7dc80ca75de218761471cd0987a36797a44cba00}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: OMP_NUM_THREADS, value: "4"}
+        - {name: OPENBLAS_NUM_THREADS, value: "4"}
+        resources:                    # limits within 20% of requests
+          requests: {cpu: "4", memory: 16Gi, ephemeral-storage: 10Gi}
+          limits:   {cpu: "4", memory: 19Gi, ephemeral-storage: 12Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: persistent-vol, mountPath: /persistent, readOnly: true}
+        - {name: features, mountPath: /mnt/features}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 12Gi}
+      - name: src
+        configMap: {name: stacking-encoders-diag-src}
+      - name: persistent-vol
+        persistentVolumeClaim: {claimName: michael-persistent}
+      - name: features
+        persistentVolumeClaim: {claimName: stacking-encoders-features}
