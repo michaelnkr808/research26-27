@@ -13,7 +13,7 @@ metadata:
   namespace: aria-world
 spec:
   backoffLimit: 1
-  activeDeadlineSeconds: 14400        # 4 h hard cap (includes time Pending); estimate ~1.5-2 h (speculative)
+  activeDeadlineSeconds: 21600        # 6 h hard cap (includes time Pending); estimate ~2-3 h on 2 CPU (speculative)
   ttlSecondsAfterFinished: 86400      # safety net; delete manually after collecting logs
   template:
     spec:
@@ -61,11 +61,13 @@ spec:
         env:
         - {name: SRC_GIT_COMMIT, value: 7dc80ca75de218761471cd0987a36797a44cba00}
         - {name: PYTHONUNBUFFERED, value: "1"}
-        - {name: OMP_NUM_THREADS, value: "4"}
-        - {name: OPENBLAS_NUM_THREADS, value: "4"}
+        - {name: OMP_NUM_THREADS, value: "2"}
+        - {name: OPENBLAS_NUM_THREADS, value: "2"}
+        # Sized from the pilot diag Job (Prometheus, 2026-10-19): RSS median 3.9-5.2 GiB, max 11.7 GiB; CPU median
+        # 0-1.5 cores of 4. NRP checks use within 20-150% (memory) / 20-200% (CPU) of the request.
         resources:                    # limits within 20% of requests
-          requests: {cpu: "4", memory: 16Gi, ephemeral-storage: 10Gi}
-          limits:   {cpu: "4", memory: 19Gi, ephemeral-storage: 12Gi}
+          requests: {cpu: "2", memory: 11Gi, ephemeral-storage: 10Gi}
+          limits:   {cpu: "2400m", memory: 13Gi, ephemeral-storage: 12Gi}
         volumeMounts:
         - {name: work, mountPath: /work}
         - {name: src, mountPath: /src, readOnly: true}
