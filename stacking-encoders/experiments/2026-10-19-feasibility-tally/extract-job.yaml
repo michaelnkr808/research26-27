@@ -1,0 +1,99 @@
+# Feasibility tally (decision 002): cache frozen DINOv3 ViT-L/16, VGGT-Omega-1B-512 and SAM 3 (ViT backbone) features
+# for libero_goal (10 files, 500 demos, 2 cams), same extraction settings as the SigLIP 2 / RADIO pilot
+# (rotate 180, fp16, 4x4 grid, every frame). Order: DINOv3 first (needed for the minimum tally), SAM 3 last (slowest).
+# Follows _standards/08: Job (not pod), runs a real command and exits, NO sleep, 1 GPU, limits within 20% of requests,
+# activeDeadlineSeconds caps runtime. No tolerations.
+# Script is mounted from ConfigMap `stacking-encoders-extract-src` (created from ../../src/extract_features.py).
+# Output: /mnt/features/stacking-encoders/features/<encoder>/libero_goal/*.h5 on CephFS PVC stacking-encoders-features
+# (one writer per file). us-west affinity: rook-cephfs is US West (_standards/08, CephFS in detail).
+# Gated weights: HF_TOKEN from Secret stacking-encoders-hf (created by the user).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-extract-dsg-libero-goal
+  namespace: aria-world
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 32400        # 9 h hard cap (includes time Pending); estimate ~6 h on a 2080 Ti (speculative)
+  ttlSecondsAfterFinished: 86400      # safety net; delete manually after collecting logs
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              # Turing or newer (fast fp16). A40/A6000 are special resources, not nvidia.com/gpu.
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-GeForce-RTX-2080-Ti, NVIDIA-TITAN-RTX, Quadro-RTX-6000, Quadro-RTX-8000,
+                         NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090, NVIDIA-RTX-A4000, NVIDIA-RTX-A5000,
+                         NVIDIA-A10, NVIDIA-L4, NVIDIA-L40, NVIDIA-L40S,
+                         NVIDIA-RTX-4000-Ada-Generation, NVIDIA-RTX-5000-Ada-Generation]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}   # CUDA 12.8 image needs driver >= 570
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          nvidia-smi
+          OUT=/mnt/features/stacking-encoders/features
+          mkdir -p $OUT /mnt/features/stacking-encoders/logs
+          LOG=/mnt/features/stacking-encoders/logs/extract-dsg-libero-goal-$(date +%Y%m%d-%H%M%S).log
+          exec > >(tee -a $LOG) 2>&1
+          echo "=== df /mnt/features"; df -h /mnt/features
+          # transformers 5.x: Sam3 is not in 4.57. torch/torchvision listed so pip keeps the image's versions.
+          pip install --no-cache-dir -q torch==2.7.1 torchvision==0.22.1 \
+            transformers==5.18.0 tokenizers==0.23.3 safetensors==0.8.0 huggingface-hub==2.2.0 \
+            einops==0.8.1 h5py==3.16.0 numpy==2.2.6 pillow==13.0.0
+          # vggt-omega pinned to a commit; --no-deps because it pins numpy<2 (its model code doesn't need it).
+          pip install --no-cache-dir -q --no-deps \
+            https://github.com/facebookresearch/vggt-omega/archive/48b23c8ce72c9a8fcf987f0d7f43d8e4870759f6.tar.gz
+          echo "=== pip freeze"; pip freeze
+          echo "=== model revisions"
+          python - <<'PY'
+          from huggingface_hub import HfApi
+          for r in ["facebook/dinov3-vitl16-pretrain-lvd1689m", "facebook/sam3", "facebook/VGGT-Omega"]:
+              print(r, HfApi().model_info(r).sha)
+          PY
+          echo "=== download libero_goal"; date -u
+          python - <<'PY'
+          from huggingface_hub import snapshot_download
+          snapshot_download("yifengzhu-hf/LIBERO-datasets", repo_type="dataset", revision="main",
+                            allow_patterns=["libero_goal/*.hdf5"], local_dir="/work/data")
+          PY
+          ls -la /work/data/libero_goal; date -u
+          X=/src/extract_features.py
+          echo "=== dinov3"; python $X --encoder dinov3 --dtype float16 --batch-size 64 --out $OUT --hdf5 /work/data/libero_goal/*.hdf5
+          du -sh $OUT/dinov3/libero_goal; date -u
+          echo "=== vggt-omega"; python $X --encoder vggt-omega --dtype float16 --batch-size 16 --out $OUT --hdf5 /work/data/libero_goal/*.hdf5
+          du -sh $OUT/vggt-omega/libero_goal; date -u
+          echo "=== sam3"; python $X --encoder sam3 --dtype float16 --batch-size 16 --out $OUT --hdf5 /work/data/libero_goal/*.hdf5
+          echo "=== outputs"; du -sh $OUT/*/libero_goal; df -h /mnt/features; date -u
+          echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: 0cd09b5e745978cb4c61003959aa090674cbbca5}   # commit of the ConfigMap'd script
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: MPLBACKEND, value: Agg}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        resources:                    # limits within 20% of requests
+          requests: {cpu: "2", memory: 16Gi, nvidia.com/gpu: "1", ephemeral-storage: 24Gi}
+          limits:   {cpu: "2", memory: 19Gi, nvidia.com/gpu: "1", ephemeral-storage: 28Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: features, mountPath: /mnt/features}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 28Gi}
+      - name: src
+        configMap: {name: stacking-encoders-extract-src}
+      - name: features
+        persistentVolumeClaim: {claimName: stacking-encoders-features}
