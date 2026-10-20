@@ -163,11 +163,15 @@ def load_vggt_omega(device, dtype, variant=None):
     from vggt_omega.models import VGGTOmega
     fname = variant or "vggt_omega_1b_512.pt"  # gated: accept license on HF
     enc = _HFEncoder("vggt-omega", f"facebook/VGGT-Omega/{fname}", 512, device, dtype)
-    model = VGGTOmega(enable_camera=False, enable_depth=False)
-    state = torch.load(hf_hub_download("facebook/VGGT-Omega", fname), map_location="cpu")
+    # Low host memory: build the model directly on the target device and copy in mmapped checkpoint tensors, so the
+    # 1B-param checkpoint is never held in RAM (a plain torch.load kept ~4.4 GiB resident all run, 2026-10-20 try 2).
+    with torch.device(device):
+        model = VGGTOmega(enable_camera=False, enable_depth=False)
+    state = torch.load(hf_hub_download("facebook/VGGT-Omega", fname), map_location="cpu", mmap=True, weights_only=True)
     aggregator_state = {k[len("aggregator."):]: v for k, v in state.items() if k.startswith("aggregator.")}
     model.aggregator.load_state_dict(aggregator_state)  # strict: every aggregator weight must be in the file
-    aggregator = model.aggregator.to(device).eval()
+    del state, aggregator_state
+    aggregator = model.aggregator.to(device).eval()  # also moves buffers made by legacy constructors (CPU-only)
     amp = dtype != torch.float32
 
     @torch.no_grad()
