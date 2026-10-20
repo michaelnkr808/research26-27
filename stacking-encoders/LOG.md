@@ -198,3 +198,16 @@
 - Encoder variants (choices, not confirmed to match the paper): DINOv3 `facebook/dinov3-vitl16-pretrain-lvd1689m` at 224; SAM 3 `facebook/sam3` ViT backbone, pre-neck, at 1008 (no summary token, so global = patch mean); VGGT-Ω `vggt_omega_1b_512.pt` at 512, final aggregator layer (2048-d: frame + global-attention tokens concatenated), global = camera token.
 **Did so far:** Wrote `sam3` and `vggt-omega` loaders in `src/extract_features.py`. Smoke-tested D/S/G with **random weights** on CPU (scratch venv: transformers 5.18.0, torch 2.7.1, vggt-omega @ 48b23c8). verified: shapes D global 1024 / tokens 14×14; S 1024 / 72×72; G 2048 / 16×16 at 256. Outputs finite. Real gated weights not yet loaded anywhere.
 **Note:** this log has two entries headed "2026-10-19 (c)". The second (bootstrap implementation) is the one the README means. Left as-is (append-only).
+
+## 2026-10-19/20 (f) [agent] (tally extraction: cluster events so far)
+**Did (all approved by user in-session; times UTC 10-20):**
+- Created CephFS PVC `stacking-encoders-features` (100Gi, `rook-cephfs`, Bound). Created ConfigMap `stacking-encoders-extract-src`.
+- Try 1 (00:22, 2080 Ti): DINOv3 in fp16 gave non-finite features on batch 0. Deleted the Job and its retry pod at once. ~1 GPU-min. Log: `experiments/2026-10-19-feasibility-tally/results/extract-try1-job.log`.
+- Try 2 (00:29–02:44, 2080 Ti, k8s-haosu-05): DINOv3 in fp32 finished all 10 files (65–72 frames/s, 4.4G). VGGT-Ω (fp16) finished 5 of 10 files at 11.9 frames/s (~3× slower than my estimate). Deleted by me after user approval, for under-used memory (below). ~2.25 GPU-h.
+- Try 3 (submitted 02:47): 1 CPU / 4Gi (limit 1.2 / 4.8Gi), VGGT-Ω loader builds on the GPU and mmaps the checkpoint (9e3bdb2). Resumes by skipping finished files. Watchdog running locally: deletes the Job if GPU < 40% or memory working set < 20% of the request on 3 consecutive 5-min checks.
+**Found:**
+- verified (Prometheus, try 2): GPU util median 100%. CPU ~1.0 core of 2 requested. Host memory: DINOv3 stage RSS ~1.0 GiB, VGGT-Ω stage median 4.4 GiB (max 8.4) against a 16Gi request. **The memory request was under 20% use for the whole run.** The pod was over 30 min old from ~00:59, so it was probably flagged as a memory-low violation on the NRP portal from ~01:00 to 02:44 (not checked on the portal by the agent). My sizing error: I requested 16Gi for a short load peak.
+- verified (try 3, 02:59): VGGT-Ω stage working set 1.42 GiB (35% of 4Gi), anon 1.25 GiB, GPU 100%, 0 OOM events.
+- verified: the HF token reads all three gated repos. Revisions: DINOv3 `ea8dc28`, SAM 3 `3c879f3`, VGGT-Ω `1041e80`.
+- verified (local, random full-size VGGT-Ω checkpoint): the new loader gives identical features to a plain strict load (max |diff| 0.0).
+- **Deviation from pre-registration (e):** DINOv3 features are fp32, not fp16 (fp16 overflowed). L and R are fp16 (R via autocast).
