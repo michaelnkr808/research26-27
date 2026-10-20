@@ -13,7 +13,7 @@ metadata:
   name: stacking-encoders-extract-dsg-libero-goal
   namespace: aria-world
 spec:
-  backoffLimit: 0                     # a retry would repeat a deterministic failure (try 1)
+  backoffLimit: 1                     # retry resumes: finished files are skipped (dst exists)
   activeDeadlineSeconds: 32400        # 9 h hard cap (includes time Pending); estimate ~6 h on a 2080 Ti (speculative)
   ttlSecondsAfterFinished: 86400      # safety net; delete manually after collecting logs
   template:
