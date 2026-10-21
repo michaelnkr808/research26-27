@@ -224,3 +224,15 @@
 - The local Prometheus monitor's memory-low alert fired at 5 min (pip install stage). It was a false alarm: NRP skips pods under 30 min. I added a grace period to the monitor (scratchpad only).
 **Resources (whole tally):** ~10.2 GPU-h (tries 1–3). CPU diagnostics 49 + 45 + 30 min at 2 cores.
 **Next:** user reviews the tally (key findings need sign-off), then chooses the hypothesis and whether the proxy-policy study (decision 001) is worth running. Open: keep or delete the 17.6G on the CephFS PVC; check the NRP Violations page for the probable try-2 memory-low flag.
+
+## 2026-10-21 (h) [agent] (key findings signed off; README brought up to date)
+**Did:**
+- The user reviewed the tally and asked for it to go into the README key findings. Wrote them with labels (verified / speculative) and n = 4 caveats.
+- Updated the README status, the plan (step 1 done, decision 002 accepted), and key files (tally experiment, CephFS PVC manifest, loader list).
+- Verified the 7 paper deltas against `literature/liu2026what-table{1,10}-*.csv`: Table 10 mean − D alone 84.0 matches all 7 values in the user's spec. The experiment README now cites this instead of "not re-checked".
+- Made the HRP skip reason precise in the experiment README.
+**Found:** in Table 10, D+R has the largest eval-seed sd (1.01) (verified, CSV).
+**Stale, not edited (out of scope of this request):**
+- `src/extract_features.py` HRP stub message ("no public release found 2026-10-17") predates the user's correction that the weights are on the CMU site.
+- `STANDARDS.md` storage line still says checkpoint storage is TBD; the CephFS PVC now exists for features.
+**Next:** user and mentor (Thursday 2026-10-22): choose the hypothesis and whether the proxy-policy study (decision 001) is worth running. Open: keep or delete the 17.6G on the CephFS PVC; check the NRP Violations page for the probable try-2 memory-low flag.

@@ -30,7 +30,7 @@
   - Diagnostics: CPU-only nodes, 2 CPU / 11Gi.
   - Features live on the CephFS PVC `stacking-encoders-features` (D 4.4G, S 4.4G, G 8.8G). L and R are read from `michael-persistent`.
 
-## Tally (all numbers verified from `results/tally-libero_goal-dinov3-*.json`; paper Δ supplied by the user from liu2026what Table 10, not re-checked against the PDF this session)
+## Tally (all numbers verified from `results/tally-libero_goal-dinov3-*.json`; paper Δ = Table 10 mean − D alone 84.0 from Table 1, verified 2026-10-21 against `../../literature/liu2026what-table{1,10}-*.csv`, which were checked against the arXiv HTML 2026-10-18)
 
 **Global (primary)**
 
@@ -109,7 +109,7 @@ The paper orders these 4 pairs L (+1.83) > S (+0.49) > G (+0.40) > R (−5.41).
 ## Skipped encoders
 - **V-JEPA 2.1:** only third-party HF conversions exist. The official weights need the repo's code and a choice of how to feed single frames to a video model.
 - **UniTok:** needs its repo's code; not cheap.
-- **HRP:** the base model could not be confirmed.
+- **HRP:** weights are on the CMU project site, but HRP fine-tunes existing encoders, so there are several checkpoints on different bases. The paper's base is unknown (user-supplied check 2026-10-17, `../../literature/encoder-weights.md`).
 
 All three are recorded as not run, not as failures.
 
