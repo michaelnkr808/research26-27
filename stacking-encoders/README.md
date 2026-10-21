@@ -1,6 +1,6 @@
 # Stacking Encoders
 
-**Status:** exploring. Feasibility tally (decision 002) done and reviewed by the user (2026-10-21): on libero_goal, neither CKA nor gain(B|D) on frozen features flags the harmful D+R combo (key findings below; `experiments/2026-10-19-feasibility-tally/`). Next: the user and the mentor (Thursday 2026-10-22) choose the hypothesis and whether the proxy-policy study (decision 001) is worth running.
+**Status:** exploring. Feasibility tally (decision 002) done and reviewed by the user (2026-10-21): on libero_goal, neither CKA nor gain(B|D) on frozen features flags the harmful D+R combo (key findings below; `experiments/2026-10-19-feasibility-tally/`). The paper uses encoder features as both inputs and prediction targets; we have only tested inputs. A target-side test (H-E) is pre-registered in LOG 2026-10-21 (i), not yet coded or run. Next: the user and the mentor (Thursday 2026-10-22) choose the hypothesis; on go-ahead, implement and run the target-side diagnostics.
 **Goal:** publish (user, 2026-10-19). Venue and timeline to discuss with the PhD mentor on Thursday 2026-10-22.
 **Question (draft, not yet confirmed):** Can a cheap, *conditional* measure of what encoder B adds to encoder A (task-relevant information not recoverable from A), computed on frozen features from robot data, predict which encoder combinations improve a World Action Model (WAM) before training, where symmetric similarity (CKA) does not?
 - Secondary, possibly a separate paper: why do general-purpose encoders match or beat specialists?

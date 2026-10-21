@@ -236,3 +236,32 @@
 - `src/extract_features.py` HRP stub message ("no public release found 2026-10-17") predates the user's correction that the weights are on the CMU site.
 - `STANDARDS.md` storage line still says checkpoint storage is TBD; the CephFS PVC now exists for features.
 **Next:** user and mentor (Thursday 2026-10-22): choose the hypothesis and whether the proxy-policy study (decision 001) is worth running. Open: keep or delete the 17.6G on the CephFS PVC; check the NRP Violations page for the probable try-2 memory-low flag.
+
+## 2026-10-21 (i) [agent] (paper check + pre-registration of target-side diagnostics; written before any target-side code or run)
+**Goal:** Explain why the input-side tally can't flag D+R. Check how liu2026what uses encoder features. Pre-register cheap diagnostics that treat the encoders as **prediction targets**. No code written and nothing run yet.
+**Found:**
+- verified (`src/diagnostics.py` lines 6, 290–299): every probe so far predicts the 7-d action **at the same timestep** from current features. No future-feature or encoder-as-target diagnostic exists. `pred(D→B)` (same frame, global) is in the JSONs but not the tally tables: R 0.805, S 0.733, L 0.675, G 0.603 (read from `results/tally-*.json`, no CIs). It is a redundancy measure, not a target-predictability measure.
+- verified (arXiv HTML v1, read through a summarising fetch; verbatim quotes not yet hand-checked against the PDF):
+  - Encoder features are both input and target. Sec. 3.3: features "concatenated along the channel dimension"; the video expert's projections are "expanded to jointly predict VAE and external-feature flow velocities". App. B.2: "Observed features remain clean, whereas future VAE latents and external features are jointly noised and predicted."
+  - App. B.2: auxiliary feature-prediction loss weight 1.0. **No per-encoder normalization, rescaling or loss weight is stated** for the concatenation path.
+  - Table 6: action horizon 32 steps; 9 frames per view at offsets 0, 4, …, 32. Table 7 / App. D.3: 2 views (agent-view and wrist), 224×224. App. D.3: DINOv3 gives a 14×14 grid of 1,024-d features per view.
+  - Sec. 4.4: the paper's only explanation for D+R is a teacher–student overlap (C-RADIOv4 distills DINOv3, SigLIP 2 and SAM 3).
+- speculative: an input-side ridge probe on [D, B] can almost never score below D alone, so gain(B|D) can't predict harm by construction. Multi-output ridge also fits each output independently, so a linear probe can't show targets competing either. That needs shared capacity under one summed loss.
+**Hypothesis under test (H-E, proposed; not chosen by the user):** a partner hurts when it makes the *prediction target* worse. Either its future features are hard to predict, or, under the paper's unnormalized concatenation, it takes a large share of the summed loss and crowds out D's own future prediction.
+**Pre-registered (fixed now, before any code or result):**
+- **Data, split, encoders:** as in (e): libero_goal, same demo split, D + {L, R, S, G}, global features primary, mean secondary. Both cams, concatenated as before.
+- **Horizons:** k ∈ {4, 16, 32} steps (the paper's first offset, a middle one, and its last). Frames with t + k beyond the demo end are dropped. **Primary = mean over the 3 k.**
+- **Target:** Δ_E = f_E(t + k) − f_E(t), so that "copy the current frame" scores R² = 0. Inputs: current global features, standardized on train.
+- **T0 (loss share; no fitting):** each encoder's share of the total raw variance of Δ in the concatenated target [D, B], on train frames.
+- **T1 (target predictability):** ridge from [D, B] at t to Δ_B. Test R² averaged over dims. α tuned on val per probe (same grid), refit on train+val.
+- **T2 (target interference; primary measure):** reduced-rank ridge, rank r = 64 (secondary r ∈ {16, 256}). Closed form: ridge fit, then SVD of the train fitted values, then project, in the target scaling being tested. Inputs are [D, B] at t in every condition, so only the target changes.
+  - interference(B) = R²_D(target Δ_D only) − R²_D(target [Δ_D, Δ_B]), on D's dims, test set.
+  - Two scalings: (a) **raw**, as in the paper; (b) **per-encoder equalized**, each encoder's block rescaled to equal total train variance.
+- **CIs:** demo-level bootstrap, 1,000 paired draws, seed 0, as in `src/diagnostics.py`.
+- **Prediction (H-E):** on T2-raw (primary), R has the largest interference of the 4 partners, and it shrinks under (b).
+- **Outcome rule:**
+  - R not the largest on T2-raw → H-E fails at this level. The remaining explanations (single-checkpoint noise, training dynamics, LIBERO-Plus shift) need retraining or the authors' variance data.
+  - R largest → weak support only. With n = 4, a random measure picks R 1 time in 4. It would justify a small causal test (with vs without per-encoder normalization in a trained model), not a claim.
+  - T0, T1 and the secondary r, k and feature types are reported but don't decide the outcome.
+- **Known limits:** global/mean features, not the paper's 14×14 grids. Linear model, not flow matching. Deltas, not noised targets. Clean libero_goal, not LIBERO-Plus.
+**Next:** (1) user/mentor review on Thursday 2026-10-22. (2) On go-ahead, write `src/target_diagnostics.py` (reusing `diagnostics.py` loaders) plus synthetic tests, e.g. a planted high-variance block must cause interference under raw and not under equalized scaling. (3) CPU Job per pair after a Prometheus capacity check and user approval.

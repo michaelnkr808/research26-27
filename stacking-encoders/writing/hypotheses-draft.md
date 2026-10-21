@@ -2,6 +2,15 @@
 
 Written 2026-10-19 by an agent after mentor feedback. Nothing here is a finding. The user picks the hypothesis; this file lays out options.
 
+## Update 2026-10-21: tally outcome and reframe (agent; see LOG 2026-10-21 (i))
+- The feasibility tally (4 pairs) met the pre-set "rethink" rule. Neither CKA nor gain(B|D) singles out D+R, and gain(B|D) ranks R highest (README key findings, signed off).
+- verified (paper, Sec. 3.3 / App. B.2): the WAM uses encoder features as **inputs and as prediction targets**. Current features go in clean. Future features are noised and predicted, concatenated channel-wise. No per-encoder normalization or loss weight is stated. All our diagnostics so far tested encoders as inputs only.
+- speculative: input-side probe gain is almost never negative by construction, so it can't predict harm. Linear multi-output probes can't show targets competing either.
+- **Proposed new candidate, H-E (target-side interference):** a partner hurts when it makes the prediction target worse. Either its future features are hard to predict, or, under raw concatenation, it takes a large share of the summed loss and crowds out D's own future prediction.
+  - Pre-registered cheap test (T0 loss share, T1 predictability, T2 reduced-rank interference, raw vs equalized): LOG 2026-10-21 (i).
+  - H-C ("redundancy hurts", via CKA) is weakened: L is nearly as similar to D as R (0.576 vs 0.583) and is the paper's best partner.
+- **Draft question for Thursday:** when frozen encoder features are stacked as both inputs and prediction targets of a WAM, why do some combinations hurt, and can a cheap diagnostic on frozen features predict which ones will?
+
 ## Mentor feedback (Slack, 2026-10-19, paraphrased; mentor hadn't read the paper yet)
 1. Similarity metrics are a fine starting point. But **low similarity is not the same as complementarity**: different encodings don't necessarily add task-useful information. Define what "complementary" means and whether it helps.
 2. **Define the hypothesis exactly first.** Then decide whether this is one experiment or a full paper. Start with **very small experiments: 1 dataset, 5–10 encoders**. Check what CKA gives, and compare and manually tally similarities and differences.
