@@ -31,3 +31,10 @@
 - Drafted a 100Gi CephFS volume for features, following the NRP docs. Dry run passed; not created.
 - Waiting on go-aheads: create the volume, rerun diagnostics with CIs, copy the libero_goal features, run DINOv3 extraction.
 - See: stacking-encoders/LOG.md (2026-10-19 (b), (c)), stacking-encoders/data/pvc-features-cephfs.yaml
+
+## 2026-10-21 — stacking-encoders: feasibility tally (decision 002) done, negative on the simple metric
+
+- Extracted DINOv3, SAM 3, VGGT-Ω for libero_goal on Nautilus (~10 GPU-h over 3 tries; fp16 DINOv3 overflowed, try 2 over-requested memory, SAM 3 ran 5.5 frames/s) and ran CPU diagnostics for D+L, D+R, D+S, D+G.
+- Result (n = 4, user signed off): neither CKA nor gain(B|D) flags the paper's harmful D+R. R is the most similar to D and adds the most to it. Every partner adds a small positive gain on frozen features.
+- Decision 002 accepted; CephFS feature PVC created (17.6G of features kept). All Jobs and ConfigMaps cleaned up. NOTES.md is now git-ignored. A handoff block went to the planning agent; direction to be chosen with the mentor on 2026-10-22.
+- See: stacking-encoders/experiments/2026-10-19-feasibility-tally/README.md, stacking-encoders/README.md (key findings), stacking-encoders/LOG.md (2026-10-19 (e) through 2026-10-21 (h))
