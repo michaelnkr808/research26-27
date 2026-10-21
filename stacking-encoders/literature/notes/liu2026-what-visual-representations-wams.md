@@ -19,3 +19,9 @@
 - **Key quotes:** "The composition results suggest that overlap in pretraining objectives can limit complementary gains." (Sec. 4.4, as extracted; page unchecked)
 - **Useful controlled pairs:** VGGT-Ω is DINOv3-initialized (per paper). SAM 3 uses a Perception Encoder backbone (per SAM 3 paper, arXiv 2511.16719, snippet only). HRP's base model is not stated in the paper and needs checking in Srirama et al. 2024.
 - **From the project page (verified 2026-10-17):** R²-WAM "predict[s] future features" and integrates them "through shared visual tokens" via channel-wise concatenation. So the encoders may act as prediction targets, not just inputs. Check the PDF method section. Composition values are only in a figure image; the text gives VAE-only 74.7, DINOv3 84.0, SigLIP 2 deltas +1.8 / −0.4 / +0.2, R²-WAM 87.3, +HRP 87.7.
+
+- **Read from the PDF (2026-10-21, LOG (j); verified, pdftotext of the user's copy):**
+  - Channel-wise concatenation uses features as clean current inputs *and* noised future targets (Sec. 3.3, App. B.2).
+  - Per-source feature losses are summed with weight 1.0 each (App. E.1 Eq. 9). Feature normalization is not stated ("source-specific processing", E.1).
+  - Table 9 (DINOv3): current-only 76.5, future-only 81.9, both 84.0.
+  - D+R 78.6 is below both D (84.0) and R (83.5) alone.

@@ -265,3 +265,27 @@
   - T0, T1 and the secondary r, k and feature types are reported but don't decide the outcome.
 - **Known limits:** global/mean features, not the paper's 14×14 grids. Linear model, not flow matching. Deltas, not noised targets. Clean libero_goal, not LIBERO-Plus.
 **Next:** (1) user/mentor review on Thursday 2026-10-22. (2) On go-ahead, write `src/target_diagnostics.py` (reusing `diagnostics.py` loaders) plus synthetic tests, e.g. a planted high-variance block must cause interference under raw and not under equalized scaling. (3) CPU Job per pair after a Prometheus capacity check and user approval.
+
+## 2026-10-21 (j) [agent] (paper read from the user's PDF; amendment to the (i) pre-registration, before any code or run)
+**Goal:** Read liu2026what from the user's PDF (`~/Downloads/2610.13024v1-2.pdf`, text via pdftotext) to replace the summarising-fetch reading in (i). Amend the pre-registration where the paper contradicts it.
+**Found (verified, PDF text):**
+- (i)'s quotes are confirmed: Sec. 3.3 "concatenate them along the channel dimension… jointly predict VAE and external-feature flow velocities". App. B.2 "Observed features remain clean, whereas future VAE latents and external features are jointly noised and predicted." App. B.2 "auxiliary feature-prediction losses use a weight of 1.0." Table 6: offsets 0, 4, …, 32; action horizon 32.
+- **App. E.1, Eq. 9: each source has its own loss term**, L_aux = Σ_k L_FM(f^k_{1:T}), and L_FM is the "modality-specific mean-squared error" (Sec. 3.1). So the feature losses are not one MSE over the pooled channels. If L_FM averages over a source's channels (likely but not stated), channel count does not set a source's loss share; feature scale still can. Each added source also adds another full-weight (1.0) feature loss next to the video and action losses.
+- App. E.1: "Source-specific processing and concatenation order are held fixed". The processing is not described. **Whether features are normalized remains unstated.** App. D.3 says "raw current-frame DINOv3 features". The design follows DreamWorld (Tan et al., 2026), not checked.
+- **Table 9 (App. D.2), DINOv3 under channel-wise concat:**
+
+  | Config | LP success |
+  |---|---|
+  | current-only input | 76.5 |
+  | future-only prediction | 81.9 |
+  | both | 84.0 |
+
+  The authors read this as "supporting future-feature prediction as a major contributor". Our tally tested only the current-input role.
+- Table 1 (repo CSV): C-RADIOv4 alone 83.5 vs DINOv3 alone 84.0. **D+R (78.6) is below both single sources**, so the harm comes from combining them, not from a weak R.
+- Sec. 4.4: the only explanation offered for D+R is "a direct teacher–student relationship" (R distills D, SigLIP 2 and SAM 3).
+**Amendment to (i), T2 (made before any code or result):**
+- Primary scaling is now **(a′) per-source mean MSE at raw feature scale**: each encoder's block weighted by 1/d_k, matching Eq. 9 if L_FM is a per-source mean. (b) per-source equalized variance is unchanged.
+- The (i) "raw" pooled-channel loss becomes secondary (a″), as the case where L_FM sums channels.
+- The prediction is unchanged (R has the largest interference under the primary scaling and less under (b)), as are the outcome rule and the other choices in (i).
+- Added to T0: per-encoder per-channel feature variance and mean norm. This is a direct check of the feature-scale route.
+**Open questions for the authors:** training-seed variance for D+R; what the "source-specific processing" is (normalization?); whether L_FM is a mean or a sum over channels.
