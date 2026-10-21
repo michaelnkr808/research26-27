@@ -289,3 +289,14 @@
 - The prediction is unchanged (R has the largest interference under the primary scaling and less under (b)), as are the outcome rule and the other choices in (i).
 - Added to T0: per-encoder per-channel feature variance and mean norm. This is a direct check of the feature-scale route.
 **Open questions for the authors:** training-seed variance for D+R; what the "source-specific processing" is (normalization?); whether L_FM is a mean or a sum over channels.
+
+## 2026-10-21 (compliance) [agent]
+**Goal:** Check the CephFS volume and our cluster use against the NRP rules in `../_standards/08`.
+**Did:** Read-only kubectl (`get pvc/pods/jobs/configmaps/resourcequota/secret`) and a review of every Job manifest in `experiments/`. The NRP policy pages were not re-fetched; 08 was last checked against them 2026-10-16/19.
+**Found (verified):**
+- `stacking-encoders-features`: Bound, 100Gi, RWX, `rook-cephfs` (US West). It matches `data/pvc-features-cephfs.yaml`. Last df (extract try 3, 10-20 10:33Z): 15G used. LOG says 17.6G. Mounted at `/mnt/features`, not a home dir.
+- No pods, Jobs, Deployments or stray ConfigMaps in `aria-world`. Only GPU-quota and ban-class quotas, all 0/0, none hit.
+- All Jobs: `kind: Job`, `backoffLimit: 1`, `activeDeadlineSeconds` set, no `sleep`, no tolerations, no `priorityClassName`, limits within 20% of requests. CephFS Jobs have us-west affinity. pip installs and HF_HOME go to the container or `emptyDir`, never CephFS. Each writer writes its own files (timestamped logs, per-pair JSON).
+- Tally results and logs are copied into `experiments/2026-10-19-feasibility-tally/results/`, so the 6-month purge risks only the cached features.
+**Open:** extraction try 2 was probably flagged memory-low (16Gi request, under 20% used, ~01:00–02:44Z 10-20). Only the NRP Violations page (https://nrp.ai/userinfo, user login) can confirm. Try 3's request was right-sized (85–89% used, GPU 99–100%).
+**Next:** User checks the Violations page. Decide keep/delete for the CephFS features after the mentor meeting.
