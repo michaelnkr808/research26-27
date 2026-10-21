@@ -1,6 +1,6 @@
 # Stacking Encoders
 
-**Status:** exploring. Ground truth will come from a proxy policy (decisions/001). First features cached (libero_goal, SigLIP 2-L + C-RADIOv4). First diagnostics run (SigLIP 2-L vs C-RADIOv4 on libero_goal). The residual-information metric failed on real data. Metric decided and implemented: gain(B|A) with demo-level bootstrap CIs; resid dropped. HF Secret exists; DINOv3, SAM 3, and VGGT-Ω access granted. Next (on go-ahead): create the CephFS feature PVC, rerun diagnostics with CIs, copy features, DINOv3 extraction (see LOG 2026-10-19 (c)).
+**Status:** exploring. Feasibility tally (decision 002) run on libero_goal: DINOv3 paired with SigLIP 2-L, C-RADIOv4, SAM 3, VGGT-Ω (V-JEPA 2.1, UniTok, HRP skipped). CKA, gain(B|D), gain(D|B) with demo-level CIs: `experiments/2026-10-19-feasibility-tally/`. Awaiting user review; no findings recorded. Next: user reviews the tally, then chooses the hypothesis and whether to run the proxy study (decision 001).
 **Goal:** publish (user, 2026-10-19). Venue and timeline to discuss with the PhD mentor on Thursday 2026-10-22.
 **Question (draft, not yet confirmed):** Can a cheap, *conditional* measure of what encoder B adds to encoder A (task-relevant information not recoverable from A), computed on frozen features from robot data, predict which encoder combinations improve a World Action Model (WAM) before training, where symmetric similarity (CKA) does not?
 - Secondary, possibly a separate paper: why do general-purpose encoders match or beat specialists?

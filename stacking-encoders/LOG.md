@@ -211,3 +211,16 @@
 - verified: the HF token reads all three gated repos. Revisions: DINOv3 `ea8dc28`, SAM 3 `3c879f3`, VGGT-Ω `1041e80`.
 - verified (local, random full-size VGGT-Ω checkpoint): the new loader gives identical features to a plain strict load (max |diff| 0.0).
 - **Deviation from pre-registration (e):** DINOv3 features are fp32, not fp16 (fp16 overflowed). L and R are fp16 (R via autocast).
+
+## 2026-10-21 (g) [agent] (tally complete: D+S diagnostics, write-up)
+**Did:**
+- 10-20: extraction try 3 finished at 10:40Z. All 10 files for G and S; D was done in try 2. ~7.9 GPU-h at 99–100% GPU and 85–89% of the 4Gi request.
+- 10-21: saved the try-3 log. Deleted the extraction Job and ConfigMap `stacking-encoders-extract-src`.
+- With user approval ("D+S only"): CPU-capacity check via Prometheus found 28 us-west CPU-only nodes that fit 2.4 CPU / 13 GiB. Created ConfigMap `stacking-encoders-diag-src`. Submitted `diag-ds-job.yaml` (07:16Z, commit 1e342dc). It completed in 30 min. Saved the log and JSON, deleted the Job and ConfigMap. The namespace has no Jobs, pods or ConfigMaps of ours (verified 08:22Z).
+- Wrote `experiments/2026-10-19-feasibility-tally/README.md`: config, commits, the 4-row tally (global and mean), plain observations, caveats, skipped encoders, failures, resource use.
+**Found** (verified, `results/tally-libero_goal-dinov3-sam3.json`; observations only, no hypothesis chosen):
+- D+S global: CKA 0.559 / 0.643; gain(S|D) +0.033 [+0.027, +0.038]; gain(D|S) +0.029 [+0.024, +0.034]; R² S 0.654, D+S 0.682.
+- Across L, R, S, G: R has the highest CKA with D in all 6 feature-type × camera cells (margin 0.007–0.094) and the largest gain(B|D). The paper order is L > S > G > R. See the experiment README.
+- The local Prometheus monitor's memory-low alert fired at 5 min (pip install stage). It was a false alarm: NRP skips pods under 30 min. I added a grace period to the monitor (scratchpad only).
+**Resources (whole tally):** ~10.2 GPU-h (tries 1–3). CPU diagnostics 49 + 45 + 30 min at 2 cores.
+**Next:** user reviews the tally (key findings need sign-off), then chooses the hypothesis and whether the proxy-policy study (decision 001) is worth running. Open: keep or delete the 17.6G on the CephFS PVC; check the NRP Violations page for the probable try-2 memory-low flag.
