@@ -45,3 +45,6 @@ venv/
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Personal notes (not part of the research record)
+NOTES.md
