@@ -128,7 +128,7 @@ def top_right_sv(m, r):
     d, p = m.shape
     if p <= d:
         _, v = np.linalg.eigh(m.T @ m)
-        return v[:, ::-1][:, :r]
+        return np.ascontiguousarray(v[:, ::-1][:, :r])  # a reversed view makes later matmuls skip BLAS (~800x slower)
     ev, u = np.linalg.eigh(m @ m.T)
     ev, u = ev[::-1][:r], u[:, ::-1][:, :r]
     keep = ev > max(ev[0], 0.0) * 1e-12  # directions with no fitted variance don't change W V V'
