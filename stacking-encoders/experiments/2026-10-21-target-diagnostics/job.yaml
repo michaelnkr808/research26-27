@@ -1,0 +1,86 @@
+# Target-side diagnostics (H-E; LOG 2026-10-21 (i) as amended by (j)), CPU only. Pairs (D, B) for B in L, S, G, R, one
+# after another, from src/target_diagnostics.py (imports the unchanged src/diagnostics.py). Same demo split and bootstrap
+# draws in every invocation (they depend only on the data and seed 0).
+# Follows _standards/08: Job (not pod), runs a real command and exits, NO sleep, no GPU, kept off GPU nodes,
+# limits within 20% of requests, activeDeadlineSeconds caps runtime. No tolerations.
+# Scripts are mounted from ConfigMap `stacking-encoders-target-src` (created from ../../src/diagnostics.py and
+# ../../src/target_diagnostics.py at SRC_GIT_COMMIT).
+# Features: D, S, G from CephFS PVC stacking-encoders-features; L, R from PVC michael-persistent (RBD, ReadWriteOnce:
+# check no other pod holds it before submitting). Symlinked into one --feats root. Downloads libero_goal for the demo index.
+# NOT YET SUBMITTED. Needs user approval, a CPU-capacity check (public Prometheus) and a free michael-persistent first.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-target-diag
+  namespace: aria-world
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 28800        # 8 h hard cap (includes Pending). Estimate ~3 h at 2 CPU, up to ~6 h if nodes are 2x slower (speculative)
+  ttlSecondsAfterFinished: 86400      # safety net; delete manually after collecting logs
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}   # CPU-only: stay off GPU nodes
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}                 # near rook-cephfs
+      containers:
+      - name: main
+        image: python:3.11.14-slim
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          OUT=/mnt/features/stacking-encoders/target-diagnostics
+          mkdir -p $OUT /mnt/features/stacking-encoders/logs
+          LOG=/mnt/features/stacking-encoders/logs/target-diag-$(date +%Y%m%d-%H%M%S).log
+          exec > >(tee -a $LOG) 2>&1
+          nproc; head -2 /proc/meminfo   # python:slim has no procps
+          pip install --no-cache-dir -q numpy==2.2.6 h5py==3.16.0 huggingface-hub==0.36.2
+          echo "=== pip freeze"; pip freeze
+          mkdir -p /work/feats
+          for E in dinov3 sam3 vggt-omega; do ln -s /mnt/features/stacking-encoders/features/$E /work/feats/$E; done
+          for E in siglip2 c-radiov4; do ln -s /persistent/stacking-encoders/features/$E /work/feats/$E; done
+          ls -la /work/feats; du -shL /work/feats/*/libero_goal
+          echo "=== download libero_goal (demo index)"; date -u
+          python - <<'PY'
+          from huggingface_hub import snapshot_download
+          snapshot_download("yifengzhu-hf/LIBERO-datasets", repo_type="dataset", revision="main",
+                            allow_patterns=["libero_goal/*.hdf5"], local_dir="/work/data")
+          PY
+          date -u
+          for B in siglip2 sam3 vggt-omega c-radiov4; do      # cheapest first
+            echo "=== target diagnostics dinov3 + $B"; date -u
+            python /src/target_diagnostics.py --feats /work/feats --suite libero_goal --raw /work/data/libero_goal \
+              --base dinov3 --partner $B --n-boot 1000 --seed 0 --out $OUT/target-libero_goal-dinov3-$B.json
+          done
+          for B in siglip2 sam3 vggt-omega c-radiov4; do echo "=== result json $B"; cat $OUT/target-libero_goal-dinov3-$B.json; echo; done
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: b68ba54204c03def9c9e033d59e3f0297e3fae57}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: OMP_NUM_THREADS, value: "2"}
+        - {name: OPENBLAS_NUM_THREADS, value: "2"}
+        # Sized from local runs on synthetic data at real D+R dims (2026-10-21, macOS/Accelerate, 2 threads): full-size
+        # (63,622 frames) peak RSS 6.1 GiB, 20% subset 7.0 GiB; ~1.26 cores average. Linux/OpenBLAS RSS not measured.
+        # NRP checks: memory within 20-150% and CPU within 20-200% of the request.
+        resources:                    # limits within 20% of requests
+          requests: {cpu: "2", memory: 9Gi, ephemeral-storage: 10Gi}
+          limits:   {cpu: "2400m", memory: 10Gi, ephemeral-storage: 12Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: persistent-vol, mountPath: /persistent, readOnly: true}
+        - {name: features, mountPath: /mnt/features}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 12Gi}
+      - name: src
+        configMap: {name: stacking-encoders-target-src}
+      - name: persistent-vol
+        persistentVolumeClaim: {claimName: michael-persistent}
+      - name: features
+        persistentVolumeClaim: {claimName: stacking-encoders-features}
