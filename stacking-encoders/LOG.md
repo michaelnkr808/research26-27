@@ -328,3 +328,13 @@
 - verified (Prismatic HTML Sec. 4.2, summarising fetch, quotes not hand-checked): channel-concat DINOv2+SigLIP helps "across the board"; DINOv2+CLIP hurts on TextVQA.
 - Not verified: only Liu et al. and Agostinelli et al. have been read in full. The rest were checked at abstract level only, which does not meet `02` for a final writeup.
 **Next:** User reviews the doc before Tuesday 2026-10-27 and picks the main hypothesis. If wanted, add the new papers to `references.bib` with notes. The E2 target-diagnostics Job is still waiting for go-ahead (LOG (k) Next).
+
+## 2026-10-26 [agent] (literature scouting: papers in the line of the mentor's recommendation)
+**Goal:** User asked for papers aligned with the mentor's recommended paper (agostinelli2022), and for world-model/embedding topics for proposals 2 and 3. Nothing run.
+**Found (verified at arXiv abstract level via summarising fetches; none read in full):**
+- **Threat to proposal 1's novelty:** KAGES, "When More Foundation Models Means Less" (arXiv 2608.17490, 2026-08-18). It greedily selects frozen encoders to fuse by *marginal* gain in centered kernel-target alignment, and reports non-monotonic accuracy as encoders are added. Image recognition/retrieval only, no robotics/WAM. This is close to H-B (conditional gain); proposal 1's difference now rests on WAMs and the target role (H-E).
+- **Also relevant to proposal 1:** OSBORN (arXiv 2309.02429, ICCV 2023) scores ensembles with a "cohesiveness" term, so "ensemble metrics are additive" (our MS-LEEP point) is not true of all prior work. ReWAM (arXiv 2609.38163) normalizes and calibrates frozen DINO features in a WAM, which overlaps proposal 1's E5 (normalization fix). Metric-guided VFM fusion (arXiv 2605.16864, CVPR 2026 Findings) uses label-free metrics to pick complementary encoders for segmentation.
+- Agostinelli lineage: LEEP (2002.12462, ICML 2020), GBC (2111.12780, CVPR 2022), "How stable are transferability metrics evaluations?" (2204.01403, ECCV 2022), SFDA (2207.03036, ECCV 2022), survey (2402.15231).
+- World-model encoder choice (for proposals 2/3): ALPS (2610.30120), Planning Limits of Latent World Models (2609.39235; Table 2 plannable range per encoder), DINO-WM (2411.04983; Table 2 encoder comparison read via HTML).
+**Not done:** the proposal 1 doc has not been updated with KAGES / OSBORN / ReWAM. No bib entries added.
+**Next:** User reads the list and picks topics for proposals 2 and 3. Then update proposal 1's Related works and novelty claim (needs user OK, since it changes the framing).
