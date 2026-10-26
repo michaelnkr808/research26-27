@@ -1,0 +1,110 @@
+<html><head><meta charset="utf-8"><title>Why Do Latent World Models Only Plan a Few Steps Ahead? Research Proposal</title></head><body>
+<h1>Why Do Latent World Models Only Plan a Few Steps Ahead? Research Proposal</h1>
+<p><i>Michael Ramirez, early draft of 2026-10-27. Related papers checked at abstract or results-table level only, except Planning Limits (main text and appendix read via fetch); this proposal is not final.</i></p>
+
+<p><b>In one line:</b> latent world models only pick good actions for goals a few steps away, and how few depends on the frozen encoder. We want to split that limit into its causes (the predictor, the embedding's geometry, and the scoring rule) and measure, per encoder, how much each one costs.</p>
+<p><b>Our bet (speculative):</b> part of the limit is in the embedding itself. Even with perfect predictions, distance in some encoders' embedding spaces stops telling good futures from bad ones a few steps out. If that holds, encoder choice and cost design are the levers, not bigger predictors.</p>
+<p><b>Where we are:</b> idea stage, nothing run. The experiment that isolates the embedding's part has not been run in the papers we found (see Related works).</p>
+<p><b>Labels:</b> <i>verified</i> = checked in the source; <i>recalled</i> = from memory, not checked; <i>speculative</i> = our hypothesis.</p>
+
+<h2>Motivation</h2>
+<p>Latent world models plan well only near the goal, and the field doesn't know how much of that is the encoder's fault.</p>
+<ul>
+<li><b>The range is short.</b> Planning Limits (2026) finds that with five-step imagined rollouts, a world model ranks actions reliably only for targets 5 to 10 steps ahead, while Meta-World task goals are 16 to 53 steps away (verified, abstract).</li>
+<li><b>Bigger models don't fix it.</b> An 81-times larger predictor and longer training rollouts do not extend the range (verified, abstract).</li>
+<li><b>The encoder changes it.</b> At their threshold of 10, DINOv2 and V-JEPA 2.1 reach 10 steps, while V-JEPA 2, VideoMAEv2 and VideoPrism reach 5. At threshold 20, DINOv2 reaches 20, the two V-JEPA models 10, and VideoMAEv2 and VideoPrism 5 (verified, Table 2).</li>
+<li><b>Removing prediction error doesn't remove the limit,</b> but the test also changes the scoring. With the real simulator in place of the predictor, success still falls from 92% to 41% as the target moves from 5 to 20 steps ahead (verified). But that test scores candidates by true distance in state space, and the authors note that "this state-based distance differs from the learned world model's latent cosine score" (verified, quote via a page-summarising fetch, not hand-checked). So it can't say how much of the limit comes from the embedding's geometry.</li>
+<li><b>Fixes are piling up without a diagnosis.</b> Since August 2026 at least four papers propose new planning costs for latent world models: NGC graph distances, monotone costs, temporal-distance costs, and latent projection (verified, abstracts). NGC reports, at the farthest goals, 95% success on TwoRoom and 100% on Reacher versus 27% and 81% with plain L2 distance (verified, abstract). None of them measures, per encoder, whether the problem they fix is present.</li>
+</ul>
+
+<h2>Problem statement</h2>
+<p>We want to measure, for each frozen encoder, how much of the planning-horizon limit is caused by (1) the learned predictor, (2) the geometry of the embedding space, and (3) the rule of scoring a candidate by its distance to the goal.</p>
+<p><b>Research question (draft):</b> if a latent world model's predictions were perfect, how far ahead could it plan in each encoder's embedding space, and does that "geometry horizon" explain why encoders differ?</p>
+<p>Three terms:</p>
+<ul>
+<li><b>Predictor error:</b> the planning success lost because imagined embeddings differ from the real future embeddings.</li>
+<li><b>Geometry error:</b> the success lost because, even with the real future embeddings, distance to the goal embedding ranks candidates wrongly.</li>
+<li><b>Scoring-rule limit:</b> the success lost even when ranking by the true physical distance, because a target beyond the rollout doesn't separate good from bad candidates. This is what Planning Limits measured.</li>
+</ul>
+
+<h2>Related works</h2>
+<p>One paper measures the horizon limit and several propose cost fixes, but none isolates the embedding's own part, and none compares that part across encoders.</p>
+<table border="1">
+<tr><th>Line of work</th><th>What they did</th><th>Why it doesn't solve our problem</th></tr>
+<tr><td><b>Measuring the limit:</b> <a href="https://arxiv.org/abs/2609.39235">Planning Limits</a></td><td>5 frozen encoders on Meta-World and BridgeData V2; plannable range per encoder; an exact-dynamics control</td><td>The control removes the predictor but scores in state space, so geometry error and the scoring-rule limit are mixed together. No mechanism is given for why encoders differ (verified, appendix)</td></tr>
+<tr><td><b>New planning costs:</b> <a href="https://arxiv.org/abs/2610.25013">NGC</a>, <a href="https://arxiv.org/abs/2608.09073">Monotone Planning Costs</a>, <a href="https://arxiv.org/abs/2607.25337">TD-JEPA</a>, <a href="https://arxiv.org/abs/2610.26979">Latent Projection</a></td><td>Replace L2 or cosine distance with graph distances, ranking-trained costs, temporal-progress costs, or distance on low-uncertainty directions</td><td>Each fixes the cost for one embedding (often LeWM's own). They show L2 fails far from the goal but don't separate that from predictor error, and don't compare encoders</td></tr>
+<tr><td><b>Planning diagnostics:</b> <a href="https://arxiv.org/abs/2609.30264">AD-WM</a></td><td>Argues low prediction error doesn't mean good action ranking; proposes an "elite regret" diagnostic and action-recovery training</td><td>A training method plus an end-to-end diagnostic; doesn't attribute the failure to the embedding</td></tr>
+<tr><td><b>World models on frozen features:</b> <a href="https://arxiv.org/abs/2411.04983">DINO-WM</a>, <a href="https://arxiv.org/abs/2506.09985">V-JEPA 2</a>, <a href="https://arxiv.org/abs/2603.19312">LeWorldModel</a></td><td>Plan by distance to a goal embedding</td><td>Take the embedding's geometry as given</td></tr>
+<tr><td><b>Embedding distance as a value:</b> <a href="https://arxiv.org/abs/2210.00030">VIP</a> (ICLR 2023)</td><td>Trains an embedding whose distance to the goal acts as a value function, for rewards</td><td>Shows geometry can be trained for this, but doesn't measure it in off-the-shelf encoders used by world models</td></tr>
+</table>
+<p><b>How we differ (speculative until run):</b> an oracle experiment that keeps embedding-distance scoring but removes predictor error, run across many frozen encoders, so the limit can be split into predictor, geometry and scoring-rule parts.</p>
+
+<h2>Method</h2>
+<p>We compare three versions of the same planner on the same start states, goals and candidate actions. Each version removes one source of error.</p>
+<ol>
+<li><b>Set up the planning test as Planning Limits does.</b> For a start state and a goal k steps ahead (k = 5, 10, 20, 40), draw candidate action sequences: the expert's and perturbed versions of it. A good planner ranks the expert's near the top.</li>
+<li><b>Run the candidates in the simulator</b> (Meta-World, and DINO-WM's PushT and Wall). Render the resulting frames and embed them with each frozen encoder. That gives the real future embedding for every candidate.</li>
+<li><b>Rank the candidates three ways:</b>
+<ul>
+<li>(a) Learned predictor, embedding distance: the normal world model.</li>
+<li>(b) Real future embeddings, embedding distance: no predictor error, same geometry. <b>This is the new condition.</b></li>
+<li>(c) Real future state, physical distance: Planning Limits' control.</li>
+</ul></li>
+<li><b>Attribute the gaps.</b> (a) vs (b) is predictor error; (b) vs (c) is geometry error; (c) vs perfect is the scoring-rule limit. Compute each per encoder and per k.</li>
+<li><b>Check the geometry cheaply on recorded trajectories.</b> Along expert demos, test whether embedding distance to the final frame falls steadily as the robot gets closer (rank agreement between distance and steps remaining). If this cheap check matches condition (b), the geometry horizon can be measured without a simulator.</li>
+<li><b>Test whether known cost fixes target the right part.</b> On the encoders with the largest geometry error, swap L2 or cosine for NGC graph distance and a temporal-distance cost, keeping everything else fixed.</li>
+</ol>
+
+<h2>Experiments</h2>
+<table border="1">
+<tr><th>#</th><th>Experiment</th><th>Setup</th><th>Cost</th></tr>
+<tr><td>E1</td><td>Cheap geometry check, no simulator</td><td>Rank agreement between embedding distance and steps-to-goal along expert demos, per encoder, on our cached LIBERO features (5 encoders) and DINO-WM's datasets</td><td>CPU, plus feature extraction for new encoders</td></tr>
+<tr><td>E2</td><td>Oracle decomposition</td><td>Conditions (a), (b), (c) on Meta-World for Planning Limits' 5 encoders, plus DINOv3, SigLIP 2 and C-RADIO; k = 5 to 40</td><td>Simulator rollouts and rendering (not yet timed); predictors for (a) trained with DINO-WM's public code</td></tr>
+<tr><td>E3</td><td>Does the cheap check predict the oracle?</td><td>Compare E1's per-encoder geometry horizon with E2's condition (b)</td><td>None beyond E1 and E2</td></tr>
+<tr><td>E4</td><td>Targeted cost fixes</td><td>NGC and temporal-distance costs on the encoders with the largest geometry error, under condition (b) and in closed-loop planning</td><td>Closed-loop rollouts for a subset</td></tr>
+</table>
+<p><b>Gate:</b> E1 needs no simulator. If embedding distance tracks steps-to-goal well for every encoder at every k, geometry error is probably small, and we would rescope before building E2.</p>
+
+<h2>Expected results</h2>
+<p>We expect geometry error to be a large part of the limit for some encoders and small for others, explaining part of the spread in Planning Limits' Table 2. This is speculative until E1 and E2 run.</p>
+<table border="1">
+<tr><th>What we evaluate</th><th>Metric</th><th>Why this metric</th></tr>
+<tr><td>How well each condition ranks candidates</td><td>Expert percentile and top-1 selection rate, per encoder and per k</td><td>The measures Planning Limits uses, so our numbers are comparable to theirs</td></tr>
+<tr><td>Plannable range</td><td>Largest k at which selection stays above a threshold, under each condition</td><td>Turns the decomposition into one interpretable number of steps</td></tr>
+<tr><td>Cheap geometry check</td><td>Kendall &tau; between embedding distance and steps remaining, with bootstrap CIs over trajectories</td><td>A rank measure suits "closer should look closer"; trajectories, not frames, are the independent units</td></tr>
+<tr><td>Closed-loop effect of fixes</td><td>Task success rate, mean &plusmn; std over 3 seeds</td><td>Shows whether removing geometry error improves real planning</td></tr>
+</table>
+<p><b>What we hope to see:</b></p>
+<ul>
+<li>Under condition (b), encoders with a short range in Planning Limits (VideoMAEv2, VideoPrism) lose much of their range even with perfect predictions, while DINOv2 and V-JEPA 2.1 keep more of it.</li>
+<li>The cheap E1 check orders encoders the same way as condition (b), giving a training-free test for picking an encoder.</li>
+<li>Cost fixes help most on the encoders with the largest geometry error, and little on the others.</li>
+</ul>
+<p><b>What would count against us:</b></p>
+<ul>
+<li>(b) is about as good as (c) for every encoder: geometry is not the problem, and the limit is the scoring rule plus the predictor. We would report that, and it would say the new cost papers are fixing something small.</li>
+<li>(a) is about as good as (b): predictor error doesn't matter, in line with Planning Limits' finding that bigger predictors don't help.</li>
+<li>Limit: with about 8 encoders, encoder-level conclusions are tallies with CIs, not significance tests.</li>
+</ul>
+
+<h2>Open questions</h2>
+<ul>
+<li>Planning Limits doesn't mention a code or data release (checked in its full text); we may need to rebuild their candidate-sampling setup.</li>
+<li>Rendering cost for many candidates per start state on Nautilus (not yet measured).</li>
+<li>Overlap with P2: P2 asks which encoder to choose; this asks why the chosen one fails far from the goal. They share data and encoders, and could become one paper with two parts.</li>
+</ul>
+
+<h2>References</h2>
+<ul>
+<li>Alrasheed, Azam, Akhtar 2026. The Planning Limits of Latent World Models. <a href="https://arxiv.org/abs/2609.39235">arXiv 2609.39235</a> (preprint)</li>
+<li>You, Tao, Xu, Wang, Xu 2026. Latent World Models Should Plan with Distances Along the Latent Manifold (NGC). <a href="https://arxiv.org/abs/2610.25013">arXiv 2610.25013</a> (preprint)</li>
+<li>Chahe, Cai, Zhou 2026. Latent World Models with Monotone Planning Costs for Image-Goal Navigation. <a href="https://arxiv.org/abs/2608.09073">arXiv 2608.09073</a> (preprint)</li>
+<li>Bai and Xiong 2026. Temporal-Distance JEPA: Plan-Aware Representation Learning for Latent World Model Predictive Control. <a href="https://arxiv.org/abs/2607.25337">arXiv 2607.25337</a> (preprint)</li>
+<li>Jang and Ryoo 2026. Latent Projection for Latent Planning. <a href="https://arxiv.org/abs/2610.26979">arXiv 2610.26979</a> (preprint)</li>
+<li>Qiu et al. 2026. AD-WM: Action-Discriminative World Models for Counterfactual Model Predictive Control. <a href="https://arxiv.org/abs/2609.30264">arXiv 2609.30264</a> (preprint)</li>
+<li>Zhou, Pan, LeCun, Pinto 2025. DINO-WM. ICML. <a href="https://arxiv.org/abs/2411.04983">arXiv 2411.04983</a></li>
+<li>Assran, Bardes, Fan, et al. 2025. V-JEPA 2. <a href="https://arxiv.org/abs/2506.09985">arXiv 2506.09985</a> (preprint)</li>
+<li>Maes, Le Lidec, Scieur, LeCun, Balestriero 2026. LeWorldModel. <a href="https://arxiv.org/abs/2603.19312">arXiv 2603.19312</a> (preprint)</li>
+<li>Ma et al. 2023. VIP: Towards Universal Visual Reward and Representation via Value-Implicit Pre-Training. ICLR. <a href="https://arxiv.org/abs/2210.00030">arXiv 2210.00030</a></li>
+</ul>
+</body></html>
