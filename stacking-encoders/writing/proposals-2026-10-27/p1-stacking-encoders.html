@@ -48,11 +48,10 @@
 <ol>
 <li><b>Extract frozen features once</b> from robot demos, for a base encoder (DINOv3) and its partners. No model training. Done for 5 encoders on one LIBERO suite.</li>
 <li><b>Measure each pair cheaply, three ways,</b> with simple linear models on those features:
-<ul>
-<li>Loss share: how big is B's piece of the combined target? (variance only, no fitting)</li>
-<li>Predictability: how well can B's future features be predicted from the current frame?</li>
-<li>Interference: give a small, capacity-limited model the job of predicting D's future alone, then D's and B's future together. How much worse does it get at D's part? We run this with raw feature scales and with each encoder rescaled to equal size. If rescaling removes the harm, the fix is a normalization step.</li>
-</ul></li>
+<br/>&nbsp;&nbsp;&nbsp;&nbsp;Loss share: how big is B's piece of the combined target? (variance only, no fitting)
+<br/>&nbsp;&nbsp;&nbsp;&nbsp;Predictability: how well can B's future features be predicted from the current frame?
+<br/>&nbsp;&nbsp;&nbsp;&nbsp;Interference: give a small, capacity-limited model the job of predicting D's future alone, then D's and B's future together. How much worse does it get at D's part? We run this with raw feature scales and with each encoder rescaled to equal size. If rescaling removes the harm, the fix is a normalization step.
+</li>
 <li><b>Rank the pairs</b> by each measure and compare with measured gains: first the paper's table, then our own small policies trained with 3 or more seeds per combination, because the paper's numbers come from one checkpoint each.</li>
 <li><b>Test the cause directly:</b> if interference points at a pair, train that pair with and without per-encoder normalization.</li>
 </ol>

@@ -45,11 +45,10 @@
 <li><b>Set up the planning test as Planning Limits does.</b> For a start state and a goal k steps ahead (k = 5, 10, 20, 40), draw candidate action sequences: the expert's and perturbed versions of it. A good planner ranks the expert's near the top.</li>
 <li><b>Run the candidates in the simulator</b> (Meta-World, and DINO-WM's PushT and Wall). Render the resulting frames and embed them with each frozen encoder. That gives the real future embedding for every candidate.</li>
 <li><b>Rank the candidates three ways:</b>
-<ul>
-<li>(a) Learned predictor, embedding distance: the normal world model.</li>
-<li>(b) Real future embeddings, embedding distance: no predictor error, same geometry. <b>This is the new condition.</b></li>
-<li>(c) Real future state, physical distance: Planning Limits' control.</li>
-</ul></li>
+<br/>&nbsp;&nbsp;&nbsp;&nbsp;(a) Learned predictor, embedding distance: the normal world model.
+<br/>&nbsp;&nbsp;&nbsp;&nbsp;(b) Real future embeddings, embedding distance: no predictor error, same geometry. <b>This is the new condition.</b>
+<br/>&nbsp;&nbsp;&nbsp;&nbsp;(c) Real future state, physical distance: Planning Limits' control.
+</li>
 <li><b>Attribute the gaps.</b> (a) vs (b) is predictor error; (b) vs (c) is geometry error; (c) vs perfect is the scoring-rule limit. Compute each per encoder and per k.</li>
 <li><b>Check the geometry cheaply on recorded trajectories.</b> Along expert demos, test whether embedding distance to the final frame falls steadily as the robot gets closer (rank agreement between distance and steps remaining). If this cheap check matches condition (b), the geometry horizon can be measured without a simulator.</li>
 <li><b>Test whether known cost fixes target the right part.</b> On the encoders with the largest geometry error, swap L2 or cosine for NGC graph distance and a temporal-distance cost, keeping everything else fixed.</li>

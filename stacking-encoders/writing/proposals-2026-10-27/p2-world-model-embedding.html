@@ -53,11 +53,10 @@
 <li><b>Collect trajectories with actions.</b> Use public data: DINO-WM's PushT, Wall and PointMaze datasets (downloadable per its GitHub README), and LIBERO, which we already have.</li>
 <li><b>Embed every frame with each frozen encoder,</b> 8 to 15 encoders: DINOv2, DINOv3, SigLIP 2, C-RADIO, SAM 3, VGGT-&Omega;, V-JEPA 2 and 2.1, and others. Five loaders already exist in our stacking-encoders code.</li>
 <li><b>Compute cheap scores per encoder,</b> all with ridge regression on held-out trajectories:
-<ul>
-<li>Controllable share: how much better can we predict the next embedding change if we also know the action? (prediction with the action minus prediction without)</li>
-<li>Action recoverability: how well can the action be read back from two consecutive embeddings?</li>
-<li>Multi-step versions of both, 1, 5 and 10 steps ahead, because planners look several steps ahead.</li>
-</ul></li>
+<br/>&nbsp;&nbsp;&nbsp;&nbsp;Controllable share: how much better can we predict the next embedding change if we also know the action? (prediction with the action minus prediction without)
+<br/>&nbsp;&nbsp;&nbsp;&nbsp;Action recoverability: how well can the action be read back from two consecutive embeddings?
+<br/>&nbsp;&nbsp;&nbsp;&nbsp;Multi-step versions of both, 1, 5 and 10 steps ahead, because planners look several steps ahead.
+</li>
 <li><b>Make the comparison fair.</b> Encoders have different sizes (768 to 2,304 dimensions), so we reduce all to the same dimension and tune regularization on validation data. Confidence intervals resample whole trajectories, not frames.</li>
 <li><b>Check against planning success.</b> Rank encoders by each score and compare with their real planning success: first the published numbers (DINO-WM, ALPS, Planning Limits), then our own DINO-WM runs with 3 seeds per encoder.</li>
 </ol>
