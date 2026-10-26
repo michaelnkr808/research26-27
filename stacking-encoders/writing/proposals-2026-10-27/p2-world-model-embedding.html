@@ -1,0 +1,119 @@
+<html><head><meta charset="utf-8"><title>Which Embedding Should a World Model Plan In? Research Proposal</title></head><body>
+<h1>Which Embedding Should a World Model Plan In? Research Proposal</h1>
+<p><i>Michael Ramirez, early draft of 2026-10-27. The related papers have been checked at abstract or results-table level only; this proposal is not final.</i></p>
+
+<p><b>In one line:</b> latent world models such as DINO-WM plan inside a frozen encoder's embedding space. The choice of encoder can change planning success several-fold, but it is made by habit. We want a cheap test that, before any world model is trained, says which embedding will plan well.</p>
+<p><b>Our bet (speculative):</b> a good planning space is one where the robot's actions explain most of how the embedding changes from frame to frame. Probes of what is in a single frame don't measure that.</p>
+<p><b>Where we are:</b> idea stage, nothing run. We can reuse the probe code and cached LIBERO features from the stacking-encoders project, and published papers give per-encoder planning results to test against.</p>
+<p><b>Labels:</b> <i>verified</i> = we ran it or checked it in the source; <i>recalled</i> = from memory, not checked; <i>speculative</i> = our hypothesis.</p>
+
+<h2>Motivation</h2>
+<p>The encoder a latent world model plans in decides a large part of its success, yet nobody can tell which encoder will work without training a world model on each one.</p>
+<p><b>How these models work.</b> A frozen encoder (e.g. DINOv2) turns each camera frame into an embedding. A small predictor learns "embedding now + action gives embedding next". To plan, the model tries many action sequences in imagination and keeps the one whose predicted embedding ends closest to the goal image's embedding (DINO-WM, ICML 2025).</p>
+<p><b>The encoder matters a lot:</b></p>
+<ul>
+<li>DINO-WM, PushT success: DINOv2 patch features 0.90, DINOv2 CLS token 0.44, R3M 0.42, ImageNet ResNet 0.20. On Wall: 0.96 vs 0.58, 0.34 and 0.12 (verified, DINO-WM Table 2).</li>
+<li>Planning Limits (2026), how many steps ahead a goal can be and still be planned reliably: DINOv2 and V-JEPA 2.1 reach 10, while V-JEPA 2, VideoMAEv2 and VideoPrism reach 5 (verified, Table 2, threshold 10).</li>
+<li>ALPS (2026), same DINO-WM protocol: Reacher success ranges from 74.0 (SigLIP 2) to 86.0 (DINOv3); on Rope, C-RADIOv3 is best and SigLIP 2 worst (verified, Table 3).</li>
+</ul>
+<p><b>The rankings don't follow the usual signs of a good encoder:</b></p>
+<ul>
+<li>No encoder wins every task. In ALPS, a different encoder leads on Rope (C-RADIOv3), Reacher (DINOv3) and Granular (ALPS) (verified, Table 3).</li>
+<li>ALPS reports that "tokens that yield the lowest single-frame readout error are not always the most predictable under learned dynamics" (verified through a page-summarising fetch; quote not hand-checked). The standard probe of what is in one frame does not tell you how well an embedding supports dynamics.</li>
+<li>DINO-WM-style planners break when the background or lighting changes, even though the physics hasn't changed (Toso et al. 2026, abstract). The embedding spends capacity on things the robot cannot control.</li>
+</ul>
+<p>Today, choosing an encoder means training and evaluating a world model per encoder per task (speculative: none of the papers we read states that cost).</p>
+
+<h2>Problem statement</h2>
+<p>We want a cheap, training-free score, computed from frozen embeddings of recorded robot trajectories, that ranks encoders by how well a latent world model will plan in them.</p>
+<p><b>Research question (draft):</b> does the share of embedding change that is caused by the action predict planning success across encoders better than existing single-frame probes?</p>
+<ul>
+<li><b>Controllable change:</b> the part of the frame-to-frame embedding change that knowing the action lets you predict. Example: the arm and the pushed block move.</li>
+<li><b>Uncontrollable change:</b> the rest. Examples: lighting flicker, camera noise, a distractor moving.</li>
+<li><b>Action recoverability:</b> how well the action can be read back from two consecutive embeddings (an inverse-dynamics probe).</li>
+</ul>
+<p>Intuition: the planner compares imagined futures. If most of the embedding's movement isn't caused by actions, different action sequences look alike and the planner can't tell good from bad (speculative).</p>
+
+<h2>Related works</h2>
+<p>Recent papers show that action-relevance matters by training it into world models, and others benchmark encoders by training a world model on each. None we found measures action-relevance on frozen embeddings to choose an encoder before training.</p>
+<table border="1">
+<tr><th>Line of work</th><th>What they did</th><th>Why it doesn't solve our problem</th></tr>
+<tr><td><b>World models on frozen features:</b> <a href="https://arxiv.org/abs/2411.04983">DINO-WM</a> (ICML 2025), <a href="https://arxiv.org/abs/2506.09985">V-JEPA 2</a></td><td>Plan in a frozen encoder's embedding space; DINO-WM compares 4 encoders</td><td>Encoders compared by training a world model on each; no way to predict the outcome</td></tr>
+<tr><td><b>Benchmarks of encoders for world models:</b> <a href="https://arxiv.org/abs/2610.30120">ALPS</a>, <a href="https://arxiv.org/abs/2609.39235">Planning Limits</a></td><td>ALPS: 15 encoders on state probes and policies, 6 on planning. Planning Limits: 5 encoders, plannable horizon</td><td>ALPS reports probes and planning in separate tables and computes no correlation between them (checked in its full text). Neither measures action-controllability</td></tr>
+<tr><td><b>Training action-relevance in:</b> <a href="https://arxiv.org/abs/2609.30264">AD-WM</a>, <a href="https://arxiv.org/abs/2606.20104">Sensorimotor World Models</a>, <a href="https://arxiv.org/abs/2602.18639">Toso et al.</a></td><td>Add inverse-dynamics, action-recovery or bisimulation losses. AD-WM reports OGBench-Cube hard-start success rising from 3.7% to 52.0%</td><td>Training methods, not selection tools. They support the bet that controllability matters but don't say which frozen encoder to start from</td></tr>
+<tr><td><b>What makes latents action-relevant:</b> <a href="https://arxiv.org/abs/2606.07687">Yeom et al. 2026</a>, <a href="https://arxiv.org/abs/2602.11832">JEPA-VLA</a></td><td>Action-relevant structure comes from temporal prediction during pretraining; V-JEPA 2 embeddings help VLAs</td><td>About policies and pretraining objectives, not ranking encoders for planning</td></tr>
+<tr><td><b>Choosing models without training:</b> <a href="https://arxiv.org/abs/2102.11005">LogME</a>, <a href="https://arxiv.org/abs/2111.13011">Agostinelli et al. 2022</a>, <a href="https://arxiv.org/abs/2608.17490">KAGES</a></td><td>Score frozen models for a task from their features</td><td>Built for classification labels on single frames; no actions or dynamics</td></tr>
+<tr><td><b>Fixing the goal-distance cost:</b> <a href="https://arxiv.org/abs/2610.26979">Latent Projection</a>, <a href="https://arxiv.org/abs/2608.09073">Monotone Planning Costs</a>, <a href="https://arxiv.org/abs/2607.25337">TD-JEPA</a></td><td>Reshape the planning cost or the latent geometry</td><td>Fix the planner's distance; we ask which embedding to start from. Complementary, and an area we stay out of because it is crowded</td></tr>
+</table>
+<p><b>How we differ (speculative until run):</b> a training-free, action-aware score on frozen embeddings, checked against planning success across many encoders and tasks.</p>
+
+<h2>Method</h2>
+<p>We score each frozen encoder from recorded trajectories with a few simple linear models, then check whether the scores predict how well a world model plans in that encoder.</p>
+<ol>
+<li><b>Collect trajectories with actions.</b> Use public data: DINO-WM's PushT, Wall and PointMaze datasets (downloadable per its GitHub README), and LIBERO, which we already have.</li>
+<li><b>Embed every frame with each frozen encoder,</b> 8 to 15 encoders: DINOv2, DINOv3, SigLIP 2, C-RADIO, SAM 3, VGGT-&Omega;, V-JEPA 2 and 2.1, and others. Five loaders already exist in our stacking-encoders code.</li>
+<li><b>Compute cheap scores per encoder,</b> all with ridge regression on held-out trajectories:
+<ul>
+<li>Controllable share: how much better can we predict the next embedding change if we also know the action? (prediction with the action minus prediction without)</li>
+<li>Action recoverability: how well can the action be read back from two consecutive embeddings?</li>
+<li>Multi-step versions of both, 1, 5 and 10 steps ahead, because planners look several steps ahead.</li>
+</ul></li>
+<li><b>Make the comparison fair.</b> Encoders have different sizes (768 to 2,304 dimensions), so we reduce all to the same dimension and tune regularization on validation data. Confidence intervals resample whole trajectories, not frames.</li>
+<li><b>Check against planning success.</b> Rank encoders by each score and compare with their real planning success: first the published numbers (DINO-WM, ALPS, Planning Limits), then our own DINO-WM runs with 3 seeds per encoder.</li>
+</ol>
+<p><b>Baselines the score must beat:</b> a single-frame state probe (what ALPS uses), similarity to DINOv2 (CKA), a single-frame action probe, and a random ranking. As an expensive reference, we also compare with the trained world model's own prediction error.</p>
+
+<h2>Experiments</h2>
+<table border="1">
+<tr><th>#</th><th>Experiment</th><th>Setup</th><th>Cost</th></tr>
+<tr><td>E1</td><td>Free-label check, no training</td><td>Scores on DINO-WM's PushT, Wall and PointMaze data for the encoders with published planning results (DINO-WM's 4, ALPS's public ones); compare rankings</td><td>Feature extraction only (not yet measured)</td></tr>
+<tr><td>E2</td><td>Own ground truth</td><td>Train DINO-WM (public code) on about 8 encoders &times; 2 to 3 tasks &times; 3 seeds; correlate scores with planning success</td><td>Not yet timed; the main cost of the project</td></tr>
+<tr><td>E3</td><td>Distractor test</td><td>Add background and lighting changes to frames (as in Toso et al.). Does the score drop for the same encoders whose planning drops?</td><td>Same as E2 for a subset</td></tr>
+<tr><td>E4</td><td>Horizon check</td><td>Multi-step scores vs Planning Limits' plannable range for its 5 encoders on Meta-World</td><td>Feature extraction only</td></tr>
+</table>
+<p><b>Gate:</b> E1 comes first and needs no world-model training. If no score orders the published results better than the single-frame state probe, we stop and rethink before spending GPU time on E2.</p>
+
+<h2>Expected results</h2>
+<p>We expect the controllable-share score to rank encoders by planning success better than single-frame probes, and to drop when distractors are added. This is speculative until E1 runs.</p>
+<table border="1">
+<tr><th>What we evaluate</th><th>Metric</th><th>Why this metric</th></tr>
+<tr><td>Does the score order encoders like planning success?</td><td>Spearman and Kendall &tau; per task, and pooled over tasks</td><td>Choosing an encoder only needs the right order</td></tr>
+<tr><td>Does it pick the best encoder?</td><td>Top-1 accuracy and regret (success lost by using the score's pick instead of the best encoder)</td><td>This is the decision a practitioner actually makes</td></tr>
+<tr><td>Score values</td><td>R&sup2;-based scores with 95% bootstrap CIs over trajectories</td><td>Frames in a trajectory are correlated</td></tr>
+<tr><td>Planning ground truth</td><td>Success rate (PushT, Wall, PointMaze) and Chamfer distance (deformables), mean &plusmn; std over 3 seeds</td><td>The metrics DINO-WM and ALPS report, so our numbers are comparable</td></tr>
+</table>
+<p><b>What we hope to see:</b></p>
+<ul>
+<li>The score reproduces known gaps without training, such as DINOv2 patch features above the CLS token on PushT.</li>
+<li>It beats the single-frame state probe at predicting planning success.</li>
+<li>It falls under background and lighting changes for encoders whose planning also falls.</li>
+</ul>
+<p><b>What would count against us:</b> if the single-frame probe ranks encoders as well as our score, action-controllability adds nothing measurable, and we report that. If no cheap score beats random, the differences between encoders come from something linear models on frozen features can't see.</p>
+
+<h2>Open questions</h2>
+<ul>
+<li>ALPS, Planning Limits and AD-WM need a full read. AD-WM's "elite regret" diagnostic may already capture part of this idea.</li>
+<li>Training cost of DINO-WM per encoder on Nautilus (not yet measured).</li>
+<li>The DINO-WM datasets have no stated license on its GitHub page; this needs checking before use.</li>
+<li>Is this best as its own paper, or as a second study that shares tools with the stacking-encoders project?</li>
+</ul>
+
+<h2>References</h2>
+<ul>
+<li>Zhou, Pan, LeCun, Pinto 2025. DINO-WM: World Models on Pre-trained Visual Features enable Zero-shot Planning. ICML. <a href="https://arxiv.org/abs/2411.04983">arXiv 2411.04983</a></li>
+<li>Assran et al. 2025. V-JEPA 2: Self-Supervised Video Models Enable Understanding, Prediction and Planning. <a href="https://arxiv.org/abs/2506.09985">arXiv 2506.09985</a> (preprint)</li>
+<li>Liu et al. 2026. ALPS: Visual State Encoders for World Models. <a href="https://arxiv.org/abs/2610.30120">arXiv 2610.30120</a> (preprint)</li>
+<li>Alrasheed, Azam, Akhtar 2026. The Planning Limits of Latent World Models. <a href="https://arxiv.org/abs/2609.39235">arXiv 2609.39235</a> (preprint)</li>
+<li>Qiu et al. 2026. AD-WM: Action-Discriminative World Models for Counterfactual Model Predictive Control. <a href="https://arxiv.org/abs/2609.30264">arXiv 2609.30264</a> (preprint)</li>
+<li>Ivashkov, Balestriero, Sch&ouml;lkopf 2026. Sensorimotor World Models: Perception for Action via Inverse Dynamics. <a href="https://arxiv.org/abs/2606.20104">arXiv 2606.20104</a> (preprint)</li>
+<li>Toso et al. 2026. Learning Invariant Visual Representations for Planning with Joint-Embedding Predictive World Models. <a href="https://arxiv.org/abs/2602.18639">arXiv 2602.18639</a> (preprint)</li>
+<li>Yeom et al. 2026. What Makes Video World Model Latents Action-Relevant: Prediction over Reconstruction. <a href="https://arxiv.org/abs/2606.07687">arXiv 2606.07687</a> (preprint)</li>
+<li>Miao et al. 2026. JEPA-VLA: Video Predictive Embedding is Needed for VLA Models. <a href="https://arxiv.org/abs/2602.11832">arXiv 2602.11832</a> (preprint)</li>
+<li>You, Liu, Wang, Long 2021. LogME. ICML. <a href="https://arxiv.org/abs/2102.11005">arXiv 2102.11005</a></li>
+<li>Agostinelli, Uijlings, Mensink, Ferrari 2022. Transferability Metrics for Selecting Source Model Ensembles. CVPR. <a href="https://arxiv.org/abs/2111.13011">arXiv 2111.13011</a></li>
+<li>Liu and Jiang 2026. When More Foundation Models Means Less (KAGES). <a href="https://arxiv.org/abs/2608.17490">arXiv 2608.17490</a> (preprint)</li>
+<li>Jang and Ryoo 2026. Latent Projection for Latent Planning. <a href="https://arxiv.org/abs/2610.26979">arXiv 2610.26979</a> (preprint)</li>
+<li>Chahe, Cai, Zhou 2026. Latent World Models with Monotone Planning Costs for Image-Goal Navigation. <a href="https://arxiv.org/abs/2608.09073">arXiv 2608.09073</a> (preprint)</li>
+<li>Bai and Xiong 2026. Temporal-Distance JEPA: Plan-Aware Representation Learning for Latent World Model Predictive Control. <a href="https://arxiv.org/abs/2607.25337">arXiv 2607.25337</a> (preprint)</li>
+</ul>
+</body></html>

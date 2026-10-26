@@ -1,0 +1,120 @@
+<html><head><meta charset="utf-8"><title>Stacking Encoders in World Action Models: Research Proposal</title></head><body>
+<h1>Stacking Encoders in World Action Models: Research Proposal</h1>
+<p><i>Michael Ramirez, draft of 2026-10-27</i></p>
+
+<p><b>In one line:</b> adding a second frozen vision encoder to a World Action Model (WAM) sometimes helps and sometimes costs 5 or more success points, and nobody can tell which before training. We want to explain why and predict it cheaply.</p>
+<p><b>Where we are:</b> the simplest diagnostic (similarity and input-side probes on frozen features) has been tested and does not flag the harmful combination (4 pairs). A second, target-side diagnostic is coded and passes synthetic tests but has not been run on real features. Everything under Expected results is an expectation, not a finding.</p>
+<p><b>Labels:</b> <i>verified</i> = we ran it or checked it in the source paper; <i>recalled</i> = from memory, not yet checked; <i>speculative</i> = our hypothesis or guess.</p>
+
+<h2>Motivation</h2>
+<p>Stacking frozen encoders into a WAM is unpredictable, and the only way to find out is to train the whole model.</p>
+<ul>
+<li><b>Encoders help a lot on their own.</b> In Liu et al. (2026), adding frozen DINOv3 features to a Wan 2.2-based WAM raises LIBERO-Plus success from 74.7 to 84.0 (verified, Table 1).</li>
+<li><b>Adding a second one is a gamble.</b> Of the paper's 16 "add one more encoder" steps, 11 gain 0.2 to 2.1 points, 1 is flat (&minus;0.03) and 4 lose 0.4 to 5.4 points (verified, our arithmetic on Table 10). The worst: DINOv3 + C-RADIOv4 drops to 78.6, below both encoders alone (84.0 and 83.5).</li>
+<li><b>The effect depends on context.</b> VGGT-&Omega; adds +0.4 on top of DINOv3 but costs &minus;2.4 on top of DINOv3 + UniTok + V-JEPA 2.1 (verified, Table 10). So the useful question is not "is encoder B good?" but "is B good given what is already there?"</li>
+<li><b>The explanation today is a story, not a measurement.</b> The paper attributes the C-RADIOv4 drop to a teacher-student overlap (RADIO distills DINOv3, SigLIP 2 and SAM 3) and gives no metric (verified, Sec. 4.4). Each number comes from one trained checkpoint, so training noise is unknown (verified, App. C.2 and E.3).</li>
+<li><b>The obvious cheap check fails.</b> On our own frozen features (LIBERO libero_goal, 4 DINOv3 pairs), neither similarity (CKA) nor "how much B adds to an action probe" flags C-RADIOv4. C-RADIOv4 is the most similar to DINOv3 and also adds the most to the probe (verified, our tally).</li>
+</ul>
+<p>Each combination needs a full WAM training run, and the paper released no code or checkpoints (verified). A cheap test that says "don't stack these two" before training would save most of that compute (speculative).</p>
+
+<h2>Problem statement</h2>
+<p>We want a cheap test, run on frozen features before any WAM training, that predicts whether adding encoder B to encoder A will help or hurt, and that explains the harmful cases.</p>
+<p><b>Research question (draft):</b> when frozen encoder features are stacked as both the inputs and the prediction targets of a WAM, why do some combinations hurt, and can a diagnostic on frozen features predict which ones will?</p>
+<p>Two terms we keep separate:</p>
+<ul>
+<li><b>Similarity:</b> how alike two encoders' features are on the same frames (symmetric; measured with CKA).</li>
+<li><b>Complementarity:</b> useful information B carries that A doesn't, for a named task. It is asymmetric: what B adds to A is not what A adds to B.</li>
+</ul>
+<p>Low similarity is not the same as complementarity: two encoders can differ in ways the robot doesn't need.</p>
+
+<h2>Related works</h2>
+<p>Other work either fuses encoders and judges the result by training, or scores combinations without training on single-frame classification tasks. None predicts the effect of fusing frozen features into a model that also has to predict those features.</p>
+<table border="1">
+<tr><th>Line of work</th><th>What they did</th><th>Why it doesn't solve our problem</th></tr>
+<tr><td><b>Encoders in WAMs:</b> <a href="https://arxiv.org/abs/2610.13024">Liu et al. 2026</a></td><td>13 frozen encoders in a WAM; single-source and composition tables; channel-wise concatenation as both input and future target</td><td>Explains good and bad combinations qualitatively; one training checkpoint per config; no predictive metric</td></tr>
+<tr><td><b>Calibrating encoder features in WAMs:</b> <a href="https://arxiv.org/abs/2609.38163">ReWAM, Jiang et al. 2026</a></td><td>Builds a WAM on pre-trained DINO features with a "Feature Calibration" step and a temporal bottleneck; reports 93.6% success on RoboTwin 2.0</td><td>One encoder, no combinations. Its calibration step may overlap our step E5 (per-encoder normalization); we must read it before claiming that fix</td></tr>
+<tr><td><b>Fusing encoders in VLMs and VLAs:</b> <a href="https://arxiv.org/abs/2402.07865">Prismatic</a>, <a href="https://arxiv.org/abs/2406.09246">OpenVLA</a>, <a href="https://arxiv.org/abs/2408.15998">Eagle</a>, <a href="https://arxiv.org/abs/2406.16860">Cambrian-1</a></td><td>Combine encoders (e.g. DINOv2 + SigLIP, channel concatenation in Prismatic); Prismatic reports DINOv2 + CLIP hurts on TextVQA</td><td>Combinations chosen by training and testing each one. Features are inputs only, never prediction targets</td></tr>
+<tr><td><b>Choosing frozen encoders to fuse:</b> <a href="https://arxiv.org/abs/2608.17490">KAGES 2026</a>, <a href="https://arxiv.org/abs/2605.16864">Metric-guided VFM fusion 2026</a></td><td>KAGES picks encoders one at a time by marginal gain in kernel-target alignment and shows accuracy can drop as encoders are added. The second picks complementary encoders for segmentation with label-free scores</td><td>Image classification, retrieval and segmentation only. No actions, no dynamics, no encoder used as a prediction target. KAGES is the closest prior work to our input-side measure</td></tr>
+<tr><td><b>Distilling many teachers into one:</b> <a href="https://arxiv.org/abs/2312.06709">AM-RADIO</a>, <a href="https://arxiv.org/abs/2407.20179">Theia</a></td><td>Distill several foundation models into one student</td><td>Teachers picked by hand. RADIO is itself the encoder whose stacking hurts in Liu et al.</td></tr>
+<tr><td><b>Picking models or ensembles without training:</b> <a href="https://arxiv.org/abs/2111.13011">Agostinelli et al. 2022</a>, <a href="https://arxiv.org/abs/2309.02429">OSBORN 2023</a>, <a href="https://arxiv.org/abs/2102.11005">LogME</a></td><td>Rank pre-trained models or ensembles for a new task. Agostinelli's MS-LEEP adds up single-model scores; OSBORN adds a "cohesiveness" term between members</td><td>Ensembles average the outputs of separately fine-tuned models, and the metrics need class labels. Robot actions are continuous and our encoders are fused into one model</td></tr>
+<tr><td><b>Comparing representations:</b> <a href="https://arxiv.org/abs/1905.00414">CKA, Kornblith et al. 2019</a></td><td>Symmetric similarity between two networks' features</td><td>Says how alike two encoders are, not whether combining them helps a task. Our tally shows it fails here</td></tr>
+</table>
+<p><b>How we differ (speculative until the experiments run):</b> we test encoders in their role as prediction targets, inside a model that fuses their features, with continuous actions and no label space. On the input side alone, KAGES has already shown that marginal-gain selection is possible, so that part is not new.</p>
+<p><i>Check status:</i> Liu et al. and Agostinelli et al. were read in full. The rest were checked against their arXiv pages only and need a full read before the paper.</p>
+
+<h2>Method</h2>
+<p>In Liu et al.'s WAM, an encoder's features are used twice. They are fed in as a clue about the current frame, and the model must also predict them for future frames (verified, Sec. 3.3, App. B.2). Most of DINOv3's benefit comes from the prediction role: 76.5 with input only, 81.9 with prediction only, 84.0 with both (verified, Table 9). Our first check only tested the input role, which is why it couldn't see the harm.</p>
+<p><b>Main hypothesis (H-E, speculative):</b> a partner encoder hurts when it makes the prediction target worse. Either its future features are hard to predict, or its loss is large enough to crowd out the model's ability to predict DINOv3's future.</p>
+<ol>
+<li><b>Extract frozen features once</b> from robot demos, for a base encoder (DINOv3) and its partners. No model training. Done for 5 encoders on one LIBERO suite.</li>
+<li><b>Measure each pair cheaply, three ways,</b> with simple linear models on those features:
+<ul>
+<li>Loss share: how big is B's piece of the combined target? (variance only, no fitting)</li>
+<li>Predictability: how well can B's future features be predicted from the current frame?</li>
+<li>Interference: give a small, capacity-limited model the job of predicting D's future alone, then D's and B's future together. How much worse does it get at D's part? We run this with raw feature scales and with each encoder rescaled to equal size. If rescaling removes the harm, the fix is a normalization step.</li>
+</ul></li>
+<li><b>Rank the pairs</b> by each measure and compare with measured gains: first the paper's table, then our own small policies trained with 3 or more seeds per combination, because the paper's numbers come from one checkpoint each.</li>
+<li><b>Test the cause directly:</b> if interference points at a pair, train that pair with and without per-encoder normalization.</li>
+</ol>
+<p>All measures are compared against baselines: CKA, B's score on its own, the paper's "similar training objectives" reasoning, KAGES-style marginal alignment, and a random ranking.</p>
+
+<h2>Experiments</h2>
+<p>We start with no WAM training at all, then add small trained models only if the cheap signals justify it.</p>
+<table border="1">
+<tr><th>#</th><th>Experiment</th><th>Setup</th><th>Cost</th><th>Status</th></tr>
+<tr><td>E1</td><td>Input-side tally</td><td>libero_goal; DINOv3 + SigLIP 2, C-RADIOv4, SAM 3, VGGT-&Omega;; CKA and probe gain vs the paper's deltas</td><td>about 10 GPU-h extraction + 2 CPU-h</td><td>Done: negative (verified)</td></tr>
+<tr><td>E2</td><td>Target-side diagnostics</td><td>Same features; horizons 4, 16, 32 steps; raw vs equalized scaling; pre-registered before any run</td><td>about 3 CPU-h (estimate)</td><td>Code and synthetic tests pass; not run on real data</td></tr>
+<tr><td>E3</td><td>More pairs</td><td>Add V-JEPA 2.1, UniTok, HRP to cover all 7 DINOv3 pairs; then the 3- and 4-encoder steps (16 steps total)</td><td>GPU extraction, not yet measured</td><td>Loaders not written</td></tr>
+<tr><td>E4</td><td>Small trained policy, multi-seed</td><td>Policy on cached features, 3 or more training seeds per combo, scored in the LIBERO simulator. First check: does it reproduce the paper's ordering?</td><td>Not yet timed</td><td>Planned</td></tr>
+<tr><td>E5</td><td>Causal fix test</td><td>Most-flagged harmful pair, trained with vs without per-encoder normalization</td><td>Same as E4, 2 configs</td><td>Only if E2 flags a pair</td></tr>
+</table>
+<p><b>Order and gates:</b> E2 is next and needs only CPU. Its pre-registered rule: if C-RADIOv4 is not the most-interfering partner, H-E fails at this level. If it is, that is weak support only (with 4 pairs, a random measure picks it 1 time in 4), and it justifies E4 and E5, not a claim.</p>
+
+<h2>Expected results</h2>
+<p>We expect a target-side measure to flag harmful pairs that similarity and input-side probes miss, and per-encoder normalization to remove some of the harm. All of this is speculative until E2 runs.</p>
+<table border="1">
+<tr><th>What we evaluate</th><th>Metric</th><th>Why this metric</th></tr>
+<tr><td>Does a diagnostic order combos like the real gains?</td><td>Spearman rank correlation and Kendall &tau; (as in Agostinelli et al.)</td><td>Only the order matters for choosing combos; the scales differ (probe R&sup2; vs success %)</td></tr>
+<tr><td>Does it catch harmful combos?</td><td>Share of harmful steps flagged as harmful</td><td>Avoiding a bad stack is the most useful decision</td></tr>
+<tr><td>Diagnostic values themselves</td><td>CKA, probe R&sup2;, gain, interference, each with 95% bootstrap CIs over demos</td><td>Frames within a demo are correlated, so frame-level CIs would be too narrow</td></tr>
+<tr><td>Policy ground truth (E4, E5)</td><td>LIBERO and LIBERO-Plus success rate, mean &plusmn; std over 3 or more training seeds</td><td>Standard benchmark metric; seeds fix the one-checkpoint problem</td></tr>
+</table>
+<p><b>What we hope to see:</b></p>
+<ul>
+<li>E2: C-RADIOv4 shows the most interference with DINOv3's future prediction under raw scaling, and less after equalizing scales.</li>
+<li>E3 and E4: the interference measure ranks combos better than CKA, single-encoder score and random, including the 3 harmful 3- and 4-encoder steps.</li>
+<li>E5: normalizing per encoder recovers part of the DINOv3 + C-RADIOv4 drop.</li>
+</ul>
+<p><b>What would count against us, and what we'd report instead:</b></p>
+<ul>
+<li>C-RADIOv4 is not the top interferer: H-E fails on frozen features. That is still reportable: neither input-side nor target-side frozen-feature tests predict stacking harm.</li>
+<li>Our multi-seed policies don't reproduce the DINOv3 + C-RADIOv4 drop: the paper's harm may be single-checkpoint noise, which is also worth reporting.</li>
+<li>With 7 pairs (16 steps), we report tallies and rank correlations with CIs, not significance claims.</li>
+</ul>
+
+<h2>Open questions</h2>
+<ul>
+<li>Is the target-side framing (H-E) the right main hypothesis, or should the input-side negative result be the paper?</li>
+<li>Is a small multi-seed policy on cached features an acceptable stand-in for full WAM training, if it reproduces the paper's ordering?</li>
+<li>Venue and timeline: workshop paper first, or a main conference?</li>
+<li>Should we ask Liu et al. for training-seed variance on DINOv3 + C-RADIOv4 and for their (unstated) feature normalization?</li>
+</ul>
+
+<h2>References</h2>
+<ul>
+<li>Liu et al. 2026. What Visual Representations Do World Action Models Need? <a href="https://arxiv.org/abs/2610.13024">arXiv 2610.13024</a> (preprint)</li>
+<li>Jiang et al. 2026. Rethinking Representations for World-Action Modeling. <a href="https://arxiv.org/abs/2609.38163">arXiv 2609.38163</a> (preprint)</li>
+<li>Liu and Jiang 2026. When More Foundation Models Means Less: Diagnosing and Addressing Multi-View Fusion Failure (KAGES). <a href="https://arxiv.org/abs/2608.17490">arXiv 2608.17490</a> (preprint)</li>
+<li>Guo et al. 2026. Metric-Guided Feature Fusion of Visual Foundation Models for Segmentation Tasks. CVPR 2026 Findings. <a href="https://arxiv.org/abs/2605.16864">arXiv 2605.16864</a></li>
+<li>Agostinelli, Uijlings, Mensink, Ferrari 2022. Transferability Metrics for Selecting Source Model Ensembles. CVPR. <a href="https://arxiv.org/abs/2111.13011">arXiv 2111.13011</a></li>
+<li>K B et al. 2023. Building a Winning Team: Selecting Source Model Ensembles using a Submodular Transferability Estimation Approach (OSBORN). ICCV. <a href="https://arxiv.org/abs/2309.02429">arXiv 2309.02429</a></li>
+<li>You, Liu, Wang, Long 2021. LogME. ICML. <a href="https://arxiv.org/abs/2102.11005">arXiv 2102.11005</a></li>
+<li>Kornblith, Norouzi, Lee, Hinton 2019. Similarity of Neural Network Representations Revisited. ICML. <a href="https://arxiv.org/abs/1905.00414">arXiv 1905.00414</a></li>
+<li>Karamcheti et al. 2024. Prismatic VLMs. ICML. <a href="https://arxiv.org/abs/2402.07865">arXiv 2402.07865</a></li>
+<li>Kim et al. 2024. OpenVLA. <a href="https://arxiv.org/abs/2406.09246">arXiv 2406.09246</a> (preprint)</li>
+<li>Shi et al. 2024. Eagle: Exploring the Design Space for Multimodal LLMs with Mixture of Encoders. <a href="https://arxiv.org/abs/2408.15998">arXiv 2408.15998</a> (preprint)</li>
+<li>Tong et al. 2024. Cambrian-1. NeurIPS. <a href="https://arxiv.org/abs/2406.16860">arXiv 2406.16860</a></li>
+<li>Ranzinger, Heinrich, Kautz, Molchanov 2024. AM-RADIO. CVPR. <a href="https://arxiv.org/abs/2312.06709">arXiv 2312.06709</a></li>
+<li>Shang et al. 2024. Theia. CoRL. <a href="https://arxiv.org/abs/2407.20179">arXiv 2407.20179</a></li>
+</ul>
+</body></html>

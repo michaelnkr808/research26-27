@@ -343,3 +343,14 @@
 **Did:** The user shared the mentor's own reading list: Atlas (World Labs blog), V-JEPA 2.1 (2603.14482), DINO-WM (ICML 2025), VL-JEPA (2512.10942), SpatioLM (2608.01899), SmolVLM (2504.05299). Fetched each abstract (verified at abstract level). Checked companion papers on arXiv: I-JEPA (2301.08243, ICCV 2023), V-JEPA 2 (2506.09985), PLDM (2502.14819), LeWM (2603.19312), JEPA-VLA (2602.11832), 2606.07687 (prediction over reconstruction), VSI-Bench (2412.14171), VGGT (2503.11651, CVPR 2025), plus the world-model encoder papers in (2026-10-26).
 **Found:** speculative: the list's themes (embedding-space world models, JEPA, spatial VLMs) fit topic A (encoder choice for latent world models). VLM spatial distillation from 3D models looks crowded (MVRD 2608.10864, GeoWorld-VLM 2605.16713; search snippets only).
 **Next:** user picks topics for proposals 2 and 3.
+
+## 2026-10-27 [agent] (three proposal drafts as HTML for Google Docs)
+**Goal:** User wants the proposals as their own Google Docs (not Claude Docs): stacking encoders (P1, the one going to the mentor), plus two early drafts (P2, P3) the user will read up on before deciding.
+**Did:** Wrote `writing/proposals-2026-10-27/p1-stacking-encoders.html`, `p2-world-model-embedding.html`, `p3-predictability-horizon.html`. P1 = the Claude Doc text plus related-work rows for KAGES, metric-guided VFM fusion, OSBORN and ReWAM, and a softened novelty claim (input-side marginal-gain selection is not new; KAGES). P2 = action-controllable share of embedding change as a training-free encoder-selection score for latent world models. P3 = predictability horizon of frozen embeddings vs Planning Limits' plannable range.
+**Found (verified at abstract level unless noted):**
+- ALPS (2610.30120) full text via fetch: planning results for 6 encoders (Table 3, S11, S12), probes for 15; no probe-planning correlation computed; no action-controllability measure.
+- AD-WM (2609.30264) and Sensorimotor WM (2606.20104) are training methods, not encoder-selection metrics.
+- **Correction:** the "+12.2 points on RoboTwin 2.0" for ReWAM given in chat on 2026-10-26 came from a search snippet and is not in the abstract (which reports 93.6% success). Removed from P1. Whether ReWAM's "Feature Calibration" is per-encoder normalization is unconfirmed.
+- DINO-WM datasets and some checkpoints are on OSF per its README; no data license stated.
+**Not done:** Google Drive upload. Drive is still connected to the school account and no Google Docs editor connector is present; waiting on the user. The Claude Docs copies (P1 complete, P2 partial) still exist and were not deleted.
+**Next:** User picks the Drive account; upload the 3 HTML files as Google Docs.
