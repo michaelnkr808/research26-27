@@ -354,3 +354,12 @@
 - DINO-WM datasets and some checkpoints are on OSF per its README; no data license stated.
 **Not done:** Google Drive upload. Drive is still connected to the school account and no Google Docs editor connector is present; waiting on the user. The Claude Docs copies (P1 complete, P2 partial) still exist and were not deleted.
 **Next:** User picks the Drive account; upload the 3 HTML files as Google Docs.
+
+## 2026-10-27 (b) [agent] (proposals uploaded to Google Docs)
+**Did:** User approved uploading to the school Drive (minarami@ucsc.edu). P3 rewritten as a full proposal: oracle decomposition of the latent-planning horizon limit into predictor, embedding-geometry and scoring-rule parts (`p3-planning-horizon.html`, renamed from `p3-predictability-horizon.html`). Flattened nested lists inside numbered steps (Google's HTML import restarted the numbering). Uploaded via Drive `create_file` (HTML to Google Doc):
+- P1 https://docs.google.com/document/d/1JJj8KcgBusH65LHY6CsFEiFqACy2lQI3f-wcgI3WF40/edit (verified by read-back: numbering 1 to 4 intact)
+- P2 https://docs.google.com/document/d/1NW4Wbikj8b1M-V1QPiEmjetNig0gY8GXLG0gwbDu3oY/edit
+- P3 https://docs.google.com/document/d/1sKBxucnzdKOZNWzwJBmjCQ7ItSzjis-LZEnu3wLXHUg/edit (uploaded before the list fix: Method steps 4 to 6 show as 1 to 3)
+**Found (verified, Planning Limits appendix via fetch):** its exact-dynamics control scores in state space, not embedding space; no oracle-embedding condition; no code or data release mentioned. NGC (2610.25013) abstract shows no oracle-embedding experiment either.
+**Not done:** no Google Docs editor connector, so the docs can't be edited in place by the agent. P3's numbering needs a manual fix or a re-upload.
+**Next:** User reads the P2/P3 papers and decides which two go to the mentor with P1.
