@@ -338,3 +338,8 @@
 - World-model encoder choice (for proposals 2/3): ALPS (2610.30120), Planning Limits of Latent World Models (2609.39235; Table 2 plannable range per encoder), DINO-WM (2411.04983; Table 2 encoder comparison read via HTML).
 **Not done:** the proposal 1 doc has not been updated with KAGES / OSBORN / ReWAM. No bib entries added.
 **Next:** User reads the list and picks topics for proposals 2 and 3. Then update proposal 1's Related works and novelty claim (needs user OK, since it changes the framing).
+
+## 2026-10-26 (b) [agent] (mentor's reading list and companion papers)
+**Did:** The user shared the mentor's own reading list: Atlas (World Labs blog), V-JEPA 2.1 (2603.14482), DINO-WM (ICML 2025), VL-JEPA (2512.10942), SpatioLM (2608.01899), SmolVLM (2504.05299). Fetched each abstract (verified at abstract level). Checked companion papers on arXiv: I-JEPA (2301.08243, ICCV 2023), V-JEPA 2 (2506.09985), PLDM (2502.14819), LeWM (2603.19312), JEPA-VLA (2602.11832), 2606.07687 (prediction over reconstruction), VSI-Bench (2412.14171), VGGT (2503.11651, CVPR 2025), plus the world-model encoder papers in (2026-10-26).
+**Found:** speculative: the list's themes (embedding-space world models, JEPA, spatial VLMs) fit topic A (encoder choice for latent world models). VLM spatial distillation from 3D models looks crowded (MVRD 2608.10864, GeoWorld-VLM 2605.16713; search snippets only).
+**Next:** user picks topics for proposals 2 and 3.
