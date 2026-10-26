@@ -316,3 +316,15 @@
 - Manifest: one CPU Job, 4 pairs sequential (cheapest first), 2 CPU / 9Gi (limit 2.4 / 10Gi), 8 h deadline, ConfigMap `stacking-encoders-target-src`, `SRC_GIT_COMMIT` b68ba54, no sleep, no tolerations. Linux RSS is unmeasured, so 9Gi is a judgment call.
 **Resources:** local CPU only (~1.2 h of sizing/profiling runs). Cluster: none.
 **Next:** user approval for the cluster steps, each to be confirmed: (1) Prometheus CPU-capacity check, (2) check that `michael-persistent` is free, (3) create ConfigMap `stacking-encoders-target-src` from `src/diagnostics.py` + `src/target_diagnostics.py` at b68ba54, (4) submit `job.yaml`, then watch memory against the 9Gi request. After the run: save the log and JSONs, delete the Job and ConfigMap, write the experiment README applying the (i) outcome rule.
+
+## 2026-10-25 [agent] (research proposal draft for the mentor, due Tuesday 2026-10-27)
+**Goal:** Draft the mentor's requested proposal (Motivation, Problem statement, Related works, Method, Experiments, Expected results) as a shareable doc. No experiments or cluster actions.
+**Did:**
+- Wrote the draft as a Claude Doc: https://claude.ai/artifact/B6uCkLxYV5FmWUUDKRQbzF (private until the user shares it). Framed around H-E (target-side interference) with the input-side tally as motivation. H-E is still **proposed, not chosen by the user**. The doc says so and lists it as an open question.
+- Recomputed every add-one-encoder delta in Table 10 from `literature/liu2026what-table10-composition.csv` (python, this session).
+- Checked 9 related papers against their arXiv abstract pages (WebFetch summaries): Kornblith 2019 (CKA), Cambrian-1, Theia, AM-RADIO, Eagle, LogME, Prismatic (Sec. 4.2 via HTML), OpenVLA, Burns 2023. Not added to `references.bib` yet.
+**Found:**
+- verified (CSV arithmetic): of 16 add-one steps, 11 gain +0.20..+2.12, 1 is flat (D+U+H −0.03), and 4 lose: D+R −5.41, D+U+L −0.44, D+U+V+S −1.13, D+U+V+G −2.36. VGGT-Ω is +0.40 on D but −2.36 on D+U+V, so the harm depends on context.
+- verified (Prismatic HTML Sec. 4.2, summarising fetch, quotes not hand-checked): channel-concat DINOv2+SigLIP helps "across the board"; DINOv2+CLIP hurts on TextVQA.
+- Not verified: only Liu et al. and Agostinelli et al. have been read in full. The rest were checked at abstract level only, which does not meet `02` for a final writeup.
+**Next:** User reviews the doc before Tuesday 2026-10-27 and picks the main hypothesis. If wanted, add the new papers to `references.bib` with notes. The E2 target-diagnostics Job is still waiting for go-ahead (LOG (k) Next).

@@ -33,6 +33,7 @@ Signed off by the user 2026-10-21. Source for all: `experiments/2026-10-19-feasi
 - Starting point: liu2026what (arXiv 2610.13024v1) judges complementarity qualitatively and uses one training checkpoint per config. See `literature/notes/liu2026-what-visual-representations-wams.md`.
 
 ## Key files
+- Research proposal draft for the mentor (2026-10-25, due 2026-10-27): Claude Doc https://claude.ai/artifact/B6uCkLxYV5FmWUUDKRQbzF (LOG 2026-10-25)
 - `STANDARDS.md`: topic rules (compute budget + Nautilus rules filled; rest TBD)
 - `LOG.md`: research log
 - `decisions/`: decision records (001: proxy-policy ground truth; 002 (accepted 2026-10-19): feasibility tally before training)
