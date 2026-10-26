@@ -38,3 +38,10 @@
 - Result (n = 4, user signed off): neither CKA nor gain(B|D) flags the paper's harmful D+R. R is the most similar to D and adds the most to it. Every partner adds a small positive gain on frozen features.
 - Decision 002 accepted; CephFS feature PVC created (17.6G of features kept). All Jobs and ConfigMaps cleaned up. NOTES.md is now git-ignored. A handoff block went to the planning agent; direction to be chosen with the mentor on 2026-10-22.
 - See: stacking-encoders/experiments/2026-10-19-feasibility-tally/README.md, stacking-encoders/README.md (key findings), stacking-encoders/LOG.md (2026-10-19 (e) through 2026-10-21 (h))
+
+## 2026-10-21 — stacking-encoders: planning session, reframed to encoders-as-targets (H-E)
+
+- Read the liu2026what PDF. The WAM uses encoder features as clean inputs *and* noised future targets, with one loss term per source (Eq. 9) and no stated normalization. Future prediction carries most of DINOv3's gain (Table 9: 76.5 / 81.9 / 84.0). D+R (78.6) is below both D and R alone.
+- Our tally tested encoders only as inputs, which is why nothing flagged D+R. Proposed H-E (target-side interference) and pre-registered T0/T1/T2 tests, then amended them to per-source losses after reading the PDF.
+- Wrote the implementation handoff. The implementation agent has since built the script and tests (commits 2e03e18..acc9d0e).
+- See: stacking-encoders/LOG.md (2026-10-21 (i), (j)), stacking-encoders/experiments/2026-10-21-target-diagnostics/PLAN.md, stacking-encoders/writing/hypotheses-draft.md (top section)
