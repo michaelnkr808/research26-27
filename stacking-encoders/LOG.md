@@ -367,3 +367,8 @@
 ## 2026-10-27 (c) [agent] (P2 and P3 moved to their own directions)
 **Did:** Created `../world-model-embedding-choice/` (P2) and `../world-model-planning-horizon/` (P3) from `_template/`, and moved their proposal HTML there. P1 stays in `writing/proposals-2026-10-27/`.
 **Next:** unchanged (user reads, picks what goes to the mentor; E2 target-diagnostics Job still awaiting go-ahead).
+
+## 2026-10-27 (d) [agent] (one-page proposals in Google Docs)
+**Did:** Google Docs connector now available. For all three proposals: kept the long version as a new "(full notes)" Google Doc (P1, P2 via Drive copy; P3 re-uploaded from the repo HTML so its numbering is fixed), then rewrote each original doc (same link) to a one-page version of about 600 to 660 words from `writing/proposals-2026-10-27/p1-short.md` and the two sibling directions' `proposal-short-2026-10-27.md`. Each batch was guarded by the doc's revision ID; all three were read back and checked. No one had edited or commented on the originals before the rewrite (Drive modifiedTime equal to creation).
+- P1 one-page: https://docs.google.com/document/d/1JJj8KcgBusH65LHY6CsFEiFqACy2lQI3f-wcgI3WF40/edit ; full notes: https://docs.google.com/document/d/1GgJm4coJ8Kn2J_D0IfIBYZpXSwlVU_3wVz17nUM7MBY/edit
+**Next:** user reviews the one-page versions before sending to the mentor.

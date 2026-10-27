@@ -18,8 +18,8 @@ Latent world models only pick good actions for goals a few steps away. Planning 
 5. Cost-fix papers to skim: Monotone Planning Costs (2608.09073), TD-JEPA (2607.25337), Latent Projection (2610.26979).
 
 ## Key files
-- `writing/proposal-2026-10-27.html`: proposal draft (source of the Google Doc)
-- Google Doc (school Drive): https://docs.google.com/document/d/1sKBxucnzdKOZNWzwJBmjCQ7ItSzjis-LZEnu3wLXHUg/edit (uploaded before a list fix: Method steps 4 to 6 show as 1 to 3)
+- `writing/proposal-short-2026-10-27.md`: one-page proposal (Google Doc: https://docs.google.com/document/d/1sKBxucnzdKOZNWzwJBmjCQ7ItSzjis-LZEnu3wLXHUg/edit)
+- `writing/proposal-2026-10-27.html`: full notes (Google Doc: https://docs.google.com/document/d/1ieqcwt7FJyhLigUSYx809ItAz8lOE3kD8sOm0ldvhtU/edit)
 - `STANDARDS.md`: topic rules
 - `LOG.md`: research log
 - `literature/references.bib`: references (checked at arXiv abstract level unless noted)

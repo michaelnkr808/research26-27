@@ -18,8 +18,8 @@ A latent world model (e.g. DINO-WM) plans by imagining embeddings of future fram
 5. Toso et al. (arXiv 2602.18639): DINO-WM breaks under background and lighting changes.
 
 ## Key files
-- `writing/proposal-2026-10-27.html`: proposal draft (source of the Google Doc)
-- Google Doc (school Drive): https://docs.google.com/document/d/1NW4Wbikj8b1M-V1QPiEmjetNig0gY8GXLG0gwbDu3oY/edit
+- `writing/proposal-short-2026-10-27.md`: one-page proposal (Google Doc: https://docs.google.com/document/d/1NW4Wbikj8b1M-V1QPiEmjetNig0gY8GXLG0gwbDu3oY/edit)
+- `writing/proposal-2026-10-27.html`: full notes (Google Doc: https://docs.google.com/document/d/1okKCxvxoZk5LbEkR6V0REmOmYB5KFuCCF16mA7s65oQ/edit)
 - `STANDARDS.md`: topic rules
 - `LOG.md`: research log
 - `literature/references.bib`: references (checked at arXiv abstract level unless noted)

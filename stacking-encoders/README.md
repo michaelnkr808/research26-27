@@ -33,7 +33,7 @@ Signed off by the user 2026-10-21. Source for all: `experiments/2026-10-19-feasi
 - Starting point: liu2026what (arXiv 2610.13024v1) judges complementarity qualitatively and uses one training checkpoint per config. See `literature/notes/liu2026-what-visual-representations-wams.md`.
 
 ## Key files
-- `writing/proposals-2026-10-27/p1-stacking-encoders.html`: research proposal for the mentor (Google Doc: https://docs.google.com/document/d/1JJj8KcgBusH65LHY6CsFEiFqACy2lQI3f-wcgI3WF40/edit). Sibling candidate directions: `../world-model-embedding-choice/`, `../world-model-planning-horizon/`
+- Research proposal for the mentor: one-page version `writing/proposals-2026-10-27/p1-short.md` (Google Doc: https://docs.google.com/document/d/1JJj8KcgBusH65LHY6CsFEiFqACy2lQI3f-wcgI3WF40/edit); full notes `writing/proposals-2026-10-27/p1-stacking-encoders.html` (Google Doc: https://docs.google.com/document/d/1GgJm4coJ8Kn2J_D0IfIBYZpXSwlVU_3wVz17nUM7MBY/edit). Sibling candidate directions: `../world-model-embedding-choice/`, `../world-model-planning-horizon/`
 - Research proposal draft for the mentor (2026-10-25, due 2026-10-27): Claude Doc https://claude.ai/artifact/B6uCkLxYV5FmWUUDKRQbzF (LOG 2026-10-25)
 - `STANDARDS.md`: topic rules (compute budget + Nautilus rules filled; rest TBD)
 - `LOG.md`: research log
