@@ -375,3 +375,14 @@
 
 ## 2026-10-27 (rename) [agent]
 **Did:** Folder renamed by the user from `stacking-encoders/` to `world-model-stacking-encoders/` (2026-10-27). Repo paths in README/STANDARDS/references were updated; older entries above keep the old path (append-only). Cluster resource names (PVC `stacking-encoders-features`, Secret `stacking-encoders-hf`, ConfigMaps, Job names, `/persistent/stacking-encoders/` and `/mnt/features/stacking-encoders/` paths) are unchanged on purpose: they name real objects on Nautilus.
+
+## 2026-10-27 (e) [agent] (novelty check for P1; competitors added to the one-page Google Doc)
+**Goal:** User is presenting P1 to the mentor and asked to (1) list key talking points, (2) double-check nobody has done this, and list close competitors in the doc.
+**Did:** 11 web searches (pre-training prediction of encoder combos for WAMs/VLAs/VLMs, target-side interference, multi-teacher distillation, frozen-feature predictors of control, citations of liu2026what). Abstract pages fetched for 2606.03879, 2609.24048, 2602.04880, 2610.21915, 2507.03262, 2610.34663, 2605.15618, 2410.01680. Edited the P1 one-page Google Doc in place (revision-guarded, read back: 4 new bold-led bullets, a sharper novelty line, 7 linked references); mirrored in `writing/proposals-2026-10-27/p1-short.md`.
+**Found (verified at abstract level only; none read in full):**
+- No paper found that predicts, before training, whether adding an encoder helps or hurts a WAM, or that studies encoder features as combined prediction targets. Absence in search is not proof of novelty.
+- Closest: KAGES (already listed; input-side marginal gain, image tasks); PHI-S (2410.01680; teacher feature-statistics mismatch hurts multi-teacher distillation, fixed by per-teacher normalization; this anticipates the H-E mechanism in a different setting); Wang et al. ICLR 2026 (2507.03262) and Ding et al. (2606.03879): harmful encoders in multi-encoder VLMs, measured on trained models; Ding et al. say good configurations remain hard to identify before training.
+- Also adjacent: Shen et al. 2610.21915 and Tang et al. 2609.24048 (prediction-target / latent-space comparisons by training each); Dong et al. 2602.04880 (frozen-feature probes correlate with policy performance); Scardecchia & Yang 2610.34663 (posted 2026-10-26; trains for predictable latents).
+- Tang et al.'s gradient-alignment analysis came from a search snippet, not the abstract; not used in the doc.
+**Not done:** the doc is now ~800 words before references (was ~620), over the ~1-page target. The full-notes doc and `references.bib` are not updated. ReWAM (2609.38163) is left in full notes only.
+**Next:** User reviews the doc's Related works and decides whether to trim back to one page. Read PHI-S in full before the meeting (the mentor may ask how H-E differs from it). E2 target-diagnostics Job still awaits go-ahead.

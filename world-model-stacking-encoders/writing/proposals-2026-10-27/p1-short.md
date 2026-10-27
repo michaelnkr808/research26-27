@@ -9,7 +9,11 @@ We want a cheap test, run on frozen features before any training, that predicts 
 - **KAGES (2026)** picks frozen encoders to fuse by how much each one adds, and shows more encoders can hurt. It covers image classification and retrieval only, with no actions or dynamics.
 - **Agostinelli et al. 2022 and OSBORN (2023)** choose model ensembles without training, but for averaged classifier outputs, not features fused into one model.
 - **Prismatic VLMs and Cambrian-1** fuse encoders in vision-language models and choose combinations by training each one.
-- None of these covers the WAM case, where encoder features are also something the model must predict.
+- **Wang et al. 2026 (ICLR) and Ding et al. 2026** show that in vision-language models with several encoders, some encoders hurt: removing one can raise accuracy. Both measure this on trained models. Ding et al. retrain all 31 subsets of 5 encoders and note that good combinations are still hard to identify before training.
+- **PHI-S (Ranzinger et al. 2024)** shows that when several encoders' features are prediction targets (multi-teacher distillation), differences in their feature statistics hurt the student, and fixes this by normalizing each teacher. This is close to the mechanism we hypothesize, but for distillation, not WAMs, and it does not predict which combinations hurt.
+- **Shen et al. 2026 and Tang et al. 2026** compare prediction targets for robot policies and WAMs (for example DINOv3, V-JEPA 2 and Wan2.2 features; 8 latent spaces) by training a model for each choice. Neither combines targets or predicts results before training.
+- **Dong et al. 2026 and Scardecchia and Yang 2026** show that probes on frozen features track policy performance, and that world-model latents should be easy to predict. Both look at one representation at a time, and Scardecchia and Yang train for predictability rather than use it to pick encoders.
+- None of these predicts, before training, whether adding an encoder will help or hurt a WAM, where encoder features are also prediction targets. The closest are KAGES (selection by marginal gain, but input side and image tasks only) and PHI-S (target-scale mismatch, but distillation, with no prediction).
 ## Method
 In Liu et al.'s WAM, each encoder's features are used twice: as an input describing the current frame, and as a target the model must predict for future frames. Most of DINOv3's benefit comes from the prediction role (76.5% input only, 81.9% prediction only, 84.0% both). Our first check tested only the input role, and it failed: neither similarity (CKA) nor "how much B adds to an action probe" flags C-RADIOv4 as harmful.
 Our hypothesis is that a partner encoder hurts when it makes the prediction target worse: its future features are hard to predict, or its loss crowds out the model's ability to predict DINOv3's future. We measure this with simple linear models on frozen features:
@@ -34,3 +38,10 @@ Our hypothesis is that a partner encoder hurts when it makes the prediction targ
 - Karamcheti et al. 2024. Prismatic VLMs. ICML. [arXiv 2402.07865](https://arxiv.org/abs/2402.07865)
 - Tong et al. 2024. Cambrian-1. NeurIPS. [arXiv 2406.16860](https://arxiv.org/abs/2406.16860)
 - Kornblith et al. 2019. Similarity of Neural Network Representations Revisited (CKA). ICML. [arXiv 1905.00414](https://arxiv.org/abs/1905.00414)
+- Wang et al. 2026. Investigating Redundancy in Multimodal Large Language Models with Multiple Vision Encoders. ICLR. [arXiv 2507.03262](https://arxiv.org/abs/2507.03262)
+- Ding et al. 2026. Beyond Encoder Accumulation: Measuring Encoder Roles in Multi-Encoder VLMs. [arXiv 2606.03879](https://arxiv.org/abs/2606.03879)
+- Ranzinger et al. 2024. PHI-S: Distribution Balancing for Label-Free Multi-Teacher Distillation. [arXiv 2410.01680](https://arxiv.org/abs/2410.01680)
+- Shen et al. 2026. What Should Robot Policies Learn to Predict? Rethinking Supervision Targets in Vision-Language-Action Learning. [arXiv 2610.21915](https://arxiv.org/abs/2610.21915)
+- Tang et al. 2026. What Matters in Designing World Action Models: An Empirical Study. [arXiv 2609.24048](https://arxiv.org/abs/2609.24048)
+- Dong et al. 2026. Capturing Visual Environment Structure Correlates with Control Performance. [arXiv 2602.04880](https://arxiv.org/abs/2602.04880)
+- Scardecchia and Yang 2026. Video World Models Need Predictable Latents. [arXiv 2610.34663](https://arxiv.org/abs/2610.34663)
