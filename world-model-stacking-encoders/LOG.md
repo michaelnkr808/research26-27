@@ -407,3 +407,13 @@
 **Resources:** cluster ~0.4 CPU-h (2 pods), no GPU. Local: tests and the capacity check.
 **Not done:** no target-side result. Violations page not checked (needs user login; nothing expected, pod < 30 min).
 **Next:** (1) Measure peak memory in a Linux container locally (`python:3.11.14-slim`, same pins), all 4 pairs or at least D+R. (2) Cut memory without changing numbers: load only the feature type in use, free fit objects sooner; re-run the synthetic tests and check outputs are bit-identical on synthetic data. (3) Fix the idle load: stage features to local disk in one sequential copy (needs more ephemeral storage), or load each encoder once per Job. (4) Resize `job.yaml` from the Linux numbers, log the changes, and ask the user before resubmitting (ConfigMap must be recreated if `src/` changes).
+
+## 2026-10-27 (g) [agent] (LIBERO study session with the user; no runs)
+**Note:** two entries above are both labelled (f): the first is this session's mentor/run-spec entry, the second is the implementation agent's Job try 1. Left as is (append-only).
+**Did:** Walked the user through the target-side idea, the LIBERO paper and LIBERO-Plus (the user read both). Downloaded one libero_goal file to the session scratchpad (not the repo) and inspected it.
+**Found:**
+- verified (`libero_goal/turn_on_the_stove_demo.hdf5`): 50 demos, length 75–119 (median 89); per step agentview + wrist RGB at 128×128, 7-d action (3 translation, 3 rotation, gripper ±1), reward 1 on the last step only; one language instruction per file.
+- verified (`literature/liu2026what-table1-single-source.csv`): adding DINOv3 to VAE-only gains most on visual perturbations (background +21.9, noise +19.4, camera +13.0) and little on language (+2.7) or layout (+1.2).
+- verified (`literature/liu2026what-table10-composition.csv`): the composition table reports only the LIBERO-Plus total, so which perturbation categories D+R loses on is unknown. If the drop is concentrated in visual categories, clean-image probes can't see it (the domain-shift pitfall in STANDARDS).
+**Mentor (user report, 2026-10-27):** also look at the intermediate steps before the final LIBERO result. Meaning not yet confirmed. Candidates: progress within a rollout (how far failed runs get), the per-category breakdown, or success over training checkpoints.
+**Next:** User asks the mentor which "intermediate steps" she meant. Ideas, not approved: ask the authors for D+R per-category numbers; probe features of LIBERO-Plus-perturbed frames (new cluster work, needs a go-ahead).

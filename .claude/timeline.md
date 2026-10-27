@@ -59,3 +59,10 @@
 - Submitted the Job with the user's OK. It ran out of memory (OOMKilled) 22 min in, on the first and smallest pair. Linux needed more than 10 GiB, where the Mac measurement said 6 GiB for the biggest pair. Deleted the Job (with the user's OK) and saved the log. No target-side result yet, and no NRP violation (the pod died before checks start).
 - Also found that data loading is slow and nearly idle (~12 min per pair at ~0 CPU), which would fall below NRP's usage floor on later pairs. The resubmit needs Linux-measured memory, lower memory use, and faster loading.
 - See: world-model-stacking-encoders/LOG.md 2026-10-27 (f), world-model-stacking-encoders/experiments/2026-10-21-target-diagnostics/RUN.md, results/try1-oom-20261027T185533Z.log
+
+## 2026-10-27 — world-model-stacking-encoders: after the mentor meeting, learning LIBERO
+
+- The proposal presentation went badly. The mentor said to focus on the benchmark: learn LIBERO, how stacking encoders relates to it, and the "intermediate steps" before the final result. The user will make their own slides from now on.
+- Wrote RUN.md, the spec the implementation agent used for the target-side Job (that run is in the entry above).
+- The user read LIBERO and LIBERO-Plus. We inspected a real libero_goal demo file and found from the paper's Table 1 that encoders mostly buy robustness to visual perturbations. The combo table gives only totals, so we don't know where D+R loses.
+- See: world-model-stacking-encoders/LOG.md 2026-10-27 (g), experiments/2026-10-21-target-diagnostics/RUN.md
