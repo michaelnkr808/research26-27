@@ -6,8 +6,10 @@
 # Scripts are mounted from ConfigMap `stacking-encoders-target-src` (created from ../../src/diagnostics.py and
 # ../../src/target_diagnostics.py at SRC_GIT_COMMIT).
 # Features: D, S, G from CephFS PVC stacking-encoders-features; L, R from PVC michael-persistent (RBD, ReadWriteOnce:
-# check no other pod holds it before submitting). Symlinked into one --feats root. Downloads libero_goal for the demo index.
-# NOT YET SUBMITTED. Needs user approval, a CPU-capacity check (public Prometheus) and a free michael-persistent first.
+# check no other pod holds it before submitting). Copied to local disk (emptyDir) before use. Downloads libero_goal for the
+# demo index.
+# Try 1 (2026-10-27, 9Gi/10Gi) was OOM-killed; see LOG 2026-10-27 (f) and (h). This is try 2: lower-memory code, staged
+# features, resized. NOT YET SUBMITTED. Needs user approval and the same pre-checks as try 1 (RUN.md).
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -41,10 +43,13 @@ spec:
           nproc; head -2 /proc/meminfo   # python:slim has no procps
           pip install --no-cache-dir -q numpy==2.2.6 h5py==3.16.0 huggingface-hub==0.36.2
           echo "=== pip freeze"; pip freeze
-          mkdir -p /work/feats
-          for E in dinov3 sam3 vggt-omega; do ln -s /mnt/features/stacking-encoders/features/$E /work/feats/$E; done
-          for E in siglip2 c-radiov4; do ln -s /persistent/stacking-encoders/features/$E /work/feats/$E; done
-          ls -la /work/feats; du -shL /work/feats/*/libero_goal
+          # Stage features to local disk with one sequential copy per encoder: try 1 read them in place over the network
+          # at ~0.01 CPU for 737 s per pair (LOG 2026-10-27 (f)). Partners are copied one at a time and removed after use.
+          src_of() { case $1 in siglip2|c-radiov4) echo /persistent/stacking-encoders/features/$1;;
+                                *) echo /mnt/features/stacking-encoders/features/$1;; esac; }
+          stage() { mkdir -p /work/feats/$1; T=$(date +%s); cp -r $(src_of $1)/libero_goal /work/feats/$1/
+                    echo "staged $1: $(du -sh /work/feats/$1/libero_goal | cut -f1) in $(( $(date +%s) - T ))s"; }
+          stage dinov3
           echo "=== download libero_goal (demo index)"; date -u
           python - <<'PY'
           from huggingface_hub import snapshot_download
@@ -54,22 +59,27 @@ spec:
           date -u
           for B in siglip2 sam3 vggt-omega c-radiov4; do      # cheapest first
             echo "=== target diagnostics dinov3 + $B"; date -u
+            stage $B; df -h /work | tail -1
             python /src/target_diagnostics.py --feats /work/feats --suite libero_goal --raw /work/data/libero_goal \
               --base dinov3 --partner $B --n-boot 1000 --seed 0 --out $OUT/target-libero_goal-dinov3-$B.json
+            rm -rf /work/feats/$B
           done
           for B in siglip2 sam3 vggt-omega c-radiov4; do echo "=== result json $B"; cat $OUT/target-libero_goal-dinov3-$B.json; echo; done
           date -u; echo "=== done"
         env:
-        - {name: SRC_GIT_COMMIT, value: b68ba54204c03def9c9e033d59e3f0297e3fae57}
+        - {name: SRC_GIT_COMMIT, value: 52d12261858217795de8fadadf51ab7da2a60afc}
         - {name: PYTHONUNBUFFERED, value: "1"}
         - {name: OMP_NUM_THREADS, value: "2"}
         - {name: OPENBLAS_NUM_THREADS, value: "2"}
-        # Sized from local runs on synthetic data at real D+R dims (2026-10-21, macOS/Accelerate, 2 threads): full-size
-        # (63,622 frames) peak RSS 6.1 GiB, 20% subset 7.0 GiB; ~1.26 cores average. Linux/OpenBLAS RSS not measured.
+        # Try 1 (9Gi/10Gi) was OOM-killed on D+L: the macOS RSS used to size it (6.1 GiB for D+R) undercounts.
+        # Try 2 sizing (2026-10-27, LOG (h)): tracemalloc peak of numpy allocations, new code, synthetic features at real
+        # D+R dims and frame count (the largest pair): 11.8 GiB, back to 5.2 GiB between horizons. Not counted: LAPACK
+        # eigh workspace (~0.7 GiB at 6656^2) and Python/BLAS overhead, so ~12.5-13 GiB expected (speculative).
+        # Watch RSS on Prometheus; smaller pairs (D+L, D+S) will sit lower.
         # NRP checks: memory within 20-150% and CPU within 20-200% of the request.
         resources:                    # limits within 20% of requests
-          requests: {cpu: "2", memory: 9Gi, ephemeral-storage: 10Gi}
-          limits:   {cpu: "2400m", memory: 10Gi, ephemeral-storage: 12Gi}
+          requests: {cpu: "2", memory: 14Gi, ephemeral-storage: 22Gi}
+          limits:   {cpu: "2400m", memory: 16Gi, ephemeral-storage: 26Gi}
         volumeMounts:
         - {name: work, mountPath: /work}
         - {name: src, mountPath: /src, readOnly: true}
@@ -77,7 +87,7 @@ spec:
         - {name: features, mountPath: /mnt/features}
       volumes:
       - name: work
-        emptyDir: {sizeLimit: 12Gi}
+        emptyDir: {sizeLimit: 24Gi}   # raw libero_goal 5.9 GiB + dinov3 4.4 + largest partner (vggt-omega) 8.8
       - name: src
         configMap: {name: stacking-encoders-target-src}
       - name: persistent-vol

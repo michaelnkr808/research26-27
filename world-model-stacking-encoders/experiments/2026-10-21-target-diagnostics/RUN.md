@@ -5,6 +5,7 @@ Planning agent, 2026-10-27. For the implementation agent. Builds on `PLAN.md` (s
 ## Where things stand
 - Code and tests are done (LOG 2026-10-21 (k)): `src/target_diagnostics.py`, `src/test_target_diagnostics.py`. All 7 synthetic checks passed on 2026-10-21.
 - verified (2026-10-27, `git rev-parse`): `diagnostics.py`, `target_diagnostics.py` and `test_target_diagnostics.py` at HEAD are byte-identical to commit b68ba54. The folder rename (`stacking-encoders/` → `world-model-stacking-encoders/`) did not change them, so `SRC_GIT_COMMIT` b68ba54 in `job.yaml` is still correct.
+- **Try 2 update (2026-10-27, LOG (h)):** try 1 was OOM-killed (LOG (f)). `src/` changed in 52d1226 (lower memory, outputs bit-identical on synthetic data), so `SRC_GIT_COMMIT` is now 52d1226 and the ConfigMap must be **deleted and recreated** from the files at that commit. `job.yaml` now stages features to local disk and requests 14Gi/16Gi memory and 22Gi/26Gi ephemeral storage. Steps below are otherwise unchanged; ask before each cluster step.
 - `job.yaml` is drafted and **has never been submitted**. Nothing has run on real features. No target-side number exists yet.
 - The user wants this run now (2026-10-27). The mentor's feedback today was to focus on the benchmark (LIBERO) and how stacking encoders relates to it. This run does not change because of that; do not widen scope.
 

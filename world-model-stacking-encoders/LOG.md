@@ -417,3 +417,18 @@
 - verified (`literature/liu2026what-table10-composition.csv`): the composition table reports only the LIBERO-Plus total, so which perturbation categories D+R loses on is unknown. If the drop is concentrated in visual categories, clean-image probes can't see it (the domain-shift pitfall in STANDARDS).
 **Mentor (user report, 2026-10-27):** also look at the intermediate steps before the final LIBERO result. Meaning not yet confirmed. Candidates: progress within a rollout (how far failed runs get), the per-category breakdown, or success over training checkpoints.
 **Next:** User asks the mentor which "intermediate steps" she meant. Ideas, not approved: ask the authors for D+R per-category numbers; probe features of LIBERO-Plus-perturbed frames (new cluster work, needs a go-ahead).
+
+## 2026-10-27 (h) [agent] (target-side Job try 2 prepared: less memory, staged features, resized; not submitted)
+**Goal:** Fix what killed try 1 (LOG (f)) and get the Job ready to resubmit. User report: the mentor also wants the target-encoder run done. User agreed to measure on the cluster rather than in a local Linux container (Docker on the Mac would need ~27 GB of features and a bigger VM).
+**Did:**
+- `src/` (commit 52d1226): `diagnostics.load` takes an optional `types` (default unchanged). `target_diagnostics.py` loads one feature type at a time, deletes per-camera arrays once concatenated, builds X block by block, scores each test prediction (R² + bootstrap draws) right away and drops it, and frees all per-k objects (incl. `y_te` slices that kept it alive). The old code held ~12 test predictions per k and carried them into the next k.
+- verified: both test files pass (numpy 2.2.6, h5py 3.16.0). verified: old (b68ba54) vs new end to end through `main` on synthetic HDF5 data (3 files, 60 demos, both types, 3 k, 3 ranks): JSON identical except `seconds`, every float and CI equal.
+- `job.yaml`: features copied to local disk (emptyDir 24Gi) with one `cp -r` per encoder; dinov3 once, each partner copied before its pair and removed after. Memory 14Gi request / 16Gi limit; ephemeral 22Gi/26Gi; `SRC_GIT_COMMIT` 52d1226. Client-side dry-run parses; script passes `bash -n`; staging functions tested on fake dirs.
+**Found:**
+- verified (tracemalloc, new code, synthetic random-walk features at real D+R dims, 64,391 frames, global, k = 4 and 16): peak numpy allocation 11.8 GiB (during k = 4 T1/T2), back to 5.2 GiB between k. macOS `ru_maxrss` for the same run was 6.2 GiB, so Mac RSS is again far below the real footprint.
+- speculative: real Linux peak ~12.5–13 GiB for D+R (adds LAPACK eigh workspace ~0.7 GiB and interpreter/BLAS overhead, not traced). Smaller pairs lower.
+- verified (kubectl, ~22:00Z): nothing of ours runs in `aria-world`; we hold only ConfigMap `stacking-encoders-target-src` (still the b68ba54 code), Secret `stacking-encoders-hf`, PVCs. ~90 `vissam-*` Jobs (label `project: vis-sam`, not in this repo) sit Failed/Complete for 10–24 h; not ours, not touched.
+- Running two probes at once pushed the Mac to ~21 GB swap; the calibration probe (old code, D+L) was stopped and not rerun.
+**Risk (speculative):** each pair starts with a few minutes of copy/load at low memory and CPU; a 10-min portal check could land there. Much shorter than try 1's 12-min in-place loads.
+**Resources:** local CPU ~1.5 h (probe, swapping). Cluster: none.
+**Next:** ask the user before each step: (1) delete and recreate ConfigMap `stacking-encoders-target-src` from `src/` at 52d1226; (2) pre-checks per RUN.md (CPU/memory capacity on Prometheus for 2 CPU / 14Gi, `michael-persistent` free); (3) submit; watch RSS on Prometheus and the staging times in the log; check the Violations page at ~35 min.
