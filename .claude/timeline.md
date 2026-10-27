@@ -52,3 +52,10 @@
 - Scouted world-model and embedding papers (the mentor's reading list plus about 25 checked on arXiv) and wrote two more strong candidate proposals: which embedding a latent world model should plan in (controllable share), and why latent world models only plan a few steps ahead (oracle-embedding decomposition). They got their own folders, `world-model-embedding-choice/` and `world-model-planning-horizon/`.
 - Moved from Claude Docs to the user's own Google Docs (school Drive). Each proposal is now a one-page doc of about 600 words (same link) plus a separate "full notes" doc. Nothing was run on the cluster.
 - See: stacking-encoders LOG 2026-10-25 to 2026-10-27 (d) (folder renamed by the user to world-model-stacking-encoders/, not yet committed), world-model-embedding-choice/README.md, world-model-planning-horizon/README.md
+
+## 2026-10-27 — world-model-stacking-encoders: target-side diagnostics, first cluster run (OOM)
+
+- Re-checked everything before the run: tests pass under the Job's package versions, the code matches the committed version, the volumes are free, and 42 CPU nodes have room. The first capacity count was wrong because Prometheus lacks the GPU-node label. Fixed by taking the node list from kubectl.
+- Submitted the Job with the user's OK. It ran out of memory (OOMKilled) 22 min in, on the first and smallest pair. Linux needed more than 10 GiB, where the Mac measurement said 6 GiB for the biggest pair. Deleted the Job (with the user's OK) and saved the log. No target-side result yet, and no NRP violation (the pod died before checks start).
+- Also found that data loading is slow and nearly idle (~12 min per pair at ~0 CPU), which would fall below NRP's usage floor on later pairs. The resubmit needs Linux-measured memory, lower memory use, and faster loading.
+- See: world-model-stacking-encoders/LOG.md 2026-10-27 (f), world-model-stacking-encoders/experiments/2026-10-21-target-diagnostics/RUN.md, results/try1-oom-20261027T185533Z.log
