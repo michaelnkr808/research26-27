@@ -14,3 +14,14 @@
 
 ## 2026-10-27 (rename) [agent]
 **Did:** Folder renamed by the user from `stacking-encoders/` to `world-model-stacking-encoders/` (2026-10-27). Repo paths in README/STANDARDS/references were updated; older entries above keep the old path (append-only). Cluster resource names (PVC `stacking-encoders-features`, Secret `stacking-encoders-hf`, ConfigMaps, Job names, `/persistent/stacking-encoders/` and `/mnt/features/stacking-encoders/` paths) are unchanged on purpose: they name real objects on Nautilus.
+
+## 2026-10-27 (c) [agent] (paper summaries, prior-work check, proposal update)
+**Goal:** User asked what the proposal is and what to read, then for summaries of DINO-WM, ALPS and AD-WM, then a check that nobody has already done this, then to add the results to the one-pager for tomorrow's mentor meeting.
+**Did:** Fetched DINO-WM, ALPS (incl. appendix) and AD-WM HTML. Ran 5 web searches and fetched 10 candidate papers. Edited the one-page Google Doc in place (guarded by revision ID; read back and checked bullets, bold labels, links): two new Related-works bullets, one sentence under Action recoverability, a Baselines sentence in Experiment 1, four references. Synced `writing/proposal-short-2026-10-27.md`; added 4 entries to `literature/references.bib`. Full-notes doc not changed.
+**Found (verified via fetch, not a careful read):**
+- ALPS: no probe-to-planning correlation in main text or appendix; no action-controllability or inverse-dynamics measure. Appendix S2 says lowest single-frame readout error is "not always the most predictable under learned dynamics."
+- AD-WM: elite regret needs a trained predictor; success tracks regret (rho ~0.86) but not factual error (Table III); no frozen-encoder comparison.
+- Nilaksh et al. 2605.06388 already compute "action recoverability" (IDM on frozen latents, 6 encoders) next to CEM planning, family-level only. Scardecchia & Yang 2610.34663 (posted 2026-10-26) define a "linear unpredictable share" on frozen latents with an action-conditioned linear predictor, one autoencoder. Neither correlates the measure with planning across encoders.
+- No paper found that tests a training-free, action-based score as a predictor of world-model planning success across frozen encoders. Search coverage is not proof of absence.
+**Next:** Mentor meeting. Afterwards write `literature/notes/` for ALPS, AD-WM, Nilaksh, Scardecchia; consider the realized-cost side of elite regret as an extra training-free score (speculative).
+**Open questions:** Should score 2 be dropped as a contribution and kept only as a tested baseline?
