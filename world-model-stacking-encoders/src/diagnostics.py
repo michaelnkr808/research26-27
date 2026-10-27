@@ -64,14 +64,14 @@ def demo_split(demos, test_frac=0.2, val_frac=0.2):
     return split
 
 
-def load(args):
-    """Per-frame global/mean features, actions, proprio, split labels, and a frame index.
+def load(args, types=("global", "mean")):
+    """Per-frame global/mean features (only the feature types in types), actions, proprio, split labels, and a frame index.
 
     Grid features are not loaded here (too wide for every frame); see load_grid.
     """
     raw_files = sorted(Path(args.raw).glob("*.hdf5"))
     assert raw_files, f"no LIBERO files in {args.raw}"
-    feats = {e: {t: {c: [] for c in CAMS} for t in ("global", "mean")} for e in args.encoders}
+    feats = {e: {t: {c: [] for c in CAMS} for t in types} for e in args.encoders}
     actions, proprio, split, index = [], [], [], []  # index: (file stem, demo, length) per demo
     meta = {}
     for raw in raw_files:
@@ -87,7 +87,7 @@ def load(args):
                 p = np.concatenate([fr["data"][d]["obs"]["joint_states"][:],
                                     fr["data"][d]["obs"]["gripper_states"][:]], axis=1)
                 for e, f in fe.items():
-                    for t in ("global", "mean"):
+                    for t in types:
                         for c in CAMS:
                             x = f[d][c][t][:]
                             assert len(x) == len(a), f"{raw.name} {d} {e} {c}: {len(x)} feats vs {len(a)} actions"

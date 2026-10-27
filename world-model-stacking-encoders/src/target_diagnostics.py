@@ -204,15 +204,17 @@ def edge(alpha):
     return alpha in (D.ALPHAS[0], D.ALPHAS[-1])
 
 
+def score(y, pred, groups, n_boot, seed):
+    """Test R^2 of one predictor and its bootstrap draws. bootstrap_r2 redraws the same demo weights on every call (fixed
+    seed), so scoring predictors one at a time gives the same paired draws as scoring them in one call."""
+    return float(D.r2(y, pred).mean()), D.bootstrap_r2(y, {"p": pred}, groups, n_boot, seed)["p"]
+
+
 def run_type(feats, split, index, groups, base, partner, ftype, ks, ranks, n_boot, seed, log):
-    """All measures for one feature type. Returns (JSON dict, per-k bootstrap draws for k-averaging)."""
+    """All measures for one feature type. Returns the JSON dict. Consumes feats[base][ftype] and feats[partner][ftype]
+    (deleted once concatenated, to save memory)."""
     train = split == "train"
-    f_d = np.concatenate([feats[base][ftype][c] for c in D.CAMS], 1)
-    f_b = np.concatenate([feats[partner][ftype][c] for c in D.CAMS], 1)
-    dd, db = f_d.shape[1], f_b.shape[1]
-    x = np.concatenate([D.standardize(f_d, train), D.standardize(f_b, train)], 1)  # same X for every condition
-    x_d = x[:, :dd]
-    res = {"dims": {"D": dd, "B": db, "X": dd + db}, "t0": {"features": {}, "by_k": {}}, "by_k": {}}
+    res = {"t0": {"features": {}, "by_k": {}}, "by_k": {}}
 
     for e in (base, partner):
         st = {"cams": {}}
@@ -225,6 +227,16 @@ def run_type(feats, split, index, groups, base, partner, ftype, ks, ranks, n_boo
         res["t0"]["features"][e] = st
         log(f"T0 {ftype} {e}: per-channel var {st['mean_channel_var']:.4g}, "
             "L2 norm " + ", ".join(f"{c} {v['mean_l2_norm']:.4g}" for c, v in st["cams"].items()))
+
+    f_d = np.concatenate([feats[base][ftype][c] for c in D.CAMS], 1)
+    f_b = np.concatenate([feats[partner][ftype][c] for c in D.CAMS], 1)
+    del feats[base][ftype], feats[partner][ftype]
+    dd, db = f_d.shape[1], f_b.shape[1]
+    x = np.empty((len(f_d), dd + db), np.float32)  # same X for every condition; filled block by block
+    x[:, :dd] = D.standardize(f_d, train)
+    x[:, dd:] = D.standardize(f_b, train)
+    x_d = x[:, :dd]
+    res["dims"] = {"D": dd, "B": db, "X": dd + db}
 
     draws = {}
     test_demos = None
@@ -266,40 +278,40 @@ def run_type(feats, split, index, groups, base, partner, ftype, ks, ranks, n_boo
         pd_va, pd_te = fd_tr.proj(va), fd_trva.proj(te)
         log(f"{ftype} k={k}: frames {rk['frames']}, fits {time.time() - tk:.0f}s")
 
-        # T1a: X -> Delta_B. T1b: D -> Delta_D and X -> Delta_D.
+        # T1a: X -> Delta_B. T1b: D -> Delta_D and X -> Delta_D. Each test prediction is scored (R^2 and bootstrap draws,
+        # same draws for every predictor and every k) as soon as it exists and then dropped: holding all of them got
+        # try 1 OOM-killed (LOG 2026-10-27 (f)).
         sb, sd = slice(dd, None), slice(0, dd)
-        pred_1a, a_1a, vc_1a = ridge_select_fit(fx_tr, fx_trva, cx_tr[:, sb], yb_tr[sb], cx_trva[:, sb], yb_trva[sb],
-                                                px_va, y_va[:, sb], px_te)
-        pred_1b_d, a_1b_d, vc_1b_d = ridge_select_fit(fd_tr, fd_trva, cd_tr, ybd_tr, cd_trva, ybd_trva,
-                                                      pd_va, y_va[:, sd], pd_te)
-        pred_1b_x, a_1b_x, vc_1b_x = ridge_select_fit(fx_tr, fx_trva, cx_tr[:, sd], yb_tr[sd], cx_trva[:, sd],
-                                                      yb_trva[sd], px_va, y_va[:, sd], px_te)
+        y_te_d, y_te_b = y_te[:, sd], y_te[:, sb]
+        sc = lambda y, p: score(y, p, g_te, n_boot, seed)
+        pred, a_1a, vc_1a = ridge_select_fit(fx_tr, fx_trva, cx_tr[:, sb], yb_tr[sb], cx_trva[:, sb], yb_trva[sb],
+                                             px_va, y_va[:, sb], px_te)
+        r2_1a, d_1a = sc(y_te_b, pred)
+        pred, a_1b_d, vc_1b_d = ridge_select_fit(fd_tr, fd_trva, cd_tr, ybd_tr, cd_trva, ybd_trva,
+                                                 pd_va, y_va[:, sd], pd_te)
+        r2_1b_d, d_1b_d = sc(y_te_d, pred)
+        pred, a_1b_x, vc_1b_x = ridge_select_fit(fx_tr, fx_trva, cx_tr[:, sd], yb_tr[sd], cx_trva[:, sd],
+                                                 yb_trva[sd], px_va, y_va[:, sd], px_te)
+        r2_1b_x, d_1b_x = sc(y_te_d, pred)
+        del pred
 
         # T2: reference (Delta_D only; one block, so the scaling can't matter: tested) and with B per scaling.
+        # Per rank: (test R^2_D, draws, alpha, val MSE by alpha).
+        scored = lambda out: {r: (*sc(y_te_d, p), a, curve) for r, (p, a, curve) in out.items()}
         sq_ref = column_scale(block_weights(SCALINGS[0], [dd], [tv[0]]), [dd])
-        ref = rrr_select(fx_tr, fx_trva, cx_tr[:, sd], yb_tr[sd], cx_trva[:, sd], yb_trva[sd], sq_ref, ranks,
-                         px_va, y_va[:, sd], px_te, dd)
+        ref = scored(rrr_select(fx_tr, fx_trva, cx_tr[:, sd], yb_tr[sd], cx_trva[:, sd], yb_trva[sd], sq_ref, ranks,
+                                px_va, y_va[:, sd], px_te, dd))
         withb = {}
         for s in SCALINGS:
             sq = column_scale(block_weights(s, [dd, db], tv), [dd, db])
-            withb[s] = rrr_select(fx_tr, fx_trva, cx_tr, yb_tr, cx_trva, yb_trva, sq, ranks, px_va, y_va, px_te, dd)
+            withb[s] = scored(rrr_select(fx_tr, fx_trva, cx_tr, yb_tr, cx_trva, yb_trva, sq, ranks, px_va, y_va, px_te,
+                                         dd))
         log(f"{ftype} k={k}: T1+T2 fitted, {time.time() - tk:.0f}s since fits started")
 
-        # Bootstrap (same draws for every predictor and every k).
-        y_te_d, y_te_b = y_te[:, sd], y_te[:, sb]
-        dr_b = D.bootstrap_r2(y_te_b, {"t1a": pred_1a}, g_te, n_boot, seed)
-        preds_d = {"t1b_D": pred_1b_d, "t1b_X": pred_1b_x}
-        preds_d.update({f"ref|{r}": ref[r][0] for r in ranks})
-        preds_d.update({f"{s}|{r}": withb[s][r][0] for s in SCALINGS for r in ranks})
-        dr_d = D.bootstrap_r2(y_te_d, preds_d, g_te, n_boot, seed)
-        dk = {"t1a": dr_b["t1a"], "t1b_gain": dr_d["t1b_X"] - dr_d["t1b_D"]}
-
-        r2_te = lambda y, p: float(D.r2(y, p).mean())
-        rk["t1a"] = {"r2": r2_te(y_te_b, pred_1a), "ci95": D.ci(dr_b["t1a"]), "alpha": a_1a, "val_r2_by_alpha": vc_1a}
-        rk["t1b"] = {"D_only": {"r2": r2_te(y_te_d, pred_1b_d), "ci95": D.ci(dr_d["t1b_D"]), "alpha": a_1b_d,
-                                "val_r2_by_alpha": vc_1b_d},
-                     "D_plus_B": {"r2": r2_te(y_te_d, pred_1b_x), "ci95": D.ci(dr_d["t1b_X"]), "alpha": a_1b_x,
-                                  "val_r2_by_alpha": vc_1b_x}}
+        dk = {"t1a": d_1a, "t1b_gain": d_1b_x - d_1b_d}
+        rk["t1a"] = {"r2": r2_1a, "ci95": D.ci(d_1a), "alpha": a_1a, "val_r2_by_alpha": vc_1a}
+        rk["t1b"] = {"D_only": {"r2": r2_1b_d, "ci95": D.ci(d_1b_d), "alpha": a_1b_d, "val_r2_by_alpha": vc_1b_d},
+                     "D_plus_B": {"r2": r2_1b_x, "ci95": D.ci(d_1b_x), "alpha": a_1b_x, "val_r2_by_alpha": vc_1b_x}}
         rk["t1b"]["gain"] = {"value": rk["t1b"]["D_plus_B"]["r2"] - rk["t1b"]["D_only"]["r2"],
                              "ci95": D.ci(dk["t1b_gain"])}
         log(f"T1 {ftype} k={k}: T1a R2 {rk['t1a']['r2']:.3f} {rk['t1a']['ci95']}; T1b D {rk['t1b']['D_only']['r2']:.3f} "
@@ -307,24 +319,25 @@ def run_type(feats, split, index, groups, base, partner, ftype, ks, ranks, n_boo
 
         t2 = {"reference": {}, "with_B": {s: {} for s in SCALINGS}}
         for r in ranks:
-            t2["reference"][str(r)] = {"r2_D": r2_te(y_te_d, ref[r][0]), "ci95": D.ci(dr_d[f"ref|{r}"]),
-                                       "alpha": ref[r][1], "val_mse_by_alpha": ref[r][2]}
+            r2_ref, d_ref, a_ref, curve_ref = ref[r]
+            t2["reference"][str(r)] = {"r2_D": r2_ref, "ci95": D.ci(d_ref), "alpha": a_ref,
+                                       "val_mse_by_alpha": curve_ref}
             for s in SCALINGS:
-                pred, alpha, curve = withb[s][r]
-                inter = dr_d[f"ref|{r}"] - dr_d[f"{s}|{r}"]
+                r2_with, d_with, alpha, curve = withb[s][r]
+                inter = d_ref - d_with
                 dk[f"{s}|{r}"] = inter
-                ent = {"r2_D": r2_te(y_te_d, pred), "ci95": D.ci(dr_d[f"{s}|{r}"]), "alpha": alpha,
-                       "val_mse_by_alpha": curve}
+                ent = {"r2_D": r2_with, "ci95": D.ci(d_with), "alpha": alpha, "val_mse_by_alpha": curve}
                 ent["interference"] = t2["reference"][str(r)]["r2_D"] - ent["r2_D"]
                 ent["interference_ci95"] = D.ci(inter)
                 t2["with_B"][s][str(r)] = ent
                 log(f"T2 {ftype} k={k} r={r} {s:8s}: R2_D ref {t2['reference'][str(r)]['r2_D']:.4f} "
                     f"with B {ent['r2_D']:.4f} interference {ent['interference']:+.4f} {ent['interference_ci95']} "
-                    f"(alpha ref {ref[r][1]:g}, with {alpha:g})")
+                    f"(alpha ref {a_ref:g}, with {alpha:g})")
         rk["t2"] = t2
         res["by_k"][str(k)] = rk
         draws[k] = dk
-        del fx_tr, fx_trva, fd_tr, fd_trva, cx_tr, cx_trva, px_va, px_te, pd_va, pd_te, y_va, y_te
+        del fx_tr, fx_trva, fd_tr, fd_trva, cx_tr, cx_trva, cd_tr, cd_trva, px_va, px_te, pd_va, pd_te
+        del y_va, y_te, y_te_d, y_te_b  # the slices keep y_te alive
 
     # Averages over k (point values averaged; CIs from per-draw averages).
     kk = [str(k) for k in ks]
@@ -382,21 +395,28 @@ def main():
     t0 = time.time()
     log = lambda m: print(f"[target {time.time() - t0:6.0f}s] {m}", flush=True)
     args.encoders = [args.base, args.partner]
-    feats, _, _, split, index, meta, files = D.load(args)
-    groups = np.repeat(np.arange(len(index)), [n for _, _, n in index])  # demo id per frame
-    counts = {s: int((split == s).sum()) for s in ("train", "val", "test")}
-    log(f"{len(split)} frames, {len(index)} demos from {len(files)} files, split {counts}")
-    res = {"suite": args.suite, "files": files, "base": args.base, "partner": args.partner,
-           "encoders": {e: meta[e] for e in args.encoders}, "git_commit": D.git_commit(),
-           "config": {"prereg": "LOG 2026-10-21 (i) as amended by (j)", "ks": args.ks, "ranks": args.ranks,
-                      "primary_rank": args.ranks[0], "scalings": SCALING_DOC, "primary_scaling": SCALINGS[0],
-                      "types": args.types, "primary_type": args.types[0], "alphas": D.ALPHAS, "seed": args.seed,
-                      "n_boot": args.n_boot},
-           "n_frames": len(split), "split_frames": counts, "types": {}}
+    res = None
     for t in args.types:
+        tl = time.time()
+        feats, _, _, split, index, meta, files = D.load(args, types=(t,))  # one feature type in memory at a time
+        log(f"loaded {t} features in {time.time() - tl:.0f}s")
+        if res is None:
+            groups = np.repeat(np.arange(len(index)), [n for _, _, n in index])  # demo id per frame
+            counts = {s: int((split == s).sum()) for s in ("train", "val", "test")}
+            log(f"{len(split)} frames, {len(index)} demos from {len(files)} files, split {counts}")
+            res = {"suite": args.suite, "files": files, "base": args.base, "partner": args.partner,
+                   "encoders": {e: meta[e] for e in args.encoders}, "git_commit": D.git_commit(),
+                   "config": {"prereg": "LOG 2026-10-21 (i) as amended by (j)", "ks": args.ks, "ranks": args.ranks,
+                              "primary_rank": args.ranks[0], "scalings": SCALING_DOC, "primary_scaling": SCALINGS[0],
+                              "types": args.types, "primary_type": args.types[0], "alphas": D.ALPHAS,
+                              "seed": args.seed, "n_boot": args.n_boot},
+                   "n_frames": len(split), "split_frames": counts, "types": {}}
+            split0, index0 = split, index
+        assert np.array_equal(split, split0) and index == index0, f"{t}: demo index differs between loads"
         res["types"][t] = run_type(feats, split, index, groups, args.base, args.partner, t, args.ks, args.ranks,
                                    args.n_boot, args.seed, log)
         res["frames_by_k"] = {k: v["frames"] for k, v in res["types"][t]["by_k"].items()}
+        del feats
     prim = res["types"][args.types[0]]["k_mean"]["t2"][SCALINGS[0]][str(args.ranks[0])]
     res["primary"] = {"definition": f"interference under {SCALINGS[0]}, r = {args.ranks[0]}, {args.types[0]}, "
                                     f"mean over k in {args.ks}", "interference": prim["interference"],

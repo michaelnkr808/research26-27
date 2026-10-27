@@ -145,8 +145,8 @@ def main():
     split7 = np.repeat(np.where(np.arange(50) < 30, "train", np.where(np.arange(50) < 40, "val", "test")), lengths)
     feats = {e: {t: {c: np.cumsum(rng.normal(size=(nf, dim)), 0).astype(np.float32) / 10 for c in D.CAMS}
                  for t in ("global", "mean")} for e, dim in (("dinov3", 12), ("partner", 20))}
-    res = T.run_type(feats, split7, index, groups, "dinov3", "partner", "global", T.KS, [4, 8, 64], 200, 0,
-                     lambda m: None)
+    res = T.run_type({e: dict(ev) for e, ev in feats.items()}, split7, index, groups, "dinov3", "partner", "global",
+                     T.KS, [4, 8, 64], 200, 0, lambda m: None)  # run_type consumes its feature type; feats is reused below
     json.dumps(res)
     for k in T.KS:
         t, _ = T.shift_rows(index, k)
