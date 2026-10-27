@@ -363,3 +363,7 @@
 **Found (verified, Planning Limits appendix via fetch):** its exact-dynamics control scores in state space, not embedding space; no oracle-embedding condition; no code or data release mentioned. NGC (2610.25013) abstract shows no oracle-embedding experiment either.
 **Not done:** no Google Docs editor connector, so the docs can't be edited in place by the agent. P3's numbering needs a manual fix or a re-upload.
 **Next:** User reads the P2/P3 papers and decides which two go to the mentor with P1.
+
+## 2026-10-27 (c) [agent] (P2 and P3 moved to their own directions)
+**Did:** Created `../world-model-embedding-choice/` (P2) and `../world-model-planning-horizon/` (P3) from `_template/`, and moved their proposal HTML there. P1 stays in `writing/proposals-2026-10-27/`.
+**Next:** unchanged (user reads, picks what goes to the mentor; E2 target-diagnostics Job still awaiting go-ahead).
