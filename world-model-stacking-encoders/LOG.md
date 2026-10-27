@@ -432,3 +432,13 @@
 **Risk (speculative):** each pair starts with a few minutes of copy/load at low memory and CPU; a 10-min portal check could land there. Much shorter than try 1's 12-min in-place loads.
 **Resources:** local CPU ~1.5 h (probe, swapping). Cluster: none.
 **Next:** ask the user before each step: (1) delete and recreate ConfigMap `stacking-encoders-target-src` from `src/` at 52d1226; (2) pre-checks per RUN.md (CPU/memory capacity on Prometheus for 2 CPU / 14Gi, `michael-persistent` free); (3) submit; watch RSS on Prometheus and the staging times in the log; check the Violations page at ~35 min.
+
+## 2026-10-27 (i) [agent] (target-side Job try 2 submitted and running; deadline extended to 16 h)
+**Did:** With user approval for each step: deleted and recreated ConfigMap `stacking-encoders-target-src` (read back, byte-identical to `src/` at 52d1226); pre-checks clean (`michael-persistent` mounted by no pod, both PVCs Bound, 19 untainted affinity nodes with ≥ 2.4 CPU / 16 GiB free on Prometheus); submitted `job.yaml` 21:49:44Z at 567413d. Pod `stacking-encoders-target-diag-pnkkm` Running 21:50:04Z on node-2-10.sdsc.optiputer.net. With user approval, patched the live Job `activeDeadlineSeconds` 28800 → 57600 (~22:24Z); `job.yaml` updated to match.
+**Found (verified, Job log and public Prometheus at pod age ~28 min):**
+- Staging fixed the idle load: dinov3 4.4G copied in 41 s (CephFS), siglip2 4.4G in 210 s (RBD); feature load 3 s (try 1: 737 s). Split 38,464 / 12,416 / 12,848, same as try 1.
+- D+L: max RSS 7.2 GiB (try 1 died above 10 GiB on this pair); RSS min 3.7 GiB over 20 min (NRP floor 2.8 GiB = 20% of 14Gi); CPU 1.67 cores avg (84% of request).
+- Speed: one D+L block (global, k = 4) took ~13 min (fits 131 s + T1/T2 523 s); the Mac took ~11.5 min for a D+R block, ~4x more work, so this node runs the linear algebra ~4x slower.
+- speculative (dim³ extrapolation from the D+L time): D+L, D+S ~70 min each, D+G ~3.5 h, D+R ~4.5 h; ~11 h total, past the 8 h cap, which would have cut D+R (last). Hence the 16 h deadline; expected finish ~09:00Z 2026-10-28. An 8-CPU resubmit was considered and not chosen: only 1 untainted affinity node had ≥ 9.6 CPU free.
+**Not done:** Violations page not checked (needs user login). No interpretation of partial numbers (outcome rule needs all 4 pairs).
+**Next:** watch via Prometheus (RSS on D+R vs the 16Gi limit); collect the log and 4 JSONs within 24 h of finish (RUN.md step 7); ask before cleanup; write the experiment README with the (i) outcome rule.

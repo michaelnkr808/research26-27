@@ -17,7 +17,7 @@ metadata:
   namespace: aria-world
 spec:
   backoffLimit: 1
-  activeDeadlineSeconds: 28800        # 8 h hard cap (includes Pending). Estimate ~3 h at 2 CPU, up to ~6 h if nodes are 2x slower (speculative)
+  activeDeadlineSeconds: 57600        # 16 h. Submitted at 28800 (8 h); patched live to 57600 at 2026-10-27 ~22:24Z: cluster ~4x slower than the Mac, ~11 h projected (LOG (i))
   ttlSecondsAfterFinished: 86400      # safety net; delete manually after collecting logs
   template:
     spec:
