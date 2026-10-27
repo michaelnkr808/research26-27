@@ -45,3 +45,10 @@
 - Our tally tested encoders only as inputs, which is why nothing flagged D+R. Proposed H-E (target-side interference) and pre-registered T0/T1/T2 tests, then amended them to per-source losses after reading the PDF.
 - Wrote the implementation handoff. The implementation agent has since built the script and tests (commits 2e03e18..acc9d0e).
 - See: stacking-encoders/LOG.md (2026-10-21 (i), (j)), stacking-encoders/experiments/2026-10-21-target-diagnostics/PLAN.md, stacking-encoders/writing/hypotheses-draft.md (top section)
+
+## 2026-10-27 — stacking-encoders: three research proposals for the mentor (Google Docs)
+
+- Wrote the mentor's 6-section proposal for stacking encoders, and found prior work that narrows our novelty claim: KAGES (2026) already picks frozen encoders to fuse by marginal gain, so what stays ours is encoders as prediction targets inside a WAM. Also OSBORN, and ReWAM's feature calibration. Removed a ReWAM "+12.2 points" number that came from a search snippet.
+- Scouted world-model and embedding papers (the mentor's reading list plus about 25 checked on arXiv) and wrote two more strong candidate proposals: which embedding a latent world model should plan in (controllable share), and why latent world models only plan a few steps ahead (oracle-embedding decomposition). They got their own folders, `world-model-embedding-choice/` and `world-model-planning-horizon/`.
+- Moved from Claude Docs to the user's own Google Docs (school Drive). Each proposal is now a one-page doc of about 600 words (same link) plus a separate "full notes" doc. Nothing was run on the cluster.
+- See: stacking-encoders LOG 2026-10-25 to 2026-10-27 (d) (folder renamed by the user to world-model-stacking-encoders/, not yet committed), world-model-embedding-choice/README.md, world-model-planning-horizon/README.md
