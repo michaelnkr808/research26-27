@@ -386,3 +386,8 @@
 - Tang et al.'s gradient-alignment analysis came from a search snippet, not the abstract; not used in the doc.
 **Not done:** the doc is now ~800 words before references (was ~620), over the ~1-page target. The full-notes doc and `references.bib` are not updated. ReWAM (2609.38163) is left in full notes only.
 **Next:** User reviews the doc's Related works and decides whether to trim back to one page. Read PHI-S in full before the meeting (the mentor may ask how H-E differs from it). E2 target-diagnostics Job still awaits go-ahead.
+
+## 2026-10-27 (f) [agent] (mentor meeting outcome; run spec for the target-side diagnostics)
+**Mentor feedback (user report, 2026-10-27):** the user presented the proposals; the mentor advised focusing on the dataset/benchmark, learning LIBERO well, and working out how stacking encoders relates to the benchmark. The user will make their own slides from now on, to understand the content better.
+**Did:** Wrote `experiments/2026-10-21-target-diagnostics/RUN.md`, a step-by-step handoff to run the drafted E2 Job (ask before ConfigMap, submit, cleanup). verified (`git rev-parse`): the three src files at HEAD are identical to b68ba54, so the manifest's `SRC_GIT_COMMIT` still holds after the rename. Nothing run; no cluster action.
+**Next:** The user passes `RUN.md` to the implementation agent. Separately, the user studies LIBERO (suites, tasks, demos, how success rate is measured, how LIBERO-Plus perturbs it) and how the encoder-combo results connect to it.
