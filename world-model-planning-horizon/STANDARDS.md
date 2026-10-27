@@ -21,7 +21,7 @@
 - Known pitfalls: the scoring rule changes between conditions (b) and (c) by design, so keep every other setting identical; candidate distribution changes encoder rankings (Planning Limits appendix), so fix it before seeing results; rendering must match the training image pipeline (resolution, crop).
 
 ## Tools and environment
-- Languages, libraries, hardware: Python; reuse `../stacking-encoders/src/extract_features.py` (encoder loaders) and `../stacking-encoders/src/diagnostics.py` (ridge probes, demo-level bootstrap) where possible.
+- Languages, libraries, hardware: Python; reuse `../world-model-stacking-encoders/src/extract_features.py` (encoder loaders) and `../world-model-stacking-encoders/src/diagnostics.py` (ridge probes, demo-level bootstrap) where possible.
 - Environment file: TBD
 - Experiment tracker (W&B / MLflow / local logs): local JSON logs per run, as in stacking-encoders (TBD)
 - Compute budget (GPU-hours / API $): **not set yet.** Set one before the first GPU run (`07`). Until then, any GPU Job is a stop-and-ask gate.

@@ -23,4 +23,4 @@ Latent world models only pick good actions for goals a few steps away. Planning 
 - `STANDARDS.md`: topic rules
 - `LOG.md`: research log
 - `literature/references.bib`: references (checked at arXiv abstract level unless noted)
-- Related directions: `../world-model-embedding-choice/` (same data and encoders), `../stacking-encoders/` (encoder loaders and probe code)
+- Related directions: `../world-model-embedding-choice/` (same data and encoders), `../world-model-stacking-encoders/` (encoder loaders and probe code)

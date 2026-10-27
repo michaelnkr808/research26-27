@@ -21,7 +21,7 @@
 - Known pitfalls: splitting probes by frame instead of trajectory (leakage); encoder dimension differences (reduce to a matched dimension, tune ridge alpha on validation); CLS vs patch features are different encoders for this purpose (DINO-WM Table 2).
 
 ## Tools and environment
-- Languages, libraries, hardware: Python; reuse `../stacking-encoders/src/extract_features.py` (encoder loaders) and `../stacking-encoders/src/diagnostics.py` (ridge probes, demo-level bootstrap) where possible.
+- Languages, libraries, hardware: Python; reuse `../world-model-stacking-encoders/src/extract_features.py` (encoder loaders) and `../world-model-stacking-encoders/src/diagnostics.py` (ridge probes, demo-level bootstrap) where possible.
 - Environment file: TBD
 - Experiment tracker (W&B / MLflow / local logs): local JSON logs per run, as in stacking-encoders (TBD)
 - Compute budget (GPU-hours / API $): **not set yet.** Set one before the first GPU run (`07`). Until then, any GPU Job is a stop-and-ask gate.

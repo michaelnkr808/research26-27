@@ -11,3 +11,6 @@
 ## 2026-10-27 (b) [agent] (one-page version)
 **Did:** User asked for shorter proposals (the full draft was about 1,700 words). Wrote `writing/proposal-short-2026-10-27.md` (about 600 words, same six sections, no confidence labels; every number is one already checked in the full notes). Saved the long version as a separate Google Doc ("full notes") and rewrote the original Google Doc to the short version through the Google Docs connector (guarded by revision ID; read back and checked: headings, numbered lists, links). Links in README.
 **Next:** unchanged.
+
+## 2026-10-27 (rename) [agent]
+**Did:** Folder renamed by the user from `stacking-encoders/` to `world-model-stacking-encoders/` (2026-10-27). Repo paths in README/STANDARDS/references were updated; older entries above keep the old path (append-only). Cluster resource names (PVC `stacking-encoders-features`, Secret `stacking-encoders-hf`, ConfigMaps, Job names, `/persistent/stacking-encoders/` and `/mnt/features/stacking-encoders/` paths) are unchanged on purpose: they name real objects on Nautilus.

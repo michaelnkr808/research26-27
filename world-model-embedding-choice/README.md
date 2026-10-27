@@ -23,4 +23,4 @@ A latent world model (e.g. DINO-WM) plans by imagining embeddings of future fram
 - `STANDARDS.md`: topic rules
 - `LOG.md`: research log
 - `literature/references.bib`: references (checked at arXiv abstract level unless noted)
-- Related direction: `../stacking-encoders/` (shares encoder loaders and probe code: `src/extract_features.py`, `src/diagnostics.py`); `../world-model-planning-horizon/` (shares data and encoders)
+- Related direction: `../world-model-stacking-encoders/` (shares encoder loaders and probe code: `src/extract_features.py`, `src/diagnostics.py`); `../world-model-planning-horizon/` (shares data and encoders)

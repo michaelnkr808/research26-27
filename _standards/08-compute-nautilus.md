@@ -124,7 +124,7 @@ Sources: `userdocs/storage/ceph.md`, `storage/intro.md`, `storage/purging.md`, `
 
 **Not in the docs** (checked 2026-10-19): CephFS quotas per namespace, expected throughput numbers, or any backup or snapshot guarantee. We haven't measured throughput on our namespace yet.
 
-[lab] First planned use: `stacking-encoders/data/pvc-features-cephfs.yaml` (100Gi `rook-cephfs`, shared feature cache). As of 2026-10-19 it is drafted but not created.
+[lab] First planned use: `world-model-stacking-encoders/data/pvc-features-cephfs.yaml` (100Gi `rook-cephfs`, shared feature cache). As of 2026-10-19 it is drafted but not created.
 
 ## Moving data
 - `kubectl cp` is **for small files only**. It goes through the API server, and more than a few MB can hurt the cluster [NRP]. [lab] In practice it drops streams above about 10 MB.
