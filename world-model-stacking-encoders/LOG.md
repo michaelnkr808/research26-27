@@ -515,3 +515,11 @@
 - Scope (open): a workshop paper needs more combos and a predictive-performance evaluation. Candidate low-cost step: retrospective check of our diagnostics vs the paper's 16 composition results (gain vs parent composition), labelled exploratory because configs share encoders and have one checkpoint each. Needs V-JEPA 2.1, UniTok, HRP and multi-encoder parent features; not started.
 **Verified:** reviewer's facts match our repo: Table 10 seeds are evaluation seeds of one checkpoint (CSV header, LOG 2026-10-18/19); D+R 78.59 (CSV). Nothing run.
 **Next:** unchanged from the previous entry (stage 2 / PLAN step 4 with a go-ahead per Job). Separately, user decides whether to add the 16-combo retrospective check to the plan.
+
+## 2026-10-28 (c) [agent] (paired-analysis code for the amended outcome rule; no cluster work)
+**Note:** two entries above are both labelled 2026-10-28 (b) (stage 1 code, then the reviewer amendment from another session). Left as is (append-only).
+**Goal:** user-pasted brief after the reviewer amendment (116d4ed): eval bookkeeping and a paired-analysis script with synthetic tests; training unchanged; the 16-combo retrospective check is out of scope.
+**Did:** read the amended PLAN framing/outcome rule, decision 003 amendment and LOG 2026-10-28 (b). Grepped our new code and PLAN text for the withdrawn "paper noise" framing: none. Added a proxy-replication note to the `proxy_wam.py` docstring. New `src/lp_eval.py` (seeded stratified LIBERO-Plus subset with a content hash; per-rollout JSON-line records; paired per-seed D+R − D analysis; secondary per-config, per-category, clean LIBERO) and `src/test_lp_eval.py`. PLAN section "Eval bookkeeping".
+**Found (verified):** LIBERO-plus `4976dc3` `task_classification.json` (sha256 faa87cce3e3b…): 4 suites × 7 categories = 28 cells, 10,030 episodes, ids unique per suite, counts match PLAN step 1. `test_lp_eval.py`: 6/6 pass on the first run (planted drops recovered exactly; identical configs exactly 0; bad rows rejected). A trial subset at 10 per cell on the real file gives 280 episodes (scratchpad only, not the final subset; N waits for the step 5 timing).
+**Not done:** rollout code (stage 3) that writes the records; the final subset file.
+**Next:** unchanged: stage 2 (PLAN step 4) with a go-ahead per Job; then stage 3 rollout code writes `lp_eval` records.

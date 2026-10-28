@@ -1,5 +1,9 @@
 """Proxy world action model for the calibration round (decision 003; experiments/2026-10-27-proxy-calibration/PLAN.md).
 
+This round is a proxy replication (decision 003 amendment, 2026-10-28): results from this model are about the proxy and
+decide whether a higher-fidelity, multi-seed WAM replication is worth running; they can't show what happened in the
+paper's model.
+
 A small copy of the paper's default WAM (liu2026what Sec. 3.1, App. B.1 joint video-action denoising) built from
 Fast-WAM's own modules (FastWAM 7faa711, MIT): FastWAMJoint = video expert (WanVideoDiT) + action expert (ActionDiT) in
 a mixture of transformers with joint attention; video tokens attend to video only (first latent frame attends only to

@@ -147,6 +147,13 @@ Secondary: each config's LIBERO-Plus success (mean over seeds), per category; cl
    - Deltas near zero or mixed in sign → "the proxy does not reproduce the drop". This does **not** establish that the paper's result was training noise: the harm may need the pretrained video prior or the full-size model. It argues for the higher-fidelity multi-seed WAM replication if the question still matters.
 3. Overlap or feature interference (C-RADIOv4 distills DINOv3, SigLIP 2, SAM 3) stays a hypothesis in any writeup, not the explanation.
 
+## Eval bookkeeping for the paired analysis (agent, 2026-10-28; after the reviewer amendment)
+`src/lp_eval.py` + `src/test_lp_eval.py` (6 synthetic checks pass):
+- `subset`: one fixed LIBERO-Plus subset, up to N episodes per (suite, category) cell (28 cells), one seeded generator, keyed (suite, id) from LIBERO-plus `4976dc3` `task_classification.json` (sha256 `faa87cce…`; not committed: the repo has no LICENSE). Written once with a `subset_id` hash and reused by every checkpoint. N set after the step 5 timing.
+- Rollout code (stage 3) must write one JSON line per rollout: benchmark, suite, episode_id, category, config, train_seed, eval_seed, checkpoint, subset_id, success. Aggregates are never the only output.
+- `analyze`: primary = per training seed, per-episode paired success(D+R) − success(D) on the subset, its mean and discordant counts; the three seed deltas side by side. Secondary: per-config success per seed and mean, per category; clean LIBERO as context. Refuses (fails loudly on) missing, duplicate or foreign-subset rows instead of intersecting. Prints the proxy-replication framing with every report.
+- Checks: planted per-seed drops come out exactly (e.g. −2/n, −5/n, +1/n); identical configs give exactly 0; pairing by seed; secondary numbers on a hand case; CLI end to end.
+
 ## Order of work
 1. Read LIBERO-Plus repo and Fast-WAM data docs (no compute). Resolve the open items above.
 2. Write the proxy training code + synthetic tests locally.
