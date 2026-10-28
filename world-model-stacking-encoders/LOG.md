@@ -449,3 +449,7 @@
 **Resources (verified, Prometheus + Job status):** ~11.5 CPU-h, no GPU; peak RSS 12.85 GiB (D+R), within the 12.5–13 GiB estimate (LOG (h)).
 **Not done:** README key findings not touched (verification gate, needs user OK). Job and ConfigMap still exist (cleanup needs user OK; Job TTL deletes it ~24 h after finish). Violations page not checked by the agent.
 **Next:** explain the result to the user (RUN.md step 10); ask before cleanup; user decides whether this goes into key findings and what it means for the LIBERO focus.
+
+## 2026-10-27 (k) [agent] (cleanup; key findings updated)
+**Did:** With user OK: deleted Job `stacking-encoders-target-diag` and ConfigMap `stacking-encoders-target-src`; verified nothing of ours is left in `aria-world` except Secret `stacking-encoders-hf` and the two PVCs. With user OK: added the target-side result to README key findings and noted that neither role shows the D+R harm.
+**Next:** decide with the mentor where this leaves the stacking-encoders question given the LIBERO focus; candidate next step (not approved): look at D+R by LIBERO-Plus perturbation category (ask the authors, or probe perturbed frames).
