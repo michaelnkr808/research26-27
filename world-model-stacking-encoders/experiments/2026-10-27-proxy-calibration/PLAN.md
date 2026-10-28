@@ -138,13 +138,20 @@ Replaces `src/proxy_policy.py` (kept for history; its smoke results above are su
 
 ## Pre-registered outcome rule
 (Amended 2026-10-28 before any training run, after reviewer feedback, user OK. The original text is in git at 44d26c1. Changes: the paired per-seed comparison became the primary analysis, and the "within seed spread" branch no longer points to paper noise.)
+(**Locked 2026-10-28 (f), user OK, after a third and fourth reviewer round, before the pilot.** The thresholds below do not change after the pilot or any later result. The previous wording, "D+L ≥ D − (one seed sd)" and an open minimum drop, is in git at 64edf4e.)
 
-**Primary analysis:** paired D+R − D on LIBERO-Plus, the same stratified episode subset for every checkpoint, computed per training seed (seed s of D+R vs seed s of D). The **three training-seed deltas are reported individually**, with per-episode paired differences behind each. Means and CIs are secondary. Three seeds can show whether a drop is large and consistent in sign; they are not enough for a strong claim about training-seed variance.
-Secondary: each config's LIBERO-Plus success (mean over seeds), per category; clean LIBERO as context (the paper reports it near saturation).
-1. **Calibration passes** if D > none and D+L ≥ D − (one seed sd). If it fails, the proxy doesn't track the paper and the D+R comparison isn't interpreted.
-2. **If calibration passes:**
-   - All three D+R − D deltas negative and each at least a minimum drop fixed before any training run (**threshold open: user sets it before the 15-run round**; amended 2026-10-28 (e), replacing "beyond the seed spread of the singles", which is unstable with 3 seeds) → the harm reproduces in the proxy. Reported as a small screening result, with per-seed discordant-episode counts. Then compare clean vs LP and per category to split explanations (2) and (3). This supports a higher-fidelity multi-seed WAM replication to check it at the paper's scale.
-   - Deltas near zero or mixed in sign → "the proxy does not reproduce the drop". This does **not** establish that the paper's result was training noise: the harm may need the pretrained video prior or the full-size model. It argues for the higher-fidelity multi-seed WAM replication if the question still matters.
+**The pilot is for sizing only** (model size, LIBERO-Plus subset size N, GPU count). Its success rates do not count toward any result and cannot change this rule. N is chosen so that episode-level noise in a per-seed paired mean is small next to the 2.7-point threshold.
+
+**All comparisons are paired per training seed:** for configs A and B, Δ_s(A − B) = mean over the fixed LIBERO-Plus subset of success(A, seed s) − success(B, seed s), in percentage points, s = 0, 1, 2. Every report shows the three Δ_s individually and their average. Confidence intervals over episodes describe episode sampling only and are never treated as evidence about training-seed variability. Three seeds are a small screening result, not an estimate of training variance.
+Secondary: each config's LIBERO-Plus success per seed and averaged, per category; clean LIBERO as context (the paper reports it near saturation).
+
+1. **Calibration** (a minimum check that the proxy responds to the controls, not proof that it is a good enough copy of the paper's model; the missing Wan 2.2 prior still limits what it can show). Passes only if both hold:
+   - (a) D vs none: Δ_s(D − none) > 0 for all three seeds, and their average ≥ +2.7 points.
+   - (b) D+L vs D, non-inferiority: average Δ_s(D+L − D) ≥ −1.35 points (half the harm threshold, so a loss that would count as harm for D+R can never count as "doesn't hurt" for D+L). The paper's +1.8 for D+L does not set this margin.
+   If either fails: **"don't interpret the D+R comparison from this proxy"**, not "D+R is fine" and not "the proxy is useless". (Known risk: the 1.35 margin is tight with 3 seeds, so noise alone can fail (b); that fails safe.)
+2. **If calibration passes,** primary question, D+R vs D:
+   - **Substantial proxy effect** if Δ_s(D+R − D) < 0 for all three seeds **and** their average ≤ −2.7 points (half the paper's D+R − D drop of −5.41, Table 10 vs Table 1). Each seed's result shown, with discordant-episode counts. This is a **trigger for the higher-fidelity multi-seed WAM replication, not proof that the effect is statistically established.** Then compare clean vs LP and per category to split explanations (2) and (3).
+   - Otherwise (any seed ≥ 0, or average above −2.7) → "the proxy does not show a substantial effect". This does **not** establish that the paper's result was training noise: the harm may need the pretrained video prior or the full-size model.
 3. Overlap or feature interference (C-RADIOv4 distills DINOv3, SigLIP 2, SAM 3) stays a hypothesis in any writeup, not the explanation.
 
 ## Eval bookkeeping for the paired analysis (agent, 2026-10-28; after the reviewer amendment)
@@ -158,7 +165,7 @@ Secondary: each config's LIBERO-Plus success (mean over seeds), per category; cl
 1. Read LIBERO-Plus repo and Fast-WAM data docs (no compute). Resolve the open items above.
 2. Write the proxy training code + synthetic tests locally.
 3. Local smoke test on libero_goal features (CPU or Mac, tiny).
-4. **Ask:** extraction Jobs for 3 suites × D, R, L. Before full extraction (added 2026-10-28 (e)): view frames from both cameras in all four suites of `yuanty/LIBERO-fastwam` to confirm they are upright and need no rotation (one episode, one camera checked so far). Volume ~1 TB, not ~760 GB.
+4. **Ask:** extraction Jobs for 3 suites × D, R, L. Before full extraction (added 2026-10-28 (e)): view frames from both cameras in all four suites of `yuanty/LIBERO-fastwam` to confirm they are upright and need no rotation (one episode, one camera checked so far). Volume ~1 TB, not ~760 GB. Headroom checked 2026-10-28 (f): `yuanty/LIBERO-fastwam` is 9.4 GB in total (lerobot_v30 4.7 GB; HF API tree listing), and `extract_fastwam.py` writes one episode at a time atomically (`.tmp` then rename, no merge step), so temporary files are one episode; ≈ 240 GB stays free after the ≈ 756 GB of caches.
 5. **Ask:** 1 pilot training run + timed rollouts (clean and LIBERO-Plus) on 1 GPU, to size everything. Before any rollout counts: pass one simulator frame through our rollout preprocessing (180° rotation) and compare it side by side with a training frame of the same task (added 2026-10-28 (e)).
 6. **Ask:** the 15 training runs and eval.
 

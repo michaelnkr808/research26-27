@@ -539,3 +539,14 @@
 - Orientation: added a check before full extraction (both cameras, all four suites) and a sim-vs-training frame side-by-side before rollouts count. So far one episode, one camera checked by eye.
 - Doc numbering: inserting the orientation step shifted the execution list; pre-approved steps now read 1–4 (volume, orientation check, extraction, pilot) and the user approves step 5 (full round).
 **Next:** user sets the minimum-drop threshold (before the 15 runs, not blocking stage 2). Stage 2 starts with a ~1 TB volume and the training-frame orientation check.
+
+## 2026-10-28 (f) [agent] (decision rule locked before the pilot; PLAN + Google Doc)
+**Goal:** User OK'd locking the outcome rule after two more reviewer rounds (reviewer proposed the D+R rule and asked for fixed margins on both calibration checks).
+**Did:** Rewrote the PLAN outcome rule (previous wording in git at 64edf4e), updated the Google Doc in place (same link) and the repo mirror; read the doc back through Drive.
+- Locked before the pilot; the pilot is sizing only (model size, subset N, GPUs); its success rates don't count. N chosen so episode noise is small next to 2.7 points.
+- All comparisons: paired per-seed differences, each seed shown plus the average; episode-level CIs not treated as training-seed evidence.
+- Calibration (minimum check that the proxy responds to controls, not proof of a good copy): (a) D − none > 0 in all three seeds and average ≥ +2.7; (b) D+L − D average ≥ −1.35 (non-inferiority, half the harm threshold, so a control loss that counts as harm can't count as "doesn't hurt"). Fail → "don't interpret D+R from this proxy".
+- D+R (reviewer's rule): all three seeds negative and average ≤ −2.7 (half of −5.41, Table 10 D+R 78.59 vs Table 1 D 84.0) → "substantial proxy effect", a trigger for the higher-fidelity run, not statistical proof.
+- Storage headroom verified: `yuanty/LIBERO-fastwam` 9.4 GB total (HF API tree), extraction writes per episode atomically with no merge step; ≈ 240 GB free on 1 TB after caches.
+**Not done:** `src/lp_eval.py analyze` computes the D+R − D pairing but not the calibration pairs (D − none, D+L − D) or the locked pass/fail rule. Needs a small code change + synthetic tests before results exist.
+**Next:** implement the locked rule in `lp_eval.py` (calibration pairs, thresholds as constants, verdict printed with the framing); then stage 2 as planned.
