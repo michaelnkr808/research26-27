@@ -66,3 +66,11 @@
 - Wrote RUN.md, the spec the implementation agent used for the target-side Job (that run is in the entry above).
 - The user read LIBERO and LIBERO-Plus. We inspected a real libero_goal demo file and found from the paper's Table 1 that encoders mostly buy robustness to visual perturbations. The combo table gives only totals, so we don't know where D+R loses.
 - See: world-model-stacking-encoders/LOG.md 2026-10-27 (g), experiments/2026-10-21-target-diagnostics/RUN.md
+
+## 2026-10-28 — world-model-stacking-encoders: target-side test run (fails), proxy policy code started
+
+- Fixed the OOM-killed target-diagnostics Job (lower-memory code with bit-identical outputs, features staged to local disk, sized with tracemalloc) and ran it: 5 h 45 m, peak 12.85 GiB. C-RADIOv4 is not the largest target-side interference (VGGT-Ω is), so H-E fails the pre-registered rule. In key findings with user OK; Job and ConfigMap deleted.
+- Read the paper's evaluation: it trains once and reports only LIBERO-Plus totals for combos. Decision 003 (another session): multi-seed proxy policy.
+- Proxy PLAN steps 1–3: the paper's 1,712 episodes are Fast-WAM's `yuanty/LIBERO-fastwam` (512→224, MuJoCo 3.3.2), not our HDF5; LIBERO-Plus is 10,030 × 1 trial. Wrote `src/proxy_policy.py` (9 checks pass) and smoke-tested it locally with real DINOv3 + C-RADIOv4 (Mac now logged in to HF).
+- Open for the user: pixel stream in every config, text encoder choice; then step 4 extraction Jobs on a go-ahead.
+- See: world-model-stacking-encoders/experiments/2026-10-21-target-diagnostics/README.md, experiments/2026-10-27-proxy-calibration/PLAN.md, LOG.md 2026-10-27 (h)–(n) and 2026-10-28
