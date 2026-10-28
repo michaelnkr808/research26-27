@@ -1,0 +1,16 @@
+# Proxy-replication cache (RUN.md step 1): Fast-WAM's LIBERO data (~5 GB), Wan 2.2 VAE + umT5-XXL weights (~13 GB),
+# VAE clip latents (~31 GB), DINOv3 / C-RADIOv4 / SigLIP 2 grids (~223 / 251 / 251 GB), T5 cache, checkpoints, rollouts.
+# 1Ti for headroom (LOG 2026-10-28 (e)). CephFS (ReadWriteMany): several extraction and training pods read it at once;
+# one writer per file. rook-cephfs = US West. Not archival: results also go to the repo. Pre-approved (RUN.md).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: stacking-encoders-proxy
+  namespace: aria-world
+spec:
+  storageClassName: rook-cephfs
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Ti

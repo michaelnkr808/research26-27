@@ -1,0 +1,73 @@
+# RUN.md step 5 (1 GPU, pre-approved; first real run of t5_cache.py). umT5-XXL encoder (bf16, 11.4 GB) on the training
+# instructions from the suite meta (+ an optional extra list: rerun at stage 3 with the LIBERO-Plus instructions).
+# Short (~10-20 min expected, speculative): mostly loading 11.4 GB to host RAM then GPU, so memory is sized for the
+# load peak; pods under 30 min are not checked by NRP. Ampere+ for bf16.
+# Follows _standards/08: Job, real command that exits, no sleep, 1 GPU, limits within 20%, no tolerations.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-t5
+  namespace: aria-world
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 5400         # 1.5 h cap
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090, NVIDIA-RTX-A5000,
+                         NVIDIA-A10, NVIDIA-L40, NVIDIA-L40S, NVIDIA-RTX-5000-Ada-Generation]   # >= 24 GB
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; mkdir -p $R/logs
+          exec > >(tee -a $R/logs/t5-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          nvidia-smi
+          bash /src/setup_env.sh
+          EXTRA=""; [ -f $R/lp_instructions.txt ] && EXTRA="--extra $R/lp_instructions.txt"
+          python /src/t5_cache.py --meta $R/feats/meta --out $R/feats/t5 $EXTRA \
+            --text-encoder $R/models/models_t5_umt5-xxl-enc-bf16.safetensors --tokenizer $R/models/wan21/google/umt5-xxl
+          cat $R/feats/t5/_meta.json; ls $R/feats/t5 | wc -l
+          python - <<'PY'
+          import sys; sys.path.insert(0, "/src")
+          import numpy as np, t5_cache
+          tasks = [t for s in ["libero_spatial", "libero_object", "libero_goal", "libero_10"]
+                   for t in np.load(f"/mnt/proxy/feats/meta/{s}.npz")["tasks"].tolist()]
+          for t in sorted(set(tasks)):
+              c, m = t5_cache.load_context("/mnt/proxy/feats/t5", t)
+              assert np.isfinite(c.numpy()).all() and float(c.abs().sum()) > 0, t
+          print("checked", len(set(tasks)), "training tasks: finite, nonzero")
+          PY
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: /src}
+        resources:                    # limits within 20% of requests; host RAM sized for the 11.4 GB load
+          requests: {cpu: "2", memory: 24Gi, nvidia.com/gpu: "1", ephemeral-storage: 12Gi}
+          limits:   {cpu: "2400m", memory: 28Gi, nvidia.com/gpu: "1", ephemeral-storage: 14Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 14Gi}
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}

@@ -1,0 +1,94 @@
+# RUN.md step 4 (1 GPU, pre-approved): the "first timed shard". Writes the suite meta for all four suites, then extracts
+# 2 libero_goal episodes per source (VAE, DINOv3, C-RADIOv4, SigLIP 2) into the real cache (extraction later skips them),
+# timing each and logging GPU memory, so the full extraction (job-extract.yaml) can be sized from measured numbers
+# (memory nautilus-job-sizing-and-estimates). Ampere or newer: Fast-WAM runs in bf16 and Turing has no bf16.
+# Code: ConfigMap stacking-encoders-proxy-src (our src/ at SRC_GIT_COMMIT) + FastWAM 7faa711 (MIT, --no-deps).
+# Follows _standards/08: Job, real command that exits, no sleep, 1 GPU, limits within 20%, no tolerations.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-probe
+  namespace: aria-world
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 10800        # 3 h cap
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090, NVIDIA-RTX-A4000, NVIDIA-RTX-A5000,
+                         NVIDIA-A10, NVIDIA-L4, NVIDIA-L40, NVIDIA-L40S,
+                         NVIDIA-RTX-4000-Ada-Generation, NVIDIA-RTX-5000-Ada-Generation]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; F=$R/feats; mkdir -p $R/logs $F
+          exec > >(tee -a $R/logs/probe-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          nvidia-smi; nproc
+          bash /src/setup_env.sh
+          D=$R/data/lerobot_v30
+          for s in libero_spatial libero_object libero_goal libero_10; do
+            python /src/extract_fastwam.py --root $D/${s}_no_noops_lerobot --suite $s --source meta --out $F
+          done
+          nvidia-smi --query-gpu=timestamp,memory.used,utilization.gpu --format=csv -l 5 > $R/logs/probe-gpu.csv &
+          SMI=$!
+          FAILED=""
+          run() {  # run SOURCE DTYPE BATCH [extra args]
+            echo "=== $1 ($2, batch $3)"; T=$(date +%s)
+            if python /src/extract_fastwam.py --root $D/libero_goal_no_noops_lerobot --suite libero_goal --source $1 \
+                 --out $F --episodes 0,1 --dtype $2 --batch $3 "${@:4}"; then
+              echo "=== TIMING $1: $(( $(date +%s) - T )) s for episodes 0,1 (incl. model load)"
+            else echo "=== FAILED $1"; FAILED="$FAILED $1"; fi
+          }
+          run vae bf16 4 --vae-path $R/models/Wan2.2_VAE.safetensors
+          run dinov3 fp32 32
+          run c-radiov4 fp16 32
+          run siglip2 fp16 32
+          kill $SMI || true
+          echo "=== peak GPU memory (MiB): $(cut -d, -f2 $R/logs/probe-gpu.csv | grep -o '[0-9]*' | sort -n | tail -1)"
+          python - <<'PY'
+          import numpy as np, glob
+          for f in sorted(glob.glob("/mnt/proxy/feats/*/libero_goal/ep00000[01].npy")):
+              a = np.load(f, mmap_mode="r"); print(f, a.shape, a.dtype, bool(np.isfinite(np.asarray(a[:4], np.float32)).all()))
+          PY
+          du -sh $F/*; date -u
+          if [ -n "$FAILED" ]; then echo "=== done with failures:$FAILED"; exit 1; fi
+          echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}   # commit of the ConfigMap'd src (RUN.md step 3)
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: /src}
+        resources:                    # limits within 20% of requests; resize the full extraction from this run
+          requests: {cpu: "4", memory: 12Gi, nvidia.com/gpu: "1", ephemeral-storage: 30Gi}
+          limits:   {cpu: "4800m", memory: 14Gi, nvidia.com/gpu: "1", ephemeral-storage: 34Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 34Gi}   # pip + HF model cache (SigLIP 2-so400m ~4.5 GB, C-RADIOv4, DINOv3)
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 2Gi}

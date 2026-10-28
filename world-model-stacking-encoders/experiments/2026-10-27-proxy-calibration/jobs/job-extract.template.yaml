@@ -1,0 +1,74 @@
+# RUN.md step 6 (pre-approved): full extraction of one source over all four suites, as an Indexed Job with
+# __SHARDS__ pods (pod i takes episodes i, i+N, ... of every suite; one writer per output file). Rendered per source by
+# RUN.md step 6 from the probe's measured speed and memory (fill every __PLACEHOLDER__; keep total GPUs <= 8 across
+# all running Jobs). Resumable: episodes already on disk (with their stats) are skipped, so a retry or resubmit continues.
+# Follows _standards/08: Job, real command that exits, no sleep, 1 GPU per pod, limits within 20%, no tolerations.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-extract-__SOURCE__
+  namespace: aria-world
+spec:
+  completionMode: Indexed
+  completions: __SHARDS__
+  parallelism: __SHARDS__
+  backoffLimit: __SHARDS__            # about one retry per shard
+  activeDeadlineSeconds: __DEADLINE__
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090, NVIDIA-RTX-A4000, NVIDIA-RTX-A5000,
+                         NVIDIA-A10, NVIDIA-L4, NVIDIA-L40, NVIDIA-L40S,
+                         NVIDIA-RTX-4000-Ada-Generation, NVIDIA-RTX-5000-Ada-Generation]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; F=$R/feats; I=$JOB_COMPLETION_INDEX; mkdir -p $R/logs
+          exec > >(tee -a $R/logs/extract-__SOURCE__-$I-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          nvidia-smi
+          bash /src/setup_env.sh
+          for s in libero_spatial libero_object libero_goal libero_10; do
+            echo "=== $s shard $I/__SHARDS__"; date -u
+            python /src/extract_fastwam.py --root $R/data/lerobot_v30/${s}_no_noops_lerobot --suite $s \
+              --source __SOURCE__ --out $F --shard $I/__SHARDS__ --dtype __DTYPE__ --batch __BATCH__ __EXTRA__
+          done
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: /src}
+        resources:                    # from the probe's measured use (memory nautilus-job-sizing-and-estimates)
+          requests: {cpu: "__CPU__", memory: __MEM__, nvidia.com/gpu: "1", ephemeral-storage: 30Gi}
+          limits:   {cpu: "__CPU_LIMIT__", memory: __MEM_LIMIT__, nvidia.com/gpu: "1", ephemeral-storage: 34Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 34Gi}
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 2Gi}

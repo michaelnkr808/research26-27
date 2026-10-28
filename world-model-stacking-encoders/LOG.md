@@ -550,3 +550,15 @@
 - Storage headroom verified: `yuanty/LIBERO-fastwam` 9.4 GB total (HF API tree), extraction writes per episode atomically with no merge step; ≈ 240 GB free on 1 TB after caches.
 **Not done:** `src/lp_eval.py analyze` computes the D+R − D pairing but not the calibration pairs (D − none, D+L − D) or the locked pass/fail rule. Needs a small code change + synthetic tests before results exist.
 **Next:** implement the locked rule in `lp_eval.py` (calibration pairs, thresholds as constants, verdict printed with the framing); then stage 2 as planned.
+
+## 2026-10-28 (f) [agent] (PLAN double-checked; autonomous run set up: RUN.md, manifests, watcher; nothing submitted)
+**Goal:** user asked to double-check PLAN.md and make sure the next session (after /close and /clear) can run stage to stage on its own "unless there is some major problem".
+**Did:**
+- PLAN.md: fixed stale lines left from 2026-10-27 (status, open items already resolved in step 1, extraction scope, rollout resolution proposal now superseded by Fast-WAM's eval path, choices 1/3/7 wording, choice 4 fill, VAE grid now verified, old sizing notes marked historical, order of work and gates now point to RUN.md). No change to configs, outcome rule or design.
+- New `experiments/2026-10-27-proxy-calibration/RUN.md`: authorization (user quotes), how chaining works, stop conditions, session start, steps 1–13 (volume, download + orientation, ConfigMap, probe, T5, extraction, rollout code, sim-vs-train frame check, pilot, 15 runs, eval, analysis, report).
+- New `watch_job.sh`: waits on a Job via the public Prometheus only; exits on complete / dead / vanished / GPU idle < 40% for a pod > 35 min / never appeared. verified: dead-Job path on an existing failed vissam Job (exit 2); missing Job keeps waiting; the idle-GPU join returns matches on another namespace's GPU pods. Not verified: the success path (no completed Job of ours to test on).
+- New manifests in `jobs/`: `pvc-proxy.yaml` (1Ti rook-cephfs), `job-download.yaml` (CPU, at NRP's exempt request level; dataset @ee018b99, ModelScope weights with sha256 checks, umT5 tokenizer @37ec5126, orientation thumbnails printed into the log), `job-probe.yaml` (1 Ampere+ GPU: meta for 4 suites + 2 timed episodes per source), `job-t5.yaml`, `job-extract.template.yaml` (Indexed, filled from the probe); `src/setup_env.sh` (pinned env + FastWAM 7faa711 --no-deps). verified: YAML parses, no sleep/tolerations, embedded Python compiles, bash syntax ok, and a server-side dry run of the PVC and three Jobs was accepted (nothing created).
+- Memory updated: the auto-chain exception covers the whole round (stage 4 once the threshold is set).
+**Found:** dataset `yuanty/LIBERO-fastwam` lerobot_v30 = 4.71 GB; ModelScope sha256 for Wan2.2_VAE (0e913a2c…) and umT5-XXL enc (d92de679…), recorded in the download Job.
+**Open (user):** the minimum-drop threshold (needed before stage 4); the calibration rule still uses "one seed sd" with 3 seeds (raised in (e), not yet decided).
+**Next:** next session follows RUN.md from "Session start", then step 1 (volume).

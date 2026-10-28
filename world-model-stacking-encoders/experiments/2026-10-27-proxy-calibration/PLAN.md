@@ -1,6 +1,6 @@
 # Proxy-policy calibration round (decision 003)
 
-**Status:** steps 1–3 done 2026-10-27 (open items resolved; code + tests; local smoke test). Steps 4–6 need a go-ahead per Job. No Jobs.
+**Status (2026-10-28):** steps 1–3 done; code rebuilt on Fast-WAM ("Stage 1" below) and eval bookkeeping written. Steps 4–6 are **pre-approved by the user and run autonomously** following `RUN.md` (same folder) until a stop condition there. Open before step 6: the minimum-drop threshold (outcome rule). No Jobs yet.
 
 ## Question
 Does a small policy trained on frozen encoder features, with 3 training seeds per config, reproduce the paper's composition ordering? And is D+R worse than D alone *in the proxy* once training-seed noise is measured?
@@ -26,15 +26,15 @@ Does a small policy trained on frozen encoder features, with 3 training seeds pe
 - **Same everything across configs** except the encoder set: architecture, steps, LR, seeds 0/1/2, data order.
 
 ## Data
-- All four LIBERO suites, matching the paper's 1,712 training episodes (Fast-WAM's processed data, paper App. C.1). **Open:** we extracted libero_goal from `yifengzhu-hf/LIBERO-datasets`; need to check whether Fast-WAM's 1,712-episode set is a filtered subset of these and how to get the same list.
-- **Open: resolution.** The paper uses 224×224 per view. Rollout images must match the training images' resolution and orientation (OpenGL, rotate 180°), or the features shift between train and test.
-- Extraction: D, R, L on libero_spatial, libero_object, libero_10. Rough cost from 2026-10-18 (verified, TITAN RTX): L ~142 frames/s, R ~62 frames/s on one suite. D not timed in that Job.
+- All four LIBERO suites, matching the paper's 1,712 training episodes (Fast-WAM's processed data, paper App. C.1). Resolved in step 1: they are `yuanty/LIBERO-fastwam`, re-extracted for all four suites.
+- Resolution and orientation: resolved in step 1 and Stage 1 (224 per view; training frames already upright; rollouts rotate 180° as Fast-WAM). Checks before extraction and before rollouts in Order of work 4–5.
+- Extraction (superseded 2026-10-28): VAE, D, R, L on all four suites of Fast-WAM's data (`src/extract_fastwam.py`), sized from a timed probe (RUN.md step 4). Old reference speeds (2026-10-18, TITAN RTX, other resolution): L ~142 frames/s, R ~62 frames/s.
 
 ## Evaluation
 - **Clean LIBERO:** 4 suites × 10 tasks × N rollouts. The paper uses 50 per task (2,000). Same per seed here.
 - **LIBERO-Plus:** the paper uses 10,030 episodes × 3 eval seeds per checkpoint. For 15 checkpoints that is too much (speculative until a rollout is timed). Proposal: a fixed, stratified subset by perturbation category, the same subset for every checkpoint, sized after timing. Report per-category numbers (the paper gives none for combos).
-- Encoders run live in the rollout loop, so eval is GPU work too.
-- **Open:** LIBERO-Plus install and episode list. Not yet checked; the repo and its license need reading before anything else.
+- Encoders and the VAE run live on the current frame in the rollout loop, so eval is GPU work too.
+- LIBERO-Plus install and episode list: resolved in step 1 (below).
 
 ## Step 1 findings: open items resolved (agent, 2026-10-27; repos read at LIBERO-plus `4976dc3` 2026-01-21, FastWAM `7faa711` 2026-08-20)
 Sources: github.com/sylvestf/LIBERO-plus (README, `libero/libero/benchmark/task_classification.json`, `requirements.txt`); github.com/yuantianyuan01/FastWAM (README, `configs/data/libero_2cam.yaml`, `configs/task/libero_uncond_2cam224_1e-4.yaml`, `configs/sim_libero.yaml`, `experiments/libero/{libero_utils,eval_libero_single}.py`); HF `yuanty/LIBERO-fastwam` (README, `lerobot_v30/*/meta/info.json`); liu2026what arXiv HTML v1 Tables 6–7 and App. C.2, E.3.
@@ -51,7 +51,7 @@ Sources: github.com/sylvestf/LIBERO-plus (README, `libero/libero/benchmark/task_
 - verified (FastWAM `libero_utils.py`, `eval_libero_single.py`): rollouts render at **256×256** (`LIBERO_ENV_RESOLUTION = 256`, commented "resolution used to render training data"), rotate 180° (`[::-1, ::-1]`, "to match train preprocessing"), then center-crop-resize to 224.
 - Discrepancy (verified that both exist, not resolved): the dataset metadata says 512×512, the eval comment says 256. Both end at 224, so it may not matter, but it's a train/eval difference in Fast-WAM itself.
 - speculative (from the eval comment): frames in Fast-WAM's dataset are **already upright**, so our extractor's default `--rotate180` must be **off** for that data, unlike the raw HDF5. Check by viewing one decoded frame before extraction.
-- Proposal for our rollouts (speculative, needs user OK as an eval detail): render at 512, rotate 180°, resize to each encoder's input size, so rollout frames go through exactly the same path as training frames.
+- ~~Proposal: render at 512~~ Superseded 2026-10-28 (user: match the paper / Fast-WAM): rollouts follow Fast-WAM's eval path (render 256, rotate 180°, resize to 224), Fast-WAM's own train/eval resolution difference included.
 
 **Action chunk and timing**
 - verified (paper Table 6; FastWAM data config): action horizon **32 steps**; 9 video frames per view at offsets **0, 4, …, 32** of a 33-step window (`action_video_freq_ratio: 4`). So future targets are at t+4, …, t+32.
@@ -80,18 +80,18 @@ Sources: github.com/sylvestf/LIBERO-plus (README, `libero/libero/benchmark/task_
 8. Data loader reads the yifengzhu-hf HDF5 layout (the cache we have). A loader for Fast-WAM's LeRobot data (mp4 frames, `observation.state`, `action`) is needed at step 4 with the new extraction.
 
 **User decisions on the design choices (2026-10-28):** stay as close to the paper as possible; cheapness is not a reason to deviate.
-- Choice 1: base stream = frozen Wan 2.2 VAE latents (the VAE the paper uses; which of the two Wan 2.2 VAEs is still to confirm from the paper), encoded per frame, in every config. Replaces the pixel stream.
-- Choice 3: flow matching, not MSE. Agent recommendation after the user's steer: joint flow matching on actions and future features, as in the paper's default joint video–action denoising (Eq. 1), pending user confirmation.
-- Choice 7: the paper's T5 text encoder (umT5-XXL in Wan 2.2, recalled; to confirm), precomputed once per unique instruction, per-token, cross-attended.
+- Choice 1: base stream = frozen Wan 2.2 VAE latents in every config, replacing the pixel stream. (Later corrected in Stage 1: encoded per 9-frame clip, not per frame; Fast-WAM's TI2V-5B VAE.)
+- Choice 3: flow matching, not MSE: joint flow matching on actions and future features (paper Eq. 1), confirmed by the user below.
+- Choice 7: the paper's T5 text encoder, precomputed once per unique instruction, per-token, cross-attended (umT5-XXL verified in Fast-WAM's loader, Stage 1).
 
 **Choices 4–5 checked against the sources (agent, 2026-10-28; paper arXiv HTML v1, FastWAM `7faa711`):**
 - Choice 3 confirmed by the user: joint flow matching on actions and future features (paper Eq. 1, 9; App. B.2).
-- Choice 4, verified: Fast-WAM fills steps past the episode end with the last frame/action repeated (index clamp, `lerobot_dataset.py:658`), flags them `*_is_pad`, and drops them from the loss: action loss averaged over valid steps (`fastwam.py:590–596`), video loss over valid latent steps, where a latent step counts as padding only if all 4 of its frames are (`fastwam.py:420–457`). `skip_padding_as_possible: false` for LIBERO (no resampling). The paper says feature losses use "valid future targets" only (App. E.1, Eq. 9). Change: fill with the repeated last frame/action (we currently mask but fill differently) and keep the masks; same masking rule for VAE latents and features.
+- Choice 4, verified: Fast-WAM fills steps past the episode end with the last frame/action repeated (index clamp, `lerobot_dataset.py:658`), flags them `*_is_pad`, and drops them from the loss: action loss averaged over valid steps (`fastwam.py:590–596`), video loss over valid latent steps, where a latent step counts as padding only if all 4 of its frames are (`fastwam.py:420–457`). `skip_padding_as_possible: false` for LIBERO (no resampling). The paper says feature losses use "valid future targets" only (App. E.1, Eq. 9). Change: fill as Fast-WAM and keep the masks (corrected in Stage 1: padded actions get delta dims zeroed, gripper clamped; frames repeat the last one).
 - Choice 5, verified: actions min/max to [-1, 1], not stepwise (`configs/data/libero_2cam.yaml`), as in our code. The paper does not say how external features are scaled before channel-wise concatenation (App. A: final-layer tokens; App. B.2, E.1: aligned to the VAE grid and concatenated; App. D calls them "raw" features in the sensitivity analysis). No R²-WAM code is public (project page, 2026-10-28). Our per-channel z-score stays, flagged as a guess.
 - Also verified for choices 1 and 7: Fast-WAM's model is `Wan-AI/Wan2.2-TI2V-5B` (`configs/model/fastwam.yaml`) with a T5 embedding cache per instruction, `context_len: 128`. The paper doesn't name its Wan 2.2 variant; speculative: it uses the same 5B model, since it uses Fast-WAM's data and code lineage.
 
 **Choice 6, model shape (user agreed, 2026-10-28):**
-1. Full 14×14 grid per camera, no pooling (paper's DINOv3 grid is 14×14×1,024 per view, App. D, verified; Wan 2.2 5B VAE at 224 is also 14×14, recalled).
+1. Full 14×14 grid per camera, no pooling (paper's DINOv3 grid is 14×14×1,024 per view, App. D, verified; Wan 2.2 5B VAE at 224 is 14×14 per view, verified in Stage 1).
 2. Time aligned to the VAE: 9 frames per view at t, t+4 … t+32 (Table 6, verified) → 1 current + 2 future latent steps (4× temporal compression, recalled); future features averaged in groups of 4 (stated for REPA, App. B.2; applying it to channel-wise concat is our reading, speculative).
 3. Channel-wise concat of raw [VAE | source 1 | source 2] per grid cell, then one shared input projection and one output head (App. B.2), replacing per-stream projections to width 64.
 4. Two experts (video, action) with joint attention, asymmetric mask (action sees video, not the reverse), T5 by cross-attention, conditioned on state and flow time (Sec. 3.1); separate video and action flow timesteps as in Fast-WAM.
@@ -110,7 +110,7 @@ Sources: github.com/sylvestf/LIBERO-plus (README, `libero/libero/benchmark/task_
 About 0.1 s per batch-32 step for two encoder streams on CPU. Losses are not results (3 demos, 55 steps; encoder feature losses still ≈ 1.0).
 **Update 2026-10-28 (verified):** the user logged this Mac in to Hugging Face with the token from the cluster Secret `stacking-encoders-hf` (user `michaelnkr808`, read; it reads `facebook/dinov3-vitl16-pretrain-lvd1689m` at `ea8dc28`). DINOv3 features extracted locally for the same 3 demos (CPU, 16.3 frames/s; MPS can't pool its 14×14 grid to 4×4), and the real configs dinov3, dinov3+c-radiov4 and dinov3+siglip2 (SigLIP 2-base) all train end to end on CPU and MPS (rows above).
 
-**Sizing notes for step 5 (arithmetic from verified counts; speculative as estimates):**
+**Sizing notes for step 5 (2026-10-27, for the old 4×4 proxy; superseded by Stage 1 and RUN.md, kept for history):**
 - Full data = 277,713 frames. Grid features in RAM as float16 at 32 tokens per frame: DINOv3 (1,024) ≈ 18.2 GB, C-RADIOv4 (1,152) ≈ 20.5 GB, pixels ≈ 3.4 GB. D+R ≈ 42 GB of host RAM as written. Options before step 5: memory-map the caches, or pool to fewer tokens. Not decided.
 - 10 epochs at batch 128 ≈ 21,700 steps per run.
 
@@ -165,9 +165,9 @@ Secondary: each config's LIBERO-Plus success per seed and averaged, per category
 1. Read LIBERO-Plus repo and Fast-WAM data docs (no compute). Resolve the open items above.
 2. Write the proxy training code + synthetic tests locally.
 3. Local smoke test on libero_goal features (CPU or Mac, tiny).
-4. **Ask:** extraction Jobs for 3 suites × D, R, L. Before full extraction (added 2026-10-28 (e)): view frames from both cameras in all four suites of `yuanty/LIBERO-fastwam` to confirm they are upright and need no rotation (one episode, one camera checked so far). Volume ~1 TB, not ~760 GB. Headroom checked 2026-10-28 (f): `yuanty/LIBERO-fastwam` is 9.4 GB in total (lerobot_v30 4.7 GB; HF API tree listing), and `extract_fastwam.py` writes one episode at a time atomically (`.tmp` then rename, no merge step), so temporary files are one episode; ≈ 240 GB stays free after the ≈ 756 GB of caches.
-5. **Ask:** 1 pilot training run + timed rollouts (clean and LIBERO-Plus) on 1 GPU, to size everything. Before any rollout counts: pass one simulator frame through our rollout preprocessing (180° rotation) and compare it side by side with a training frame of the same task (added 2026-10-28 (e)).
-6. **Ask:** the 15 training runs and eval.
+4. **Pre-approved (RUN.md stage 2):** volume, download, timed probe, T5 cache, extraction of VAE, D, R, L for all four suites (was: 3 suites × D, R, L). Before full extraction (added 2026-10-28 (e)): view frames from both cameras in all four suites of `yuanty/LIBERO-fastwam` to confirm they are upright and need no rotation (one episode, one camera checked so far). Volume ~1 TB, not ~760 GB. Headroom checked 2026-10-28 (f): `yuanty/LIBERO-fastwam` is 9.4 GB in total (lerobot_v30 4.7 GB; HF API tree listing), and `extract_fastwam.py` writes one episode at a time atomically (`.tmp` then rename, no merge step), so temporary files are one episode; ≈ 240 GB stays free after the ≈ 756 GB of caches.
+5. **Pre-approved (RUN.md stage 3):** 1 pilot training run + timed rollouts (clean and LIBERO-Plus) on 1 GPU, to size everything. Before any rollout counts: pass one simulator frame through our rollout preprocessing (180° rotation) and compare it side by side with a training frame of the same task (added 2026-10-28 (e)).
+6. **Pre-approved (RUN.md stage 4)**, once the minimum-drop threshold is in the outcome rule: the 15 training runs and eval.
 
 ## Gates
-Every step marked Ask needs a go-ahead for that specific Job. STANDARDS gate: more than 8 GPUs at once or more than 20 Jobs in a sweep.
+User, 2026-10-28: steps 4–6 pre-approved and auto-chained ("move from stage to stage autonomously unless there is some major problem"); stop conditions and exact steps in `RUN.md`. Still gated: STANDARDS (more than 8 GPUs at once or more than 20 Jobs), anything outside RUN.md, protocol or outcome-rule changes, deleting data.

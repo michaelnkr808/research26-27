@@ -1,0 +1,99 @@
+# RUN.md step 2 (CPU, pre-approved). Downloads to PVC stacking-encoders-proxy (/mnt/proxy):
+#   data/lerobot_v30/   HF yuanty/LIBERO-fastwam @ ee018b99 (lerobot_v30 only, 4.71 GB; CC BY 4.0)
+#   models/             Wan2.2_VAE.safetensors and models_t5_umt5-xxl-enc-bf16.safetensors from ModelScope
+#                       DiffSynth-Studio/Wan-Series-Converted-Safetensors (what Fast-WAM's loader fetches), sha256-checked;
+#                       umT5 tokenizer from HF Wan-AI/Wan2.1-T2V-1.3B @ 37ec5126 (google/umt5-xxl/)
+#   orientation/        first frame of episode 0, both cameras, all four suites, as PNG (PLAN order of work step 4:
+#                       confirm upright before extraction; the agent copies these back and looks at them)
+# Follows _standards/08: Job, real command that exits, no sleep, no GPU, off GPU nodes, us-west, limits within 20%.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-download
+  namespace: aria-world
+spec:
+  backoffLimit: 1                     # rerun skips files already complete (hf cache / sha check)
+  activeDeadlineSeconds: 10800        # 3 h cap
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: python:3.11.14-slim
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; mkdir -p $R/logs $R/data $R/models $R/orientation
+          exec > >(tee -a $R/logs/download-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          apt-get update -qq && apt-get install -y -qq curl >/dev/null
+          pip install --no-cache-dir -q huggingface-hub==0.36.2 av==15.1.0 pandas==2.3.3 pyarrow==21.0.0 pillow==13.0.0
+          date -u; echo "=== dataset"
+          python - <<'PY'
+          from huggingface_hub import snapshot_download
+          snapshot_download("yuanty/LIBERO-fastwam", repo_type="dataset", revision="ee018b997c430bb12b5bf3c892d744798c5a2f91",
+                            allow_patterns=["lerobot_v30/*"], local_dir="/mnt/proxy/data")
+          snapshot_download("Wan-AI/Wan2.1-T2V-1.3B", revision="37ec512624d61f7aa208f7ea8140a131f93afc9a",
+                            allow_patterns=["google/umt5-xxl/*"], local_dir="/mnt/proxy/models/wan21")
+          PY
+          du -sh $R/data/lerobot_v30/*; date -u
+          echo "=== weights"
+          MS=https://modelscope.cn/models/DiffSynth-Studio/Wan-Series-Converted-Safetensors/resolve/master
+          get() {  # get FILE SHA256
+            if [ -f $R/models/$1 ] && echo "$2  $R/models/$1" | sha256sum -c --status; then echo "have $1"; return; fi
+            curl -sSL --retry 5 -o $R/models/$1.part $MS/$1
+            echo "$2  $R/models/$1.part" | sha256sum -c
+            mv $R/models/$1.part $R/models/$1
+          }
+          get Wan2.2_VAE.safetensors 0e913a2ca571c75fcb63385a8edadcca73454af5842596cb1ad11e4142590996
+          get models_t5_umt5-xxl-enc-bf16.safetensors d92de679881d38af9c89eff7bb1b6d6c9d96cb2b69831e4027e9ecabdd38eb23
+          ls -la $R/models; date -u
+          echo "=== orientation frames"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import av, pandas as pd
+          from PIL import Image
+          root = Path("/mnt/proxy/data/lerobot_v30")
+          for suite in sorted(root.glob("libero_*_no_noops_lerobot")):
+              info = json.loads((suite / "meta/info.json").read_text())
+              m = pd.read_parquet(sorted((suite / "meta/episodes").glob("chunk-*/file-*.parquet"))[0]).iloc[0]
+              for cam in ["observation.images.image", "observation.images.wrist_image"]:
+                  p = suite / info["video_path"].format(video_key=cam, chunk_index=int(m[f"videos/{cam}/chunk_index"]),
+                                                        file_index=int(m[f"videos/{cam}/file_index"]))
+                  with av.open(str(p)) as f:
+                      fr = next(f.decode(video=0))
+                  out = Path("/mnt/proxy/orientation") / f"{suite.name}-{cam.split('.')[-1]}.png"
+                  img = Image.fromarray(fr.to_ndarray(format="rgb24"))
+                  img.resize((256, 256)).save(out)
+                  print(out, fr.width, fr.height, m[f"videos/{cam}/from_timestamp"])
+                  # small JPEG in the log, so the agent can view it from `kubectl logs` after the pod is gone
+                  import base64, io
+                  buf = io.BytesIO(); img.resize((160, 160)).save(buf, "JPEG", quality=80)
+                  print(f"THUMB {out.stem} {base64.b64encode(buf.getvalue()).decode()}")
+          PY
+          date -u; echo "=== done"
+        env:
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: HF_HOME, value: /work/hf}
+        # Network-bound and may run > 30 min (ModelScope was ~5 MB/s from the Mac: the 11.4 GB T5 file ~40 min), so
+        # requests stay at the NRP exempt thresholds (1 CPU, 2 GB; _standards/08) to avoid low-utilization flags.
+        resources:                    # limits within 20% of requests
+          requests: {cpu: "1", memory: 2Gi, ephemeral-storage: 8Gi}
+          limits:   {cpu: "1200m", memory: 2400Mi, ephemeral-storage: 9Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: proxy, mountPath: /mnt/proxy}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 9Gi}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
