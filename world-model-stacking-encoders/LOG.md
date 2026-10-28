@@ -562,3 +562,14 @@
 **Found:** dataset `yuanty/LIBERO-fastwam` lerobot_v30 = 4.71 GB; ModelScope sha256 for Wan2.2_VAE (0e913a2c…) and umT5-XXL enc (d92de679…), recorded in the download Job.
 **Open (user):** the minimum-drop threshold (needed before stage 4); the calibration rule still uses "one seed sd" with 3 seeds (raised in (e), not yet decided).
 **Next:** next session follows RUN.md from "Session start", then step 1 (volume).
+
+## 2026-10-28 (g) [agent] (NRP policy check of the autonomous proxy run before it starts)
+**Goal:** User asked to double-check that the auto-chained proxy run (RUN.md, stages 2–4) can't break Nautilus policy while unattended.
+**Did:** Reread `_standards/08`, RUN.md, every manifest in `jobs/`, `watch_job.sh`, `src/setup_env.sh`. Rechecked the live NRP policies page (last updated 2026-10-26) and Jobs page (2026-10-25) via web fetch. `kubectl apply --dry-run=server` on pvc-proxy, download, probe, t5: all accepted.
+**Found (verified):**
+- Policy wording unchanged on the numbers that matter: GPU > 40%, CPU 20–200%, RAM 20–150% of request, max 4 violating pods, limits within 20% of requests, no `sleep` in Jobs (ban). Exemption is stated as "pods requesting 1 CPU core and 2GB memory" (one size, not a threshold).
+- `job-download.yaml` requested 2Gi = 2.15 GB, above the 2 GB exempt size, for a network-bound Job that may run > 30 min at low RAM. Fixed: 1536Mi request / 1800Mi limit.
+- `watch_job.sh` only caught idle GPUs; a pod flagged for low CPU or RAM would go unnoticed. Added exit 6 (pod > 35 min old, not at exempt size, 10-min CPU outside 20–200% of request or RSS < 20% of request). Queries tested on live Prometheus against a running aria-world pod: return values, exemption filter works. RUN.md exit list and stop 2 updated.
+- Otherwise compliant: all Jobs, no sleep, no tolerations, 1 GPU per pod, limits ≤ 1.2× requests, deadlines and 24 h TTL set, LIBERO is simulated (no PII), ≤ 8 GPUs gate in RUN.
+**Open risks (speculative):** probe (12Gi) and T5 (24Gi) RAM requests are guesses; fine if they finish within 30 min, else the new exit 6 catches it. kubectl login expiry (stop 3) means an idle GPU Job can't be deleted until the user logs in; it then runs until its `activeDeadlineSeconds`.
+**Next:** unchanged: RUN.md stage 2 step 1.

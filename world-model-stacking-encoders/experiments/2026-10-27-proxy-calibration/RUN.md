@@ -9,7 +9,7 @@ Written 2026-10-28 by the agent, for the agent sessions that carry this out afte
 - The user keeps the Mac awake ("caffeinated") so the session can keep running. Talk to the user in plain words, one or two numbers at most (CLAUDE.md); details go in LOG and the experiment README.
 
 ## How the chaining works
-- Submit a Job, then start `./watch_job.sh <job-name> <completions> 120` with the Bash tool's `run_in_background`. It polls the public Prometheus (no kubectl, so an expired login doesn't stop it) and exits on: 0 complete, 2 dead, 3 vanished, 4 a GPU pod idle below 40% (NRP floor), 5 never appeared. Its exit wakes you; then do the step's checks and move on. Don't poll in the foreground or add sleep loops.
+- Submit a Job, then start `./watch_job.sh <job-name> <completions> 120` with the Bash tool's `run_in_background`. It polls the public Prometheus (no kubectl, so an expired login doesn't stop it) and exits on: 0 complete, 2 dead, 3 vanished, 4 a GPU pod idle below 40% (NRP floor), 5 never appeared, 6 a pod's CPU or RAM outside NRP's range (CPU 20–200% of request, RAM ≥ 20%; pods at the exempt size skipped). Its exit wakes you; then do the step's checks and move on. Don't poll in the foreground or add sleep loops.
 - Run independent Jobs side by side when the GPU total stays ≤ 8.
 - **kubectl login expires** after a few hours and then hangs (memory `nautilus-kubectl-auth-expiry`). Before every kubectl call that changes something, test it: `(kubectl get pods -n aria-world >/dev/null & pid=$!; sleep 25; kill $pid 2>/dev/null && echo HUNG)`. If it hangs, that's a stop: the user must run `! kubectl get pods -n aria-world` and log in. Jobs already running finish on their own meanwhile.
 - After each step: append a short `[agent]` LOG entry (what ran, verified numbers, GPU-hours), commit. Keep every Job's log: `kubectl logs job/<name> > results/logs/<name>.log` within 24 h (TTL).
@@ -17,7 +17,7 @@ Written 2026-10-28 by the agent, for the agent sessions that carry this out afte
 ## Stop conditions ("major problem")
 Stop the chain, write a LOG entry, commit, and tell the user (use PushNotification if it's available, since they may be away) when any of these happens:
 1. The same step fails twice (one diagnosed fix and retry is allowed; log the fix).
-2. The watcher exits 4 (GPU idle) and the cause isn't an obvious, fixable startup phase; or the NRP Violations page shows one of our pods (the user can check https://nrp.ai/userinfo).
+2. The watcher exits 4 (GPU idle) or 6 (CPU/RAM out of range) and the cause isn't an obvious, fixable startup phase (on 6, resize requests from Prometheus and resubmit; that counts as the one fix); or the NRP Violations page shows one of our pods (the user can check https://nrp.ai/userinfo).
 3. kubectl login expired when a change is needed.
 4. Orientation check (step 2) or the sim-vs-training frame check (step 8) shows a mismatch.
 5. Measured costs blow past the plan: full extraction > 24 h wall, one training run > 48 h, the whole stage 4 > ~7 days, or anything that needs > 8 GPUs at once or > 20 Jobs.

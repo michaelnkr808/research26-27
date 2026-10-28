@@ -85,10 +85,11 @@ spec:
         - {name: PYTHONUNBUFFERED, value: "1"}
         - {name: HF_HOME, value: /work/hf}
         # Network-bound and may run > 30 min (ModelScope was ~5 MB/s from the Mac: the 11.4 GB T5 file ~40 min), so
-        # requests stay at the NRP exempt thresholds (1 CPU, 2 GB; _standards/08) to avoid low-utilization flags.
+        # requests stay within NRP's exempt size ("pods requesting 1 CPU core and 2GB memory", policies page checked
+        # 2026-10-28) to avoid low-utilization flags. 2Gi would be 2.15 GB, over that; 1536Mi is 1.61 GB.
         resources:                    # limits within 20% of requests
-          requests: {cpu: "1", memory: 2Gi, ephemeral-storage: 8Gi}
-          limits:   {cpu: "1200m", memory: 2400Mi, ephemeral-storage: 9Gi}
+          requests: {cpu: "1", memory: 1536Mi, ephemeral-storage: 8Gi}
+          limits:   {cpu: "1200m", memory: 1800Mi, ephemeral-storage: 9Gi}
         volumeMounts:
         - {name: work, mountPath: /work}
         - {name: proxy, mountPath: /mnt/proxy}

@@ -8,7 +8,9 @@
 # Exit codes: 0 all COMPLETIONS succeeded | 2 Job dead (no active pods, not complete, >= 1 failure; seen twice in a row)
 #             3 Job metrics gone for 10 polls after being seen (deleted / TTL) | 4 GPU idle: a pod of this Job older
 #             than 35 min averaged < 40% GPU utilization over the last 10 min (NRP's floor; _standards/08)
-#             5 Job never appeared within 30 min of starting the watch
+#             5 Job never appeared within 30 min of starting the watch | 6 CPU/RAM out of NRP range: a pod of this
+#             Job older than 35 min, not exempt (requests > 1 CPU or > 2 GB), had 10-min CPU < 20% or > 200% of its
+#             request, or RSS < 20% of its memory request (> 150% can't happen: limits are <= 1.2x requests)
 # One status line per poll on stdout.
 set -u
 JOB=$1; N=$2; POLL=${3:-120}
@@ -30,7 +32,14 @@ while true; do
   # pods of this Job running for > 35 min with a 10-min mean GPU utilization below 40
   IDLE=$(q "count((avg_over_time(DCGM_FI_DEV_GPU_UTIL{namespace=\"aria-world\",pod=~\"$JOB-.*\"}[10m]) < 40) and on(pod) ((time() - kube_pod_start_time{namespace=\"aria-world\",pod=~\"$JOB-.*\"}) > 2100))")
   GPU=$(q "avg(avg_over_time(DCGM_FI_DEV_GPU_UTIL{namespace=\"aria-world\",pod=~\"$JOB-.*\"}[10m]))")
-  echo "$(date -u +%FT%TZ) job=$JOB succeeded=$S/$N failed=$F active=$A gpu10m=$GPU idle_pods=$IDLE"
+  # pods outside NRP's CPU (20-200%) / RAM (>= 20%) ranges, same age rule, skipping pods at the exempt size
+  SEL="namespace=\"aria-world\",pod=~\"$JOB-.*\""
+  REQC="sum by (pod) (max by (pod, container) (kube_pod_container_resource_requests{$SEL,resource=\"cpu\"}))"
+  REQM="sum by (pod) (max by (pod, container) (kube_pod_container_resource_requests{$SEL,resource=\"memory\"}))"
+  CPUR="(sum by (pod) (rate(container_cpu_usage_seconds_total{$SEL,container!=\"\"}[10m])) / $REQC)"
+  MEMR="(sum by (pod) (max by (pod, container) (container_memory_rss{$SEL,container!=\"\"})) / $REQM)"
+  OUT=$(q "count((($CPUR < 0.2) or on(pod) ($CPUR > 2) or on(pod) ($MEMR < 0.2)) and on(pod) ((time() - kube_pod_start_time{$SEL}) > 2100) and on(pod) (($REQC > 1) or on(pod) ($REQM > 2e9)))")
+  echo "$(date -u +%FT%TZ) job=$JOB succeeded=$S/$N failed=$F active=$A gpu10m=$GPU idle_pods=$IDLE cpu_ram_out=$OUT"
   if [ "$S" = nan ] && [ "$A" = nan ]; then
     if [ $seen = 1 ]; then gone=$((gone + 1)); [ $gone -ge 10 ] && { echo "EXIT 3: metrics gone"; exit 3; }
     elif [ $(( $(date +%s) - t0 )) -gt 1800 ]; then echo "EXIT 5: never appeared"; exit 5; fi
@@ -42,6 +51,9 @@ while true; do
     else dead=0; fi
     if [ "$IDLE" != nan ] && python3 -c "import sys; sys.exit(0 if float('$IDLE') >= 1 else 1)"; then
       echo "EXIT 4: GPU idle below 40% (NRP floor)"; exit 4
+    fi
+    if [ "$OUT" != nan ] && python3 -c "import sys; sys.exit(0 if float('$OUT') >= 1 else 1)"; then
+      echo "EXIT 6: CPU or RAM outside NRP range"; exit 6
     fi
   fi
   sleep "$POLL"
