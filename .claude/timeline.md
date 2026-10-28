@@ -74,3 +74,10 @@
 - Proxy PLAN steps 1–3: the paper's 1,712 episodes are Fast-WAM's `yuanty/LIBERO-fastwam` (512→224, MuJoCo 3.3.2), not our HDF5; LIBERO-Plus is 10,030 × 1 trial. Wrote `src/proxy_policy.py` (9 checks pass) and smoke-tested it locally with real DINOv3 + C-RADIOv4 (Mac now logged in to HF).
 - Open for the user: pixel stream in every config, text encoder choice; then step 4 extraction Jobs on a go-ahead.
 - See: world-model-stacking-encoders/experiments/2026-10-21-target-diagnostics/README.md, experiments/2026-10-27-proxy-calibration/PLAN.md, LOG.md 2026-10-27 (h)–(n) and 2026-10-28
+
+## 2026-10-28 — world-model-stacking-encoders: faithful proxy built on Fast-WAM, reviewer framing, autonomous run set up
+
+- Reviewed the 8 proxy design choices with the user; decision: match the paper over cheap stand-ins (Wan 2.2 VAE latents, joint flow matching, the paper's T5, full 14×14 grids, Fast-WAM's data handling, ~1 TB feature cache).
+- Rebuilt the proxy on Fast-WAM's own code (`src/proxy_wam.py`, `extract_fastwam.py`, `t5_cache.py`, `fastwam_data.py`; loss identical to Fast-WAM's), real-data smoke on one episode; added the paired per-seed analysis (`src/lp_eval.py`) after reviewer feedback reframed the round as a proxy replication.
+- Wrote the full plan as a Google Doc for the reviewer; set up the autonomous run (RUN.md, stage 2 manifests, Prometheus watcher) with the user's pre-approval. Nothing submitted yet.
+- See: world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/{PLAN.md,RUN.md}, writing/proxy-replication-plan-2026-10-28.html, LOG.md 2026-10-28 (b)–(f)
