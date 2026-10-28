@@ -1,0 +1,95 @@
+<html><body>
+<h1>Stacking encoders: proxy replication plan</h1>
+<p><i>Status as of 2026-10-28, before any training run. Source of truth: experiments/2026-10-27-proxy-calibration/PLAN.md and decision 003 in the project repo. This document gathers them for review.</i></p>
+
+<h2>Summary</h2>
+<p>We will train a small copy of the paper's world action model (WAM) from scratch, 3 training seeds for each of 5 encoder configurations, and test every checkpoint on the same fixed set of LIBERO-Plus episodes. The primary question is whether DINOv3 + C-RADIOv4 does worse than DINOv3 alone in this proxy, seed by seed. This is a proxy replication: the proxy has no pretrained Wan 2.2 video prior and is far smaller than the paper's model, so its result is about the proxy. Its job is to decide whether a higher-fidelity, multi-seed WAM replication is worth running. If the proxy does not reproduce the drop, that does not show the paper's result was training noise.</p>
+<p>The code is written and tested locally. Nothing has run on the cluster yet. The expected wall time is about three days if things go smoothly and closer to five if not.</p>
+
+<h2>Background and question</h2>
+<p>Liu et al. 2026 ("What Visual Representations Do World Action Models Need?", arXiv 2610.13024, preprint) add frozen encoder features to a Wan 2.2-based WAM and evaluate on LIBERO-Plus. DINOv3 alone reaches 84.0% on LIBERO-Plus, and C-RADIOv4 alone 83.5%, but DINOv3 + C-RADIOv4 reaches 78.6%, below both. Each configuration in the paper is one trained checkpoint; the three seeds reported are evaluation seeds, not training seeds.</p>
+<p>Our earlier cheap diagnostics on frozen features (CKA similarity, conditional probe gain, and a target-side interference test, all on clean libero_goal frames) did not flag D+R as harmful. That leaves two open possibilities we can't tell apart from the paper alone: the drop is a real effect our diagnostics miss, or it depends on things a single checkpoint can't separate from training variability.</p>
+<p>Question for this round: does a proxy WAM, trained with 3 seeds per configuration, reproduce the paper's ordering, and is D+R worse than D in the proxy, seed by seed?</p>
+
+<h2>Configurations</h2>
+<table border="1">
+<tr><th>Config</th><th>Encoders added to the VAE latents</th><th>Role</th></tr>
+<tr><td>none</td><td>none (VAE latents only)</td><td>floor, the paper's VAE-only baseline</td></tr>
+<tr><td>D</td><td>DINOv3</td><td>paper's best single encoder</td></tr>
+<tr><td>R</td><td>C-RADIOv4</td><td>about equal to D alone in the paper</td></tr>
+<tr><td>D+R</td><td>DINOv3 + C-RADIOv4</td><td>the harmful pair under test</td></tr>
+<tr><td>D+L</td><td>DINOv3 + SigLIP 2</td><td>positive control, paper's best D pair (+1.8)</td></tr>
+</table>
+<p>3 training seeds each, 15 training runs. Everything except the encoder set is identical across configurations, including the data order for a given seed.</p>
+
+<h2>The proxy model</h2>
+<p>The guiding rule, set by the project lead, is to match the paper wherever its setup is known and to flag every place where we had to choose. The proxy is built directly from Fast-WAM's own code (github.com/yuantianyuan01/FastWAM, commit 7faa711, MIT license), whose processed LIBERO data the paper trains on, instantiated at small size with random weights.</p>
+<h3>Matches the paper or Fast-WAM</h3>
+<ul>
+<li>Formulation: joint video-action denoising, the paper's default (App. B.1). A video expert and an action expert share joint attention; video tokens attend only to video, the first latent frame only to itself, and action tokens attend to all video and action tokens.</li>
+<li>Base visual stream: frozen Wan 2.2 VAE latents (48 channels, 16x spatial and 4x temporal compression) of the two camera views placed side by side at 224 x 448.</li>
+<li>Feature integration: channel-wise concatenation, the mechanism used for the paper's composition study (App. B.2, E.1). At each cell of the 14 x 28 latent grid, the input is the VAE latent followed by each encoder's features; one expanded patch embedding and output head cover all channels. Current features stay clean; future features are noised and denoised together with the future VAE latents.</li>
+<li>Loss: flow matching for video and actions with Fast-WAM's schedulers and timestep weights, plus one future-feature loss per encoder at weight 1.0 (Eq. 9). Padded steps past an episode's end are excluded from the loss.</li>
+<li>Language: the umT5-XXL encoder used by Wan 2.2, 128 tokens, Fast-WAM's prompt template, precomputed once per instruction; proprioception enters as one extra context token.</li>
+<li>Training: AdamW, learning rate 1e-4 decaying to 1e-6 (cosine, 5% warmup), weight decay 0.01, betas (0.9, 0.95), gradient clipping 1.0, bf16, batch 128, 10 epochs, action horizon 32, 9 video frames at offsets 0, 4, ..., 32 (Table 6).</li>
+<li>Data: Fast-WAM's processed LIBERO (Hugging Face yuanty/LIBERO-fastwam, 1,712 episodes over the four suites, the paper's training set), with Fast-WAM's resizing, camera layout, action and proprio min/max normalization, and padding rules.</li>
+<li>Inference: 10 denoising steps, replanning every 10 steps, 30 initial waiting steps, no action ensembling, text guidance 1.0, binarized gripper (App. E.3); both cameras rotated 180 degrees and the gripper sign inverted, as in Fast-WAM's LIBERO evaluation code.</li>
+</ul>
+<h3>Differs from the paper (unavoidable)</h3>
+<ul>
+<li>No pretrained video prior. The paper starts from Wan 2.2 and a pretrained action expert; the proxy starts from random weights.</li>
+<li>Size. The proxy has roughly 28 to 35 million parameters depending on configuration (video width 384, action width 128, 8 layers, 3 heads of size 128), against billions in the paper. Final size is set after the pilot run.</li>
+</ul>
+<h3>Our choices where the paper is silent (flagged in any write-up)</h3>
+<ul>
+<li>Encoder input: every encoder sees the same 224 x 224 frame the VAE sees and applies its own resizing; its patch grid is then resized bilinearly to the VAE's 14 x 14 per camera.</li>
+<li>Temporal alignment of features: each future latent step uses the mean of its four frames' features. The paper states this for its REPA variant; applying it to channel-wise concatenation is our reading.</li>
+<li>Feature scaling: each encoder's channels are z-scored with training-set statistics. The paper does not say how it scales sources before concatenation. If it fed raw features, a source with large values could dominate; our scaling would hide that effect.</li>
+<li>Batching: batches are drawn from a shuffled buffer of 16 episodes at a time, so each episode is read from disk once per epoch. This is close to, but not the same as, a full shuffle.</li>
+</ul>
+
+<h2>Evaluation</h2>
+<ul>
+<li>LIBERO-Plus: one fixed, seeded subset of the 10,030 episodes, stratified by suite and perturbation category (28 cells), saved to a file with a content hash and reused by every checkpoint. Its size is chosen after timing rollouts in the pilot.</li>
+<li>Every rollout is saved as its own record: episode id, suite, perturbation category, configuration, training seed, evaluation seed, checkpoint, subset id and success. Aggregates are never the only output, so the paired analysis is always possible.</li>
+<li>Clean LIBERO is reported as context only; the paper reports it near saturation.</li>
+</ul>
+
+<h2>Pre-registered analysis and outcome rule</h2>
+<p>Amended on 2026-10-28 after outside review, before any training run; the original text is kept in the repo history.</p>
+<p>Primary analysis: for each training seed s, the per-episode paired difference between D+R seed s and D seed s on the same LIBERO-Plus episodes, and its mean. The three seed deltas are reported individually, each with the counts of episodes where D+R failed and D succeeded, and the reverse. Means and confidence intervals are secondary. Three seeds can show whether a drop is large and consistent in sign; they are not enough for strong claims about training-seed variance.</p>
+<p>Secondary: each configuration's LIBERO-Plus success per seed and averaged over seeds, broken down by perturbation category, and clean LIBERO.</p>
+<ol>
+<li>Calibration passes if D beats none and D+L is at least D minus one seed standard deviation. If calibration fails, the proxy doesn't track the paper and the D+R comparison is not interpreted.</li>
+<li>If calibration passes and all three D+R minus D deltas are clearly negative (beyond the seed spread of the single-encoder configurations), the harm reproduces in the proxy. We then compare clean LIBERO with LIBERO-Plus and look by category to separate a robustness failure from a training failure. This supports a higher-fidelity, multi-seed replication at the paper's scale.</li>
+<li>If the deltas are near zero or mixed in sign, the result is "the proxy does not reproduce the drop". This does not establish that the paper's result was training noise: the effect may need the pretrained video prior or the full-size model.</li>
+<li>Overlap between encoders (C-RADIOv4 is distilled partly from DINOv3) stays a hypothesis in any write-up, not the explanation.</li>
+</ol>
+<p>The analysis script refuses to run if two checkpoints were not evaluated on exactly the same episodes. It is tested on synthetic data with known answers: planted per-seed drops are recovered exactly, and identical configurations give exactly zero.</p>
+
+<h2>Execution plan</h2>
+<ol>
+<li>Storage and data: a CephFS volume of about 760 GB on the NRP Nautilus cluster, and the LIBERO dataset downloaded onto it.</li>
+<li>Feature extraction: one small timed shard first, then VAE latents, DINOv3, C-RADIOv4 and SigLIP 2 features for all 1,712 episodes, and the T5 instruction cache. Cached sizes are about 31 GB for the VAE latents and 223 to 251 GB per encoder.</li>
+<li>Pilot: one shortened training run and timed rollouts on clean LIBERO and LIBERO-Plus, to fix the model size, the subset size and the number of GPUs. The rollout code is written while extraction runs.</li>
+<li>Full round: 15 training runs in two waves of at most 8 GPUs, then evaluation of every checkpoint on the fixed subset, then the analysis above.</li>
+</ol>
+<p>Steps 1 to 3 are pre-approved and chained automatically: each step starts when the previous one finishes and passes its checks. A failure gets one fix and retry, and a second failure stops the chain. The project lead approves step 4 after seeing the pilot's numbers.</p>
+<p>Time estimate: extraction takes a few hours, the pilot several hours, training about a day if enough GPUs are free, and rollouts about a day. That gives about three days end to end in the best case and about five with cluster contention or first-run problems.</p>
+
+<h2>Checks done so far</h2>
+<ul>
+<li>The proxy's training loss is identical to Fast-WAM's own training loss on the same inputs and random draws.</li>
+<li>Padding masks, normalization and the attention mask match Fast-WAM's code. Checkpoint resume reproduces an uninterrupted run exactly. The model overfits a single batch (the action loss goes to near zero).</li>
+<li>Real-data smoke test on one LIBERO episode: VAE latents and all three encoders extract correctly, and all configurations train end to end. These losses are not results.</li>
+<li>Not yet tested: the T5 encoder with its real weights (11 GB, to run on the cluster), and the rollout code, which isn't written yet.</li>
+</ul>
+
+<h2>Risks and open items</h2>
+<ul>
+<li>The proxy may be too weak to pass calibration without the pretrained video prior. In that case the D+R comparison is not interpreted.</li>
+<li>The paper does not name its exact Wan 2.2 variant. We follow Fast-WAM's default (TI2V-5B and its VAE).</li>
+<li>VAE extraction and rollout speed are not yet measured on GPUs; the pilot measures both before the full round.</li>
+<li>Out of scope for this round: a retrospective, exploratory check of our cheap diagnostics against the paper's 16 composition results. It is a candidate next analysis, not started, and would be suggestive only because the configurations share encoders and each has one checkpoint.</li>
+</ul>
+</body></html>

@@ -10,7 +10,7 @@ Does a small policy trained on frozen encoder features, with 3 training seeds pe
 ## Configs (user, 2026-10-27)
 | Config | Encoders | Why |
 |---|---|---|
-| none | no external encoder (raw low-res pixels + proprio) | floor; the paper's "VAE-only" analogue (not identical) |
+| none | no external encoder (Wan 2.2 VAE latents + proprio; pixels until 2026-10-28) | floor; the paper's "VAE-only" baseline |
 | D | DINOv3 | paper's single best |
 | R | C-RADIOv4 | about equal to D alone in the paper (LP 83.5 vs 84.0) |
 | D+R | DINOv3 + C-RADIOv4 | the harmful pair (LP 78.6, below both singles) |
@@ -18,7 +18,7 @@ Does a small policy trained on frozen encoder features, with 3 training seeds pe
 
 3 training seeds each → 15 training runs. Under the 20-Job gate if each run is one Job; eval Jobs count separately (see Gates).
 
-## Proxy design (draft, needs review before code)
+## Proxy design (draft of 2026-10-27; superseded by "Stage 1" below)
 - **Inputs per step:** for each encoder, both cameras (agentview, eye-in-hand), `grid` tokens (g × g, from `src/extract_features.py`) projected per source to a shared width, concatenated along channels (the paper's default fusion). Plus proprio and the language instruction embedding (frozen text encoder, same for all configs).
 - **Outputs:** an action chunk (as Fast-WAM; chunk length to match their setup, to check), and future-feature predictions for every source in the config.
 - **Loss:** action loss + Σ_sources feature-prediction loss, weight 1.0 each (paper App. E.1 Eq. 9). Per-source feature normalization: z-score per dimension on the training set. The paper doesn't state its normalization, so this is our choice; log it.
