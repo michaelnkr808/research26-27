@@ -4,7 +4,7 @@
 
 <h2>Summary</h2>
 <p>We will train a Fast-WAM-based proxy of the paper's world action model (WAM), using the paper's recipe where it is known, from scratch, 3 training seeds for each of 5 encoder configurations, and test every checkpoint on the same fixed set of LIBERO-Plus episodes. The primary question is whether DINOv3 + C-RADIOv4 does worse than DINOv3 alone in this proxy, seed by seed. This is a proxy replication: the proxy has no pretrained Wan 2.2 video prior, is far smaller than the paper's model, and makes its own choices where the paper is silent (feature scaling, temporal averaging of features) that could affect whether stacking hurts, so its result is about the proxy. Its job is to decide whether a higher-fidelity, multi-seed WAM replication is worth running. If the proxy does not reproduce the drop, that does not show the paper's result was training noise.</p>
-<p>The code is written and tested locally. Nothing has run on the cluster yet. The expected wall time is about three days if things go smoothly and closer to five if not.</p>
+<p>The code is written and tested locally. Nothing has run on the cluster yet. The expected wall time is about four days if things go smoothly and closer to six if not.</p>
 
 <h2>Background and question</h2>
 <p>Liu et al. 2026 ("What Visual Representations Do World Action Models Need?", arXiv 2610.13024, preprint) add frozen encoder features to a Wan 2.2-based WAM and evaluate on LIBERO-Plus. DINOv3 alone reaches 84.0% on LIBERO-Plus, and C-RADIOv4 alone 83.5%, but DINOv3 + C-RADIOv4 reaches 78.6%, below both. Each configuration in the paper is one trained checkpoint; the three seeds reported are evaluation seeds, not training seeds.</p>
