@@ -481,3 +481,7 @@
 **Resources:** local only (~10 min CPU/MPS). Cluster: none.
 **Not done:** text encoder choice; LeRobot (Fast-WAM) data loader; rollout/eval code (needs the simulators); host-RAM plan for full data (~42 GB for D+R as written).
 **Next:** user reviews the 8 design choices in PLAN "Steps 2–3" (especially the pixel stream in every config and the text encoder), then PLAN step 4 (extraction Jobs from Fast-WAM's data for D, R, L, all four suites) on a go-ahead.
+
+## 2026-10-28 [agent] (smoke test rerun with real DINOv3)
+**Did:** User logged this Mac in to Hugging Face (`hf auth login` with the token read from the cluster Secret `stacking-encoders-hf`; token never printed). verified: user `michaelnkr808`, read permission, `facebook/dinov3-vitl16-pretrain-lvd1689m` readable at `ea8dc28` (the revision in LOG 2026-10-17). Extracted DINOv3 for the same 3 demos (CPU, 16.3 frames/s, 35 s; MPS fails on the 14×14 → 4×4 pool) and ran dinov3, dinov3+c-radiov4, dinov3+siglip2 (base) on CPU and MPS: all exit 0; 5.8M / 8.3M / 7.5M params; 3.6–6.2 s for 55 batch-32 steps. PLAN smoke table updated. Losses are not results.
+**Next:** unchanged from (n): user reviews the PLAN design choices; then step 4 on a go-ahead.

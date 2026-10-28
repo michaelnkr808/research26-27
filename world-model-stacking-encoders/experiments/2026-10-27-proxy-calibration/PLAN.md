@@ -83,7 +83,11 @@ Sources: github.com/sylvestf/LIBERO-plus (README, `libero/libero/benchmark/task_
 | none | 3.62M | 4 s / 8 s | 3.0 s / 6.0 s |
 | c-radiov4 | 6.08M | 6 s / 5 s | 4.5 s / 4.1 s |
 | c-radiov4+siglip2 | 7.72M | 7 s / 7 s | 5.7 s / 5.2 s |
-About 0.1 s per batch-32 step for two encoders on CPU. Losses are not results (3 demos, 55 steps; encoder feature losses still ≈ 1.0).
+| dinov3 | 5.81M | train 4.4 s / 3.6 s | (added 2026-10-28, see below) |
+| dinov3+c-radiov4 | 8.27M | train 6.2 s / 5.2 s | |
+| dinov3+siglip2 (base) | 7.45M | train 5.5 s / 4.8 s | |
+About 0.1 s per batch-32 step for two encoder streams on CPU. Losses are not results (3 demos, 55 steps; encoder feature losses still ≈ 1.0).
+**Update 2026-10-28 (verified):** the user logged this Mac in to Hugging Face with the token from the cluster Secret `stacking-encoders-hf` (user `michaelnkr808`, read; it reads `facebook/dinov3-vitl16-pretrain-lvd1689m` at `ea8dc28`). DINOv3 features extracted locally for the same 3 demos (CPU, 16.3 frames/s; MPS can't pool its 14×14 grid to 4×4), and the real configs dinov3, dinov3+c-radiov4 and dinov3+siglip2 (SigLIP 2-base) all train end to end on CPU and MPS (rows above).
 
 **Sizing notes for step 5 (arithmetic from verified counts; speculative as estimates):**
 - Full data = 277,713 frames. Grid features in RAM as float16 at 32 tokens per frame: DINOv3 (1,024) ≈ 18.2 GB, C-RADIOv4 (1,152) ≈ 20.5 GB, pixels ≈ 3.4 GB. D+R ≈ 42 GB of host RAM as written. Options before step 5: memory-map the caches, or pool to fewer tokens. Not decided.
