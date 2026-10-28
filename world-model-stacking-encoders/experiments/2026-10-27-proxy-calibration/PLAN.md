@@ -77,6 +77,25 @@ Sources: github.com/sylvestf/LIBERO-plus (README, `libero/libero/benchmark/task_
 7. **Text encoder: open.** The model takes a frozen instruction embedding (`--text-emb`, .npz). Without it, a hash embedding is used (smoke only; it gives reworded LIBERO-Plus instructions unrelated vectors). A real choice is needed before step 5, and it must not be one of the compared encoders' own towers if that could favour a config (speculative concern).
 8. Data loader reads the yifengzhu-hf HDF5 layout (the cache we have). A loader for Fast-WAM's LeRobot data (mp4 frames, `observation.state`, `action`) is needed at step 4 with the new extraction.
 
+**User decisions on the design choices (2026-10-28):** stay as close to the paper as possible; cheapness is not a reason to deviate.
+- Choice 1: base stream = frozen Wan 2.2 VAE latents (the VAE the paper uses; which of the two Wan 2.2 VAEs is still to confirm from the paper), encoded per frame, in every config. Replaces the pixel stream.
+- Choice 3: flow matching, not MSE. Agent recommendation after the user's steer: joint flow matching on actions and future features, as in the paper's default joint video–action denoising (Eq. 1), pending user confirmation.
+- Choice 7: the paper's T5 text encoder (umT5-XXL in Wan 2.2, recalled; to confirm), precomputed once per unique instruction, per-token, cross-attended.
+
+**Choices 4–5 checked against the sources (agent, 2026-10-28; paper arXiv HTML v1, FastWAM `7faa711`):**
+- Choice 3 confirmed by the user: joint flow matching on actions and future features (paper Eq. 1, 9; App. B.2).
+- Choice 4, verified: Fast-WAM fills steps past the episode end with the last frame/action repeated (index clamp, `lerobot_dataset.py:658`), flags them `*_is_pad`, and drops them from the loss: action loss averaged over valid steps (`fastwam.py:590–596`), video loss over valid latent steps, where a latent step counts as padding only if all 4 of its frames are (`fastwam.py:420–457`). `skip_padding_as_possible: false` for LIBERO (no resampling). The paper says feature losses use "valid future targets" only (App. E.1, Eq. 9). Change: fill with the repeated last frame/action (we currently mask but fill differently) and keep the masks; same masking rule for VAE latents and features.
+- Choice 5, verified: actions min/max to [-1, 1], not stepwise (`configs/data/libero_2cam.yaml`), as in our code. The paper does not say how external features are scaled before channel-wise concatenation (App. A: final-layer tokens; App. B.2, E.1: aligned to the VAE grid and concatenated; App. D calls them "raw" features in the sensitivity analysis). No R²-WAM code is public (project page, 2026-10-28). Our per-channel z-score stays, flagged as a guess.
+- Also verified for choices 1 and 7: Fast-WAM's model is `Wan-AI/Wan2.2-TI2V-5B` (`configs/model/fastwam.yaml`) with a T5 embedding cache per instruction, `context_len: 128`. The paper doesn't name its Wan 2.2 variant; speculative: it uses the same 5B model, since it uses Fast-WAM's data and code lineage.
+
+**Choice 6, model shape (user agreed, 2026-10-28):**
+1. Full 14×14 grid per camera, no pooling (paper's DINOv3 grid is 14×14×1,024 per view, App. D, verified; Wan 2.2 5B VAE at 224 is also 14×14, recalled).
+2. Time aligned to the VAE: 9 frames per view at t, t+4 … t+32 (Table 6, verified) → 1 current + 2 future latent steps (4× temporal compression, recalled); future features averaged in groups of 4 (stated for REPA, App. B.2; applying it to channel-wise concat is our reading, speculative).
+3. Channel-wise concat of raw [VAE | source 1 | source 2] per grid cell, then one shared input projection and one output head (App. B.2), replacing per-stream projections to width 64.
+4. Two experts (video, action) with joint attention, asymmetric mask (action sees video, not the reverse), T5 by cross-attention, conditioned on state and flow time (Sec. 3.1); separate video and action flow timesteps as in Fast-WAM.
+5. No pretrained video prior (the paper starts from Wan 2.2): the main unavoidable gap. Size set from the step 5 pilot.
+**Storage (user decision, 2026-10-28):** extract features once to disk and stream them during training (not live encoders: ~2,700× more encoder work, arithmetic). Full-grid float16 over 277,713 frames × 2 cams: DINOv3 223.0 GB, C-RADIOv4 250.8 GB, SigLIP 2-so400m 250.8 GB, VAE (48 ch) 10.5 GB (arithmetic, run 2026-10-28). Needs a ~750 GB CephFS PVC; `aria-world` has no storage ResourceQuota and holds 400Gi PVCs from other projects (kubectl, verified 2026-10-28). User: no need to ask the namespace admin. PVC created at step 4 with the go-ahead for that Job.
+
 **Smoke test (verified, this Mac, 2026-10-27):** DINOv3 could not be used locally (gated; no HF token on this machine) and our cached libero_goal features are only on the cluster PVCs, so features were extracted locally for **3 demos of `turn_on_the_stove_demo.hdf5`** (265 timesteps): C-RADIOv4 (pinned revision, MPS, 5.2 frames/s) and SigLIP 2-**base** (cached; the real runs use the so400m variant; CPU, 48 frames/s). Configs none, c-radiov4, c-radiov4+siglip2 (same shape as D+R: two encoder streams of 1,152 and 768 channels), seed 0, 10 epochs, batch 32, 55 steps, default model size:
 | config | params | wall (CPU / MPS) | train time (CPU / MPS) |
 |---|---|---|---|
@@ -92,6 +111,28 @@ About 0.1 s per batch-32 step for two encoder streams on CPU. Losses are not res
 **Sizing notes for step 5 (arithmetic from verified counts; speculative as estimates):**
 - Full data = 277,713 frames. Grid features in RAM as float16 at 32 tokens per frame: DINOv3 (1,024) ≈ 18.2 GB, C-RADIOv4 (1,152) ≈ 20.5 GB, pixels ≈ 3.4 GB. D+R ≈ 42 GB of host RAM as written. Options before step 5: memory-map the caches, or pool to fewer tokens. Not decided.
 - 10 epochs at batch 128 ≈ 21,700 steps per run.
+
+## Stage 1: code for the faithful proxy (agent, 2026-10-28; FastWAM `7faa711`, liu2026what arXiv HTML v1)
+Replaces `src/proxy_policy.py` (kept for history; its smoke results above are superseded). New code: `src/fastwam_data.py`, `src/extract_fastwam.py`, `src/t5_cache.py`, `src/proxy_wam.py`, tests `src/test_proxy_wam.py`.
+
+**Facts found while porting (verified, FastWAM source unless noted):**
+- Cameras: agentview + wrist, each 512² → 224² (bilinear, antialias), side by side to 224 × 448, [-1, 1] for the VAE (`configs/data/libero_2cam*.yaml`, `robot_video_dataset.py`). VAE latent grid 14 × 28, 48 channels, 4× time (`Wan2.2_VAE`, `WanVideoVAE38`: z_dim 48, ×16 spatial). DiT patch (1, 2, 2) → 98 tokens per latent step, 294 video tokens.
+- Training frames in `yuanty/LIBERO-fastwam` are already upright (episode 432 checked by eye). Rollouts rotate both cameras 180° (`libero_utils.py:47–52`) and **invert the gripper sign** of predicted actions (`eval_libero_single.py:442`); the paper's composition evals also binarize the gripper, use 10 inference steps, replan every 10 steps, wait 30 steps, no action ensembling, text guidance 1.0 (App. E.3). Needed for the rollout code (stage 3).
+- Correction to choice 4: padded actions are **not** the last action repeated. Fast-WAM clamps the index, then zeroes the 6 delta dims of padded steps and keeps the clamped gripper (`fastwam_processor.py`), and drops them from the loss. Images: last frame repeated; a future latent step is padding only if all 4 of its frames are.
+- Proprio is min/max-normalized like actions (not z-scored as in the old proxy); stats over the whole training set; clamp ±5 (`normalizer.py`).
+- VAE latents are computed per training window from that window's 9-frame clip (causal VAE: later latent steps depend on the clip start), so they are cached per start frame t, not per frame. Storage: 31.4 GB (not 10.5 GB); total for VAE + DINOv3 + C-RADIOv4 + SigLIP 2 ≈ 756 GB (arithmetic).
+- T5: umT5-XXL encoder (`models_t5_umt5-xxl-enc-bf16`), 128 tokens, prompt "A video recorded from a robot's point of view executing the following instruction: {task}"; padded token positions zeroed and the mask set to all ones in the dataset. Proprio enters as one extra context token (Linear 8 → 4096).
+- Fast-WAM's defaults download `Wan2.2_VAE.safetensors` from ModelScope `DiffSynth-Studio/Wan-Series-Converted-Safetensors` (sha256 `0e913a2c…`, matched after download). The paper doesn't name its Wan 2.2 variant; that it is TI2V-5B is still speculative.
+
+**Design (as decided with the user, implemented):** the proxy *is* Fast-WAM's `FastWAMJoint` (video DiT + action DiT, mixture of transformers, joint attention, first-frame-causal video mask, action sees all video) built at small size from random weights: video width 384, action width 128 (paper 3:1), 8 layers, 3 heads × 128 (Wan's head size; Wan's 3D RoPE needs head_dim // 3 even), FFN ratios as Fast-WAM. Inputs channel-concatenated per grid cell [VAE 48 | sources]; one expanded patch embedding and head. Loss = Fast-WAM's (shift 5 video / 1 action, timestep weights, masked padding) with the video term split per source (Eq. 9). Size still set at the pilot.
+
+**Our choices where the paper is silent (speculative, flagged for any writeup):**
+- Encoders see Fast-WAM's 224² frame and resize it themselves (DINOv3 224 → 14 × 14; C-RADIOv4 448 → 28 × 28; SigLIP 2-so400m 384 → 27 × 27), then their grid is resized bilinearly to 14 × 14 per camera.
+- Future features per latent step = mean of its 4 frames (stated for REPA, App. B.2).
+- Source channels z-scored per channel with training-set stats (computed during extraction, no extra pass).
+- Batches from 16-episode buffers (each episode read once per epoch), not a full shuffle.
+
+**Checks (verified, `test_proxy_wam.py`, all 12 pass, CPU):** normalizer, padding masks and the full training loss equal Fast-WAM's own code (loss identical to Fast-WAM's `training_loss` on the same draws); attention mask; data plan coverage and determinism; z-score; overfit one batch; inference determinism; checkpoint resume reproduces a straight run bit for bit; `main()` end to end. Check 9 (overfit) was revised after two failed runs; history in the test and in LOG.
 
 ## Pre-registered outcome rule
 Primary metric: LIBERO-Plus success on the stratified subset, mean over 3 training seeds, with a demo-free CI from seeds × episodes (method to fix before results).
