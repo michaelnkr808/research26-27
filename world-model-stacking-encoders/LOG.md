@@ -453,3 +453,9 @@
 ## 2026-10-27 (k) [agent] (cleanup; key findings updated)
 **Did:** With user OK: deleted Job `stacking-encoders-target-diag` and ConfigMap `stacking-encoders-target-src`; verified nothing of ours is left in `aria-world` except Secret `stacking-encoders-hf` and the two PVCs. With user OK: added the target-side result to README key findings and noted that neither role shows the D+R harm.
 **Next:** decide with the mentor where this leaves the stacking-encoders question given the LIBERO focus; candidate next step (not approved): look at D+R by LIBERO-Plus perturbation category (ask the authors, or probe perturbed frames).
+
+## 2026-10-27 (l) [agent] (plain-language write-up; how the paper benchmarks)
+**Did:** Added an "In plain words" section (full encoder names, per user request) to `experiments/2026-10-21-target-diagnostics/README.md`. Read the paper's evaluation text (arXiv HTML v1: Sec. 4.1, 4.4, App. C.2, D.1, E.3) and added the benchmarking protocol to `literature/notes/liu2026-what-visual-representations-wams.md`.
+**Found (verified, arXiv HTML v1):** one checkpoint per config, trained on LIBERO (1,712 episodes, four suites), then scored without retraining on clean LIBERO (2,000 rollouts, near saturation, App. D only) and LIBERO-Plus (10,030 episodes × 3 eval seeds, 7 categories; the headline). The composition study reports only LIBERO-Plus totals: no per-category and no clean-LIBERO numbers for any combination. C-RADIOv4 alone: LP 83.5 vs DINOv3 84.0; better than DINOv3 on background (86.2 vs 83.9) and noise (86.6 vs 86.0).
+**Clarified for the user:** our diagnostics never run a policy; their only ground truth is the paper's LIBERO-Plus totals.
+**Next:** user decides whether to ask the authors for DINOv3 + C-RADIOv4 per-category numbers, or to probe perturbed frames (new cluster work, needs a go-ahead).

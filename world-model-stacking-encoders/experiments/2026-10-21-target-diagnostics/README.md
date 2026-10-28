@@ -2,6 +2,17 @@
 
 **Purpose:** test the target role of each partner encoder. In liu2026what every encoder is both a current-frame input and a future-feature target of the WAM; the feasibility tally (`../2026-10-19-feasibility-tally/`) only tested the input role. Binding spec: LOG 2026-10-21 (i) as amended by (j); task list `PLAN.md`; run handoff `RUN.md`.
 
+## In plain words (written for the user, 2026-10-27)
+**The big idea.** The paper builds robot world models that see through several pretrained vision encoders at once. Adding a second encoder to DINOv3 usually helps a little, but adding C-RADIOv4 makes the robot much worse (−5.4 points). Training a model for every combination is expensive, so we want to spot a bad combination cheaply, from the encoders' features alone, before any training.
+
+**How we score things.** We never run a robot. We compute cheap measures on frozen features from clean libero_goal training demos, then check whether their ranking of partners matches the ranking in the paper's Table 10. Those paper numbers are LIBERO-Plus success rates: the paper trains each combination once and tests it under perturbed conditions (camera, lighting, background, noise and so on). See `../../literature/notes/liu2026-what-visual-representations-wams.md`.
+
+**Experiment 1, the input side (`../2026-10-19-feasibility-tally/`).** First guess: C-RADIOv4 hurts because it repeats what DINOv3 already says. We asked how much new information about the robot's actions each partner adds on top of DINOv3. C-RADIOv4 added the most of the four. So simple redundancy doesn't explain it.
+
+**Experiment 2, the target side (this folder).** In these world models each encoder is also something the model must predict a moment ahead. Second guess: predicting C-RADIOv4's future is a burden that crowds out predicting DINOv3's future, like a student whose second exam eats into study time for the first. We built a capacity-limited linear stand-in and measured how much worse it got at DINOv3's future once each partner's future was added. Every partner cost a little, but VGGT-Ω cost the most (about twice C-RADIOv4), and VGGT-Ω helped in the paper. C-RADIOv4 and SigLIP 2 came out nearly tied, though they are the paper's worst and best partners. By the rule fixed in advance, this guess fails.
+
+**Why, possibly (speculative).** Both tests look at clean, normal images, and there C-RADIOv4 looks like a fine partner (alone it is nearly as good as DINOv3 in the paper, 83.5 vs 84.0). So the damage probably isn't visible there. Candidates: (1) the paper trained each combination once, so DINOv3 + C-RADIOv4 may be one unlucky run; (2) something goes wrong during training that frozen features can't show; (3) the pair breaks mainly under LIBERO-Plus perturbations, which our clean-image probes never see. The paper reports only the LIBERO-Plus total for combinations, so the per-category breakdown that would test (3) isn't public.
+
 ## Config
 - **Data:** libero_goal, 10 task files, 63,728 frames, 500 demos; same demo split as the tally (train/val/test 38,464 / 12,416 / 12,848 frames). Both cams concatenated per encoder.
 - **Pairs:** base D (DINOv3) with B ∈ {L SigLIP 2, S SAM 3, G VGGT-Ω, R C-RADIOv4}. Features are the tally's caches. Dims (both cams): D 2,048; L 2,048; S 2,048; G 4,096; R 4,608.

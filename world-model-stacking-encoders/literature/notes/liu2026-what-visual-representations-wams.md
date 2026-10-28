@@ -25,3 +25,13 @@
   - Per-source feature losses are summed with weight 1.0 each (App. E.1 Eq. 9). Feature normalization is not stated ("source-specific processing", E.1).
   - Table 9 (DINOv3): current-only 76.5, future-only 81.9, both 84.0.
   - D+R 78.6 is below both D (84.0) and R (83.5) alone.
+
+- **How the paper benchmarks (verified, arXiv HTML v1 text, Sec. 4.1, 4.4, App. C.2, D.1, E.3; read 2026-10-27):**
+  - Train once on LIBERO (Fast-WAM's processed data, all four suites, 1,712 episodes). Then the *same* checkpoint is scored three ways, with no retraining:
+    1. **LIBERO (clean):** 50 rollouts per task × 40 tasks = 2,000 rollouts, averaged over the four suites. Near saturation (~97–99%), so only in App. D, Table 8.
+    2. **LIBERO-Plus (LP):** 10,030 episodes per evaluation seed across 7 perturbation categories (camera, robot initial state, language, light, background, noise, layout), 3 evaluation seeds (41, 42, 43). The perturbation descriptions appended to LP instructions are removed (rewritten instructions kept in the language category). LP is the headline metric.
+    3. Other benchmarks (RoboCasa GR1, RoboTwin 2.0, real Galbot G1) for the single-source study and the final recipe only, not the composition study.
+  - **Composition (RQ3, Fig. 4, Table 10):** only the LP **total** per combo. No per-category LP numbers and no clean-LIBERO numbers for any combination, including DINOv3 + C-RADIOv4. One trained checkpoint per combo.
+  - Single sources do get per-category LP (Table 1) and clean LIBERO (Table 8). C-RADIOv4 alone: LP 83.5 (DINOv3 84.0), clean LIBERO 98.2; per category camera 62.6, robot 81.0, language 92.2, light 97.3, background 86.2, noise 86.6, layout 83.6. So C-RADIOv4 alone is about as good as DINOv3 (better on background and noise); only the pair is bad.
+  - Composition eval settings (E.3): 10 inference steps, replan every 10 steps, 30 initial waiting steps, no action ensembling, text guidance 1.0, binarized gripper.
+  - **Implication for us:** our diagnostics never run a policy. They compare frozen-feature probe scores on clean libero_goal training demos (one suite of four) against the paper's LP totals. The harm we try to predict is measured under perturbations we never look at.
