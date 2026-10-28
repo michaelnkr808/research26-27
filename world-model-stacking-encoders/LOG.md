@@ -589,3 +589,6 @@
 - CIs, if added, resample whole episodes with their three rollouts together.
 **Inconsistency for the user (not changed):** the Google Doc (from session (d)) says the project lead approves the 15-run round after the pilot; RUN.md and memory say stage 4 is pre-approved (user quote in RUN.md).
 **Next:** implementation agent updates `lp_eval.py` to the locked protocol (now a RUN.md precondition for step 9); then RUN.md stage 2.
+
+## 2026-10-28 (i) [agent] (doc and PLAN reconciled)
+**Did:** Checked the Google Doc against PLAN/RUN. Rules matched; four side mismatches fixed with the user: (1) user confirmed the 15-run round is pre-approved and should run without them watching; the doc now says all five steps are pre-approved, with the chain stopping on major problems (matches RUN.md); (2) stale PLAN status line ("threshold open") replaced; (3) doc time estimate updated for the 48 h eval cap and two-run pilot: ~4 days best case, ~6 with contention (speculative; user: fine as long as it isn't weeks; RUN stop 5 still caps stage 4 at ~7 days); (4) doc "Not yet tested" now lists the analysis-code update as a precondition for pilot sizing. Doc read back; mirror updated.

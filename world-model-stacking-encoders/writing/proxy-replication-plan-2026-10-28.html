@@ -75,15 +75,15 @@
 <li>Pilot (sizing only): two short training runs with the same training seed, one DINOv3 and one DINOv3 + C-RADIOv4, with timed rollouts on clean LIBERO and LIBERO-Plus. Both pilot models are evaluated on the same pilot episodes (their own proportional sample) under evaluation seeds 41, 42 and 43. The pilot fixes the model size and the number of GPUs, and sets the subset size by a rule locked in advance: estimate the standard deviation of the paired per-episode difference (DINOv3 + C-RADIOv4 minus DINOv3, each episode averaged over its three evaluation seeds), multiply it by 1.5 because full runs may disagree more than one short run does (equivalently, multiply the variance by 2.25), and choose enough episodes that the standard error of the per-seed paired mean is at most 1.35 percentage points. If that would push evaluation of all 15 checkpoints past roughly 48 hours on at most 8 GPUs, use the largest affordable size and report the precision it actually gives. The final subset is then drawn independently, excluding the pilot episodes, and pilot results never enter the effect analysis. The rollout code is written while extraction runs.</li>
 <li>Full round: 15 training runs in two waves of at most 8 GPUs, then evaluation of every checkpoint on the fixed subset, then the analysis above.</li>
 </ol>
-<p>Steps 1 to 4 are pre-approved and chained automatically: each step starts when the previous one finishes and passes its checks. A failure gets one fix and retry, and a second failure stops the chain. The project lead approves step 5 after seeing the pilot's numbers.</p>
-<p>Time estimate: extraction takes a few hours, the pilot several hours, training about a day if enough GPUs are free, and rollouts about a day. That gives about three days end to end in the best case and about five with cluster contention or first-run problems.</p>
+<p>All five steps are pre-approved by the project lead and chained automatically: each step starts when the previous one finishes and passes its checks. A failure gets one fix and retry, and a second failure stops the chain. The chain stops and reports to the project lead on any major problem: repeated failures, a cluster-policy problem, an orientation mismatch, or costs far beyond the plan.</p>
+<p>Time estimate: extraction takes a few hours, the pilot several hours, training about a day if enough GPUs are free, and rollouts up to about two days (the cap). That gives about four days end to end in the best case and about six with cluster contention or first-run problems.</p>
 
 <h2>Checks done so far</h2>
 <ul>
 <li>The proxy's training loss is identical to Fast-WAM's own training loss on the same inputs and random draws.</li>
 <li>Padding masks, normalization and the attention mask match Fast-WAM's code. Checkpoint resume reproduces an uninterrupted run exactly. The model overfits a single batch (the action loss goes to near zero).</li>
 <li>Real-data smoke test on one LIBERO episode: VAE latents and all three encoders extract correctly, and all configurations train end to end. These losses are not results.</li>
-<li>Not yet tested: the T5 encoder with its real weights (11 GB, to run on the cluster), and the rollout code, which isn't written yet.</li>
+<li>Not yet tested: the T5 encoder with its real weights (11 GB, to run on the cluster), the rollout code, which isn't written yet, and the analysis code's update to the locked protocol (three evaluation seeds per episode, proportional sampling, the calibration verdict and the sizing step), which must pass its tests before the pilot is sized.</li>
 </ul>
 
 <h2>Risks and open items</h2>

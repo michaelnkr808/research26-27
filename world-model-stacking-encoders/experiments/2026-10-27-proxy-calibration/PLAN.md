@@ -1,6 +1,6 @@
 # Proxy-policy calibration round (decision 003)
 
-**Status (2026-10-28):** steps 1–3 done; code rebuilt on Fast-WAM ("Stage 1" below) and eval bookkeeping written. Steps 4–6 are **pre-approved by the user and run autonomously** following `RUN.md` (same folder) until a stop condition there. Open before step 6: the minimum-drop threshold (outcome rule). No Jobs yet.
+**Status (2026-10-28):** steps 1–3 done; code rebuilt on Fast-WAM ("Stage 1" below) and eval bookkeeping written. Steps 4–6 are **pre-approved by the user and run autonomously** following `RUN.md` (same folder) until a stop condition there. Outcome rule, evaluation protocol and sample-size rule locked 2026-10-28 (f)–(h). Precondition for the step 5 sizing: `src/lp_eval.py` updated to the locked protocol with passing tests. No Jobs yet.
 
 ## Question
 Does a small policy trained on frozen encoder features, with 3 training seeds per config, reproduce the paper's composition ordering? And is D+R worse than D alone *in the proxy* once training-seed noise is measured?
