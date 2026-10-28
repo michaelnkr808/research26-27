@@ -3,7 +3,7 @@
 <p><i>Status as of 2026-10-28, before any training run. Source of truth: experiments/2026-10-27-proxy-calibration/PLAN.md and decision 003 in the project repo. This document gathers them for review.</i></p>
 
 <h2>Summary</h2>
-<p>We will train a small copy of the paper's world action model (WAM) from scratch, 3 training seeds for each of 5 encoder configurations, and test every checkpoint on the same fixed set of LIBERO-Plus episodes. The primary question is whether DINOv3 + C-RADIOv4 does worse than DINOv3 alone in this proxy, seed by seed. This is a proxy replication: the proxy has no pretrained Wan 2.2 video prior and is far smaller than the paper's model, so its result is about the proxy. Its job is to decide whether a higher-fidelity, multi-seed WAM replication is worth running. If the proxy does not reproduce the drop, that does not show the paper's result was training noise.</p>
+<p>We will train a Fast-WAM-based proxy of the paper's world action model (WAM), using the paper's recipe where it is known, from scratch, 3 training seeds for each of 5 encoder configurations, and test every checkpoint on the same fixed set of LIBERO-Plus episodes. The primary question is whether DINOv3 + C-RADIOv4 does worse than DINOv3 alone in this proxy, seed by seed. This is a proxy replication: the proxy has no pretrained Wan 2.2 video prior, is far smaller than the paper's model, and makes its own choices where the paper is silent (feature scaling, temporal averaging of features) that could affect whether stacking hurts, so its result is about the proxy. Its job is to decide whether a higher-fidelity, multi-seed WAM replication is worth running. If the proxy does not reproduce the drop, that does not show the paper's result was training noise.</p>
 <p>The code is written and tested locally. Nothing has run on the cluster yet. The expected wall time is about three days if things go smoothly and closer to five if not.</p>
 
 <h2>Background and question</h2>
@@ -37,13 +37,13 @@
 </ul>
 <h3>Differs from the paper (unavoidable)</h3>
 <ul>
-<li>No pretrained video prior. The paper starts from Wan 2.2 and a pretrained action expert; the proxy starts from random weights.</li>
+<li>No pretrained video prior. The paper's video expert is initialized from Wan 2.2 (Sec. 3.1); the paper does not say how its separate action expert is initialized. The proxy starts both from random weights.</li>
 <li>Size. The proxy has roughly 28 to 35 million parameters depending on configuration (video width 384, action width 128, 8 layers, 3 heads of size 128), against billions in the paper. Final size is set after the pilot run.</li>
 </ul>
 <h3>Our choices where the paper is silent (flagged in any write-up)</h3>
 <ul>
 <li>Encoder input: every encoder sees the same 224 x 224 frame the VAE sees and applies its own resizing; its patch grid is then resized bilinearly to the VAE's 14 x 14 per camera.</li>
-<li>Temporal alignment of features: each future latent step uses the mean of its four frames' features. The paper states this for its REPA variant; applying it to channel-wise concatenation is our reading.</li>
+<li>Temporal alignment of features: each future latent step uses the mean of its four frames' features. The paper states this for its REPA variant; applying it to channel-wise concatenation is our reading. If the paper keeps per-frame features instead, averaging could smooth over a conflict between sources and change whether stacking hurts.</li>
 <li>Feature scaling: each encoder's channels are z-scored with training-set statistics. The paper does not say how it scales sources before concatenation. If it fed raw features, a source with large values could dominate; our scaling would hide that effect.</li>
 <li>Batching: batches are drawn from a shuffled buffer of 16 episodes at a time, so each episode is read from disk once per epoch. This is close to, but not the same as, a full shuffle.</li>
 </ul>
@@ -56,12 +56,12 @@
 </ul>
 
 <h2>Pre-registered analysis and outcome rule</h2>
-<p>Amended on 2026-10-28 after outside review, before any training run; the original text is kept in the repo history.</p>
-<p>Primary analysis: for each training seed s, the per-episode paired difference between D+R seed s and D seed s on the same LIBERO-Plus episodes, and its mean. The three seed deltas are reported individually, each with the counts of episodes where D+R failed and D succeeded, and the reverse. Means and confidence intervals are secondary. Three seeds can show whether a drop is large and consistent in sign; they are not enough for strong claims about training-seed variance.</p>
+<p>Amended on 2026-10-28 after outside review, before any training run; the original text is kept in the repo history. Amended again the same day after a second review: a fixed threshold replaces "beyond the seed spread", the storage volume was resized, an image-orientation check was added, and the proxy is described more precisely.</p>
+<p>Primary analysis: for each training seed s, the per-episode paired difference between D+R seed s and D seed s on the same LIBERO-Plus episodes, and its mean. The three seed deltas are reported individually, each with the counts of episodes where D+R failed and D succeeded, and the reverse. Means and confidence intervals are secondary. Three seeds can show whether a drop is large and consistent in sign; they are not enough for strong claims about training-seed variance, so this round is reported as a small screening result.</p>
 <p>Secondary: each configuration's LIBERO-Plus success per seed and averaged over seeds, broken down by perturbation category, and clean LIBERO.</p>
 <ol>
 <li>Calibration passes if D beats none and D+L is at least D minus one seed standard deviation. If calibration fails, the proxy doesn't track the paper and the D+R comparison is not interpreted.</li>
-<li>If calibration passes and all three D+R minus D deltas are clearly negative (beyond the seed spread of the single-encoder configurations), the harm reproduces in the proxy. We then compare clean LIBERO with LIBERO-Plus and look by category to separate a robustness failure from a training failure. This supports a higher-fidelity, multi-seed replication at the paper's scale.</li>
+<li>If calibration passes and all three D+R minus D deltas are negative and each at least as large as a minimum drop fixed before any training run (the threshold is still open; the project lead sets it before the full round, step 5), the harm reproduces in the proxy. We then compare clean LIBERO with LIBERO-Plus and look by category to separate a robustness failure from a training failure. This supports a higher-fidelity, multi-seed replication at the paper's scale.</li>
 <li>If the deltas are near zero or mixed in sign, the result is "the proxy does not reproduce the drop". This does not establish that the paper's result was training noise: the effect may need the pretrained video prior or the full-size model.</li>
 <li>Overlap between encoders (C-RADIOv4 is distilled partly from DINOv3) stays a hypothesis in any write-up, not the explanation.</li>
 </ol>
@@ -69,12 +69,13 @@
 
 <h2>Execution plan</h2>
 <ol>
-<li>Storage and data: a CephFS volume of about 760 GB on the NRP Nautilus cluster, and the LIBERO dataset downloaded onto it.</li>
+<li>Storage and data: a CephFS volume of about 1 TB (the caches alone total about 756 GB, so a 760 GB volume would leave no room for the dataset, intermediates, logs or checkpoints) on the NRP Nautilus cluster, and the LIBERO dataset downloaded onto it.</li>
+<li>Orientation check: before full extraction, view frames from both cameras in all four suites of the training data to confirm they are upright and need no rotation. Before any evaluation, pass one simulator frame through our rollout preprocessing (the 180-degree rotation) and compare it side by side with a training frame from the same task. A train/eval orientation mismatch would swamp the comparison.</li>
 <li>Feature extraction: one small timed shard first, then VAE latents, DINOv3, C-RADIOv4 and SigLIP 2 features for all 1,712 episodes, and the T5 instruction cache. Cached sizes are about 31 GB for the VAE latents and 223 to 251 GB per encoder.</li>
 <li>Pilot: one shortened training run and timed rollouts on clean LIBERO and LIBERO-Plus, to fix the model size, the subset size and the number of GPUs. The rollout code is written while extraction runs.</li>
 <li>Full round: 15 training runs in two waves of at most 8 GPUs, then evaluation of every checkpoint on the fixed subset, then the analysis above.</li>
 </ol>
-<p>Steps 1 to 3 are pre-approved and chained automatically: each step starts when the previous one finishes and passes its checks. A failure gets one fix and retry, and a second failure stops the chain. The project lead approves step 4 after seeing the pilot's numbers.</p>
+<p>Steps 1 to 4 are pre-approved and chained automatically: each step starts when the previous one finishes and passes its checks. A failure gets one fix and retry, and a second failure stops the chain. The project lead approves step 5 after seeing the pilot's numbers.</p>
 <p>Time estimate: extraction takes a few hours, the pilot several hours, training about a day if enough GPUs are free, and rollouts about a day. That gives about three days end to end in the best case and about five with cluster contention or first-run problems.</p>
 
 <h2>Checks done so far</h2>

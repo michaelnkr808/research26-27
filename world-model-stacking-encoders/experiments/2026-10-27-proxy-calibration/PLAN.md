@@ -5,7 +5,7 @@
 ## Question
 Does a small policy trained on frozen encoder features, with 3 training seeds per config, reproduce the paper's composition ordering? And is D+R worse than D alone *in the proxy* once training-seed noise is measured?
 
-**Framing (amended 2026-10-28 after reviewer feedback, user OK):** this is a **proxy replication**. The proxy has no pretrained Wan 2.2 video prior and is far smaller, so its result is about the proxy. Its job is to decide whether a **higher-fidelity, multi-seed WAM replication** (Wan 2.2-based model and training recipe matched to Liu et al. as closely as the available code permits) is warranted. It cannot by itself establish what happened in the paper's model.
+**Framing (amended 2026-10-28 after reviewer feedback, user OK):** this is a **proxy replication**. The proxy (a Fast-WAM-based proxy using the paper's recipe where known; amended wording after the second review) has no pretrained Wan 2.2 video prior, is far smaller, and makes its own choices where the paper is silent (feature z-scoring, temporal averaging of future features) that may affect whether stacking hurts, so its result is about the proxy. Its job is to decide whether a **higher-fidelity, multi-seed WAM replication** (Wan 2.2-based model and training recipe matched to Liu et al. as closely as the available code permits) is warranted. It cannot by itself establish what happened in the paper's model.
 
 ## Configs (user, 2026-10-27)
 | Config | Encoders | Why |
@@ -95,8 +95,8 @@ Sources: github.com/sylvestf/LIBERO-plus (README, `libero/libero/benchmark/task_
 2. Time aligned to the VAE: 9 frames per view at t, t+4 … t+32 (Table 6, verified) → 1 current + 2 future latent steps (4× temporal compression, recalled); future features averaged in groups of 4 (stated for REPA, App. B.2; applying it to channel-wise concat is our reading, speculative).
 3. Channel-wise concat of raw [VAE | source 1 | source 2] per grid cell, then one shared input projection and one output head (App. B.2), replacing per-stream projections to width 64.
 4. Two experts (video, action) with joint attention, asymmetric mask (action sees video, not the reverse), T5 by cross-attention, conditioned on state and flow time (Sec. 3.1); separate video and action flow timesteps as in Fast-WAM.
-5. No pretrained video prior (the paper starts from Wan 2.2): the main unavoidable gap. Size set from the step 5 pilot.
-**Storage (user decision, 2026-10-28):** extract features once to disk and stream them during training (not live encoders: ~2,700× more encoder work, arithmetic). Full-grid float16 over 277,713 frames × 2 cams: DINOv3 223.0 GB, C-RADIOv4 250.8 GB, SigLIP 2-so400m 250.8 GB, VAE (48 ch) 10.5 GB (arithmetic, run 2026-10-28). Needs a ~750 GB CephFS PVC; `aria-world` has no storage ResourceQuota and holds 400Gi PVCs from other projects (kubectl, verified 2026-10-28). User: no need to ask the namespace admin. PVC created at step 4 with the go-ahead for that Job.
+5. No pretrained video prior (the paper's video expert starts from Wan 2.2; the paper does not say how its action expert is initialized: Sec. 3.1 verbatim, App. B checked only via a summary, 2026-10-28): the main unavoidable gap. Size set from the step 5 pilot.
+**Storage (user decision, 2026-10-28):** extract features once to disk and stream them during training (not live encoders: ~2,700× more encoder work, arithmetic). Full-grid float16 over 277,713 frames × 2 cams: DINOv3 223.0 GB, C-RADIOv4 250.8 GB, SigLIP 2-so400m 250.8 GB, VAE (48 ch) 10.5 GB (arithmetic, run 2026-10-28). Needs a ~750 GB CephFS PVC (superseded 2026-10-28 (e): caches total ≈ 756 GB, so request ~1 TB for headroom); `aria-world` has no storage ResourceQuota and holds 400Gi PVCs from other projects (kubectl, verified 2026-10-28). User: no need to ask the namespace admin. PVC created at step 4 with the go-ahead for that Job.
 
 **Smoke test (verified, this Mac, 2026-10-27):** DINOv3 could not be used locally (gated; no HF token on this machine) and our cached libero_goal features are only on the cluster PVCs, so features were extracted locally for **3 demos of `turn_on_the_stove_demo.hdf5`** (265 timesteps): C-RADIOv4 (pinned revision, MPS, 5.2 frames/s) and SigLIP 2-**base** (cached; the real runs use the so400m variant; CPU, 48 frames/s). Configs none, c-radiov4, c-radiov4+siglip2 (same shape as D+R: two encoder streams of 1,152 and 768 channels), seed 0, 10 epochs, batch 32, 55 steps, default model size:
 | config | params | wall (CPU / MPS) | train time (CPU / MPS) |
@@ -143,7 +143,7 @@ Replaces `src/proxy_policy.py` (kept for history; its smoke results above are su
 Secondary: each config's LIBERO-Plus success (mean over seeds), per category; clean LIBERO as context (the paper reports it near saturation).
 1. **Calibration passes** if D > none and D+L ≥ D − (one seed sd). If it fails, the proxy doesn't track the paper and the D+R comparison isn't interpreted.
 2. **If calibration passes:**
-   - All three D+R − D deltas clearly negative (beyond the seed spread of the singles) → the harm reproduces in the proxy. Then compare clean vs LP and per category to split explanations (2) and (3). This supports a higher-fidelity multi-seed WAM replication to check it at the paper's scale.
+   - All three D+R − D deltas negative and each at least a minimum drop fixed before any training run (**threshold open: user sets it before the 15-run round**; amended 2026-10-28 (e), replacing "beyond the seed spread of the singles", which is unstable with 3 seeds) → the harm reproduces in the proxy. Reported as a small screening result, with per-seed discordant-episode counts. Then compare clean vs LP and per category to split explanations (2) and (3). This supports a higher-fidelity multi-seed WAM replication to check it at the paper's scale.
    - Deltas near zero or mixed in sign → "the proxy does not reproduce the drop". This does **not** establish that the paper's result was training noise: the harm may need the pretrained video prior or the full-size model. It argues for the higher-fidelity multi-seed WAM replication if the question still matters.
 3. Overlap or feature interference (C-RADIOv4 distills DINOv3, SigLIP 2, SAM 3) stays a hypothesis in any writeup, not the explanation.
 
@@ -158,8 +158,8 @@ Secondary: each config's LIBERO-Plus success (mean over seeds), per category; cl
 1. Read LIBERO-Plus repo and Fast-WAM data docs (no compute). Resolve the open items above.
 2. Write the proxy training code + synthetic tests locally.
 3. Local smoke test on libero_goal features (CPU or Mac, tiny).
-4. **Ask:** extraction Jobs for 3 suites × D, R, L.
-5. **Ask:** 1 pilot training run + timed rollouts (clean and LIBERO-Plus) on 1 GPU, to size everything.
+4. **Ask:** extraction Jobs for 3 suites × D, R, L. Before full extraction (added 2026-10-28 (e)): view frames from both cameras in all four suites of `yuanty/LIBERO-fastwam` to confirm they are upright and need no rotation (one episode, one camera checked so far). Volume ~1 TB, not ~760 GB.
+5. **Ask:** 1 pilot training run + timed rollouts (clean and LIBERO-Plus) on 1 GPU, to size everything. Before any rollout counts: pass one simulator frame through our rollout preprocessing (180° rotation) and compare it side by side with a training frame of the same task (added 2026-10-28 (e)).
 6. **Ask:** the 15 training runs and eval.
 
 ## Gates
