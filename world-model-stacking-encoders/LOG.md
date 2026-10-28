@@ -592,3 +592,10 @@
 
 ## 2026-10-28 (i) [agent] (doc and PLAN reconciled)
 **Did:** Checked the Google Doc against PLAN/RUN. Rules matched; four side mismatches fixed with the user: (1) user confirmed the 15-run round is pre-approved and should run without them watching; the doc now says all five steps are pre-approved, with the chain stopping on major problems (matches RUN.md); (2) stale PLAN status line ("threshold open") replaced; (3) doc time estimate updated for the 48 h eval cap and two-run pilot: ~4 days best case, ~6 with contention (speculative; user: fine as long as it isn't weeks; RUN stop 5 still caps stage 4 at ~7 days); (4) doc "Not yet tested" now lists the analysis-code update as a precondition for pilot sizing. Doc read back; mirror updated.
+
+## 2026-10-28 (i) [agent] (NRP policy recheck after the protocol changes in (g)–(h))
+**Goal:** User asked to confirm the plan is still compliant after the eval protocol and sample-size changes (5909065, bef745d, ac5cafc).
+**Did:** Diffed PLAN/RUN since 934be0c; stage 2 manifests and `watch_job.sh` unchanged since the (g) policy check. Read-only kubectl: none of our proxy PVC/Jobs/ConfigMaps exist yet.
+**Found:** Stage 2 still compliant (as in the earlier policy-check entry). New exposure is in stages 3–4: three eval seeds per episode triple rollout volume (cap 48 h on ≤ 8 GPUs keeps it bounded), and simulator rollouts are CPU-bound with a policy call every 10 steps, so one env per GPU would likely sit below NRP's 40% GPU floor for hours (speculative; not measured). Also the pilot training, rollout and round manifests don't exist yet and RUN had no compliance rule for manifests written mid-run.
+**Changed RUN.md:** new section "Manifests written during the run" (08 pre-flight list, measured requests, server dry run); rollout code must batch many environments per GPU (results independent of batching); pilot rollout Job must show ≥ 40% GPU over 10-min windows; new stop 10 if it can't.
+**Next:** unchanged: RUN.md stage 2 step 1.
