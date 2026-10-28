@@ -602,3 +602,8 @@
 
 ## 2026-10-28 (j) [agent] (RUN.md: analysis-code update made an explicit step)
 **Did:** RUN.md only listed the `lp_eval.py` update as a precondition in its authorization section. Added "Step 7a. Analysis code to the locked protocol" (local, during extraction, before step 9 sizing) with the full checklist: proportional subset with pilot exclusion, records per episode × eval seed 41–43 with per-episode averaging, calibration + D+R verdict with named threshold constants, the sizing helper (sd × 1.5, SE ≤ 1.35), episode-level resampling for CIs, synthetic tests incl. boundary values; ConfigMap recreated afterwards. User will point the implementation agent at RUN.md.
+
+## 2026-10-28 (k) [agent] (watcher survives a dropped laptop connection)
+**Found:** `watch_job.sh` turned any failed Prometheus query into "nan", the same as "no such series". With the laptop offline for ~20 min (10 polls at 120 s) after a Job was seen, it would exit 3 ("metrics gone"), and before a Job was seen the offline time counted toward exit 5. The user plans to move the laptop around during the run.
+**Did:** `q()` now returns `err` when curl fails or Prometheus doesn't answer `success`; a poll with `err` on the status queries prints `offline`, counts toward nothing and pauses the exit-5 clock; `err` in the GPU/CPU checks is ignored. `PROM` can be overridden (for testing). RUN.md notes the behavior.
+**Verified:** `bash -n` ok; offline test (unreachable endpoint, 1 s polls, 12 s): 12 "offline" lines, no exit; online test against the real Prometheus with a nonexistent Job: normal status lines with nan, no exit within 15 s. Not re-tested: the complete/dead paths on a real Job (unchanged code).
