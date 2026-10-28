@@ -1,6 +1,6 @@
 # Proxy-policy calibration round (decision 003)
 
-**Status:** step 1 done (open items resolved below); steps 2–3 (code, local smoke test) in progress 2026-10-27. No Jobs.
+**Status:** steps 1–3 done 2026-10-27 (open items resolved; code + tests; local smoke test). Steps 4–6 need a go-ahead per Job. No Jobs.
 
 ## Question
 Does a small policy trained on frozen encoder features, with 3 training seeds per config, reproduce the paper's composition ordering? And is D+R worse than D alone once training-seed noise is measured?
@@ -63,6 +63,31 @@ Sources: github.com/sylvestf/LIBERO-plus (README, `libero/libero/benchmark/task_
 - verified: **no LICENSE file in the GitHub repo** (GitHub reports none); the HF assets repo is tagged MIT. Treat the code license as unstated; fine for evaluation use, ask before redistributing anything from it.
 - speculative: LIBERO-Plus should be run with `mujoco==3.3.2` (Fast-WAM's README instruction for LIBERO) so scenes match the training data. Not tested; check in step 5.
 - Stratified subset: still open. The per-category counts above make a fixed per-category sample easy (e.g. N per category per suite, seeded). N is set after the step 5 timing.
+
+## Steps 2–3: code and local smoke test (agent, 2026-10-27)
+**Code:** `src/proxy_policy.py`, tests `src/test_proxy_policy.py` (commit d5d10b0). verified: all 9 synthetic checks pass (pixel tokens, windows never cross an episode end, train-only normalization, loss = action + Σ per-source means with weight 1.0, config wiring, seed-only data order, a planted signal is learned from the right stream and not without it, same-seed determinism, end to end through `main()`). Check 7 failed twice on its own premise before passing; the history is in the test file (thresholds unchanged).
+
+**Design choices in the code that need the user's review** (none changes the configs, eval protocol or outcome rule):
+1. **Pixel stream in every config** (raw frames, 180° rotated, block-averaged to 32×32 per cam, 4×4 patches): the analogue of the paper's VAE latents, which every config has. So "none" = pixels only, "D" = pixels + DINOv3. `--no-base-pixels` drops it. The PLAN table reads "none" as pixels + proprio but doesn't say whether pixels stay in D, R, etc.
+2. Every stream, pixels included, is both input and future target (t+4 … t+32), as in the paper's default joint video–action formulation.
+3. **Deterministic regression (MSE)** in place of flow matching, for both actions and future features. Simpler and cheaper; a proxy difference to state in any writeup.
+4. Steps past an episode end are masked out of the loss (Fast-WAM pads them).
+5. Feature z-score is per channel, pooled over positions and cams, train frames only. Actions min/max to [-1, 1] (as Fast-WAM); proprio = ee pose 6 + gripper 2 (as Fast-WAM), z-scored.
+6. Fusion: per stream Linear → width 64, concatenated along channels, Linear → hidden 256; 4-layer pre-norm transformer over 32 grid tokens (2 cams × 4×4) + proprio + text + 32 action queries. ~3.6M params (none) to ~7.7M (two encoders). Size is a guess until step 5.
+7. **Text encoder: open.** The model takes a frozen instruction embedding (`--text-emb`, .npz). Without it, a hash embedding is used (smoke only; it gives reworded LIBERO-Plus instructions unrelated vectors). A real choice is needed before step 5, and it must not be one of the compared encoders' own towers if that could favour a config (speculative concern).
+8. Data loader reads the yifengzhu-hf HDF5 layout (the cache we have). A loader for Fast-WAM's LeRobot data (mp4 frames, `observation.state`, `action`) is needed at step 4 with the new extraction.
+
+**Smoke test (verified, this Mac, 2026-10-27):** DINOv3 could not be used locally (gated; no HF token on this machine) and our cached libero_goal features are only on the cluster PVCs, so features were extracted locally for **3 demos of `turn_on_the_stove_demo.hdf5`** (265 timesteps): C-RADIOv4 (pinned revision, MPS, 5.2 frames/s) and SigLIP 2-**base** (cached; the real runs use the so400m variant; CPU, 48 frames/s). Configs none, c-radiov4, c-radiov4+siglip2 (same shape as D+R: two encoder streams of 1,152 and 768 channels), seed 0, 10 epochs, batch 32, 55 steps, default model size:
+| config | params | wall (CPU / MPS) | train time (CPU / MPS) |
+|---|---|---|---|
+| none | 3.62M | 4 s / 8 s | 3.0 s / 6.0 s |
+| c-radiov4 | 6.08M | 6 s / 5 s | 4.5 s / 4.1 s |
+| c-radiov4+siglip2 | 7.72M | 7 s / 7 s | 5.7 s / 5.2 s |
+About 0.1 s per batch-32 step for two encoders on CPU. Losses are not results (3 demos, 55 steps; encoder feature losses still ≈ 1.0).
+
+**Sizing notes for step 5 (arithmetic from verified counts; speculative as estimates):**
+- Full data = 277,713 frames. Grid features in RAM as float16 at 32 tokens per frame: DINOv3 (1,024) ≈ 18.2 GB, C-RADIOv4 (1,152) ≈ 20.5 GB, pixels ≈ 3.4 GB. D+R ≈ 42 GB of host RAM as written. Options before step 5: memory-map the caches, or pool to fewer tokens. Not decided.
+- 10 epochs at batch 128 ≈ 21,700 steps per run.
 
 ## Pre-registered outcome rule
 Primary metric: LIBERO-Plus success on the stratified subset, mean over 3 training seeds, with a demo-free CI from seeds × episodes (method to fix before results).

@@ -464,3 +464,20 @@
 **Did:** Explained to the user why the cheap diagnostics may miss the D+R harm, split into three causes (single-checkpoint noise, LIBERO-Plus shift, training dynamics; all speculative). User chose the multi-seed proxy policy (decision 001, option 3), skipping decision 002 step 2. Recorded as decision 003. User choices: configs none, D, R, D+R, D+L × 3 seeds; eval on clean LIBERO + LIBERO-Plus; proxy uses features as input and as future-feature targets (paper Eq. 9); all four suites from the start. Wrote `experiments/2026-10-27-proxy-calibration/PLAN.md` with a pre-registered calibration rule.
 **Not done:** no code, no Jobs, nothing run. Open items: LIBERO-Plus install/episode list, Fast-WAM's 1,712-episode list, training/rollout resolution, LIBERO-Plus subset size (needs a timed rollout).
 **Next:** PLAN step 1 (read the LIBERO-Plus repo and Fast-WAM data docs, no compute), then the proxy code + tests locally. Cluster work only with a go-ahead per Job.
+
+## 2026-10-27 (n) [agent] (proxy calibration PLAN steps 1–3: facts, code, local smoke test; no cluster work)
+**Goal:** PLAN.md "Order of work" steps 1–3 only (user brief). No Jobs, ConfigMaps or PVCs; no contact with authors; configs, eval protocol and outcome rule unchanged.
+**Did:**
+- Step 1: read LIBERO-plus (`4976dc3`), FastWAM (`7faa711`), HF `yuanty/LIBERO-fastwam` metadata, and paper Tables 6–7. Findings written into PLAN.md with labels.
+- Step 2: `src/proxy_policy.py` + `src/test_proxy_policy.py` (commit d5d10b0). Existing `test_diagnostics.py` and `test_target_diagnostics.py` still pass.
+- Step 3: local smoke test on real C-RADIOv4 and SigLIP 2-base features extracted on this Mac from 3 demos of the one local libero_goal file. Scratch venv: Python 3.11.14, torch 2.7.1, numpy 2.2.6, h5py 3.16.0, transformers 4.57.6, timm 1.0.30, open-clip-torch 3.3.0, einops 0.8.1.
+**Found:**
+- verified: the paper's 1,712 episodes = Fast-WAM's `yuanty/LIBERO-fastwam` (434 + 457 + 433 + 388; 277,713 frames; MuJoCo 3.3.2; 512×512 frames resized to 224; CC BY 4.0), not the yifengzhu-hf HDF5 we extracted from. Matching the paper means re-extracting all four suites (libero_goal too) from Fast-WAM's data.
+- verified: action horizon 32; feature frames at t+4 … t+32; Fast-WAM rollouts render at 256, rotate 180°, resize to 224 (dataset metadata says 512: unresolved discrepancy in Fast-WAM).
+- verified: LIBERO-Plus = 10,030 episodes × 1 trial; per-category counts in PLAN; no LICENSE in the GitHub repo (HF assets MIT).
+- verified: 9/9 synthetic checks pass. Check 7 (planted signal) failed twice first: run 1 base too small (val episodes drifted from train), run 2 the per-episode walk made future features near-unpredictable (feature MSE 0.557 vs threshold 0.5). Fixed the test data (continuous walk, interleaved val episodes); thresholds unchanged. Recorded in the test.
+- verified (smoke): all configs train end to end on real features on CPU and MPS; ~0.1 s per batch-32 step for two encoder streams on CPU; 3.6M–7.7M params. Losses are not results.
+- Not possible locally: DINOv3 (gated, no HF token on this Mac), and our cluster feature caches (would need a pod).
+**Resources:** local only (~10 min CPU/MPS). Cluster: none.
+**Not done:** text encoder choice; LeRobot (Fast-WAM) data loader; rollout/eval code (needs the simulators); host-RAM plan for full data (~42 GB for D+R as written).
+**Next:** user reviews the 8 design choices in PLAN "Steps 2–3" (especially the pixel stream in every config and the text encoder), then PLAN step 4 (extraction Jobs from Fast-WAM's data for D, R, L, all four suites) on a go-ahead.
