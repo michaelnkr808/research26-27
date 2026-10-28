@@ -3,7 +3,9 @@
 **Status:** steps 1–3 done 2026-10-27 (open items resolved; code + tests; local smoke test). Steps 4–6 need a go-ahead per Job. No Jobs.
 
 ## Question
-Does a small policy trained on frozen encoder features, with 3 training seeds per config, reproduce the paper's composition ordering? And is D+R worse than D alone once training-seed noise is measured?
+Does a small policy trained on frozen encoder features, with 3 training seeds per config, reproduce the paper's composition ordering? And is D+R worse than D alone *in the proxy* once training-seed noise is measured?
+
+**Framing (amended 2026-10-28 after reviewer feedback, user OK):** this is a **proxy replication**. The proxy has no pretrained Wan 2.2 video prior and is far smaller, so its result is about the proxy. Its job is to decide whether a **higher-fidelity, multi-seed WAM replication** (Wan 2.2-based model and training recipe matched to Liu et al. as closely as the available code permits) is warranted. It cannot by itself establish what happened in the paper's model.
 
 ## Configs (user, 2026-10-27)
 | Config | Encoders | Why |
@@ -135,12 +137,15 @@ Replaces `src/proxy_policy.py` (kept for history; its smoke results above are su
 **Checks (verified, `test_proxy_wam.py`, all 12 pass, CPU):** normalizer, padding masks and the full training loss equal Fast-WAM's own code (loss identical to Fast-WAM's `training_loss` on the same draws); attention mask; data plan coverage and determinism; z-score; overfit one batch; inference determinism; checkpoint resume reproduces a straight run bit for bit; `main()` end to end. Check 9 (overfit) was revised after two failed runs; history in the test and in LOG.
 
 ## Pre-registered outcome rule
-Primary metric: LIBERO-Plus success on the stratified subset, mean over 3 training seeds, with a demo-free CI from seeds × episodes (method to fix before results).
+(Amended 2026-10-28 before any training run, after reviewer feedback, user OK. The original text is in git at 44d26c1. Changes: the paired per-seed comparison became the primary analysis, and the "within seed spread" branch no longer points to paper noise.)
+
+**Primary analysis:** paired D+R − D on LIBERO-Plus, the same stratified episode subset for every checkpoint, computed per training seed (seed s of D+R vs seed s of D). The **three training-seed deltas are reported individually**, with per-episode paired differences behind each. Means and CIs are secondary. Three seeds can show whether a drop is large and consistent in sign; they are not enough for a strong claim about training-seed variance.
+Secondary: each config's LIBERO-Plus success (mean over seeds), per category; clean LIBERO as context (the paper reports it near saturation).
 1. **Calibration passes** if D > none and D+L ≥ D − (one seed sd). If it fails, the proxy doesn't track the paper and the D+R comparison isn't interpreted.
 2. **If calibration passes:**
-   - D+R < D by more than the training-seed spread → the harm is real in the proxy; then compare clean vs LP and per category to split explanations (2) and (3).
-   - D+R within seed spread of D → consistent with explanation (1), single-checkpoint noise in the paper. Report as "the proxy doesn't reproduce it", not "the paper is wrong".
-3. Clean-LIBERO results are secondary and reported alongside.
+   - All three D+R − D deltas clearly negative (beyond the seed spread of the singles) → the harm reproduces in the proxy. Then compare clean vs LP and per category to split explanations (2) and (3). This supports a higher-fidelity multi-seed WAM replication to check it at the paper's scale.
+   - Deltas near zero or mixed in sign → "the proxy does not reproduce the drop". This does **not** establish that the paper's result was training noise: the harm may need the pretrained video prior or the full-size model. It argues for the higher-fidelity multi-seed WAM replication if the question still matters.
+3. Overlap or feature interference (C-RADIOv4 distills DINOv3, SigLIP 2, SAM 3) stays a hypothesis in any writeup, not the explanation.
 
 ## Order of work
 1. Read LIBERO-Plus repo and Fast-WAM data docs (no compute). Resolve the open items above.

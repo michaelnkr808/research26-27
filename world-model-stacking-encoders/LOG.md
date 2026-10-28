@@ -504,3 +504,14 @@
 **Not done:** `t5_cache.py` not run with the real umT5-XXL weights (11.4 GB; to run on the cluster at step 4). No timing of VAE extraction on GPU. Rollout code (stage 3). Old tests not rerun (their code is unchanged).
 **Resources:** local CPU ~30 min; downloads ~6 GB (VAE weights, SigLIP 2-so400m, one libero_goal parquet + 2 video files) in the session scratchpad / HF cache. Cluster: none.
 **Next:** stage 2 = PLAN step 4, with a go-ahead per Job: (1) create a ~760 GB CephFS PVC (or grow `stacking-encoders-features`); (2) download `yuanty/LIBERO-fastwam` lerobot_v30 (4 suites) to it; (3) Jobs: meta, VAE, DINOv3, C-RADIOv4, SigLIP 2 extraction (sharded; time a first shard before sizing the rest), T5 cache on 1 GPU. Then stage 3 (pilot + rollout code).
+
+## 2026-10-28 (b) [agent] (reviewer feedback: proxy round reframed as a proxy replication; outcome rule amended before any training run)
+**Goal:** Fold two rounds of outside reviewer feedback (pasted by the user) into the plan; user OK'd the edits.
+**Did:** Amended `experiments/2026-10-27-proxy-calibration/PLAN.md` (framing + outcome rule; original text at f42af61), appended an amendment to decision 003, added a reviewer-feedback line to README.
+- Framing: proxy replication; its outcome decides whether a higher-fidelity, multi-seed WAM replication (Wan 2.2-based, the paper's recipe as closely as code permits) is warranted.
+- Withdrawn: "D+R within seed spread → consistent with single-checkpoint noise in the paper" (decision 003 said the same). The proxy lacks the pretrained video prior, so non-reproduction doesn't establish noise. I had also told the user this in chat on 2026-10-28; corrected.
+- Primary analysis: paired D+R − D per training seed on the same LIBERO-Plus episodes, three deltas shown individually; means/CIs secondary; no strong variance claim from 3 seeds.
+- Overlap/interference stays a hypothesis.
+- Scope (open): a workshop paper needs more combos and a predictive-performance evaluation. Candidate low-cost step: retrospective check of our diagnostics vs the paper's 16 composition results (gain vs parent composition), labelled exploratory because configs share encoders and have one checkpoint each. Needs V-JEPA 2.1, UniTok, HRP and multi-encoder parent features; not started.
+**Verified:** reviewer's facts match our repo: Table 10 seeds are evaluation seeds of one checkpoint (CSV header, LOG 2026-10-18/19); D+R 78.59 (CSV). Nothing run.
+**Next:** unchanged from the previous entry (stage 2 / PLAN step 4 with a go-ahead per Job). Separately, user decides whether to add the 16-combo retrospective check to the plan.

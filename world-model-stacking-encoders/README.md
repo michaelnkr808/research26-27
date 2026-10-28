@@ -14,6 +14,7 @@
 1. ~~Feasibility tally, no training~~ done 2026-10-21: libero_goal, DINOv3 + 4 of 7 partners (L, R, S, G; V, U, H skipped). CKA and gain(B|D)/gain(D|B) with CIs, compared against the liu2026what Table 10 deltas.
 2. Choose the hypothesis.
 3. If justified, run the proxy-policy multi-seed study (decision 001).
+**Reviewer feedback (2026-10-28, two rounds, accepted by user):** the proxy round is a *proxy replication*; if it doesn't reproduce the D+R drop, that doesn't show the paper's result was noise, only whether a higher-fidelity multi-seed WAM replication is worth running. Primary analysis = paired D+R − D per training seed on the same episodes (PLAN outcome rule, decision 003 amendment). Open for a workshop paper: five configs test one anomaly, not a predictor; a low-cost retrospective, exploratory check of our diagnostics against the paper's 16 composition results is a candidate next analysis (suggestive only; not started).
 **What done looks like:** A conditional metric that ranks combo gains better than CKA, single-encoder score, and objective-overlap reasoning, on multi-seed ground truth. It must also explain harmful combos (e.g. D+R). Or a documented negative result.
 
 ## Key findings so far
