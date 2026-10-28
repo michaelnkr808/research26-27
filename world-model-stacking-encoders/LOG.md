@@ -573,3 +573,11 @@
 - Otherwise compliant: all Jobs, no sleep, no tolerations, 1 GPU per pod, limits ≤ 1.2× requests, deadlines and 24 h TTL set, LIBERO is simulated (no PII), ≤ 8 GPUs gate in RUN.
 **Open risks (speculative):** probe (12Gi) and T5 (24Gi) RAM requests are guesses; fine if they finish within 30 min, else the new exit 6 catches it. kubectl login expiry (stop 3) means an idle GPU Job can't be deleted until the user logs in; it then runs until its `activeDeadlineSeconds`.
 **Next:** unchanged: RUN.md stage 2 step 1.
+
+## 2026-10-28 (g) [agent] (evaluation seeds and subset weighting locked before the pilot)
+**Goal:** User agreed to the reviewer's two evaluation corrections and asked to lock them into the plan.
+**Did:** PLAN outcome rule gains "Evaluation protocol (locked 2026-10-28 (g))"; old LIBERO-Plus eval line marked superseded; eval bookkeeping notes the code changes still needed. Google Doc updated in place (same link) and read back; repo mirror updated.
+- Evaluation seeds: every selected episode runs under the paper's seeds 41, 42, 43 (Table 10 columns, our CSV) for every checkpoint, same IDs across checkpoints; per-episode score = mean over the three; pairing uses those scores. Discordant counts become "D+R scored lower / higher". Pilot sizes N counting 3 rollouts per episode.
+- Subset weighting: proportional to each of the 28 suite × category cells' benchmark size (largest remainder, ≥ 1 per cell), so a plain mean estimates the benchmark micro-average and the 2.7 / 1.35 thresholds are on the paper's scale.
+**Found (verified, `src/lp_eval.py`):** current code samples up to N per cell (equal allocation), takes plain means, and rejects a second rollout of the same episode for a (config, seed) as a duplicate, so neither locked item is implemented yet.
+**Next:** implementation agent: proportional `make_subset`, eval seeds 41–43 in records and `lp_table` (one row per episode × eval seed), per-episode averaging before pairing, calibration pairs (D − none, D+L − D) and the locked verdict, with synthetic tests. Then stage 2.

@@ -32,7 +32,7 @@ Does a small policy trained on frozen encoder features, with 3 training seeds pe
 
 ## Evaluation
 - **Clean LIBERO:** 4 suites × 10 tasks × N rollouts. The paper uses 50 per task (2,000). Same per seed here.
-- **LIBERO-Plus:** the paper uses 10,030 episodes × 3 eval seeds per checkpoint. For 15 checkpoints that is too much (speculative until a rollout is timed). Proposal: a fixed, stratified subset by perturbation category, the same subset for every checkpoint, sized after timing. Report per-category numbers (the paper gives none for combos).
+- **LIBERO-Plus:** the paper uses 10,030 episodes × 3 eval seeds per checkpoint. For 15 checkpoints that is too much (speculative until a rollout is timed). Proposal: a fixed, stratified subset by perturbation category, the same subset for every checkpoint, sized after timing. Report per-category numbers (the paper gives none for combos). **Superseded by "Evaluation protocol (locked 2026-10-28 (g))" in the outcome rule section.**
 - Encoders and the VAE run live on the current frame in the rollout loop, so eval is GPU work too.
 - LIBERO-Plus install and episode list: resolved in step 1 (below).
 
@@ -140,6 +140,11 @@ Replaces `src/proxy_policy.py` (kept for history; its smoke results above are su
 (Amended 2026-10-28 before any training run, after reviewer feedback, user OK. The original text is in git at 44d26c1. Changes: the paired per-seed comparison became the primary analysis, and the "within seed spread" branch no longer points to paper noise.)
 (**Locked 2026-10-28 (f), user OK, after a third and fourth reviewer round, before the pilot.** The thresholds below do not change after the pilot or any later result. The previous wording, "D+L ≥ D − (one seed sd)" and an open minimum drop, is in git at 64edf4e.)
 
+**Evaluation protocol (locked 2026-10-28 (g), user OK, after a fifth reviewer round, before the pilot):**
+- **Evaluation seeds:** every selected LIBERO-Plus episode is run under all three evaluation seeds the paper uses, **41, 42, 43** (Table 10 columns; App. C.2, E.3), for every checkpoint, with the same seed IDs across checkpoints. Each episode's score per checkpoint = mean success over its three evaluation seeds. The pilot sizes N counting three rollouts per episode.
+- **Subset weighting:** the subset is sampled **in proportion to each of the 28 suite × category cells' size in the full benchmark** (total N, largest-remainder rounding, at least 1 episode per cell; one seeded generator). A plain mean over the subset then estimates the benchmark's overall micro-average, so the 2.7 / 1.35-point thresholds are on the same scale as the paper's overall numbers. (Replaces equal-per-cell sampling with a simple average, which would over-weight small cells.)
+- Δ_s below is computed on these per-episode scores.
+
 **The pilot is for sizing only** (model size, LIBERO-Plus subset size N, GPU count). Its success rates do not count toward any result and cannot change this rule. N is chosen so that episode-level noise in a per-seed paired mean is small next to the 2.7-point threshold.
 
 **All comparisons are paired per training seed:** for configs A and B, Δ_s(A − B) = mean over the fixed LIBERO-Plus subset of success(A, seed s) − success(B, seed s), in percentage points, s = 0, 1, 2. Every report shows the three Δ_s individually and their average. Confidence intervals over episodes describe episode sampling only and are never treated as evidence about training-seed variability. Three seeds are a small screening result, not an estimate of training variance.
@@ -156,7 +161,7 @@ Secondary: each config's LIBERO-Plus success per seed and averaged, per category
 
 ## Eval bookkeeping for the paired analysis (agent, 2026-10-28; after the reviewer amendment)
 `src/lp_eval.py` + `src/test_lp_eval.py` (6 synthetic checks pass):
-- `subset`: one fixed LIBERO-Plus subset, up to N episodes per (suite, category) cell (28 cells), one seeded generator, keyed (suite, id) from LIBERO-plus `4976dc3` `task_classification.json` (sha256 `faa87cce…`; not committed: the repo has no LICENSE). Written once with a `subset_id` hash and reused by every checkpoint. N set after the step 5 timing.
+- `subset`: one fixed LIBERO-Plus subset, up to N episodes per (suite, category) cell (28 cells), one seeded generator, keyed (suite, id) from LIBERO-plus `4976dc3` `task_classification.json` (sha256 `faa87cce…`; not committed: the repo has no LICENSE). Written once with a `subset_id` hash and reused by every checkpoint. N set after the step 5 timing. **To change (locked protocol 2026-10-28 (g)): proportional allocation instead of up to N per cell; three eval seeds per episode (41–43) instead of one rollout; analysis averages eval seeds per episode before pairing; add the calibration pairs and the locked verdict. Not yet done.**
 - Rollout code (stage 3) must write one JSON line per rollout: benchmark, suite, episode_id, category, config, train_seed, eval_seed, checkpoint, subset_id, success. Aggregates are never the only output.
 - `analyze`: primary = per training seed, per-episode paired success(D+R) − success(D) on the subset, its mean and discordant counts; the three seed deltas side by side. Secondary: per-config success per seed and mean, per category; clean LIBERO as context. Refuses (fails loudly on) missing, duplicate or foreign-subset rows instead of intersecting. Prints the proxy-replication framing with every report.
 - Checks: planted per-seed drops come out exactly (e.g. −2/n, −5/n, +1/n); identical configs give exactly 0; pairing by seed; secondary numbers on a hand case; CLI end to end.
