@@ -368,15 +368,21 @@ def training_loss(model, bt, slices):
 
 
 @torch.no_grad()
-def infer_actions(model, current, context, context_mask, proprio, steps=INFER_STEPS, seed=None):
+def infer_actions(model, current, context, context_mask, proprio, steps=INFER_STEPS, seed=None, noise=None):
     """Normalized action chunks (B, HORIZON, 7), as FastWAMJoint.infer_action: video and actions start from noise and
     are denoised jointly over `steps` steps, the first latent step reset to the observation after every step.
-    current: (B, C, 1, 14, 28) observed latents with source channels already z-scored."""
+    current: (B, C, 1, 14, 28) observed latents with source channels already z-scored. noise: optional starting noise
+    (video (B, C, LATENT_T, 14, 28), action (B, HORIZON, 7)), so rollouts can draw it per episode, independent of
+    which episodes share a batch; otherwise drawn from `seed`."""
     B, C = current.shape[:2]
     dev = current.device
-    g = None if seed is None else torch.Generator(device="cpu").manual_seed(seed)
-    lat = torch.randn((B, C, LATENT_T) + GRID, generator=g).to(dev)
-    a = torch.randn((B, HORIZON, 7), generator=g).to(dev)
+    if noise is not None:
+        lat, a = noise[0].to(dev).clone(), noise[1].to(dev).clone()
+        assert lat.shape == (B, C, LATENT_T) + GRID and a.shape == (B, HORIZON, 7), (lat.shape, a.shape)
+    else:
+        g = None if seed is None else torch.Generator(device="cpu").manual_seed(seed)
+        lat = torch.randn((B, C, LATENT_T) + GRID, generator=g).to(dev)
+        a = torch.randn((B, HORIZON, 7), generator=g).to(dev)
     lat[:, :, 0:1] = current
     ctx, cmask = model._append_proprio_to_context(context, context_mask, proprio)
     tv, dv = model.infer_video_scheduler.build_inference_schedule(steps, device=dev, dtype=lat.dtype)

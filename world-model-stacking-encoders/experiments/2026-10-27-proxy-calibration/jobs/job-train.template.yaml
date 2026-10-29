@@ -1,0 +1,70 @@
+# RUN.md step 9 (pilot: 2 pairs, --max-steps ~500) and step 10 (the round: 15 pairs, defaults), pre-approved. Written
+# mid-run: render per use (fill every __PLACEHOLDER__ from measured use; jobs/rendered/), checklist in RUN.md
+# "Manifests written during the run". Indexed: pod i trains pair i of __PAIRS__ ("config:seed", space-separated), so
+# the index order sets which runs start first. Resumable: proxy_wam.py continues from <out>/ckpt.pt (written every
+# --ckpt-every steps), so a retried pod picks up where it stopped. One writer per run dir.
+# Follows _standards/08: Job, real command that exits, no sleep, 1 GPU per pod, limits within 20%, no tolerations.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-__NAME__
+  namespace: aria-world
+spec:
+  completionMode: Indexed
+  completions: __N__
+  parallelism: __PARALLEL__
+  backoffLimit: __N__                 # about one retry per run
+  activeDeadlineSeconds: __DEADLINE__
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [__GPUS__]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; I=$JOB_COMPLETION_INDEX
+          P=($PAIRS); C=${P[$I]%%:*}; S=${P[$I]##*:}
+          mkdir -p $R/logs $R/runs
+          exec > >(tee -a $R/logs/__NAME__-$C-s$S-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          echo "=== index $I: config $C seed $S"; nvidia-smi; nproc; date -u
+          bash /src/setup_env.sh > /work/pip-env.log 2>&1 || { tail -50 /work/pip-env.log; exit 1; }
+          python /src/proxy_wam.py --feats $R/feats --suites libero_spatial,libero_object,libero_goal,libero_10 \
+            --t5 $R/feats/t5 --config $C --seed $S --out $R/runs/__RUNPREFIX__$C-s$S __EXTRA__
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}
+        - {name: PAIRS, value: "__PAIRS__"}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: /src}
+        resources:                    # from measured use (probe / pilot Prometheus); limits <= 1.2x requests
+          requests: {cpu: "__CPU__", memory: __MEM__, nvidia.com/gpu: "1", ephemeral-storage: 20Gi}
+          limits:   {cpu: "__CPU_LIMIT__", memory: __MEM_LIMIT__, nvidia.com/gpu: "1", ephemeral-storage: 24Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 24Gi}
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 2Gi}
