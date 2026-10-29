@@ -60,7 +60,7 @@ spec:
           sha256sum $R/lp_instructions.txt $R/lp_tasks.json
           echo "=== smoke"; date -u
           python /src/rollout.py smoke --classification $SIM_DIR/LIBERO-plus/libero/libero/benchmark/task_classification.json \
-            --tasks $R/lp_tasks.json --out-dir $R/sim/smoke --envs 6 --mujoco-gl osmesa 2>&1 | sed "/using task orders/d"
+            --tasks $R/lp_tasks.json --out-dir $R/sim/smoke --envs 4 --mujoco-gl osmesa 2>&1 | sed "/using task orders/d"
           date -u; echo "=== done"
         env:
         - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}
@@ -70,9 +70,10 @@ spec:
         - {name: PYTHONPATH, value: /src}
         - {name: MUJOCO_GL, value: osmesa}
         - {name: PYOPENGL_PLATFORM, value: osmesa}
-        resources:                    # limits within 20% of requests; 6 simulator processes + main
-          requests: {cpu: "6", memory: 10Gi, ephemeral-storage: 40Gi}
-          limits:   {cpu: "7200m", memory: 12Gi, ephemeral-storage: 46Gi}
+        resources:                    # limits within 20% of requests; 4 simulator processes + main. Try 1 (12Gi limit,
+          # 6 processes) was OOM-killed as the simulators started (LOG 2026-10-29 (b)); per-process peak RSS now logged
+          requests: {cpu: "4", memory: 20Gi, ephemeral-storage: 40Gi}
+          limits:   {cpu: "4800m", memory: 24Gi, ephemeral-storage: 46Gi}
         volumeMounts:
         - {name: work, mountPath: /work}
         - {name: src, mountPath: /src, readOnly: true}

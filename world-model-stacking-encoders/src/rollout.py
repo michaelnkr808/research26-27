@@ -326,7 +326,28 @@ def run_episode(job, env_factory, ask):
         if close is not None:
             close()
     return {"success": bool(done), "steps": t, "instruction": instruction, "wall_s": round(time.time() - t0, 2),
-            "final_state": [round(float(x), 6) for x in final]}
+            "final_state": [round(float(x), 6) for x in final], "worker_peak_rss_mb": peak_rss_mb()}
+
+
+def peak_rss_mb():
+    """This process's peak RSS (VmHWM) in MB, for sizing pod memory from measured use; None where /proc is missing."""
+    try:
+        for line in Path("/proc/self/status").read_text().splitlines():
+            if line.startswith("VmHWM:"):
+                return round(int(line.split()[1]) / 1024)
+    except OSError:
+        return None
+
+
+def cgroup_mem_gb():
+    """(current, peak) memory of this container's cgroup in GB (cgroup v2), or None."""
+    out = []
+    for f in ("memory.current", "memory.peak"):
+        try:
+            out.append(round(int(Path("/sys/fs/cgroup", f).read_text()) / 1e9, 2))
+        except (OSError, ValueError):
+            out.append(None)
+    return tuple(out)
 
 
 def worker_main(conn, env_spec, mujoco_gl):
@@ -359,7 +380,7 @@ def record(job, res, config, train_seed, checkpoint):
     row = lp_eval.result_row(job["benchmark"], job["suite"], job["episode_id"], job["category"], config, train_seed,
                              job["eval_seed"], checkpoint, job["subset_id"], res["success"])
     return {**row, "steps": res["steps"], "instruction": res["instruction"], "wall_s": res["wall_s"],
-            "final_state": res["final_state"]}
+            "final_state": res["final_state"], "worker_peak_rss_mb": res.get("worker_peak_rss_mb")}
 
 
 def done_keys(path):
@@ -439,14 +460,14 @@ def run_jobs(jobs, act, n_envs, out, meta, env_spec="rollout:libero_env", mujoco
                 el = time.time() - t_start
                 log(f"progress: {n_rec} done, {n_err} errors, {len(todo)} queued, {len(busy)} running; "
                     f"{3600 * n_rec / el:.0f} episodes/h; mean batch {stats['items'] / max(1, stats['calls']):.1f}; "
-                    f"policy busy {stats['act_s'] / el:.0%}")
+                    f"policy busy {stats['act_s'] / el:.0%}; cgroup memory now/peak GB {cgroup_mem_gb()}")
                 t_log = time.time()
     for p in procs:
         p.join(timeout=30)
     el = time.time() - t_start
     log(f"finished: {n_rec} records, {n_err} errors in {el:.0f}s ({3600 * n_rec / max(el, 1e-9):.0f} episodes/h); "
         f"{stats['calls']} policy calls, mean batch {stats['items'] / max(1, stats['calls']):.1f}, "
-        f"policy busy {stats['act_s'] / max(el, 1e-9):.0%}")
+        f"policy busy {stats['act_s'] / max(el, 1e-9):.0%}; cgroup memory now/peak GB {cgroup_mem_gb()}")
     return n_rec, n_err
 
 
