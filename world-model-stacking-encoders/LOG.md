@@ -669,3 +669,5 @@ By 12:15 UTC only VAE shard 1/4 had a GPU (L4 again, nautilus-it-gpu05.fullerton
 **VAE speed (verified, shard 1 log):** steady 2.0 frames/s (e.g. ep 129 → 133: 137 frames in 68 s), half the probe-based 4.6, so VAE ≈ 38.6 GPU-h (not 16.8). Log `results/logs/extract-vae-try1-shard1of4.log` (to ep 133).
 **GPU utilization is not visible for this node:** no `DCGM_FI_DEV_GPU_UTIL` series from nautilus-it-gpu05 (other Fullerton nodes export it), so the watcher's GPU check reads nan there.
 **Fix (the one allowed for step 6):** VAE 5 shards (≈ 7.7 h each), 6Gi / 7Gi, deadline 20 h; DINOv3 and C-RADIOv4 (never started) 8Gi / 9Gi so they don't hit the same rule (their RSS includes the float64 stats buffer, larger on long libero_10 episodes; speculative). GPUs: VAE 5 + DINOv3 1 + C-RADIOv4 1 + T5 1 = 8 (gate). SigLIP 2 (8Gi / 9Gi rendered) waits for a free slot. Jobs deleted (not forced) and resubmitted 12:16 UTC; finished episode files are kept and skipped (the extractor resumes).
+
+- 12:17 UTC: the new VAE watcher exited 6 at once on the old shard-1 pod (still Terminating, same name prefix); not a new problem. Watcher restarted after that pod left Prometheus.
