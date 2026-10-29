@@ -54,11 +54,11 @@ spec:
             secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
         - {name: HF_HOME, value: /work/hf}
         - {name: PYTHONUNBUFFERED, value: "1"}
-        - {name: OMP_NUM_THREADS, value: "6"}   # match the CPU request (torch otherwise sizes its pool to the node)
+        - {name: OMP_NUM_THREADS, value: "1"}   # = CPU request: torch otherwise sizes its pool to the node and gets throttled (2026-10-29 (k))
         - {name: PYTHONPATH, value: /src}
         resources:                    # from the probe's measured use (memory nautilus-job-sizing-and-estimates)
-          requests: {cpu: "6", memory: 6Gi, nvidia.com/gpu: "1", ephemeral-storage: 30Gi}
-          limits:   {cpu: "7200m", memory: 7Gi, nvidia.com/gpu: "1", ephemeral-storage: 34Gi}
+          requests: {cpu: "1", memory: 5Gi, nvidia.com/gpu: "1", ephemeral-storage: 30Gi}
+          limits:   {cpu: "1200m", memory: 6Gi, nvidia.com/gpu: "1", ephemeral-storage: 34Gi}
         volumeMounts:
         - {name: work, mountPath: /work}
         - {name: src, mountPath: /src, readOnly: true}
