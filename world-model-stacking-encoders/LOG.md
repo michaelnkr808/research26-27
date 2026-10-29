@@ -607,3 +607,13 @@
 **Found:** `watch_job.sh` turned any failed Prometheus query into "nan", the same as "no such series". With the laptop offline for ~20 min (10 polls at 120 s) after a Job was seen, it would exit 3 ("metrics gone"), and before a Job was seen the offline time counted toward exit 5. The user plans to move the laptop around during the run.
 **Did:** `q()` now returns `err` when curl fails or Prometheus doesn't answer `success`; a poll with `err` on the status queries prints `offline`, counts toward nothing and pauses the exit-5 clock; `err` in the GPU/CPU checks is ignored. `PROM` can be overridden (for testing). RUN.md notes the behavior.
 **Verified:** `bash -n` ok; offline test (unreachable endpoint, 1 s polls, 12 s): 12 "offline" lines, no exit; online test against the real Prometheus with a nonexistent Job: normal status lines with nan, no exit within 15 s. Not re-tested: the complete/dead paths on a real Job (unchanged code).
+
+## 2026-10-28 (l) [agent] (open NRP-usage risks in PLAN/RUN; reported to the user, not yet applied)
+**Goal:** User asked whether PLAN.md / RUN.md contain potential Nautilus violations.
+**Found:** no hard-rule breaks (Jobs that exit, no sleep, no tolerations, 1 GPU/pod, ≤ 8 GPUs, no PII). Stage 2 clean. Open usage risks for stages 3–4 (speculative, none measured), awaiting the user's OK to fix:
+1. kubectl expiry + long `activeDeadlineSeconds` (eval up to ~2× 48 h): an idle GPU Job can't be deleted while unattended. Fix options: in-pod GPU-idle watchdog that exits the pod, or shorter eval Jobs with tight deadlines.
+2. 8 concurrent training pods streaming hundreds of GB each × 10 epochs from CephFS; the pilot measures data wait for one pod only, so contention could push GPUs below 40%. Fix: ramp the round (a few runs first, check GPU util, then scale).
+3. RUN doesn't say where LIBERO-Plus is installed; pip install on CephFS is prohibited. Fix: install per pod in the emptyDir.
+4. RUN step 11 writes `/mnt/proxy/rollouts/*.jsonl` without stating one file per pod (CephFS concurrent-write rule).
+5. Extraction leaves >10k files on CephFS (cleanup must use `find -delete`); step 12 report lacks the NRP AUP acknowledgment.
+**Next:** user decides whether to apply 1–5 to RUN.md (3–5 are one-liners; 1–2 change Job design). Not blocking stage 2.

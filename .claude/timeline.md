@@ -88,3 +88,10 @@
 - Folded five rounds of outside review into the proxy plan: proxy replication framing, action-expert claim corrected, ~1 TB volume, orientation checks, and a locked decision rule (paired per-seed; calibration D−none ≥ +2.7 all positive, D+L−D ≥ −1.35; D+R all negative and mean ≤ −2.7 as a trigger), eval seeds 41–43, proportional subset, paired D/D+R pilot for sizing (sd ×1.5, SE ≤ 1.35, 48 h / 8 GPU cap).
 - RUN.md aligned (paired pilot, step 7a analysis-code checklist, round pre-approved); watcher fixed so a dropped laptop connection no longer looks like a vanished Job. Google Doc kept in sync. Next: user starts the autonomous run from RUN.md.
 - See: world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/{PLAN.md,RUN.md}, decisions/003-proxy-policy-calibration.md, LOG.md 2026-10-28 (b)–(k)
+
+## 2026-10-28 — world-model-stacking-encoders: NRP policy checks of the autonomous proxy run
+
+- Rechecked the live NRP policy pages against the proxy run's manifests and runbook; server dry run of all stage 2 manifests passed.
+- Fixed: download Job memory under NRP's 2 GB exempt size; watcher now also stops on CPU/RAM out of range (exit 6); runbook got a compliance checklist for manifests written mid-run and a ≥ 40% GPU requirement for rollout Jobs (stop 10).
+- Open, awaiting the user: five usage risks for stages 3–4 (unkillable idle Job after kubectl expiry, CephFS contention with 8 trainers, simulator install location, one rollout file per pod, cleanup + NRP acknowledgment).
+- See: world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/{RUN.md,watch_job.sh}, LOG.md 2026-10-28 (g), (i), (l)
