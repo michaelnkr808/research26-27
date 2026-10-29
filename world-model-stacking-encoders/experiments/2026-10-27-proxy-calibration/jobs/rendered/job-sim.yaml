@@ -1,0 +1,89 @@
+# RUN.md step 7 (CPU, part of the pre-approved run; written mid-run, so it passed the "Manifests written during the
+# run" checklist): the LIBERO-Plus simulator on the cluster, without a model.
+#   1. assets: HF Sylvest/LIBERO-plus @ dd2bd61b assets.zip (6.4 GB, sha256 from the HF LFS pointer; tagged MIT) to the
+#      PVC once (/mnt/proxy/sim/assets.zip), so rollout pods unzip it into their own emptyDir.
+#   2. setup_env.sh + setup_sim.sh (LIBERO-Plus @ 4976dc3, mujoco 3.3.2, numpy 1.26.4; installed in /work, not CephFS).
+#   3. rollout.py instructions: all 10,030 LIBERO-Plus tasks against task_classification.json, the policy's instruction
+#      per task (appended perturbation descriptions stripped, rewritten ones kept), the 40 clean tasks against the
+#      training meta when it exists -> /mnt/proxy/lp_instructions.txt (for the T5 cache) and /mnt/proxy/lp_tasks.json.
+#   4. rollout.py smoke: one episode per (suite, category) + one clean task per suite with a hold-still policy (CPU
+#      rendering, OSMesa): env build, perturbations, timing, a determinism rerun, and the first frames the policy would
+#      see (PNG on the PVC + THUMB lines in the log) for the sim-vs-training frame check (RUN.md step 8).
+# Follows _standards/08: Job, real command that exits, no sleep, no GPU, off GPU nodes, us-west, limits within 20%.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-sim
+  namespace: aria-world
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 10800        # 3 h cap (estimate ~1 h: download, install, ~30 short episodes; speculative)
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; mkdir -p $R/logs $R/sim
+          exec > >(tee -a $R/logs/sim-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          nproc; date -u
+          apt-get update -qq && apt-get install -y -qq curl >/dev/null
+          SHA=96764a4bfbdaea98d4411598caeab235458318fe0f549611b93d1a323027b3cf
+          if ! echo "$SHA  $R/sim/assets.zip" | sha256sum -c --status 2>/dev/null; then
+            curl -sSL --retry 5 -o $R/sim/assets.zip.part \
+              https://huggingface.co/datasets/Sylvest/LIBERO-plus/resolve/dd2bd61b7d9a6fef1abc52d606e983b41886a149/assets.zip
+            echo "$SHA  $R/sim/assets.zip.part" | sha256sum -c
+            mv $R/sim/assets.zip.part $R/sim/assets.zip
+          fi
+          date -u; echo "=== env"
+          bash /src/setup_env.sh > /work/pip-env.log 2>&1 || { tail -50 /work/pip-env.log; exit 1; }
+          . /src/setup_sim.sh
+          cd /src; date -u
+          echo "=== instructions"
+          META=""; [ "$(ls $R/feats/meta/*.npz 2>/dev/null | wc -l)" = 4 ] && META="--meta $R/feats/meta"
+          python /src/rollout.py instructions --out $R/lp_instructions.txt.part --tasks-out $R/lp_tasks.json \
+            --classification $SIM_DIR/LIBERO-plus/libero/libero/benchmark/task_classification.json $META 2>&1 \
+            | sed "/using task orders/d"
+          mv $R/lp_instructions.txt.part $R/lp_instructions.txt
+          sha256sum $R/lp_instructions.txt $R/lp_tasks.json
+          echo "=== smoke"; date -u
+          python /src/rollout.py smoke --classification $SIM_DIR/LIBERO-plus/libero/libero/benchmark/task_classification.json \
+            --tasks $R/lp_tasks.json --out-dir $R/sim/smoke --envs 6 --mujoco-gl osmesa 2>&1 | sed "/using task orders/d"
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: e6cc0e7f7f3c0fa7beac86ff27a8f3a00bb99854}
+        - {name: SIM_DIR, value: /work/sim}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: /src}
+        - {name: MUJOCO_GL, value: osmesa}
+        - {name: PYOPENGL_PLATFORM, value: osmesa}
+        resources:                    # limits within 20% of requests; 6 simulator processes + main
+          requests: {cpu: "6", memory: 10Gi, ephemeral-storage: 40Gi}
+          limits:   {cpu: "7200m", memory: 12Gi, ephemeral-storage: 46Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 46Gi}   # pip + LIBERO-Plus + unzipped assets
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 2Gi}
