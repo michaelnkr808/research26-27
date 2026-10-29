@@ -1,0 +1,529 @@
+Thu Oct 29 14:24:42 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 595.91.07              Driver Version: 595.91.07      CUDA Version: 13.2     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA RTX 5000 Ada Gene...    On  |   00000000:C1:00.0 Off |                  Off |
+| 30%   28C    P8             12W /  250W |       2MiB /  32760MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+  DEPRECATION: Building 'antlr4-python3-runtime' using the legacy setup.py bdist_wheel mechanism, which will be removed in a future version. pip 25.3 will enforce this behaviour change. A possible replacement is to use the standardized build interface by setting the `--use-pep517` option, (possibly combined with `--no-build-isolation`), or adding a `pyproject.toml` file to the source tree of 'antlr4-python3-runtime'. Discussion can be found at https://github.com/pypa/pip/issues/6334
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+=== pip freeze
+antlr4-python3-runtime==4.9.3
+archspec @ file:///home/conda/feedstock_root/build_artifacts/archspec_1737352602016/work
+asttokens @ file:///home/conda/feedstock_root/build_artifacts/asttokens_1733250440834/work
+astunparse==1.6.3
+attrs @ file:///home/conda/feedstock_root/build_artifacts/attrs_1741918516150/work
+av==15.1.0
+beautifulsoup4 @ file:///home/conda/feedstock_root/build_artifacts/beautifulsoup4_1744783198182/work
+boltons @ file:///home/conda/feedstock_root/build_artifacts/boltons_1733827268945/work
+Brotli @ file:///home/conda/feedstock_root/build_artifacts/brotli-split_1725267488082/work
+certifi @ file:///home/conda/feedstock_root/build_artifacts/certifi_1746569525376/work/certifi
+cffi @ file:///home/conda/feedstock_root/build_artifacts/cffi_1725560564262/work
+chardet @ file:///home/conda/feedstock_root/build_artifacts/chardet_1741797914774/work
+charset-normalizer @ file:///home/conda/feedstock_root/build_artifacts/charset-normalizer_1746214863626/work
+click @ file:///home/conda/feedstock_root/build_artifacts/click_1747811314515/work
+cmake==4.0.2
+colorama @ file:///home/conda/feedstock_root/build_artifacts/colorama_1733218098505/work
+conda @ file:///home/conda/feedstock_root/build_artifacts/conda_1748334230838/work/conda-src
+conda-build @ file:///home/conda/feedstock_root/build_artifacts/conda-build_1748431289756/work
+conda-libmamba-solver @ file:///home/conda/feedstock_root/build_artifacts/conda-libmamba-solver_1742219570693/work/src
+conda-package-handling @ file:///home/conda/feedstock_root/build_artifacts/conda-package-handling_1736345463896/work
+conda_index @ file:///home/conda/feedstock_root/build_artifacts/conda-index_1748375757308/work
+conda_package_streaming @ file:///home/conda/feedstock_root/build_artifacts/conda-package-streaming_1741620732069/work
+decorator @ file:///home/conda/feedstock_root/build_artifacts/decorator_1740384970518/work
+distro @ file:///home/conda/feedstock_root/build_artifacts/distro_1734729835256/work
+dnspython==2.7.0
+einops==0.8.1
+evalidate @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_evalidate_1746793833/work
+exceptiongroup @ file:///home/conda/feedstock_root/build_artifacts/exceptiongroup_1746947292760/work
+executing @ file:///home/conda/feedstock_root/build_artifacts/executing_1745502089858/work
+expecttest==0.3.0
+fastwam @ https://github.com/yuantianyuan01/FastWAM/archive/7faa71108368fbb3b6885649f112af607427a2d4.tar.gz#sha256=43102a7c1d207f0a4a691991b6562d8b2dcfbc09b6b22b5a52ecc7c6b6f81520
+filelock @ file:///home/conda/feedstock_root/build_artifacts/filelock_1741969488311/work
+frozendict @ file:///home/conda/feedstock_root/build_artifacts/frozendict_1728841334936/work
+fsspec==2025.5.1
+ftfy==6.3.1
+gitdb==4.0.12
+GitPython==3.1.45
+h2 @ file:///home/conda/feedstock_root/build_artifacts/h2_1738578511449/work
+h5py==3.16.0
+hf-xet==1.7.1
+hpack @ file:///home/conda/feedstock_root/build_artifacts/hpack_1737618293087/work
+huggingface_hub==0.36.2
+hydra-core==1.3.2
+hyperframe @ file:///home/conda/feedstock_root/build_artifacts/hyperframe_1737618333194/work
+hypothesis==6.135.0
+idna @ file:///home/conda/feedstock_root/build_artifacts/idna_1733211830134/work
+imageio==2.37.0
+imageio-ffmpeg==0.6.0
+importlib_resources @ file:///home/conda/feedstock_root/build_artifacts/importlib_resources_1736252299705/work
+ipython @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_ipython_1748713870/work
+ipython_pygments_lexers @ file:///home/conda/feedstock_root/build_artifacts/ipython_pygments_lexers_1737123620466/work
+jedi @ file:///home/conda/feedstock_root/build_artifacts/jedi_1733300866624/work
+Jinja2 @ file:///home/conda/feedstock_root/build_artifacts/jinja2_1741263328855/work
+jsonpatch @ file:///home/conda/feedstock_root/build_artifacts/jsonpatch_1733814567314/work
+jsonpointer @ file:///home/conda/feedstock_root/build_artifacts/jsonpointer_1725302941992/work
+jsonschema @ file:///home/conda/feedstock_root/build_artifacts/jsonschema_1748294245630/work
+jsonschema-specifications @ file:///tmp/tmpuvkyqc9y/src
+libarchive-c @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_python-libarchive-c_1747927321/work
+libmambapy @ file:///home/conda/feedstock_root/build_artifacts/mamba-split_1746515836725/work/libmambapy
+lief @ file:///home/conda/feedstock_root/build_artifacts/lief_1743551769507/work/api/python
+lintrunner==0.12.7
+markdown-it-py==4.2.0
+MarkupSafe @ file:///home/conda/feedstock_root/build_artifacts/markupsafe_1733219680183/work
+matplotlib-inline @ file:///home/conda/feedstock_root/build_artifacts/matplotlib-inline_1733416936468/work
+mdurl==0.1.2
+menuinst @ file:///home/conda/feedstock_root/build_artifacts/menuinst_1731146975675/work
+mpmath==1.3.0
+msgpack @ file:///home/conda/feedstock_root/build_artifacts/msgpack-python_1725974992554/work
+networkx==3.5
+ninja==1.11.1.4
+numpy @ file:///home/conda/feedstock_root/build_artifacts/numpy_1747544639841/work/dist/numpy-2.2.6-cp311-cp311-linux_x86_64.whl#sha256=d4f76e4f9939f09d6b8021a56dbd088095917d586ead71ad13dbe44bb22d3dfa
+nvidia-cublas-cu12==12.8.3.14
+nvidia-cuda-cupti-cu12==12.8.57
+nvidia-cuda-nvrtc-cu12==12.8.61
+nvidia-cuda-runtime-cu12==12.8.57
+nvidia-cudnn-cu12==9.7.1.26
+nvidia-cufft-cu12==11.3.3.41
+nvidia-cufile-cu12==1.13.0.11
+nvidia-curand-cu12==10.3.9.55
+nvidia-cusolver-cu12==11.7.2.55
+nvidia-cusparse-cu12==12.5.7.53
+nvidia-cusparselt-cu12==0.6.3
+nvidia-nccl-cu12==2.26.2
+nvidia-nvjitlink-cu12==12.8.61
+nvidia-nvtx-cu12==12.8.55
+omegaconf==2.3.0
+open_clip_torch==3.3.0
+optree==0.16.0
+packaging @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_packaging_1745345660/work
+pandas==2.3.3
+parso @ file:///home/conda/feedstock_root/build_artifacts/parso_1733271261340/work
+pexpect @ file:///home/conda/feedstock_root/build_artifacts/pexpect_1733301927746/work
+pickleshare @ file:///home/conda/feedstock_root/build_artifacts/pickleshare_1733327343728/work
+pillow==13.0.0
+pkginfo @ file:///home/conda/feedstock_root/build_artifacts/pkginfo_1739984581450/work
+pkgutil_resolve_name @ file:///home/conda/feedstock_root/build_artifacts/pkgutil-resolve-name_1733344503739/work
+platformdirs @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_platformdirs_1746710438/work
+pluggy @ file:///home/conda/feedstock_root/build_artifacts/pluggy_1733222765875/work
+prompt_toolkit @ file:///home/conda/feedstock_root/build_artifacts/prompt-toolkit_1744724089886/work
+psutil @ file:///home/conda/feedstock_root/build_artifacts/psutil_1740663149797/work
+ptyprocess @ file:///home/conda/feedstock_root/build_artifacts/ptyprocess_1733302279685/work/dist/ptyprocess-0.7.0-py2.py3-none-any.whl#sha256=92c32ff62b5fd8cf325bec5ab90d7be3d2a8ca8c8a3813ff487a8d2002630d1f
+pure_eval @ file:///home/conda/feedstock_root/build_artifacts/pure_eval_1733569405015/work
+pyarrow==21.0.0
+pycosat @ file:///home/conda/feedstock_root/build_artifacts/pycosat_1732588400443/work
+pycparser @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_pycparser_1733195786/work
+Pygments @ file:///home/conda/feedstock_root/build_artifacts/pygments_1736243443484/work
+PySocks @ file:///home/conda/feedstock_root/build_artifacts/pysocks_1733217236728/work
+python-dateutil==3.0.0
+python-etcd==0.4.5
+pytz @ file:///home/conda/feedstock_root/build_artifacts/pytz_1742920838005/work
+PyYAML @ file:///home/conda/feedstock_root/build_artifacts/pyyaml_1737454647378/work
+referencing @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_referencing_1737836872/work
+regex==2025.11.3
+requests @ file:///home/conda/feedstock_root/build_artifacts/requests_1733217035951/work
+rich==14.2.0
+rpds-py @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_rpds-py_1747837968/work
+ruamel.yaml @ file:///home/conda/feedstock_root/build_artifacts/ruamel.yaml_1748629995798/work
+ruamel.yaml.clib @ file:///home/conda/feedstock_root/build_artifacts/ruamel.yaml.clib_1728724459810/work
+safetensors==0.5.3
+six==1.17.0
+smmap==5.0.3
+sortedcontainers==2.4.0
+soupsieve @ file:///home/conda/feedstock_root/build_artifacts/soupsieve_1746563585861/work
+stack_data @ file:///home/conda/feedstock_root/build_artifacts/stack_data_1733569443808/work
+sympy==1.14.0
+termcolor==2.5.0
+timm==1.0.30
+tokenizers==0.22.2
+torch==2.7.1+cu128
+torchaudio==2.7.1+cu128
+torchelastic==0.2.2
+torchvision==0.22.1+cu128
+tqdm @ file:///home/conda/feedstock_root/build_artifacts/tqdm_1735661334605/work
+traitlets @ file:///home/conda/feedstock_root/build_artifacts/traitlets_1733367359838/work
+transformers==4.57.6
+triton==3.3.1
+truststore @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_truststore_1739009763/work
+types-dataclasses==0.6.6
+typing_extensions @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_typing_extensions_1748959427/work
+tzdata==2026.6
+urllib3 @ file:///home/conda/feedstock_root/build_artifacts/urllib3_1744323578849/work
+wcwidth @ file:///home/conda/feedstock_root/build_artifacts/wcwidth_1733231326287/work
+zipp @ file:///home/conda/feedstock_root/build_artifacts/zipp_1748277385522/work
+zstandard==0.23.0
+fastwam ok, torch 2.7.1+cu128 cuda True
+=== libero_spatial shard 0/1
+Thu Oct 29 14:25:04 UTC 2026
+[extract       1s] libero_spatial: 434 episodes, 53229 frames
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+[extract      53s] ep 0: (98, 14, 28, 1152) (1.8 frames/s overall)
+[extract      57s] ep 1: (84, 14, 28, 1152) (3.2 frames/s overall)
+[extract      62s] ep 2: (93, 14, 28, 1152) (4.4 frames/s overall)
+[extract      68s] ep 3: (128, 14, 28, 1152) (5.9 frames/s overall)
+[extract      72s] ep 4: (86, 14, 28, 1152) (6.8 frames/s overall)
+[extract      76s] ep 5: (88, 14, 28, 1152) (7.6 frames/s overall)
+[extract      80s] ep 6: (84, 14, 28, 1152) (8.2 frames/s overall)
+[extract      85s] ep 7: (89, 14, 28, 1152) (8.8 frames/s overall)
+[extract      90s] ep 8: (75, 14, 28, 1152) (9.2 frames/s overall)
+[extract      95s] ep 9: (92, 14, 28, 1152) (9.7 frames/s overall)
+[extract      99s] ep 10: (90, 14, 28, 1152) (10.1 frames/s overall)
+[extract     104s] ep 11: (87, 14, 28, 1152) (10.5 frames/s overall)
+[extract     110s] ep 12: (121, 14, 28, 1152) (11.0 frames/s overall)
+[extract     115s] ep 13: (96, 14, 28, 1152) (11.4 frames/s overall)
+[extract     119s] ep 14: (84, 14, 28, 1152) (11.7 frames/s overall)
+[extract     124s] ep 15: (100, 14, 28, 1152) (12.0 frames/s overall)
+[extract     129s] ep 16: (91, 14, 28, 1152) (12.3 frames/s overall)
+[extract     135s] ep 17: (105, 14, 28, 1152) (12.6 frames/s overall)
+[extract     140s] ep 18: (113, 14, 28, 1152) (12.9 frames/s overall)
+[extract     145s] ep 19: (92, 14, 28, 1152) (13.1 frames/s overall)
+[extract     150s] ep 20: (124, 14, 28, 1152) (13.4 frames/s overall)
+[extract     156s] ep 21: (97, 14, 28, 1152) (13.6 frames/s overall)
+[extract     162s] ep 22: (127, 14, 28, 1152) (13.9 frames/s overall)
+[extract     169s] ep 23: (151, 14, 28, 1152) (14.2 frames/s overall)
+[extract     173s] ep 24: (93, 14, 28, 1152) (14.4 frames/s overall)
+[extract     178s] ep 25: (111, 14, 28, 1152) (14.6 frames/s overall)
+[extract     183s] ep 26: (89, 14, 28, 1152) (14.7 frames/s overall)
+[extract     189s] ep 27: (102, 14, 28, 1152) (14.8 frames/s overall)
+[extract     197s] ep 28: (168, 14, 28, 1152) (15.0 frames/s overall)
+[extract     202s] ep 29: (108, 14, 28, 1152) (15.2 frames/s overall)
+[extract     207s] ep 30: (105, 14, 28, 1152) (15.3 frames/s overall)
+[extract     212s] ep 31: (95, 14, 28, 1152) (15.4 frames/s overall)
+[extract     217s] ep 32: (95, 14, 28, 1152) (15.5 frames/s overall)
+[extract     222s] ep 33: (96, 14, 28, 1152) (15.6 frames/s overall)
+[extract     226s] ep 34: (88, 14, 28, 1152) (15.7 frames/s overall)
+[extract     231s] ep 35: (90, 14, 28, 1152) (15.8 frames/s overall)
+[extract     235s] ep 36: (85, 14, 28, 1152) (15.8 frames/s overall)
+[extract     240s] ep 37: (92, 14, 28, 1152) (15.9 frames/s overall)
+[extract     245s] ep 38: (96, 14, 28, 1152) (16.0 frames/s overall)
+[extract     249s] ep 39: (92, 14, 28, 1152) (16.1 frames/s overall)
+[extract     256s] ep 40: (134, 14, 28, 1152) (16.2 frames/s overall)
+[extract     260s] ep 41: (92, 14, 28, 1152) (16.3 frames/s overall)
+[extract     264s] ep 42: (92, 14, 28, 1152) (16.4 frames/s overall)
+[extract     268s] ep 43: (79, 14, 28, 1152) (16.4 frames/s overall)
+[extract     272s] ep 44: (89, 14, 28, 1152) (16.5 frames/s overall)
+[extract     277s] ep 45: (103, 14, 28, 1152) (16.6 frames/s overall)
+[extract     284s] ep 46: (123, 14, 28, 1152) (16.6 frames/s overall)
+[extract     289s] ep 47: (109, 14, 28, 1152) (16.7 frames/s overall)
+[extract     293s] ep 48: (101, 14, 28, 1152) (16.8 frames/s overall)
+[extract     299s] ep 49: (124, 14, 28, 1152) (16.8 frames/s overall)
+[extract     305s] ep 50: (120, 14, 28, 1152) (16.9 frames/s overall)
+[extract     311s] ep 51: (114, 14, 28, 1152) (17.0 frames/s overall)
+[extract     318s] ep 52: (134, 14, 28, 1152) (17.0 frames/s overall)
+[extract     323s] ep 53: (105, 14, 28, 1152) (17.1 frames/s overall)
+[extract     328s] ep 54: (107, 14, 28, 1152) (17.2 frames/s overall)
+[extract     332s] ep 55: (98, 14, 28, 1152) (17.2 frames/s overall)
+[extract     338s] ep 56: (122, 14, 28, 1152) (17.3 frames/s overall)
+[extract     344s] ep 57: (117, 14, 28, 1152) (17.3 frames/s overall)
+[extract     349s] ep 58: (108, 14, 28, 1152) (17.4 frames/s overall)
+[extract     355s] ep 59: (111, 14, 28, 1152) (17.4 frames/s overall)
+[extract     360s] ep 60: (106, 14, 28, 1152) (17.5 frames/s overall)
+[extract     365s] ep 61: (117, 14, 28, 1152) (17.5 frames/s overall)
+[extract     372s] ep 62: (143, 14, 28, 1152) (17.6 frames/s overall)
+[extract     377s] ep 63: (125, 14, 28, 1152) (17.7 frames/s overall)
+[extract     382s] ep 64: (111, 14, 28, 1152) (17.7 frames/s overall)
+[extract     387s] ep 65: (110, 14, 28, 1152) (17.8 frames/s overall)
+[extract     393s] ep 66: (115, 14, 28, 1152) (17.8 frames/s overall)
+[extract     399s] ep 67: (122, 14, 28, 1152) (17.9 frames/s overall)
+[extract     405s] ep 68: (119, 14, 28, 1152) (17.9 frames/s overall)
+[extract     410s] ep 69: (120, 14, 28, 1152) (18.0 frames/s overall)
+[extract     417s] ep 70: (131, 14, 28, 1152) (18.0 frames/s overall)
+[extract     423s] ep 71: (135, 14, 28, 1152) (18.0 frames/s overall)
+[extract     429s] ep 72: (121, 14, 28, 1152) (18.1 frames/s overall)
+[extract     435s] ep 73: (129, 14, 28, 1152) (18.1 frames/s overall)
+[extract     440s] ep 74: (114, 14, 28, 1152) (18.2 frames/s overall)
+[extract     446s] ep 75: (115, 14, 28, 1152) (18.2 frames/s overall)
+[extract     451s] ep 76: (111, 14, 28, 1152) (18.3 frames/s overall)
+[extract     456s] ep 77: (108, 14, 28, 1152) (18.3 frames/s overall)
+[extract     461s] ep 78: (106, 14, 28, 1152) (18.3 frames/s overall)
+[extract     468s] ep 79: (138, 14, 28, 1152) (18.3 frames/s overall)
+[extract     472s] ep 80: (93, 14, 28, 1152) (18.4 frames/s overall)
+[extract     477s] ep 81: (100, 14, 28, 1152) (18.4 frames/s overall)
+[extract     483s] ep 82: (126, 14, 28, 1152) (18.4 frames/s overall)
+[extract     489s] ep 83: (125, 14, 28, 1152) (18.5 frames/s overall)
+[extract     494s] ep 84: (117, 14, 28, 1152) (18.5 frames/s overall)
+[extract     501s] ep 85: (131, 14, 28, 1152) (18.5 frames/s overall)
+[extract     507s] ep 86: (114, 14, 28, 1152) (18.5 frames/s overall)
+[extract     512s] ep 87: (109, 14, 28, 1152) (18.5 frames/s overall)
+[extract     518s] ep 88: (123, 14, 28, 1152) (18.6 frames/s overall)
+[extract     523s] ep 89: (109, 14, 28, 1152) (18.6 frames/s overall)
+[extract     528s] ep 90: (110, 14, 28, 1152) (18.6 frames/s overall)
+[extract     535s] ep 91: (153, 14, 28, 1152) (18.7 frames/s overall)
+[extract     542s] ep 92: (142, 14, 28, 1152) (18.7 frames/s overall)
+[extract     548s] ep 93: (139, 14, 28, 1152) (18.7 frames/s overall)
+[extract     557s] ep 94: (182, 14, 28, 1152) (18.8 frames/s overall)
+[extract     564s] ep 95: (145, 14, 28, 1152) (18.8 frames/s overall)
+[extract     570s] ep 96: (138, 14, 28, 1152) (18.8 frames/s overall)
+[extract     577s] ep 97: (150, 14, 28, 1152) (18.9 frames/s overall)
+[extract     583s] ep 98: (131, 14, 28, 1152) (18.9 frames/s overall)
+[extract     589s] ep 99: (156, 14, 28, 1152) (19.0 frames/s overall)
+[extract     597s] ep 100: (162, 14, 28, 1152) (19.0 frames/s overall)
+[extract     604s] ep 101: (158, 14, 28, 1152) (19.0 frames/s overall)
+[extract     611s] ep 102: (153, 14, 28, 1152) (19.1 frames/s overall)
+[extract     618s] ep 103: (163, 14, 28, 1152) (19.1 frames/s overall)
+[extract     625s] ep 104: (149, 14, 28, 1152) (19.1 frames/s overall)
+[extract     632s] ep 105: (165, 14, 28, 1152) (19.2 frames/s overall)
+[extract     639s] ep 106: (149, 14, 28, 1152) (19.2 frames/s overall)
+[extract     645s] ep 107: (132, 14, 28, 1152) (19.2 frames/s overall)
+[extract     651s] ep 108: (142, 14, 28, 1152) (19.3 frames/s overall)
+[extract     657s] ep 109: (129, 14, 28, 1152) (19.3 frames/s overall)
+[extract     665s] ep 110: (170, 14, 28, 1152) (19.3 frames/s overall)
+[extract     674s] ep 111: (190, 14, 28, 1152) (19.3 frames/s overall)
+[extract     681s] ep 112: (156, 14, 28, 1152) (19.4 frames/s overall)
+[extract     687s] ep 113: (147, 14, 28, 1152) (19.4 frames/s overall)
+[extract     693s] ep 114: (131, 14, 28, 1152) (19.4 frames/s overall)
+[extract     701s] ep 115: (172, 14, 28, 1152) (19.5 frames/s overall)
+[extract     708s] ep 116: (158, 14, 28, 1152) (19.5 frames/s overall)
+[extract     715s] ep 117: (138, 14, 28, 1152) (19.5 frames/s overall)
+[extract     722s] ep 118: (140, 14, 28, 1152) (19.5 frames/s overall)
+[extract     728s] ep 119: (143, 14, 28, 1152) (19.5 frames/s overall)
+[extract     734s] ep 120: (156, 14, 28, 1152) (19.6 frames/s overall)
+[extract     740s] ep 121: (134, 14, 28, 1152) (19.6 frames/s overall)
+[extract     746s] ep 122: (127, 14, 28, 1152) (19.6 frames/s overall)
+[extract     752s] ep 123: (137, 14, 28, 1152) (19.7 frames/s overall)
+[extract     758s] ep 124: (137, 14, 28, 1152) (19.7 frames/s overall)
+[extract     767s] ep 125: (169, 14, 28, 1152) (19.7 frames/s overall)
+[extract     774s] ep 126: (147, 14, 28, 1152) (19.7 frames/s overall)
+[extract     781s] ep 127: (151, 14, 28, 1152) (19.7 frames/s overall)
+[extract     788s] ep 128: (158, 14, 28, 1152) (19.7 frames/s overall)
+[extract     795s] ep 129: (167, 14, 28, 1152) (19.7 frames/s overall)
+[extract     802s] ep 130: (156, 14, 28, 1152) (19.8 frames/s overall)
+[extract     809s] ep 131: (159, 14, 28, 1152) (19.8 frames/s overall)
+[extract     815s] ep 132: (132, 14, 28, 1152) (19.8 frames/s overall)
+[extract     821s] ep 133: (137, 14, 28, 1152) (19.8 frames/s overall)
+[extract     827s] ep 134: (127, 14, 28, 1152) (19.9 frames/s overall)
+[extract     832s] ep 135: (111, 14, 28, 1152) (19.9 frames/s overall)
+[extract     838s] ep 136: (124, 14, 28, 1152) (19.9 frames/s overall)
+[extract     844s] ep 137: (124, 14, 28, 1152) (19.9 frames/s overall)
+[extract     850s] ep 138: (141, 14, 28, 1152) (19.9 frames/s overall)
+[extract     855s] ep 139: (106, 14, 28, 1152) (19.9 frames/s overall)
+[extract     861s] ep 140: (118, 14, 28, 1152) (19.9 frames/s overall)
+[extract     867s] ep 141: (130, 14, 28, 1152) (19.9 frames/s overall)
+[extract     872s] ep 142: (113, 14, 28, 1152) (19.9 frames/s overall)
+[extract     878s] ep 143: (122, 14, 28, 1152) (19.9 frames/s overall)
+[extract     883s] ep 144: (108, 14, 28, 1152) (19.9 frames/s overall)
+[extract     889s] ep 145: (124, 14, 28, 1152) (20.0 frames/s overall)
+[extract     894s] ep 146: (120, 14, 28, 1152) (20.0 frames/s overall)
+[extract     901s] ep 147: (133, 14, 28, 1152) (20.0 frames/s overall)
+[extract     908s] ep 148: (146, 14, 28, 1152) (20.0 frames/s overall)
+[extract     914s] ep 149: (122, 14, 28, 1152) (20.0 frames/s overall)
+[extract     920s] ep 150: (129, 14, 28, 1152) (20.0 frames/s overall)
+[extract     927s] ep 151: (155, 14, 28, 1152) (20.0 frames/s overall)
+[extract     933s] ep 152: (123, 14, 28, 1152) (20.0 frames/s overall)
+[extract     938s] ep 153: (108, 14, 28, 1152) (20.0 frames/s overall)
+[extract     944s] ep 154: (135, 14, 28, 1152) (20.0 frames/s overall)
+[extract     951s] ep 155: (141, 14, 28, 1152) (20.0 frames/s overall)
+[extract     956s] ep 156: (124, 14, 28, 1152) (20.0 frames/s overall)
+[extract     962s] ep 157: (113, 14, 28, 1152) (20.0 frames/s overall)
+[extract     967s] ep 158: (115, 14, 28, 1152) (20.1 frames/s overall)
+[extract     973s] ep 159: (122, 14, 28, 1152) (20.1 frames/s overall)
+[extract     979s] ep 160: (130, 14, 28, 1152) (20.1 frames/s overall)
+[extract     985s] ep 161: (125, 14, 28, 1152) (20.1 frames/s overall)
+[extract     991s] ep 162: (123, 14, 28, 1152) (20.1 frames/s overall)
+[extract     996s] ep 163: (117, 14, 28, 1152) (20.1 frames/s overall)
+[extract    1002s] ep 164: (121, 14, 28, 1152) (20.1 frames/s overall)
+[extract    1007s] ep 165: (110, 14, 28, 1152) (20.1 frames/s overall)
+[extract    1013s] ep 166: (133, 14, 28, 1152) (20.1 frames/s overall)
+[extract    1018s] ep 167: (114, 14, 28, 1152) (20.1 frames/s overall)
+[extract    1022s] ep 168: (107, 14, 28, 1152) (20.1 frames/s overall)
+[extract    1028s] ep 169: (133, 14, 28, 1152) (20.2 frames/s overall)
+[extract    1035s] ep 170: (152, 14, 28, 1152) (20.2 frames/s overall)
+[extract    1040s] ep 171: (122, 14, 28, 1152) (20.2 frames/s overall)
+[extract    1046s] ep 172: (119, 14, 28, 1152) (20.2 frames/s overall)
+[extract    1053s] ep 173: (157, 14, 28, 1152) (20.2 frames/s overall)
+[extract    1060s] ep 174: (152, 14, 28, 1152) (20.2 frames/s overall)
+[extract    1065s] ep 175: (130, 14, 28, 1152) (20.2 frames/s overall)
+[extract    1071s] ep 176: (124, 14, 28, 1152) (20.2 frames/s overall)
+[extract    1077s] ep 177: (123, 14, 28, 1152) (20.3 frames/s overall)
+[extract    1083s] ep 178: (133, 14, 28, 1152) (20.3 frames/s overall)
+[extract    1088s] ep 179: (113, 14, 28, 1152) (20.3 frames/s overall)
+[extract    1093s] ep 180: (115, 14, 28, 1152) (20.3 frames/s overall)
+[extract    1098s] ep 181: (107, 14, 28, 1152) (20.3 frames/s overall)
+[extract    1104s] ep 182: (116, 14, 28, 1152) (20.3 frames/s overall)
+[extract    1110s] ep 183: (125, 14, 28, 1152) (20.3 frames/s overall)
+[extract    1115s] ep 184: (106, 14, 28, 1152) (20.3 frames/s overall)
+[extract    1121s] ep 185: (137, 14, 28, 1152) (20.3 frames/s overall)
+[extract    1126s] ep 186: (97, 14, 28, 1152) (20.3 frames/s overall)
+[extract    1133s] ep 187: (150, 14, 28, 1152) (20.3 frames/s overall)
+[extract    1139s] ep 188: (114, 14, 28, 1152) (20.3 frames/s overall)
+[extract    1146s] ep 189: (165, 14, 28, 1152) (20.3 frames/s overall)
+[extract    1151s] ep 190: (99, 14, 28, 1152) (20.3 frames/s overall)
+[extract    1156s] ep 191: (104, 14, 28, 1152) (20.3 frames/s overall)
+[extract    1162s] ep 192: (138, 14, 28, 1152) (20.3 frames/s overall)
+[extract    1167s] ep 193: (125, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1173s] ep 194: (127, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1178s] ep 195: (100, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1183s] ep 196: (110, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1188s] ep 197: (111, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1194s] ep 198: (140, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1200s] ep 199: (109, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1205s] ep 200: (116, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1211s] ep 201: (121, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1219s] ep 202: (173, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1223s] ep 203: (96, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1228s] ep 204: (116, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1233s] ep 205: (95, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1238s] ep 206: (109, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1244s] ep 207: (122, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1249s] ep 208: (111, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1255s] ep 209: (121, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1260s] ep 210: (110, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1265s] ep 211: (105, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1271s] ep 212: (123, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1277s] ep 213: (138, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1283s] ep 214: (114, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1288s] ep 215: (120, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1293s] ep 216: (97, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1298s] ep 217: (99, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1304s] ep 218: (117, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1310s] ep 219: (133, 14, 28, 1152) (20.4 frames/s overall)
+[extract    1315s] ep 220: (113, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1321s] ep 221: (115, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1326s] ep 222: (110, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1331s] ep 223: (107, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1337s] ep 224: (104, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1342s] ep 225: (126, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1350s] ep 226: (152, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1355s] ep 227: (123, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1361s] ep 228: (111, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1366s] ep 229: (117, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1372s] ep 230: (114, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1378s] ep 231: (125, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1385s] ep 232: (150, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1390s] ep 233: (127, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1396s] ep 234: (135, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1401s] ep 235: (113, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1407s] ep 236: (112, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1412s] ep 237: (125, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1419s] ep 238: (140, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1425s] ep 239: (134, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1431s] ep 240: (132, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1436s] ep 241: (109, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1445s] ep 242: (189, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1451s] ep 243: (143, 14, 28, 1152) (20.5 frames/s overall)
+[extract    1458s] ep 244: (145, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1463s] ep 245: (116, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1469s] ep 246: (120, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1476s] ep 247: (154, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1481s] ep 248: (120, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1488s] ep 249: (150, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1493s] ep 250: (117, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1499s] ep 251: (120, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1505s] ep 252: (137, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1511s] ep 253: (120, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1517s] ep 254: (129, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1523s] ep 255: (143, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1529s] ep 256: (124, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1535s] ep 257: (142, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1542s] ep 258: (126, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1547s] ep 259: (112, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1554s] ep 260: (137, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1560s] ep 261: (135, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1566s] ep 262: (126, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1572s] ep 263: (134, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1578s] ep 264: (133, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1585s] ep 265: (141, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1591s] ep 266: (127, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1597s] ep 267: (145, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1604s] ep 268: (131, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1610s] ep 269: (152, 14, 28, 1152) (20.6 frames/s overall)
+[extract    1615s] ep 270: (127, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1620s] ep 271: (99, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1625s] ep 272: (101, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1630s] ep 273: (89, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1635s] ep 274: (97, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1639s] ep 275: (99, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1645s] ep 276: (119, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1650s] ep 277: (101, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1654s] ep 278: (94, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1659s] ep 279: (100, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1664s] ep 280: (95, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1668s] ep 281: (96, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1673s] ep 282: (96, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1677s] ep 283: (96, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1682s] ep 284: (97, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1687s] ep 285: (96, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1691s] ep 286: (98, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1696s] ep 287: (92, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1701s] ep 288: (100, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1706s] ep 289: (95, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1711s] ep 290: (106, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1716s] ep 291: (115, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1720s] ep 292: (86, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1725s] ep 293: (99, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1730s] ep 294: (96, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1735s] ep 295: (111, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1740s] ep 296: (101, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1744s] ep 297: (92, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1749s] ep 298: (97, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1754s] ep 299: (97, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1758s] ep 300: (92, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1763s] ep 301: (103, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1769s] ep 302: (114, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1773s] ep 303: (89, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1778s] ep 304: (102, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1783s] ep 305: (113, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1788s] ep 306: (99, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1793s] ep 307: (103, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1798s] ep 308: (90, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1803s] ep 309: (100, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1807s] ep 310: (90, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1812s] ep 311: (99, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1817s] ep 312: (111, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1822s] ep 313: (95, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1828s] ep 314: (111, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1834s] ep 315: (129, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1840s] ep 316: (137, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1846s] ep 317: (131, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1852s] ep 318: (100, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1858s] ep 319: (154, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1864s] ep 320: (102, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1869s] ep 321: (120, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1875s] ep 322: (121, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1881s] ep 323: (129, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1887s] ep 324: (107, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1891s] ep 325: (98, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1896s] ep 326: (98, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1903s] ep 327: (146, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1908s] ep 328: (106, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1913s] ep 329: (116, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1919s] ep 330: (121, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1924s] ep 331: (119, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1929s] ep 332: (118, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1934s] ep 333: (111, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1939s] ep 334: (109, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1944s] ep 335: (111, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1950s] ep 336: (128, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1955s] ep 337: (110, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1960s] ep 338: (102, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1965s] ep 339: (98, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1969s] ep 340: (86, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1974s] ep 341: (119, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1980s] ep 342: (117, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1986s] ep 343: (128, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1991s] ep 344: (113, 14, 28, 1152) (20.7 frames/s overall)
+[extract    1998s] ep 345: (142, 14, 28, 1152) (20.7 frames/s overall)
+[extract    2003s] ep 346: (112, 14, 28, 1152) (20.7 frames/s overall)
+[extract    2008s] ep 347: (108, 14, 28, 1152) (20.7 frames/s overall)
+[extract    2013s] ep 348: (110, 14, 28, 1152) (20.7 frames/s overall)
+[extract    2018s] ep 349: (109, 14, 28, 1152) (20.7 frames/s overall)
+[extract    2023s] ep 350: (100, 14, 28, 1152) (20.7 frames/s overall)
+[extract    2028s] ep 351: (101, 14, 28, 1152) (20.7 frames/s overall)
+[extract    2034s] ep 352: (129, 14, 28, 1152) (20.7 frames/s overall)
+[extract    2040s] ep 353: (123, 14, 28, 1152) (20.7 frames/s overall)
+[extract    2045s] ep 354: (125, 14, 28, 1152) (20.7 frames/s overall)
+[extract    2051s] ep 355: (140, 14, 28, 1152) (20.7 frames/s overall)
