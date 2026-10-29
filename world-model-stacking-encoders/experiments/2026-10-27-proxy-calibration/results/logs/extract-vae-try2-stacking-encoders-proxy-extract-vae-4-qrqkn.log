@@ -1,0 +1,368 @@
+Thu Oct 29 14:16:45 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.09              KMD Version: 615.71.09     CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA L4                      On  |   00000000:2C:00.0 Off |                    0 |
+| N/A   40C    P8             17W /   72W |       0MiB /  23034MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+  DEPRECATION: Building 'antlr4-python3-runtime' using the legacy setup.py bdist_wheel mechanism, which will be removed in a future version. pip 25.3 will enforce this behaviour change. A possible replacement is to use the standardized build interface by setting the `--use-pep517` option, (possibly combined with `--no-build-isolation`), or adding a `pyproject.toml` file to the source tree of 'antlr4-python3-runtime'. Discussion can be found at https://github.com/pypa/pip/issues/6334
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+=== pip freeze
+antlr4-python3-runtime==4.9.3
+archspec @ file:///home/conda/feedstock_root/build_artifacts/archspec_1737352602016/work
+asttokens @ file:///home/conda/feedstock_root/build_artifacts/asttokens_1733250440834/work
+astunparse==1.6.3
+attrs @ file:///home/conda/feedstock_root/build_artifacts/attrs_1741918516150/work
+av==15.1.0
+beautifulsoup4 @ file:///home/conda/feedstock_root/build_artifacts/beautifulsoup4_1744783198182/work
+boltons @ file:///home/conda/feedstock_root/build_artifacts/boltons_1733827268945/work
+Brotli @ file:///home/conda/feedstock_root/build_artifacts/brotli-split_1725267488082/work
+certifi @ file:///home/conda/feedstock_root/build_artifacts/certifi_1746569525376/work/certifi
+cffi @ file:///home/conda/feedstock_root/build_artifacts/cffi_1725560564262/work
+chardet @ file:///home/conda/feedstock_root/build_artifacts/chardet_1741797914774/work
+charset-normalizer @ file:///home/conda/feedstock_root/build_artifacts/charset-normalizer_1746214863626/work
+click @ file:///home/conda/feedstock_root/build_artifacts/click_1747811314515/work
+cmake==4.0.2
+colorama @ file:///home/conda/feedstock_root/build_artifacts/colorama_1733218098505/work
+conda @ file:///home/conda/feedstock_root/build_artifacts/conda_1748334230838/work/conda-src
+conda-build @ file:///home/conda/feedstock_root/build_artifacts/conda-build_1748431289756/work
+conda-libmamba-solver @ file:///home/conda/feedstock_root/build_artifacts/conda-libmamba-solver_1742219570693/work/src
+conda-package-handling @ file:///home/conda/feedstock_root/build_artifacts/conda-package-handling_1736345463896/work
+conda_index @ file:///home/conda/feedstock_root/build_artifacts/conda-index_1748375757308/work
+conda_package_streaming @ file:///home/conda/feedstock_root/build_artifacts/conda-package-streaming_1741620732069/work
+decorator @ file:///home/conda/feedstock_root/build_artifacts/decorator_1740384970518/work
+distro @ file:///home/conda/feedstock_root/build_artifacts/distro_1734729835256/work
+dnspython==2.7.0
+einops==0.8.1
+evalidate @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_evalidate_1746793833/work
+exceptiongroup @ file:///home/conda/feedstock_root/build_artifacts/exceptiongroup_1746947292760/work
+executing @ file:///home/conda/feedstock_root/build_artifacts/executing_1745502089858/work
+expecttest==0.3.0
+fastwam @ https://github.com/yuantianyuan01/FastWAM/archive/7faa71108368fbb3b6885649f112af607427a2d4.tar.gz#sha256=43102a7c1d207f0a4a691991b6562d8b2dcfbc09b6b22b5a52ecc7c6b6f81520
+filelock @ file:///home/conda/feedstock_root/build_artifacts/filelock_1741969488311/work
+frozendict @ file:///home/conda/feedstock_root/build_artifacts/frozendict_1728841334936/work
+fsspec==2025.5.1
+ftfy==6.3.1
+gitdb==4.0.12
+GitPython==3.1.45
+h2 @ file:///home/conda/feedstock_root/build_artifacts/h2_1738578511449/work
+h5py==3.16.0
+hf-xet==1.7.1
+hpack @ file:///home/conda/feedstock_root/build_artifacts/hpack_1737618293087/work
+huggingface_hub==0.36.2
+hydra-core==1.3.2
+hyperframe @ file:///home/conda/feedstock_root/build_artifacts/hyperframe_1737618333194/work
+hypothesis==6.135.0
+idna @ file:///home/conda/feedstock_root/build_artifacts/idna_1733211830134/work
+imageio==2.37.0
+imageio-ffmpeg==0.6.0
+importlib_resources @ file:///home/conda/feedstock_root/build_artifacts/importlib_resources_1736252299705/work
+ipython @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_ipython_1748713870/work
+ipython_pygments_lexers @ file:///home/conda/feedstock_root/build_artifacts/ipython_pygments_lexers_1737123620466/work
+jedi @ file:///home/conda/feedstock_root/build_artifacts/jedi_1733300866624/work
+Jinja2 @ file:///home/conda/feedstock_root/build_artifacts/jinja2_1741263328855/work
+jsonpatch @ file:///home/conda/feedstock_root/build_artifacts/jsonpatch_1733814567314/work
+jsonpointer @ file:///home/conda/feedstock_root/build_artifacts/jsonpointer_1725302941992/work
+jsonschema @ file:///home/conda/feedstock_root/build_artifacts/jsonschema_1748294245630/work
+jsonschema-specifications @ file:///tmp/tmpuvkyqc9y/src
+libarchive-c @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_python-libarchive-c_1747927321/work
+libmambapy @ file:///home/conda/feedstock_root/build_artifacts/mamba-split_1746515836725/work/libmambapy
+lief @ file:///home/conda/feedstock_root/build_artifacts/lief_1743551769507/work/api/python
+lintrunner==0.12.7
+markdown-it-py==4.2.0
+MarkupSafe @ file:///home/conda/feedstock_root/build_artifacts/markupsafe_1733219680183/work
+matplotlib-inline @ file:///home/conda/feedstock_root/build_artifacts/matplotlib-inline_1733416936468/work
+mdurl==0.1.2
+menuinst @ file:///home/conda/feedstock_root/build_artifacts/menuinst_1731146975675/work
+mpmath==1.3.0
+msgpack @ file:///home/conda/feedstock_root/build_artifacts/msgpack-python_1725974992554/work
+networkx==3.5
+ninja==1.11.1.4
+numpy @ file:///home/conda/feedstock_root/build_artifacts/numpy_1747544639841/work/dist/numpy-2.2.6-cp311-cp311-linux_x86_64.whl#sha256=d4f76e4f9939f09d6b8021a56dbd088095917d586ead71ad13dbe44bb22d3dfa
+nvidia-cublas-cu12==12.8.3.14
+nvidia-cuda-cupti-cu12==12.8.57
+nvidia-cuda-nvrtc-cu12==12.8.61
+nvidia-cuda-runtime-cu12==12.8.57
+nvidia-cudnn-cu12==9.7.1.26
+nvidia-cufft-cu12==11.3.3.41
+nvidia-cufile-cu12==1.13.0.11
+nvidia-curand-cu12==10.3.9.55
+nvidia-cusolver-cu12==11.7.2.55
+nvidia-cusparse-cu12==12.5.7.53
+nvidia-cusparselt-cu12==0.6.3
+nvidia-nccl-cu12==2.26.2
+nvidia-nvjitlink-cu12==12.8.61
+nvidia-nvtx-cu12==12.8.55
+omegaconf==2.3.0
+open_clip_torch==3.3.0
+optree==0.16.0
+packaging @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_packaging_1745345660/work
+pandas==2.3.3
+parso @ file:///home/conda/feedstock_root/build_artifacts/parso_1733271261340/work
+pexpect @ file:///home/conda/feedstock_root/build_artifacts/pexpect_1733301927746/work
+pickleshare @ file:///home/conda/feedstock_root/build_artifacts/pickleshare_1733327343728/work
+pillow==13.0.0
+pkginfo @ file:///home/conda/feedstock_root/build_artifacts/pkginfo_1739984581450/work
+pkgutil_resolve_name @ file:///home/conda/feedstock_root/build_artifacts/pkgutil-resolve-name_1733344503739/work
+platformdirs @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_platformdirs_1746710438/work
+pluggy @ file:///home/conda/feedstock_root/build_artifacts/pluggy_1733222765875/work
+prompt_toolkit @ file:///home/conda/feedstock_root/build_artifacts/prompt-toolkit_1744724089886/work
+psutil @ file:///home/conda/feedstock_root/build_artifacts/psutil_1740663149797/work
+ptyprocess @ file:///home/conda/feedstock_root/build_artifacts/ptyprocess_1733302279685/work/dist/ptyprocess-0.7.0-py2.py3-none-any.whl#sha256=92c32ff62b5fd8cf325bec5ab90d7be3d2a8ca8c8a3813ff487a8d2002630d1f
+pure_eval @ file:///home/conda/feedstock_root/build_artifacts/pure_eval_1733569405015/work
+pyarrow==21.0.0
+pycosat @ file:///home/conda/feedstock_root/build_artifacts/pycosat_1732588400443/work
+pycparser @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_pycparser_1733195786/work
+Pygments @ file:///home/conda/feedstock_root/build_artifacts/pygments_1736243443484/work
+PySocks @ file:///home/conda/feedstock_root/build_artifacts/pysocks_1733217236728/work
+python-dateutil==3.0.0
+python-etcd==0.4.5
+pytz @ file:///home/conda/feedstock_root/build_artifacts/pytz_1742920838005/work
+PyYAML @ file:///home/conda/feedstock_root/build_artifacts/pyyaml_1737454647378/work
+referencing @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_referencing_1737836872/work
+regex==2025.11.3
+requests @ file:///home/conda/feedstock_root/build_artifacts/requests_1733217035951/work
+rich==14.2.0
+rpds-py @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_rpds-py_1747837968/work
+ruamel.yaml @ file:///home/conda/feedstock_root/build_artifacts/ruamel.yaml_1748629995798/work
+ruamel.yaml.clib @ file:///home/conda/feedstock_root/build_artifacts/ruamel.yaml.clib_1728724459810/work
+safetensors==0.5.3
+six==1.17.0
+smmap==5.0.3
+sortedcontainers==2.4.0
+soupsieve @ file:///home/conda/feedstock_root/build_artifacts/soupsieve_1746563585861/work
+stack_data @ file:///home/conda/feedstock_root/build_artifacts/stack_data_1733569443808/work
+sympy==1.14.0
+termcolor==2.5.0
+timm==1.0.30
+tokenizers==0.22.2
+torch==2.7.1+cu128
+torchaudio==2.7.1+cu128
+torchelastic==0.2.2
+torchvision==0.22.1+cu128
+tqdm @ file:///home/conda/feedstock_root/build_artifacts/tqdm_1735661334605/work
+traitlets @ file:///home/conda/feedstock_root/build_artifacts/traitlets_1733367359838/work
+transformers==4.57.6
+triton==3.3.1
+truststore @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_truststore_1739009763/work
+types-dataclasses==0.6.6
+typing_extensions @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_typing_extensions_1748959427/work
+tzdata==2026.6
+urllib3 @ file:///home/conda/feedstock_root/build_artifacts/urllib3_1744323578849/work
+wcwidth @ file:///home/conda/feedstock_root/build_artifacts/wcwidth_1733231326287/work
+zipp @ file:///home/conda/feedstock_root/build_artifacts/zipp_1748277385522/work
+zstandard==0.23.0
+fastwam ok, torch 2.7.1+cu128 cuda True
+=== libero_spatial shard 4/5
+Thu Oct 29 14:17:05 UTC 2026
+[extract       1s] libero_spatial: 434 episodes, 53229 frames
+[extract      98s] ep 4: (86, 3, 14, 28, 48) (0.9 frames/s overall)
+[extract     141s] ep 14: (84, 3, 14, 28, 48) (1.2 frames/s overall)
+[extract     190s] ep 19: (92, 3, 14, 28, 48) (1.4 frames/s overall)
+[extract     240s] ep 24: (93, 3, 14, 28, 48) (1.5 frames/s overall)
+[extract     287s] ep 34: (88, 3, 14, 28, 48) (1.5 frames/s overall)
+[extract     334s] ep 39: (92, 3, 14, 28, 48) (1.6 frames/s overall)
+[extract     382s] ep 44: (89, 3, 14, 28, 48) (1.6 frames/s overall)
+[extract     438s] ep 54: (107, 3, 14, 28, 48) (1.7 frames/s overall)
+[extract     496s] ep 59: (111, 3, 14, 28, 48) (1.7 frames/s overall)
+[extract     553s] ep 64: (111, 3, 14, 28, 48) (1.7 frames/s overall)
+[extract     613s] ep 74: (114, 3, 14, 28, 48) (1.7 frames/s overall)
+[extract     685s] ep 79: (138, 3, 14, 28, 48) (1.8 frames/s overall)
+[extract     746s] ep 84: (117, 3, 14, 28, 48) (1.8 frames/s overall)
+[extract     840s] ep 94: (182, 3, 14, 28, 48) (1.8 frames/s overall)
+[extract     921s] ep 99: (156, 3, 14, 28, 48) (1.8 frames/s overall)
+[extract     999s] ep 104: (149, 3, 14, 28, 48) (1.8 frames/s overall)
+[extract    1067s] ep 114: (131, 3, 14, 28, 48) (1.8 frames/s overall)
+[extract    1142s] ep 119: (143, 3, 14, 28, 48) (1.8 frames/s overall)
+[extract    1214s] ep 124: (137, 3, 14, 28, 48) (1.8 frames/s overall)
+[extract    1280s] ep 134: (127, 3, 14, 28, 48) (1.8 frames/s overall)
+[extract    1335s] ep 139: (106, 3, 14, 28, 48) (1.8 frames/s overall)
+[extract    1392s] ep 144: (108, 3, 14, 28, 48) (1.8 frames/s overall)
+[extract    1456s] ep 149: (122, 3, 14, 28, 48) (1.8 frames/s overall)
+[extract    1527s] ep 154: (135, 3, 14, 28, 48) (1.8 frames/s overall)
+[extract    1591s] ep 159: (122, 3, 14, 28, 48) (1.8 frames/s overall)
+[extract    1654s] ep 164: (121, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    1724s] ep 169: (133, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    1803s] ep 174: (152, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    1863s] ep 179: (113, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    1921s] ep 184: (106, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    2007s] ep 189: (165, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    2073s] ep 194: (127, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    2131s] ep 199: (109, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    2191s] ep 204: (116, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    2253s] ep 209: (121, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    2313s] ep 214: (114, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    2382s] ep 219: (133, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    2436s] ep 224: (104, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    2498s] ep 229: (117, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    2568s] ep 234: (135, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    2638s] ep 239: (134, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    2714s] ep 244: (145, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    2792s] ep 249: (150, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    2859s] ep 254: (129, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    2917s] ep 259: (112, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    2987s] ep 264: (133, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    3066s] ep 269: (152, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    3118s] ep 274: (97, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    3171s] ep 279: (100, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    3223s] ep 284: (97, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    3273s] ep 289: (95, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    3324s] ep 294: (96, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    3376s] ep 299: (97, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    3430s] ep 304: (102, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    3483s] ep 309: (100, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    3541s] ep 314: (111, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    3622s] ep 319: (154, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    3678s] ep 324: (107, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    3739s] ep 329: (116, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    3796s] ep 334: (109, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    3848s] ep 339: (98, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    3907s] ep 344: (113, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    3965s] ep 349: (109, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    4031s] ep 354: (125, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    4098s] ep 359: (128, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    4172s] ep 364: (144, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    4243s] ep 369: (135, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    4320s] ep 374: (148, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    4388s] ep 379: (130, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    4459s] ep 384: (136, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    4534s] ep 389: (145, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    4605s] ep 394: (134, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    4674s] ep 399: (133, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    4750s] ep 404: (145, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    4824s] ep 409: (141, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    4900s] ep 414: (145, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    4977s] ep 419: (145, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    5045s] ep 424: (130, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    5118s] ep 429: (139, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract    5118s] done
+=== libero_object shard 4/5
+Thu Oct 29 15:42:27 UTC 2026
+[extract       1s] libero_object: 457 episodes, 67309 frames
+[extract      99s] ep 4: (164, 3, 14, 28, 48) (1.7 frames/s overall)
+[extract     161s] ep 9: (154, 3, 14, 28, 48) (2.0 frames/s overall)
+[extract     223s] ep 14: (146, 3, 14, 28, 48) (2.1 frames/s overall)
+[extract     276s] ep 19: (136, 3, 14, 28, 48) (2.2 frames/s overall)
+[extract     338s] ep 24: (153, 3, 14, 28, 48) (2.2 frames/s overall)
+[extract     398s] ep 29: (149, 3, 14, 28, 48) (2.3 frames/s overall)
+[extract     460s] ep 34: (151, 3, 14, 28, 48) (2.3 frames/s overall)
+[extract     539s] ep 39: (189, 3, 14, 28, 48) (2.3 frames/s overall)
+[extract     603s] ep 44: (155, 3, 14, 28, 48) (2.3 frames/s overall)
+[extract     665s] ep 49: (149, 3, 14, 28, 48) (2.3 frames/s overall)
+[extract     723s] ep 54: (140, 3, 14, 28, 48) (2.3 frames/s overall)
+[extract     778s] ep 59: (132, 3, 14, 28, 48) (2.3 frames/s overall)
+[extract     846s] ep 64: (166, 3, 14, 28, 48) (2.3 frames/s overall)
+[extract     901s] ep 69: (134, 3, 14, 28, 48) (2.3 frames/s overall)
+[extract     958s] ep 74: (139, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    1030s] ep 79: (174, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    1088s] ep 84: (141, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    1151s] ep 89: (150, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    1214s] ep 94: (154, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    1283s] ep 99: (167, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    1349s] ep 104: (158, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    1416s] ep 109: (164, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    1474s] ep 114: (144, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    1542s] ep 119: (164, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    1605s] ep 124: (153, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    1669s] ep 129: (155, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    1732s] ep 134: (153, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    1797s] ep 139: (158, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    1859s] ep 144: (148, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    1949s] ep 149: (224, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    2010s] ep 154: (148, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    2078s] ep 159: (162, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    2144s] ep 164: (158, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    2207s] ep 169: (149, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    2271s] ep 174: (153, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    2333s] ep 179: (149, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    2399s] ep 184: (145, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    2455s] ep 189: (133, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    2515s] ep 194: (144, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    2576s] ep 199: (147, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    2633s] ep 204: (138, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    2703s] ep 209: (171, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    2760s] ep 214: (135, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    2815s] ep 219: (133, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    2872s] ep 224: (135, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    2941s] ep 229: (167, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    3002s] ep 234: (150, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    3066s] ep 239: (156, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    3128s] ep 244: (152, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    3194s] ep 249: (159, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    3253s] ep 254: (141, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    3319s] ep 259: (164, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    3385s] ep 264: (159, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    3447s] ep 269: (150, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    3502s] ep 274: (131, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    3561s] ep 279: (141, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    3620s] ep 284: (143, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    3675s] ep 289: (132, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    3732s] ep 294: (137, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    3790s] ep 299: (139, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    3859s] ep 304: (161, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    3916s] ep 309: (139, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    3987s] ep 314: (175, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    4042s] ep 319: (135, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    4090s] ep 324: (114, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    4145s] ep 329: (132, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    4196s] ep 334: (124, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    4260s] ep 339: (153, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    4319s] ep 344: (142, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    4375s] ep 349: (138, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    4426s] ep 354: (123, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    4478s] ep 359: (125, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    4531s] ep 364: (125, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    4588s] ep 369: (139, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    4639s] ep 374: (124, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    4692s] ep 379: (125, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    4744s] ep 384: (128, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    4797s] ep 389: (126, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    4851s] ep 394: (132, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    4902s] ep 399: (120, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    4955s] ep 404: (129, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    5007s] ep 409: (124, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    5079s] ep 414: (177, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    5145s] ep 419: (146, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    5197s] ep 424: (127, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    5251s] ep 429: (130, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    5311s] ep 434: (148, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    5378s] ep 439: (165, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    5433s] ep 444: (137, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    5484s] ep 449: (126, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    5539s] ep 454: (133, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    5539s] done
+=== libero_goal shard 4/5
+Thu Oct 29 17:14:49 UTC 2026
+[extract       1s] libero_goal: 433 episodes, 52895 frames
+[extract      86s] ep 4: (138, 3, 14, 28, 48) (1.6 frames/s overall)
+[extract     137s] ep 9: (126, 3, 14, 28, 48) (1.9 frames/s overall)
+[extract     199s] ep 14: (153, 3, 14, 28, 48) (2.1 frames/s overall)
+[extract     257s] ep 19: (146, 3, 14, 28, 48) (2.2 frames/s overall)
+[extract     314s] ep 24: (143, 3, 14, 28, 48) (2.2 frames/s overall)
+[extract     372s] ep 29: (141, 3, 14, 28, 48) (2.3 frames/s overall)
+[extract     422s] ep 34: (124, 3, 14, 28, 48) (2.3 frames/s overall)
+[extract     477s] ep 39: (140, 3, 14, 28, 48) (2.3 frames/s overall)
+[extract     595s] ep 44: (299, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract     669s] ep 49: (182, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract     755s] ep 54: (218, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract     836s] ep 59: (202, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract     908s] ep 64: (184, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    1009s] ep 69: (251, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    1078s] ep 74: (173, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    1135s] ep 79: (142, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    1189s] ep 84: (134, 3, 14, 28, 48) (2.4 frames/s overall)
+[extract    1247s] ep 89: (147, 3, 14, 28, 48) (2.4 frames/s overall)
