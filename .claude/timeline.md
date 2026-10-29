@@ -81,3 +81,10 @@
 - Rebuilt the proxy on Fast-WAM's own code (`src/proxy_wam.py`, `extract_fastwam.py`, `t5_cache.py`, `fastwam_data.py`; loss identical to Fast-WAM's), real-data smoke on one episode; added the paired per-seed analysis (`src/lp_eval.py`) after reviewer feedback reframed the round as a proxy replication.
 - Wrote the full plan as a Google Doc for the reviewer; set up the autonomous run (RUN.md, stage 2 manifests, Prometheus watcher) with the user's pre-approval. Nothing submitted yet.
 - See: world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/{PLAN.md,RUN.md}, writing/proxy-replication-plan-2026-10-28.html, LOG.md 2026-10-28 (b)–(f)
+
+## 2026-10-28 — world-model-stacking-encoders: stand-in audit, reviewer rounds, decision rules locked
+
+- Audited stand-ins: the DINOv3 stand-in only touched a smoke test (rerun with real DINOv3); the real caveat is that the earlier diagnostics used 128 px yifengzhu-hf data, not the paper's Fast-WAM data. Added "don't bury me in numbers" to the global and workspace CLAUDE.md.
+- Folded five rounds of outside review into the proxy plan: proxy replication framing, action-expert claim corrected, ~1 TB volume, orientation checks, and a locked decision rule (paired per-seed; calibration D−none ≥ +2.7 all positive, D+L−D ≥ −1.35; D+R all negative and mean ≤ −2.7 as a trigger), eval seeds 41–43, proportional subset, paired D/D+R pilot for sizing (sd ×1.5, SE ≤ 1.35, 48 h / 8 GPU cap).
+- RUN.md aligned (paired pilot, step 7a analysis-code checklist, round pre-approved); watcher fixed so a dropped laptop connection no longer looks like a vanished Job. Google Doc kept in sync. Next: user starts the autonomous run from RUN.md.
+- See: world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/{PLAN.md,RUN.md}, decisions/003-proxy-policy-calibration.md, LOG.md 2026-10-28 (b)–(k)
