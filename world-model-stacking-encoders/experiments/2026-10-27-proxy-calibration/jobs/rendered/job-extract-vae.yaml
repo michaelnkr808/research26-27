@@ -1,5 +1,5 @@
 # RUN.md step 6 (pre-approved): full extraction of one source over all four suites, as an Indexed Job with
-# 4 pods (pod i takes episodes i, i+N, ... of every suite; one writer per output file). Rendered per source by
+# 5 pods (pod i takes episodes i, i+N, ... of every suite; one writer per output file). Rendered per source by
 # RUN.md step 6 from the probe's measured speed and memory (fill every __PLACEHOLDER__; keep total GPUs <= 8 across
 # all running Jobs). Resumable: episodes already on disk (with their stats) are skipped, so a retry or resubmit continues.
 # Follows _standards/08: Job, real command that exits, no sleep, 1 GPU per pod, limits within 20%, no tolerations.
@@ -10,10 +10,10 @@ metadata:
   namespace: aria-world
 spec:
   completionMode: Indexed
-  completions: 4
-  parallelism: 4
-  backoffLimit: 4            # about one retry per shard
-  activeDeadlineSeconds: 57600
+  completions: 5
+  parallelism: 5
+  backoffLimit: 5            # about one retry per shard
+  activeDeadlineSeconds: 72000
   ttlSecondsAfterFinished: 86400
   template:
     spec:
@@ -42,9 +42,9 @@ spec:
           nvidia-smi
           bash /src/setup_env.sh
           for s in libero_spatial libero_object libero_goal libero_10; do
-            echo "=== $s shard $I/4"; date -u
+            echo "=== $s shard $I/5"; date -u
             python /src/extract_fastwam.py --root $R/data/lerobot_v30/${s}_no_noops_lerobot --suite $s \
-              --source vae --out $F --shard $I/4 --dtype bf16 --batch 4 --vae-path $R/models/Wan2.2_VAE.safetensors
+              --source vae --out $F --shard $I/5 --dtype bf16 --batch 4 --vae-path $R/models/Wan2.2_VAE.safetensors
           done
           date -u; echo "=== done"
         env:
@@ -56,8 +56,8 @@ spec:
         - {name: PYTHONUNBUFFERED, value: "1"}
         - {name: PYTHONPATH, value: /src}
         resources:                    # from the probe's measured use (memory nautilus-job-sizing-and-estimates)
-          requests: {cpu: "2", memory: 10Gi, nvidia.com/gpu: "1", ephemeral-storage: 30Gi}
-          limits:   {cpu: "2400m", memory: 12Gi, nvidia.com/gpu: "1", ephemeral-storage: 34Gi}
+          requests: {cpu: "2", memory: 6Gi, nvidia.com/gpu: "1", ephemeral-storage: 30Gi}
+          limits:   {cpu: "2400m", memory: 7Gi, nvidia.com/gpu: "1", ephemeral-storage: 34Gi}
         volumeMounts:
         - {name: work, mountPath: /work}
         - {name: src, mountPath: /src, readOnly: true}

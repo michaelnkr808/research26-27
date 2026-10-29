@@ -56,8 +56,8 @@ spec:
         - {name: PYTHONUNBUFFERED, value: "1"}
         - {name: PYTHONPATH, value: /src}
         resources:                    # from the probe's measured use (memory nautilus-job-sizing-and-estimates)
-          requests: {cpu: "2", memory: 10Gi, nvidia.com/gpu: "1", ephemeral-storage: 30Gi}
-          limits:   {cpu: "2400m", memory: 12Gi, nvidia.com/gpu: "1", ephemeral-storage: 34Gi}
+          requests: {cpu: "2", memory: 8Gi, nvidia.com/gpu: "1", ephemeral-storage: 30Gi}
+          limits:   {cpu: "2400m", memory: 9Gi, nvidia.com/gpu: "1", ephemeral-storage: 34Gi}
         volumeMounts:
         - {name: work, mountPath: /work}
         - {name: src, mountPath: /src, readOnly: true}
