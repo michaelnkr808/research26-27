@@ -702,3 +702,5 @@ Healthy (kept running): C-RADIOv4 (L4, gpu05; 0.83 of 2 cores, throttling 4%, RS
 
 ## 2026-10-29 (m) [agent] (SigLIP 2 borderline under 40% on a fast GPU; stopped)
 SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min GPU mean 28 → 40% (1-h mean 38.3%, DCGM). Process running (`R`, not blocked) at 1.03 of 2 cores, throttling 6%; 11.9 frames/s. So on a fast GPU the serial per-episode pipeline (decode, resize, uint8 round trip, float64 stats, save: one Python thread) is the limit and the GPU waits; on L4s the encoders are GPU-bound (100%). Job deleted 23:15 UTC (no data deleted); SigLIP 2 isn't needed for the pilot. Log `results/logs/extract-siglip2-try4.log`. Fix options for the user: prefetch the next episode's decode in a background thread (code change, outputs must stay byte-identical), or restrict SigLIP 2 to L4-class GPUs.
+
+- 23:47 UTC: C-RADIOv4 watcher exit 6 was transient: the extractor restarts per suite (libero_10 just began, ep 8 at 80 s) and RSS dips during model load; now 0.93 of 2 cores, RSS 1.96 GB (23% of 8Gi), throttling 4%, GPU mostly 100%. No change; watcher restarted.
