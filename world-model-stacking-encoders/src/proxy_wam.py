@@ -63,6 +63,7 @@ LATENT_T = 3                  # 1 + (NUM_FRAMES - 1) / 4
 GRID = (14, 28)               # VAE latent grid of the 224 x 448 two-camera frame
 PATCH = (1, 2, 2)             # Wan 2.2 TI2V-5B patch size
 VAE, VAE_DIM = "vae", 48
+VAE_DIRS = ("vae", "vae_b")   # the VAE cache was split across two folders (extract_fastwam.py --out-name)
 TEXT_DIM, FREQ_DIM = 4096, 256
 DELTA_DIMS = 6                # action dims 0-5 are deltas (Fast-WAM delta_action_dim_mask), 6 is the gripper
 INFER_STEPS = 10              # App. E.3
@@ -156,6 +157,11 @@ class Data:
         all_a, all_s = np.concatenate(acts), np.concatenate(states)
         self.a_norm = MinMax(all_a.min(0), all_a.max(0))
         self.s_norm = MinMax(all_s.min(0), all_s.max(0))
+        self.vae_dir = {}
+        for s, e, _, _ in self.episodes:
+            found = [d for d in VAE_DIRS if (self.feats / d / s / f"ep{e:06d}.npy").exists()]
+            assert found, f"no VAE latents for {s} episode {e} in {VAE_DIRS}"
+            self.vae_dir[s, e] = found[0]
         self.dims = {VAE: VAE_DIM}
         self.fstats = {}
         for src in self.sources:
@@ -176,7 +182,7 @@ class Data:
         assert m["lengths"].sum() == len(m["action"]) == len(m["episode_index"])
 
     def _path(self, src, suite, ep):
-        return self.feats / src / suite / f"ep{ep:06d}.npy"
+        return self.feats / (self.vae_dir[suite, ep] if src == VAE else src) / suite / f"ep{ep:06d}.npy"
 
     @property
     def in_dim(self):

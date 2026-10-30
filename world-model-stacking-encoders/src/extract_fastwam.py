@@ -10,6 +10,8 @@ One run handles one source for one suite (shard with --shard i/n). Output, all f
                                          VAE's 14 x 14 grid per camera, cameras side by side (agentview | wrist)
   <out>/<encoder>/<suite>/ep<idx>.stats.npy  (3, D) float64: count, sum, sum of squares per channel (z-score stats)
   <out>/<source>/<suite>/_meta.*.json    provenance
+--out-name writes a source into another folder (the VAE's last part went to vae_b after CephFS write stalls in the
+old folder, LOG 2026-10-29 (l)); --done-in names folders whose episodes count as done. proxy_wam.py reads vae, then vae_b.
 
 The encoders see Fast-WAM's 224 x 224 frame (rounded to uint8) and apply their own resize and normalization
 (extract_features.py). The paper doesn't state encoder input resolution: our choice, logged in PLAN.
@@ -26,6 +28,7 @@ import argparse
 import json
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import numpy as np
@@ -96,6 +99,8 @@ def main():
     p.add_argument("--source", required=True, help="meta, vae, or an encoder name from extract_features.ENCODERS")
     p.add_argument("--out", required=True)
     p.add_argument("--vae-path", default=None)
+    p.add_argument("--out-name", default=None, help="output folder under --out (default: --source)")
+    p.add_argument("--done-in", default="", help="comma-separated folders under --out whose episodes are skipped")
     p.add_argument("--shard", default="0/1", help="i/n: this run takes episodes i, i+n, ...")
     p.add_argument("--max-episodes", type=int, default=None, help="smoke tests")
     p.add_argument("--episodes", default=None, help="comma-separated episode ids (smoke tests)")
@@ -118,7 +123,8 @@ def main():
     i, n = map(int, args.shard.split("/"))
     eps = eps[i::n][:args.max_episodes]
 
-    out_dir = Path(args.out) / args.source / args.suite
+    out_dir = Path(args.out) / (args.out_name or args.source) / args.suite
+    done_dirs = [out_dir] + [Path(args.out) / d / args.suite for d in args.done_in.split(",") if d]
     if args.source == "vae":
         assert args.vae_path, "--vae-path is required for the VAE"
         model = load_vae(args.vae_path, args.device, dtype)
@@ -135,12 +141,18 @@ def main():
         "git_commit": git_commit(), "grid": list(LATENT_GRID), "cams": FD.CAMS, "frame_size": FD.SIZE,
         "torch": torch.__version__}, indent=1))
 
+    todo = [e for e in eps if not any((d / f"ep{e['episode_index']:06d}.npy").exists() for d in done_dirs)]
+    log(f"{len(eps) - len(todo)} of {len(eps)} episodes already done")
+    # One thread decodes and resizes the next episode while the GPU runs this one (the serial loop left fast GPUs
+    # under the 40% floor, LOG 2026-10-29 (m)). Same functions on the same inputs, so the output is unchanged.
+    prep = lambda e: {c: FD.to_224(f) for c, f in FD.decode_episode(args.root, e).items()}
+    pool = ThreadPoolExecutor(max_workers=1)
+    nxt = pool.submit(prep, todo[0]) if todo else None
     done = 0
-    for e in eps:
+    for k, e in enumerate(todo):
         path = out_dir / f"ep{e['episode_index']:06d}.npy"
-        if path.exists():
-            continue
-        cams224 = {c: FD.to_224(f) for c, f in FD.decode_episode(args.root, e).items()}
+        cams224 = nxt.result()
+        nxt = pool.submit(prep, todo[k + 1]) if k + 1 < len(todo) else None
         arr = run(cams224)
         assert len(arr) == e["length"], (len(arr), e["length"])
         if args.source != "vae":
@@ -152,6 +164,7 @@ def main():
         save_npy(path, arr)
         done += e["length"]
         log(f"ep {e['episode_index']}: {arr.shape} ({done / (time.time() - t0):.1f} frames/s overall)")
+    pool.shutdown()
     log("done")
 
 

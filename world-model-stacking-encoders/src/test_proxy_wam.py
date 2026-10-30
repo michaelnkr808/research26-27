@@ -167,6 +167,22 @@ def main():
         assert f"DEFAULT_PROMPT = {json.dumps(t5_cache.DEFAULT_PROMPT)}" in src, "prompt template differs from Fast-WAM"
         print("8 ok: cache -> batch (channel order, z-score, context, loader order), prompt template")
 
+        # 8b. VAE cache split across vae and vae_b (extract_fastwam.py --out-name): same latents, missing fails.
+        want = data.load_episode(("suite_b", 1))["vae"]
+        (Path(d) / "vae_b" / "suite_b").mkdir(parents=True)
+        (Path(d) / "vae" / "suite_b" / "ep000001.npy").rename(Path(d) / "vae_b" / "suite_b" / "ep000001.npy")
+        split = P.Data(d, ["suite_a", "suite_b"], ["enc1", "enc2"], Path(d) / "t5")
+        assert split.vae_dir["suite_b", 1] == "vae_b" and split.vae_dir["suite_b", 0] == "vae"
+        assert np.array_equal(split.load_episode(("suite_b", 1))["vae"], want)
+        (Path(d) / "vae_b" / "suite_b" / "ep000001.npy").unlink()
+        try:
+            P.Data(d, ["suite_a", "suite_b"], ["enc1", "enc2"], Path(d) / "t5")
+            raise RuntimeError("missing VAE episode not caught")
+        except AssertionError:
+            pass
+        save_npy(Path(d) / "vae" / "suite_b" / "ep000001.npy", want)
+        print("8b ok: VAE cache read from vae, then vae_b; missing episode fails")
+
         # 9. Overfit one batch (07 sanity check), noise and timesteps re-seeded every step so the batch is the same
         #    problem each time: the action loss over the last 20 of 200 steps is below a tenth of the first 20, and
         #    every other loss term ends lower than it starts (each output gets a working gradient).
