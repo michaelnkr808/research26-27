@@ -55,10 +55,11 @@ spec:
         - {name: HF_HOME, value: /work/hf}
         - {name: PYTHONUNBUFFERED, value: "1"}
         - {name: OMP_NUM_THREADS, value: "2"}   # = CPU request: torch otherwise sizes its pool to the node and gets throttled (2026-10-29 (k))
+        - {name: MALLOC_ARENA_MAX, value: "2"}   # the prefetch thread otherwise gets its own malloc arenas; shard 2 OOM-killed at 6Gi (2026-10-30 (b))
         - {name: PYTHONPATH, value: /src}
         resources:                    # from the probe's measured use (memory nautilus-job-sizing-and-estimates)
-          requests: {cpu: "2", memory: 5Gi, nvidia.com/gpu: "1", ephemeral-storage: 30Gi}
-          limits:   {cpu: "2400m", memory: 6Gi, nvidia.com/gpu: "1", ephemeral-storage: 34Gi}
+          requests: {cpu: "2", memory: 8Gi, nvidia.com/gpu: "1", ephemeral-storage: 30Gi}
+          limits:   {cpu: "2400m", memory: 9600Mi, nvidia.com/gpu: "1", ephemeral-storage: 34Gi}
         volumeMounts:
         - {name: work, mountPath: /work}
         - {name: src, mountPath: /src, readOnly: true}
