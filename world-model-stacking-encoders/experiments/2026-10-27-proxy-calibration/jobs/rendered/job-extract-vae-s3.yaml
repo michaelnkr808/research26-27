@@ -1,0 +1,81 @@
+# Shard-3-only resubmit (user OK 2026-10-31: exclude k8s-4090-01 and nautilus-it-gpu05/06, the nodes where
+# CephFS writes stalled, LOG 2026-10-29 (k)/(l), 2026-10-31 (a)). Only shard 3/7 has episodes left (20 of libero_10),
+# so one pod runs `--shard 3/7` instead of 7 pods of which 6 would only skip. Otherwise identical to job-extract-vae.yaml.
+# RUN.md step 6 (pre-approved): full extraction of one source over all four suites, as an Indexed Job with
+# 7 pods (pod i takes episodes i, i+N, ... of every suite; one writer per output file). Rendered per source by
+# RUN.md step 6 from the probe's measured speed and memory (fill every __PLACEHOLDER__; keep total GPUs <= 8 across
+# all running Jobs). Resumable: episodes already on disk (with their stats) are skipped, so a retry or resubmit continues.
+# Follows _standards/08: Job, real command that exits, no sleep, 1 GPU per pod, limits within 20%, no tolerations.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-extract-vae-s3
+  namespace: aria-world
+spec:
+  completions: 1
+  parallelism: 1
+  backoffLimit: 2
+  activeDeadlineSeconds: 43200   # ~15 min of work at 7 frames/s, the rest is queue time
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090, NVIDIA-RTX-A4000, NVIDIA-RTX-A5000,
+                         NVIDIA-A10, NVIDIA-L4, NVIDIA-L40, NVIDIA-L40S,
+                         NVIDIA-RTX-4000-Ada-Generation, NVIDIA-RTX-5000-Ada-Generation]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: [k8s-4090-01.calit2.optiputer.net, nautilus-it-gpu05.fullerton.edu, nautilus-it-gpu06.fullerton.edu]
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; F=$R/feats; I=3; mkdir -p $R/logs
+          exec > >(tee -a $R/logs/extract-vae-$I-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          nvidia-smi
+          bash /src/setup_env.sh
+          for s in libero_spatial libero_object libero_goal libero_10; do
+            echo "=== $s shard $I/7"; date -u
+            python /src/extract_fastwam.py --root $R/data/lerobot_v30/${s}_no_noops_lerobot --suite $s \
+              --source vae --out $F --shard $I/7 --dtype bf16 --batch 4 --vae-path $R/models/Wan2.2_VAE.safetensors --out-name vae_b --done-in vae
+          done
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: 439e52f6316e0c825616be7efbb96bbf6701ccae}
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: OMP_NUM_THREADS, value: "2"}   # = CPU request: torch otherwise sizes its pool to the node and gets throttled (2026-10-29 (k))
+        - {name: MALLOC_ARENA_MAX, value: "2"}   # the prefetch thread otherwise gets its own malloc arenas; shard 2 OOM-killed at 6Gi (2026-10-30 (b))
+        - {name: PYTHONPATH, value: /src}
+        resources:                    # from the probe's measured use (memory nautilus-job-sizing-and-estimates)
+          requests: {cpu: "2", memory: 8Gi, nvidia.com/gpu: "1", ephemeral-storage: 30Gi}
+          limits:   {cpu: "2400m", memory: 9600Mi, nvidia.com/gpu: "1", ephemeral-storage: 34Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 34Gi}
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 2Gi}
