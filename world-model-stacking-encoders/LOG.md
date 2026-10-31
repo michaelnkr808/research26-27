@@ -732,7 +732,7 @@ SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min G
 
 ## 2026-10-31 (a) [agent] (STOP 2: last VAE shard stalls on CephFS writes again, now in vae_b; VAE Job stopped; needs the user)
 - Overnight (verified, kubectl): shards 0 (nautilus-it-gpu06) and 4 (nautilus-it-gpu05) got GPUs and completed; shard 3 started 08:59 UTC on k8s-4090-01.calit2.optiputer.net (RTX 4090) and ran at 0.9 frames/s overall (~5 min per episode; other shards 7+). Watcher EXIT 4 at 09:34 (10-min GPU mean 2%, CPU out of range). Process in D state `folio_wait_bit_common` writing `feats/vae_b/libero_10/.ep000213.npy.tmp`; GPU 0%. So the fresh folder did not avoid the stalls on this node: the CephFS slowness follows the node (Fullerton gpu05/06 on 2026-10-29, now this one), not the folder (speculative).
-- Stopped: VAE Job deleted 09:40 UTC (not forced; atomic writes, nothing partial). Logs of all 7 pods saved results/logs/extract-vae-try6-*.log.
+- Stopped: VAE Job deleted 09:38 UTC (not forced; atomic writes, nothing partial). Logs of all 7 pods saved results/logs/extract-vae-try6-*.log.
 - VAE cache state (verified, ls): vae + vae_b = spatial 386+48 = 434, object 243+214 = 457, goal 119+314 = 433 (complete), libero_10 78+290 = 368 of 388. 20 episodes left, all shard 3/7 (libero_10 eps 213, 220, ... ≡ 3 mod 7).
 - SigLIP 2 step 6 checks, part (verified, same exec): spatial 434, object 457, goal 433, libero_10 388 = 1,712 with .stats.npy, no .tmp; `du -sh` 234G (GiB) = 251 GB vs PLAN 250.8 GB. Spot-load still to do.
 - Proposed to the user: resubmit only the 20 remaining episodes (same Job, shards make the rest skip) with an anti-affinity excluding k8s-4090-01 and the two Fullerton nodes, and remeasure. Waiting for the OK (stop 2).
