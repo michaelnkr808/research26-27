@@ -95,3 +95,10 @@
 - Fixed: download Job memory under NRP's 2 GB exempt size; watcher now also stops on CPU/RAM out of range (exit 6); runbook got a compliance checklist for manifests written mid-run and a ≥ 40% GPU requirement for rollout Jobs (stop 10).
 - Open, awaiting the user: five usage risks for stages 3–4 (unkillable idle Job after kubectl expiry, CephFS contention with 8 trainers, simulator install location, one rollout file per pod, cleanup + NRP acknowledgment).
 - See: world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/{RUN.md,watch_job.sh}, LOG.md 2026-10-28 (g), (i), (l)
+
+## 2026-10-31 — Proxy run: feature extraction nearly done
+
+- Extraction for DINOv3, C-RADIOv4 and SigLIP 2 finished and passed the file checks; the VAE is done except 20 episodes.
+- User OK'd an extractor change (decode the next episode on a thread; VAE remainder into a fresh `vae_b` folder). Outputs were byte-identical to the old code; speed went up 2-3×; memory had to be raised after OOMs on long episodes.
+- The last VAE shard stalled on CephFS writes on k8s-4090-01, as on the Fullerton nodes before, so the stalls follow the node, not the folder. VAE Job stopped (stop 2); waiting for the user to OK a resubmit that excludes those nodes, then the pilot.
+- See: world-model-stacking-encoders/LOG.md 2026-10-30 (a)-(c), 2026-10-31 (a); experiments/2026-10-27-proxy-calibration/RUN.md
