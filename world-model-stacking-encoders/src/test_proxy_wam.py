@@ -96,6 +96,16 @@ def main():
     assert st[0, :, 0, 0, 0].tolist() == [0, 10, 19] and st[1, :, 0, 0, 0].tolist() == [10, 17.5, 19], st[:, :, 0, 0, 0]
     print("4 ok: feature steps (current frame, two clamped 4-frame means)")
 
+    # 4b. Precomputed future means give feature_steps rounded to float16, byte for byte, incl. episodes shorter than
+    #     a window and every t (the Loader's fast path).
+    rng4 = np.random.default_rng(4)
+    for n in (1, 2, 5, 16, 17, 33, 70):
+        f = (rng4.normal(size=(n, 2, 3, 5)) * 3).astype(np.float16)
+        t = np.arange(n)
+        assert P.feature_steps(f, t).astype(np.float16).tobytes() == \
+            P.feature_steps_cached(f, P.future_means(f, chunk=3), t).tobytes(), n
+    print("4b ok: cached future means equal feature_steps (float16 bytes)")
+
     # 5. Plan: each window once per epoch (all but < bs of the whole run), same for a seed, different across seeds,
     #    and episodes stay together (a batch draws from at most ~2 chunks).
     lens = [40, 23, 57, 31, 12, 64, 25]
@@ -162,6 +172,11 @@ def main():
         assert torch.allclose(got[0]["latents"][0, :48], torch.from_numpy(e0["vae"][plan[0, 0, 1]].astype(np.float32))
                               .permute(3, 0, 1, 2))
         assert (got[0]["context_mask"]).all()
+        # same batches with parallel reads and assembly, and from load_episode (the uncached feature_steps path)
+        par = list(P.Loader(data, plan, horizon=3, read_threads=4, assemble_threads=3))
+        ref = [data.assemble(b, {data.episodes[ei][:2]: data.load_episode(data.episodes[ei][:2])
+                                 for ei in np.unique(b[:, 0])}) for b in plan]
+        assert all(a[k].tobytes() == b[k].tobytes() for a, b in zip(par, ref) for k in a) and len(par) == len(ref)
         import fastwam
         src = (Path(fastwam.__file__).parent / "datasets/lerobot/robot_video_dataset.py").read_text()
         assert f"DEFAULT_PROMPT = {json.dumps(t5_cache.DEFAULT_PROMPT)}" in src, "prompt template differs from Fast-WAM"

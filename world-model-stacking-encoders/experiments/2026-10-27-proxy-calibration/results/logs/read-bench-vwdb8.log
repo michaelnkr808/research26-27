@@ -1,0 +1,5 @@
+node pas.losa2.net.internet2.edu files 3424
+RESULT threads 1: 5.42 GB in 184 s = 29.5 MB/s
+RESULT threads 4: 19.79 GB in 184 s = 107.8 MB/s
+RESULT threads 8: 32.75 GB in 188 s = 173.9 MB/s
+RESULT threads 16: 56.39 GB in 191 s = 295.5 MB/s

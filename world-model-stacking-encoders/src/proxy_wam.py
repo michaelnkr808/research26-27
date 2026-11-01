@@ -42,6 +42,7 @@ import math
 import queue
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import numpy as np
@@ -133,6 +134,35 @@ def feature_steps(feat, t):
     return np.stack(out, 1)
 
 
+def future_means(feat, chunk=16):
+    """(n, 14, 28, D) float16: M[u] = mean of frames u+4, u+8, u+12, u+16 clamped to the episode, the same float32 mean
+    feature_steps takes. Future step g of a window at t is M[min(t + 16 g, n - 1)] (each group starts 16 frames after
+    the last; past the end every index clamps to n - 1 either way), so a batch needs only gathers. Computed once per
+    episode when it's read, instead of per window (the pilot's loader spent ~45% of its time here, LOG 2026-11-01 (f))."""
+    n = len(feat)
+    out = np.empty(feat.shape, np.float16)
+    acc = np.empty((chunk,) + feat.shape[1:], np.float32)
+    for s in range(0, n, chunk):
+        u = np.arange(s, min(n, s + chunk))
+        a = acc[:len(u)]
+        # mean over 4 frames as numpy's mean(1) does it: add in order, then divide by the count
+        for k in range(1, STRIDE + 1):
+            f = feat[np.minimum(u + STRIDE * k, n - 1)]
+            if k == 1:
+                a[...] = f
+            else:
+                np.add(a, f, out=a)
+        np.divide(a, STRIDE, out=a)
+        out[u] = a
+    return out
+
+
+def feature_steps_cached(feat, means, t):
+    """feature_steps(feat, t) rounded to float16, from future_means(feat): byte-identical, gathers only."""
+    n = len(feat)
+    return np.stack([feat[t]] + [means[np.minimum(t + STRIDE * STRIDE * g, n - 1)] for g in range(LATENT_T - 1)], 1)
+
+
 class Data:
     """Episodes of the given suites from the extract_fastwam.py cache (meta, VAE latents, each source's features)."""
 
@@ -200,6 +230,12 @@ class Data:
         suite, ep = key
         return {src: np.load(self._path(src, suite, ep)) for src in [VAE] + self.sources}
 
+    def load_file(self, key, src):
+        """One source of one episode, as the Loader's reader threads cache it: VAE latents as stored; a feature source
+        as (features, future_means) so batches need only gathers."""
+        x = np.load(self._path(src, *key))
+        return x if src == VAE else (x, future_means(x))
+
     def assemble(self, windows, cache):
         """Host-side batch for windows [(episode index, t)]: latents float16 (B, 3, 14, 28, C) un-normalized,
         normalized actions and proprio, masks, task ids."""
@@ -219,7 +255,8 @@ class Data:
             arr = cache[(s, e)]
             lat[rows, ..., sl[VAE]] = arr[VAE][t]
             for src in self.sources:
-                lat[rows, ..., sl[src]] = feature_steps(arr[src], t)
+                v = arr[src]
+                lat[rows, ..., sl[src]] = feature_steps_cached(*v, t) if isinstance(v, tuple) else feature_steps(v, t)
             nn_ = np.full(len(t), n)
             a, p = action_window(self.action[(s, e)], t, nn_)
             act[rows], apad[rows] = self.a_norm(a), p
@@ -250,35 +287,52 @@ def make_plan(lengths, epochs, bs, buffer_eps, seed):
 
 
 class Loader:
-    """Background thread that walks the plan from `start`, keeps the episodes it needs in RAM (reading each from disk
-    when first needed and dropping it once no batch in the next `horizon` uses it), and queues assembled batches."""
+    """Background thread that walks the plan from `start`, keeps the episodes it needs in RAM and queues assembled
+    batches. Each file (episode x source) is read by a pool of `read_threads` as soon as a batch in the next
+    `read_ahead` steps (default: horizon) needs it, and dropped once none in the next `horizon` does; batches are
+    assembled by `assemble_threads` and queued in plan order. CephFS reads scale with parallel streams (one reader
+    ~30 MB/s, 16 ~300 MB/s, LOG 2026-11-01 (g)); the batches are the same for any thread counts. Reading a whole
+    chunk ahead matters: a chunk's first batch touches nearly all of its episodes. read_s = time spent waiting for
+    reads."""
 
-    def __init__(self, data, plan, start=0, prefetch=3, horizon=None):
+    def __init__(self, data, plan, start=0, prefetch=3, horizon=None, read_threads=1, assemble_threads=1,
+                 read_ahead=None):
         self.data, self.plan, self.start = data, plan, start
         self.horizon = horizon or 1
-        self.q = queue.Queue(maxsize=prefetch)
+        self.read_ahead = min(read_ahead or self.horizon, self.horizon)
+        self.read_threads, self.assemble_threads = read_threads, assemble_threads
+        self.q = queue.Queue(maxsize=prefetch + assemble_threads)
         self.read_s = 0.0
         self.th = threading.Thread(target=self._run, daemon=True)
         self.th.start()
 
+    def _keys(self, a, b):
+        return {self.data.episodes[ei][:2] for ei in np.unique(self.plan[a:b, :, 0])}
+
     def _run(self):
+        reads = ThreadPoolExecutor(self.read_threads)
+        asm = ThreadPoolExecutor(self.assemble_threads)
+        srcs = [VAE] + self.data.sources
         try:
-            cache = {}
+            files = {}
             for s in range(self.start, len(self.plan)):
-                b = self.plan[s]
-                for ei in np.unique(b[:, 0]):
-                    key = self.data.episodes[ei][:2]
-                    if key not in cache:
-                        t = time.time()
-                        cache[key] = self.data.load_episode(key)
-                        self.read_s += time.time() - t
-                self.q.put(self.data.assemble(b, cache))
-                ahead = {self.data.episodes[ei][:2] for ei in np.unique(self.plan[s + 1:s + 1 + self.horizon, :, 0])}
-                for key in [k for k in cache if k not in ahead]:
-                    del cache[key]
+                for key in self._keys(s, s + 1 + self.read_ahead):
+                    for src in srcs:
+                        if (key, src) not in files:
+                            files[key, src] = reads.submit(self.data.load_file, key, src)
+                t = time.time()
+                arr = {key: {src: files[key, src].result() for src in srcs} for key in self._keys(s, s + 1)}
+                self.read_s += time.time() - t
+                self.q.put(asm.submit(self.data.assemble, self.plan[s], arr))
+                ahead = self._keys(s + 1, s + 1 + self.horizon)
+                for k in [k for k in files if k[0] not in ahead]:
+                    del files[k]
             self.q.put(None)
         except BaseException as e:      # surface loader errors in the training thread
             self.q.put(e)
+        finally:
+            reads.shutdown(wait=False, cancel_futures=True)
+            asm.shutdown(wait=False)
 
     def __iter__(self):
         while True:
@@ -287,7 +341,7 @@ class Loader:
                 return
             if isinstance(b, BaseException):
                 raise b
-            yield b
+            yield b.result()
 
 
 def to_device(bt, data, device):
@@ -418,7 +472,7 @@ def lr_at(step, total, base=1e-4, floor=1e-6, warmup=0.05):
 
 
 def train(data, plan, seed, device, log, model_kw=None, ckpt=None, ckpt_every=0, start=0, state=None, amp=True,
-          horizon=None):
+          horizon=None, read_threads=1, assemble_threads=1):
     torch.manual_seed(seed)
     model = build_model(data.in_dim, device, **(model_kw or {}))
     opt = torch.optim.AdamW(model.parameters(), lr=1e-4, betas=(0.9, 0.95), weight_decay=0.01)
@@ -433,7 +487,7 @@ def train(data, plan, seed, device, log, model_kw=None, ckpt=None, ckpt_every=0,
     total = len(plan)
     use_amp = amp and torch.device(device).type == "cuda"
     hist, t0, wait = [], time.time(), 0.0
-    loader = Loader(data, plan, start, horizon=horizon)
+    loader = Loader(data, plan, start, horizon=horizon, read_threads=read_threads, assemble_threads=assemble_threads)
     tw = time.time()
     for s, hb in zip(range(start, total), loader):
         wait += time.time() - tw
@@ -475,6 +529,8 @@ def main():
     p.add_argument("--epochs", type=int, default=10)
     p.add_argument("--batch-size", type=int, default=128)
     p.add_argument("--buffer-episodes", type=int, default=16)
+    p.add_argument("--read-threads", type=int, default=32, help="parallel file reads (CephFS scales with streams)")
+    p.add_argument("--assemble-threads", type=int, default=3, help="threads building host batches")
     p.add_argument("--max-steps", type=int, default=None, help="cap on steps (smoke tests and the pilot)")
     p.add_argument("--hidden", type=int, default=384)
     p.add_argument("--layers", type=int, default=8)
@@ -513,7 +569,7 @@ def main():
     # look ahead about one chunk of batches before dropping an episode from RAM
     horizon = math.ceil(args.buffer_episodes * np.mean(lengths) / args.batch_size) + 1
     model, hist = train(data, plan, args.seed, args.device, log, model_kw, ckpt, args.ckpt_every, start, state,
-                        horizon=horizon)
+                        horizon=horizon, read_threads=args.read_threads, assemble_threads=args.assemble_threads)
     n_params = sum(q.numel() for q in model.parameters())
     torch.save({"model": model.state_dict(), "config": cfg}, out / "model.pt")
     (out / "train.json").write_text(json.dumps({"n_params": n_params, "history": hist,
