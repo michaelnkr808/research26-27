@@ -102,3 +102,10 @@
 - User OK'd an extractor change (decode the next episode on a thread; VAE remainder into a fresh `vae_b` folder). Outputs were byte-identical to the old code; speed went up 2-3×; memory had to be raised after OOMs on long episodes.
 - The last VAE shard stalled on CephFS writes on k8s-4090-01, as on the Fullerton nodes before, so the stalls follow the node, not the folder. VAE Job stopped (stop 2); waiting for the user to OK a resubmit that excludes those nodes, then the pilot.
 - See: world-model-stacking-encoders/LOG.md 2026-10-30 (a)-(c), 2026-10-31 (a); experiments/2026-10-27-proxy-calibration/RUN.md
+
+## 2026-11-01 — Proxy run: VAE resubmit stalls again; pilot sample drawn
+
+- Resubmitted the last VAE shard as a single pod excluding the three stalling nodes (user OK). It queued ~3 h, was rejected twice by a fourth node (ry-gpu-08), then ran there and stalled on CephFS writes the same way. Stopped (stops 1/2). 11 libero_10 episodes left.
+- So the stalls are not about specific nodes; the cause is unknown. Proposed fix, awaiting the user: write each episode to local disk, then copy it to CephFS in one go.
+- Drew the 100-episode pilot LIBERO-Plus sample (size chosen by the agent, logged). Deleted the finished SigLIP 2 Job at the user's request.
+- See: world-model-stacking-encoders/LOG.md 2026-10-31 (b), 2026-11-01 (a); experiments/2026-10-27-proxy-calibration/jobs/rendered/job-extract-vae-s3.yaml
