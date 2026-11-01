@@ -1,0 +1,64 @@
+# Cache checks after the VAE shard-3 Job (user OK 2026-11-01): RUN.md step 6 checks that need the PVC. CPU only, no GPU.
+# VAE: every episode of all four suites is in vae or vae_b (434/457/433/388), no leftover .tmp, the 11 episodes written
+# by try 8 load as float16 (length, 3, 14, 28, 48), finite. SigLIP 2: spot-load of the 5 episodes used for the other
+# encoders (seed 6), shape (length, 14, 28, D) float16 finite, stats (3, D) finite. Lengths from feats/meta.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-check-caches
+  namespace: aria-world
+spec:
+  completions: 1
+  backoffLimit: 0
+  activeDeadlineSeconds: 3600
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["python", "-u", "-c"]
+        args:
+        - |
+          import numpy as np, random
+          from pathlib import Path
+          F = Path("/mnt/proxy/feats")
+          want = {"libero_spatial": 434, "libero_object": 457, "libero_goal": 433, "libero_10": 388}
+          L = {s: dict(zip(m["episode_ids"].tolist(), m["lengths"].tolist())) for s in want for m in [np.load(F / "meta" / f"{s}.npz")]}
+          ok = True
+          for s, n in want.items():
+              have = {p.name for d in ("vae", "vae_b") for p in (F / d / s).glob("ep*.npy")}
+              tmp = [p.name for d in ("vae", "vae_b") for p in (F / d / s).glob(".*.tmp")]
+              exp = {f"ep{e:06d}.npy" for e in L[s]}
+              print(f"vae {s}: {len(have)} of {n} (meta {len(exp)}), missing {sorted(exp - have)[:5]}, extra {sorted(have - exp)[:5]}, tmp {tmp}")
+              ok &= have == exp and len(exp) == n and not tmp
+          for e in [297, 304, 311, 318, 332, 339, 346, 353, 367, 374, 381]:
+              x = np.load(F / "vae_b" / "libero_10" / f"ep{e:06d}.npy")
+              good = x.dtype == np.float16 and x.shape == (L["libero_10"][e], 3, 14, 28, 48) and bool(np.isfinite(x).all())
+              print(f"vae_b libero_10 ep {e}: {x.dtype} {x.shape} finite={np.isfinite(x).all()} ok={good}")
+              ok &= good
+          print("siglip2 folder:", sorted(p.name for p in F.iterdir()))
+          for s, e in [("libero_spatial", 406), ("libero_object", 293), ("libero_goal", 420), ("libero_10", 41), ("libero_10", 248)]:
+              p = F / "siglip2" / s / f"ep{e:06d}.npy"
+              x, st = np.load(p), np.load(p.with_suffix(".stats.npy"))
+              good = (x.dtype == np.float16 and x.ndim == 4 and x.shape[:3] == (L[s][e], 14, 28) and bool(np.isfinite(x).all())
+                      and st.shape == (3, x.shape[3]) and bool(np.isfinite(st).all()))
+              print(f"siglip2 {s} ep {e}: {x.dtype} {x.shape} stats {st.shape} ok={good}")
+              ok &= good
+          print("ALL OK" if ok else "CHECK FAILED")
+          raise SystemExit(0 if ok else 1)
+        resources:
+          requests: {cpu: "1", memory: 4Gi}
+          limits:   {cpu: "1200m", memory: 4800Mi}
+        volumeMounts:
+        - {name: proxy, mountPath: /mnt/proxy, readOnly: true}
+      volumes:
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
