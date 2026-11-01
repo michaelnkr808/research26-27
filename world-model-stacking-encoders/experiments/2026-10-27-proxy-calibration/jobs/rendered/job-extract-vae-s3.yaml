@@ -1,6 +1,8 @@
-# Shard-3-only resubmit (user OK 2026-10-31: exclude k8s-4090-01 and nautilus-it-gpu05/06, the nodes where
-# CephFS writes stalled, LOG 2026-10-29 (k)/(l), 2026-10-31 (a)). Only shard 3/7 has episodes left (20 of libero_10),
-# so one pod runs `--shard 3/7` instead of 7 pods of which 6 would only skip. Otherwise identical to job-extract-vae.yaml.
+# Shard-3-only resubmit, try 2 (user OK 2026-11-01: stage each episode on local disk, then copy to CephFS). The
+# stalls hit four nodes and both folders (LOG 2026-11-01 (a)), so the node exclusion is dropped and --stage-dir
+# /work/stage is added; the log prints each copy's seconds. 11 libero_10 episodes are left, all shard 3/7, so one pod
+# runs `--shard 3/7`. backoffLimit 4: kubelet admission errors (ry-gpu-08) used up two retries last time.
+# Otherwise identical to job-extract-vae.yaml.
 # RUN.md step 6 (pre-approved): full extraction of one source over all four suites, as an Indexed Job with
 # 7 pods (pod i takes episodes i, i+N, ... of every suite; one writer per output file). Rendered per source by
 # RUN.md step 6 from the probe's measured speed and memory (fill every __PLACEHOLDER__; keep total GPUs <= 8 across
@@ -14,7 +16,7 @@ metadata:
 spec:
   completions: 1
   parallelism: 1
-  backoffLimit: 2
+  backoffLimit: 4
   activeDeadlineSeconds: 43200   # ~15 min of work at 7 frames/s, the rest is queue time
   ttlSecondsAfterFinished: 86400
   template:
@@ -32,9 +34,6 @@ spec:
                          NVIDIA-RTX-4000-Ada-Generation, NVIDIA-RTX-5000-Ada-Generation]
               - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
               - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
-              - key: kubernetes.io/hostname
-                operator: NotIn
-                values: [k8s-4090-01.calit2.optiputer.net, nautilus-it-gpu05.fullerton.edu, nautilus-it-gpu06.fullerton.edu]
       containers:
       - name: main
         image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
@@ -49,11 +48,11 @@ spec:
           for s in libero_spatial libero_object libero_goal libero_10; do
             echo "=== $s shard $I/7"; date -u
             python /src/extract_fastwam.py --root $R/data/lerobot_v30/${s}_no_noops_lerobot --suite $s \
-              --source vae --out $F --shard $I/7 --dtype bf16 --batch 4 --vae-path $R/models/Wan2.2_VAE.safetensors --out-name vae_b --done-in vae
+              --source vae --out $F --shard $I/7 --dtype bf16 --batch 4 --vae-path $R/models/Wan2.2_VAE.safetensors --out-name vae_b --done-in vae --stage-dir /work/stage
           done
           date -u; echo "=== done"
         env:
-        - {name: SRC_GIT_COMMIT, value: 439e52f6316e0c825616be7efbb96bbf6701ccae}
+        - {name: SRC_GIT_COMMIT, value: dc3041764208b63ca67e50eb829107bd75bdee13}
         - name: HF_TOKEN
           valueFrom:
             secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
