@@ -1,0 +1,38 @@
+# Prints episode lengths per suite from feats/meta as JSON, to size the pilot training pods by replaying the
+# loader's cache policy locally (RUN step 9; user OK 2026-11-01 to start the pilot). CPU only, read-only PVC.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-read-lengths
+  namespace: aria-world
+spec:
+  completions: 1
+  backoffLimit: 0
+  activeDeadlineSeconds: 1800
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["python", "-c"]
+        args:
+        - |
+          import json, numpy as np
+          S = ["libero_spatial", "libero_object", "libero_goal", "libero_10"]
+          print("LENGTHS " + json.dumps({s: np.load(f"/mnt/proxy/feats/meta/{s}.npz")["lengths"].tolist() for s in S}))
+        resources:
+          requests: {cpu: "500m", memory: 1Gi}
+          limits:   {cpu: "600m", memory: 1200Mi}
+        volumeMounts:
+        - {name: proxy, mountPath: /mnt/proxy, readOnly: true}
+      volumes:
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}

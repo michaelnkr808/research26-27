@@ -1,0 +1,75 @@
+# Rendered for RUN step 9 pilot (user OK 2026-11-01): dinov3+c-radiov4, seed 0, --max-steps 500. Memory from replaying the
+# loader's cache on the real episode lengths (peak 11.0 GiB of episodes held) + ~4 GiB torch/CUDA/batches, rounded up:
+# 18Gi. GPUs: 24 GB+ cards (GPU memory not yet measured). CPU 3 (loader thread + main), OMP_NUM_THREADS 3.
+# RUN.md step 9 (pilot: 2 pairs, --max-steps ~500) and step 10 (the round: 15 pairs, defaults), pre-approved. Written
+# mid-run: render per use (fill every __PLACEHOLDER__ from measured use; jobs/rendered/), checklist in RUN.md
+# "Manifests written during the run". Indexed: pod i trains pair i of dinov3+c-radiov4:0 ("config:seed", space-separated), so
+# the index order sets which runs start first. Resumable: proxy_wam.py continues from <out>/ckpt.pt (written every
+# --ckpt-every steps), so a retried pod picks up where it stopped. One writer per run dir.
+# Follows _standards/08: Job, real command that exits, no sleep, 1 GPU per pod, limits within 20%, no tolerations.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-pilot-dinov3-c-radiov4
+  namespace: aria-world
+spec:
+  completionMode: Indexed
+  completions: 1
+  parallelism: 1
+  backoffLimit: 1                 # about one retry per run
+  activeDeadlineSeconds: 43200
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090, NVIDIA-RTX-A5000, NVIDIA-A10, NVIDIA-L4, NVIDIA-L40, NVIDIA-L40S, NVIDIA-RTX-5000-Ada-Generation]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; I=$JOB_COMPLETION_INDEX
+          P=($PAIRS); C=${P[$I]%%:*}; S=${P[$I]##*:}
+          mkdir -p $R/logs $R/runs
+          exec > >(tee -a $R/logs/pilot-dinov3-c-radiov4-$C-s$S-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          echo "=== index $I: config $C seed $S"; nvidia-smi; nproc; date -u
+          bash /src/setup_env.sh > /work/pip-env.log 2>&1 || { tail -50 /work/pip-env.log; exit 1; }
+          python /src/proxy_wam.py --feats $R/feats --suites libero_spatial,libero_object,libero_goal,libero_10 \
+            --t5 $R/feats/t5 --config $C --seed $S --out $R/runs/pilot-$C-s$S --max-steps 500
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: 9f0d8c1013f87dbf60cb9436aade3899f2eda884}
+        - {name: PAIRS, value: "dinov3+c-radiov4:0"}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: /src}
+        - {name: OMP_NUM_THREADS, value: "3"}
+        - {name: MALLOC_ARENA_MAX, value: "2"}
+        resources:                    # from measured use (probe / pilot Prometheus); limits <= 1.2x requests
+          requests: {cpu: "3", memory: 18Gi, nvidia.com/gpu: "1", ephemeral-storage: 20Gi}
+          limits:   {cpu: "3600m", memory: 21Gi, nvidia.com/gpu: "1", ephemeral-storage: 24Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 24Gi}
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 2Gi}
