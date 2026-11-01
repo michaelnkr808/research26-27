@@ -1,0 +1,66 @@
+# CephFS read-speed test for the training feature files (user OK 2026-11-01, LOG 2026-11-01 (f) option 1): the pilot
+# spent 98% of its time waiting on reads at ~18 MB/s with one reader thread. Reads whole episode files (dinov3 and
+# c-radiov4, random episodes of all suites, a fresh set per test so nothing is cached) with 1, 4, 8 and 16 threads,
+# ~3 min per test, and prints MB/s. Plain 16 MB chunked reads, discarded (no numpy). CPU only, read-only PVC.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-read-bench
+  namespace: aria-world
+spec:
+  completions: 1
+  backoffLimit: 0
+  activeDeadlineSeconds: 3600
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["python", "-u", "-c"]
+        args:
+        - |
+          import os, random, socket, time, threading
+          from concurrent.futures import ThreadPoolExecutor
+          from pathlib import Path
+          F = Path("/mnt/proxy/feats")
+          files = [p for s in ("dinov3", "c-radiov4") for su in ("libero_spatial", "libero_object", "libero_goal", "libero_10")
+                   for p in (F / s / su).glob("ep*.npy") if not p.name.endswith(".stats.npy")]
+          random.Random(11).shuffle(files)
+          print("node", os.environ.get("NODE"), "files", len(files), flush=True)
+          pos, lock = [0], threading.Lock()
+          def take():
+              with lock:
+                  i = pos[0]; pos[0] += 1
+              return files[i]
+          def reader(stop):
+              n, buf = 0, bytearray(16 << 20)
+              while time.time() < stop:
+                  with open(take(), "rb", buffering=0) as f:
+                      while (k := f.readinto(buf)):
+                          n += k
+              return n
+          for threads in (1, 4, 8, 16):
+              t0 = time.time(); stop = t0 + 180
+              with ThreadPoolExecutor(threads) as ex:
+                  total = sum(ex.map(lambda _: reader(stop), range(threads)))
+              dt = time.time() - t0
+              print(f"RESULT threads {threads}: {total / 1e9:.2f} GB in {dt:.0f} s = {total / 1e6 / dt:.1f} MB/s", flush=True)
+        env:
+        - name: NODE
+          valueFrom: {fieldRef: {fieldPath: spec.nodeName}}
+        resources:
+          requests: {cpu: "2", memory: 2Gi}
+          limits:   {cpu: "2400m", memory: 2400Mi}
+        volumeMounts:
+        - {name: proxy, mountPath: /mnt/proxy, readOnly: true}
+      volumes:
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
