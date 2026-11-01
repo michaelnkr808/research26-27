@@ -1,0 +1,22 @@
+vae libero_spatial: 434 of 434 (meta 434), missing [], extra [], tmp []
+vae libero_object: 457 of 457 (meta 457), missing [], extra [], tmp []
+vae libero_goal: 433 of 433 (meta 433), missing [], extra [], tmp ['.ep000159.npy.tmp']
+vae libero_10: 388 of 388 (meta 388), missing [], extra [], tmp []
+vae_b libero_10 ep 297: float16 (225, 3, 14, 28, 48) finite=True ok=True
+vae_b libero_10 ep 304: float16 (276, 3, 14, 28, 48) finite=True ok=True
+vae_b libero_10 ep 311: float16 (247, 3, 14, 28, 48) finite=True ok=True
+vae_b libero_10 ep 318: float16 (253, 3, 14, 28, 48) finite=True ok=True
+vae_b libero_10 ep 332: float16 (264, 3, 14, 28, 48) finite=True ok=True
+vae_b libero_10 ep 339: float16 (244, 3, 14, 28, 48) finite=True ok=True
+vae_b libero_10 ep 346: float16 (218, 3, 14, 28, 48) finite=True ok=True
+vae_b libero_10 ep 353: float16 (197, 3, 14, 28, 48) finite=True ok=True
+vae_b libero_10 ep 367: float16 (172, 3, 14, 28, 48) finite=True ok=True
+vae_b libero_10 ep 374: float16 (170, 3, 14, 28, 48) finite=True ok=True
+vae_b libero_10 ep 381: float16 (165, 3, 14, 28, 48) finite=True ok=True
+siglip2 folder: ['c-radiov4', 'dinov3', 'meta', 'siglip2', 't5', 'vae', 'vae_b']
+siglip2 libero_spatial ep 406: float16 (141, 14, 28, 1152) stats (3, 1152) ok=True
+siglip2 libero_object ep 293: float16 (140, 14, 28, 1152) stats (3, 1152) ok=True
+siglip2 libero_goal ep 420: float16 (87, 14, 28, 1152) stats (3, 1152) ok=True
+siglip2 libero_10 ep 41: float16 (275, 14, 28, 1152) stats (3, 1152) ok=True
+siglip2 libero_10 ep 248: float16 (234, 14, 28, 1152) stats (3, 1152) ok=True
+CHECK FAILED

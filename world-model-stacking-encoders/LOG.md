@@ -765,3 +765,9 @@ SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min G
 - Copy to CephFS per episode (~16-27 MB): 44.5, 38.5, 27.5, 38.9, 65.5, 33.2, 30.4, 44.6, 39.9, 16.9, 30.8 s, i.e. under 1 MB/s. So CephFS writes from this node are slow for any large file, not only np.save's write pattern (speculative on cause); staging kept the job moving (~1 min per episode vs ~4 min in (a)) but the GPU idles during each copy. Worth raising with NRP support before checkpoint-heavy training.
 - Not done yet: libero_10 vae + vae_b = 388 check, spot-load of new episodes, SigLIP 2 spot-load (5 eps). No pod mounts the PVC now; needs a small CPU check pod/Job (user OK pending).
 **Next:** user OK for the check pod; then the checks; then RUN step 9 pilot.
+
+## 2026-11-01 (d) [agent] (cache checks: VAE and SigLIP 2 pass except one leftover .tmp)
+- User OK'd a CPU check pod. `jobs/rendered/job-check-caches.yaml` (CPU 1 / 4Gi, PVC read-only, no GPU) ran 19:42-19:46 UTC on k8s-chase-ci-04; log `results/logs/check-caches-2nr5j.log`.
+- verified: VAE vae + vae_b has every episode in meta for all four suites (spatial 434, object 457, goal 433, libero_10 388), none missing, none extra. The 11 new libero_10 episodes load as float16 (length, 3, 14, 28, 48) with lengths equal to meta, finite. SigLIP 2 spot-load (seed-6 set: spatial 406, object 293, goal 420, libero_10 41 and 248): float16 (length, 14, 28, 1152), finite, stats (3, 1152) finite. SigLIP 2 cache done.
+- Script exit 1 only because of a leftover `feats/vae/libero_goal/.ep000159.npy.tmp` (from a pod killed mid-write on 2026-10-29; `ep000159.npy` itself is present). Harmless: training reads episodes by explicit path from meta (2026-10-29 (k)). Not deleted (PVC data, ask the user). VAE cache done.
+**Next:** user's call on deleting the .tmp (optional), then RUN step 9 pilot (size and submit the two pilot training Jobs; user OK per RUN).
