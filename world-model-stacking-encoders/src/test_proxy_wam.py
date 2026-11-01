@@ -183,6 +183,13 @@ def main():
         save_npy(Path(d) / "vae" / "suite_b" / "ep000001.npy", want)
         print("8b ok: VAE cache read from vae, then vae_b; missing episode fails")
 
+        # 8c. save_npy with --stage-dir: same bytes as a direct write, nothing left in the stage or as .tmp.
+        direct, staged, stage = Path(d) / "s8c" / "direct.npy", Path(d) / "s8c" / "out" / "direct.npy", Path(d) / "stage"
+        assert save_npy(direct, want) is None and save_npy(staged, want, stage) >= 0
+        assert direct.read_bytes() == staged.read_bytes()
+        assert not list(stage.iterdir()) and not list(staged.parent.glob(".*.tmp"))
+        print("8c ok: staged write gives the same bytes and cleans up")
+
         # 9. Overfit one batch (07 sanity check), noise and timesteps re-seeded every step so the batch is the same
         #    problem each time: the action loss over the last 20 of 200 steps is below a tenth of the first 20, and
         #    every other loss term ends lower than it starts (each output gets a working gradient).
