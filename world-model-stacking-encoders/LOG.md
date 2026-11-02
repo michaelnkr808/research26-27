@@ -820,3 +820,11 @@ SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min G
 - Same rendered files and names, GPU list now 3090 / 4090 / A5000 / A6000 / L40 / L40S (L4, A10, 5000 Ada dropped: too little usable memory for D+R). Out dirs pilot2-* reused: the crashed D+R run wrote nothing (crash at step 0, no ckpt), D never started. Server dry run OK; submitted 06:38 UTC; deadline 6 h from creation.
 - Check: scratchpad gpucheck2.sh, one per Job in the background; fires when the log shows step ≥ 100, "=== done", a Traceback, or a failed pod; prints 5-min/1-min GPU util, memory, CPU, log tail. kubectl calls capped at 60 s via perl alarm.
 **Next:** read the two checks; under 40% GPU while training → delete that Job and stop; else copy logs, record timings, then the pilot rollout Job.
+
+## 2026-11-02 (c) [agent] (D pilot2 done: GPU busy, ~18x faster per step; D+R still Pending)
+- verified (log `results/logs/pilot2-dinov3-kcv7v.log`): D pilot2 ran 08:17:52-08:28:20 UTC on bak-hpc2.csub.edu (NVIDIA L40S), after ~1 h 40 min Pending. Index load 220 s. 500 steps in 356.7 s = 0.71 s/step (first pilot, old loader, D+R on a 4090: 13.0 s/step), data_wait 177.2 s (50%, much of it the chunk-start fills), disk_read 204.7 s; wrote `runs/pilot2-dinov3-s0`, 31,647,943 params. Loss 2.86 at step 499 (falling).
+- verified (Prometheus, 1-min samples every 2 min): DCGM GPU util 0 during setup + index load (08:18-08:22), 100 at 08:24, 87 at 08:26, 2 at 08:28 (model write). CPU ~2.8-3.2 cores of 6 requested (~50%, inside NRP's 20-200%). Memory working set rose to 22 GiB vs 24Gi request (92%, limit 28Gi): tight for a full run, which holds more episodes (replay 17.8 GiB) (speculative: raise to ~28Gi for the round).
+- The background check fired only after the pod completed (instant Prometheus queries then empty); used query_range instead.
+- Estimate (speculative, D on an L40S): full run 21,696 × 0.71 s ≈ 4.3 h, well under the 48 h cap.
+- D+R pilot2 Pending 2 h 40 min at 08:58 UTC (deadline 12:38 UTC); its check still running.
+**Next:** D+R pilot2 result (its timing sets the round estimate); then the pilot rollout Job.
