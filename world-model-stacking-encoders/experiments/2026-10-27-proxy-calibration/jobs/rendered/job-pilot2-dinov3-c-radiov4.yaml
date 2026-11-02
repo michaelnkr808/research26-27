@@ -3,7 +3,7 @@
 # Memory: replay of the new loader on real lengths holds 36.6 GiB of episodes (full run) + ~4 GiB torch/CUDA + margin
 # (first pilot ran 112% of its replay-based request): 44Gi. CPU 6 (32 read threads mostly wait on I/O, 3 assemble, main).
 # GPUs (resubmit 2026-11-02, user OK): full-24 GB or 48 GB cards only; D+R ran out of GPU memory on an L4 (22 GiB usable), L4/A10/5000 Ada dropped
-# (LOG 2026-11-02 (a)); 4090/L40/L40S back, GPU util checked live. Follows _standards/08: Job, real command that exits, no sleep, 1 GPU, limits <= 1.2x requests.
+# (LOG 2026-11-02 (a)); 4090/L40/L40S back, GPU util checked live. CPU 6 -> 4 (user OK 2026-11-02, LOG (e)): D used ~3 cores, 6 never scheduled. Follows _standards/08: Job, real command that exits, no sleep, 1 GPU, limits <= 1.2x requests.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -54,8 +54,8 @@ spec:
         - {name: OMP_NUM_THREADS, value: "3"}
         - {name: MALLOC_ARENA_MAX, value: "2"}
         resources:                    # from measured use (probe / pilot Prometheus); limits <= 1.2x requests
-          requests: {cpu: "6", memory: 44Gi, nvidia.com/gpu: "1", ephemeral-storage: 20Gi}
-          limits:   {cpu: "7200m", memory: 52Gi, nvidia.com/gpu: "1", ephemeral-storage: 24Gi}
+          requests: {cpu: "4", memory: 44Gi, nvidia.com/gpu: "1", ephemeral-storage: 20Gi}
+          limits:   {cpu: "4800m", memory: 52Gi, nvidia.com/gpu: "1", ephemeral-storage: 24Gi}
         volumeMounts:
         - {name: work, mountPath: /work}
         - {name: src, mountPath: /src, readOnly: true}

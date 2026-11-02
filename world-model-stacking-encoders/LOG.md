@@ -834,3 +834,7 @@ SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min G
 - My free-capacity script (scratchpad free.py) again lists ~13 matching nodes that "fit" 6 CPU / 44 GiB (the same csusb / ry-gpu nodes as at 02:15), which the scheduler never uses: it ignores taints, cordons and reservations, so it overstates free capacity (speculative cause; not checked per node). Don't trust it for sizing decisions until fixed.
 - The Job will hit activeDeadlineSeconds at 12:38 UTC and be marked failed; no GPU time used by this attempt.
 **Next:** user's choice: resubmit D+R with a smaller CPU request (D used ~3 cores of 6), as is, or wait for quieter hours.
+
+## 2026-11-02 (e) [agent] (D+R pilot2 resubmitted with 4 CPU)
+- verified: the D+R pilot2 Job hit its 6 h deadline unscheduled (Failed 0/1, no GPU time). User OK (2026-11-02) to resubmit with CPU 4 (limit 4800m); memory 44Gi / 52Gi and GPU list unchanged. Deleted the failed Job, server dry run OK, submitted 19:20 UTC. Background gpucheck2.sh running.
+**Next:** D+R pilot2 timings and GPU util (query_range after it ends); then the pilot rollout Job.
