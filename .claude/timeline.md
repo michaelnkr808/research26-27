@@ -109,3 +109,11 @@
 - So the stalls are not about specific nodes; the cause is unknown. Proposed fix, awaiting the user: write each episode to local disk, then copy it to CephFS in one go.
 - Drew the 100-episode pilot LIBERO-Plus sample (size chosen by the agent, logged). Deleted the finished SigLIP 2 Job at the user's request.
 - See: world-model-stacking-encoders/LOG.md 2026-10-31 (b), 2026-11-01 (a); experiments/2026-10-27-proxy-calibration/jobs/rendered/job-extract-vae-s3.yaml
+
+## 2026-11-01 — stacking-encoders: VAE cache finished, pilot found disk-bound, loader rewritten
+
+- Fixed VAE write stalls by staging on local disk; last VAE shard finished and all feature caches passed checks.
+- First training pilot learned fine but its GPU sat idle about 2 h waiting on CephFS reads; second pilot cancelled.
+- Read test showed parallel reads are about ten times faster; loader rewritten to read in parallel, same batches as before.
+- Next: user OK to rerun both pilots with bigger memory and a GPU check 15 min in.
+- See: world-model-stacking-encoders/LOG.md (2026-11-01 (b)-(g)), experiments/2026-10-27-proxy-calibration/RUN.md
