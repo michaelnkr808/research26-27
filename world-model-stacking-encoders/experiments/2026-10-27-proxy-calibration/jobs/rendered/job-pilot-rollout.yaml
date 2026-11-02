@@ -1,0 +1,91 @@
+# Rendered for RUN step 9 pilot rollouts (user OK 2026-11-02, LOG 2026-11-02 (g)). Both pilot2 checkpoints, 2 shards each:
+# pilot subset (100 LIBERO-Plus episodes x eval seeds 41-43) + clean LIBERO 1 trial per task (40 tasks; RUN says ~10,
+# the CLI's smallest unit is 1 per task). 8 sim processes per pod: ~2.5-3 GB RSS each (sim Job try 2) + encoders/VAE/model
+# on host -> 32Gi (speculative, first measured run), 8 CPU. GPU: full-24 GB / 48 GB cards (as the pilot2 training).
+# Subset file shipped in the src ConfigMap as /src/pilot-subset.json.
+# RUN.md step 9 (pilot rollouts) and step 11 (evaluation), pre-approved. Written mid-run: render per use (fill every
+# __PLACEHOLDER__ from measured use; jobs/rendered/), checklist in RUN.md "Manifests written during the run".
+# Indexed: pod i takes item i of pilot2-dinov3-s0@0/2 pilot2-dinov3-s0@1/2 pilot2-dinov3+c-radiov4-s0@0/2 pilot2-dinov3+c-radiov4-s0@1/2 ("<run dir name>@<shard i>/<n>", space-separated): one checkpoint, one
+# shard of its jobs (subset episodes x eval seeds 41-43, plus clean trials). Each pod writes its own JSONL
+# (/mnt/proxy/rollouts/pilot-rollout/<run>.<i>of<n>.jsonl: one writer per file on CephFS) and resumes from it on retry.
+# GPU floor (RUN.md "Rollouts and the 40% GPU floor"): 8 simulator processes per pod batch their inference on
+# the GPU; MuJoCo renders on the GPU through NVIDIA EGL (graphics capability requested below).
+# Follows _standards/08: Job, real command that exits, no sleep, 1 GPU per pod, limits within 20%, no tolerations.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-pilot-rollout
+  namespace: aria-world
+spec:
+  completionMode: Indexed
+  completions: 4
+  parallelism: 4
+  backoffLimit: 4
+  activeDeadlineSeconds: 43200
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090, NVIDIA-RTX-A5000, NVIDIA-RTX-A6000, NVIDIA-L40, NVIDIA-L40S]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; I=$JOB_COMPLETION_INDEX
+          IT=($ITEMS); RUN=${IT[$I]%%@*}; SH=${IT[$I]##*@}
+          OUT=$R/rollouts/pilot-rollout/$RUN.${SH/\//of}.jsonl
+          mkdir -p $R/logs $R/rollouts/pilot-rollout
+          exec > >(tee -a $R/logs/pilot-rollout-$RUN-${SH/\//of}-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          echo "=== index $I: $RUN shard $SH -> $OUT"; nvidia-smi; nproc; date -u
+          bash /src/setup_env.sh > /work/pip-env.log 2>&1 || { tail -50 /work/pip-env.log; exit 1; }
+          . /src/setup_sim.sh
+          nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv -l 30 > /work/gpu.csv & SMI=$!
+          python /src/rollout.py run --run-dir $R/runs/$RUN --t5 $R/feats/t5 \
+            --vae-path $R/models/Wan2.2_VAE.safetensors --tasks $R/lp_tasks.json --subset /src/pilot-subset.json --clean 1 \
+            --envs 8 --shard $SH --out $OUT 2>&1 | sed "/using task orders/d"
+          kill $SMI || true
+          echo "=== GPU utilization over the run (nvidia-smi, 30 s samples)"
+          awk -F, 'NR>1 {gsub(/ %/,"",$2); s+=$2; n++} END {if (n) printf "mean %.1f%% over %d samples\n", s/n, n}' /work/gpu.csv
+          wc -l $OUT; date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: 2110ff61ab911eecf32c7556ca630ff4a8dec019}
+        - {name: ITEMS, value: "pilot2-dinov3-s0@0/2 pilot2-dinov3-s0@1/2 pilot2-dinov3+c-radiov4-s0@0/2 pilot2-dinov3+c-radiov4-s0@1/2"}
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: /src}
+        - {name: SIM_DIR, value: /work/sim}
+        - {name: MUJOCO_GL, value: egl}
+        - {name: PYOPENGL_PLATFORM, value: egl}
+        - {name: NVIDIA_DRIVER_CAPABILITIES, value: "compute,utility,graphics"}
+        resources:                    # from measured use (pilot rollout Prometheus); limits <= 1.2x requests
+          requests: {cpu: "8", memory: 32Gi, nvidia.com/gpu: "1", ephemeral-storage: 50Gi}
+          limits:   {cpu: "9600m", memory: 38Gi, nvidia.com/gpu: "1", ephemeral-storage: 58Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 58Gi}   # pip, HF encoder cache, LIBERO-Plus + unzipped assets
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 4Gi}
