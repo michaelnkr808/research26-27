@@ -828,3 +828,9 @@ SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min G
 - Estimate (speculative, D on an L40S): full run 21,696 × 0.71 s ≈ 4.3 h, well under the 48 h cap.
 - D+R pilot2 Pending 2 h 40 min at 08:58 UTC (deadline 12:38 UTC); its check still running.
 **Next:** D+R pilot2 result (its timing sets the round estimate); then the pilot rollout Job.
+
+## 2026-11-02 (d) [agent] (D+R pilot2 still Pending after 5.5 h; deadline 12:38 UTC)
+- verified (kubectl, 12:10 UTC): pod fwflx Pending 5 h 31 min; FailedScheduling: 28 Insufficient nvidia.com/gpu, 26 Insufficient cpu, 12 Insufficient memory, 234 untolerated taints, 20 unschedulable.
+- My free-capacity script (scratchpad free.py) again lists ~13 matching nodes that "fit" 6 CPU / 44 GiB (the same csusb / ry-gpu nodes as at 02:15), which the scheduler never uses: it ignores taints, cordons and reservations, so it overstates free capacity (speculative cause; not checked per node). Don't trust it for sizing decisions until fixed.
+- The Job will hit activeDeadlineSeconds at 12:38 UTC and be marked failed; no GPU time used by this attempt.
+**Next:** user's choice: resubmit D+R with a smaller CPU request (D used ~3 cores of 6), as is, or wait for quieter hours.
