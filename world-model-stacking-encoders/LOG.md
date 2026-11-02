@@ -814,3 +814,9 @@ SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min G
 - The Job's one retry pod (backoffLimit 1) has been Pending 55 min and could land on an L4 again. The one-shot gpucheck.sh never fired (it waited for both pods to be 15 min old) and also used `timeout`, which macOS lacks; killed.
 - Fix options for the user (no change made): (1) D+R only on full-24 GB or larger cards (3090, A5000, 4090; or 48 GB A6000 / L40 / L40S, where the GPU-util concern is speculative); (2) PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True alone is unlikely enough (speculative). Smaller batch would change the design (stop 6).
 **Next:** user's choice; until then the D Job stays Pending (deadline 08:18 UTC) and the D+R retry pod is still queued.
+
+## 2026-11-02 (b) [agent] (pilot2 Jobs resubmitted on full-24 GB / 48 GB GPUs)
+- User OK (2026-11-02) for the (a) proposal. Deleted both pilot2 Jobs (D Pending 4 h 19 min, D+R retry Pending 72 min; D+R crash log already in results/logs).
+- Same rendered files and names, GPU list now 3090 / 4090 / A5000 / A6000 / L40 / L40S (L4, A10, 5000 Ada dropped: too little usable memory for D+R). Out dirs pilot2-* reused: the crashed D+R run wrote nothing (crash at step 0, no ckpt), D never started. Server dry run OK; submitted 06:38 UTC; deadline 6 h from creation.
+- Check: scratchpad gpucheck2.sh, one per Job in the background; fires when the log shows step ≥ 100, "=== done", a Traceback, or a failed pod; prints 5-min/1-min GPU util, memory, CPU, log tail. kubectl calls capped at 60 s via perl alarm.
+**Next:** read the two checks; under 40% GPU while training → delete that Job and stop; else copy logs, record timings, then the pilot rollout Job.

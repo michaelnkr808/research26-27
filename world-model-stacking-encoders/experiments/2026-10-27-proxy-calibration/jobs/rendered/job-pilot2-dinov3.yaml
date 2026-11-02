@@ -2,8 +2,8 @@
 # --max-steps 500, new out dir pilot2-* (pilot-* holds the first run; same dir would resume at step 500 and exit).
 # Memory: replay of the new loader on real lengths holds 17.8 GiB of episodes (full run) + ~4 GiB torch/CUDA + margin
 # (first pilot ran 112% of its replay-based request): 24Gi. CPU 6 (32 read threads mostly wait on I/O, 3 assemble, main).
-# GPUs: 24 GB cards, RTX 4090 / L40 / L40S left out so ~0.3 s/step of GPU compute stays above NRP's 40% floor
-# (speculative estimate, LOG (g)). Follows _standards/08: Job, real command that exits, no sleep, 1 GPU, limits <= 1.2x requests.
+# GPUs (resubmit 2026-11-02, user OK): full-24 GB or 48 GB cards only; D+R ran out of GPU memory on an L4 (22 GiB usable), L4/A10/5000 Ada dropped
+# (LOG 2026-11-02 (a)); 4090/L40/L40S back, GPU util checked live. Follows _standards/08: Job, real command that exits, no sleep, 1 GPU, limits <= 1.2x requests.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -26,7 +26,7 @@ spec:
             - matchExpressions:
               - key: nvidia.com/gpu.product
                 operator: In
-                values: [NVIDIA-GeForce-RTX-3090, NVIDIA-RTX-A5000, NVIDIA-A10, NVIDIA-L4, NVIDIA-RTX-5000-Ada-Generation]
+                values: [NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090, NVIDIA-RTX-A5000, NVIDIA-RTX-A6000, NVIDIA-L40, NVIDIA-L40S]
               - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
               - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
       containers:
