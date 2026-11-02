@@ -798,3 +798,12 @@ SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min G
 - Memory (verified, replay on real lengths, eager reads a full horizon, features + means): full run D 17.8 GiB, D+R 36.6 GiB of episodes held (old lazy loader 6.4 / 12.6). Shorter read-ahead (4: D+R 28.5) would stall at chunk starts (a chunk's first batch touches ~all 16 episodes, ~4.7 GB for D+R).
 - Estimate (speculative): reads ~233 MB per step for D+R → 0.5-0.8 s/step at 300-500 MB/s; GPU compute ~0.3 s/step on the RTX 4090 → GPU ~40-60% there, more on slower cards. Full run ~3-5 h.
 **Next:** user OK to rerun the two pilot Jobs with the new loader (D+R ~44Gi request, D ~24Gi, 6 CPU), GPU check by Prometheus ~15 min after each starts; stop and delete if under 40%.
+
+## 2026-11-01 (h) [agent] (pilot rerun with the parallel-read loader: both Jobs submitted)
+- User (2026-11-01): "its good to run both pilots" (the (g) proposal).
+- ConfigMap `stacking-encoders-proxy-src` recreated from 11fed03 (src/ identical to a21b695); verified proxy_wam.py in the ConfigMap equals the repo file.
+- Free capacity (verified, Prometheus incl. init containers, kubectl node list for the affinity, ~02:15 UTC): 11 matching us-west nodes had a free GPU with ≥ 6 CPU / 44 GiB (3090, A5000, L4).
+- Rendered `jobs/rendered/job-pilot2-dinov3-c-radiov4.yaml` and `job-pilot2-dinov3.yaml` from the first pilot's files: names pilot2-*, out `/mnt/proxy/runs/pilot2-<config>-s0` (the pilot-* dir would resume at step 500 and exit), D+R 6 CPU / 44Gi (limit 7200m / 52Gi), D 6 CPU / 24Gi (28Gi), GPUs 3090 / A5000 / A10 / L4 / 5000 Ada (4090, L40, L40S dropped for GPU-util margin, speculative), deadline 6 h, SRC_GIT_COMMIT 11fed03, `--max-steps 500`, loader defaults (32 read, 3 assemble threads). Server dry run OK; submitted 02:18 UTC 2026-11-02; both Pending at first.
+- Watch: one-shot background check (scratchpad gpucheck.sh) once both pods are 15 min old: 5-min and 1-min GPU util, memory, CPU, log tails. Under 40% while training (not in the ~10 min feature-index load) → delete the Job and stop.
+- Old Jobs (first pilot, read bench, read lengths, VAE s3, check-caches) still exist until TTL; logs already in results/logs.
+**Next:** read the 15-min check; then copy both training logs to results/logs, record s/step, read_s, GPU util, memory; then the pilot rollout Job (RUN step 9).

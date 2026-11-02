@@ -1,0 +1,72 @@
+# Rerun of the RUN step 9 pilot with the parallel-read loader (a21b695; user OK 2026-11-01, LOG (h)). config dinov3+c-radiov4, seed 0,
+# --max-steps 500, new out dir pilot2-* (pilot-* holds the first run; same dir would resume at step 500 and exit).
+# Memory: replay of the new loader on real lengths holds 36.6 GiB of episodes (full run) + ~4 GiB torch/CUDA + margin
+# (first pilot ran 112% of its replay-based request): 44Gi. CPU 6 (32 read threads mostly wait on I/O, 3 assemble, main).
+# GPUs: 24 GB cards, RTX 4090 / L40 / L40S left out so ~0.3 s/step of GPU compute stays above NRP's 40% floor
+# (speculative estimate, LOG (g)). Follows _standards/08: Job, real command that exits, no sleep, 1 GPU, limits <= 1.2x requests.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-pilot2-dinov3-c-radiov4
+  namespace: aria-world
+spec:
+  completionMode: Indexed
+  completions: 1
+  parallelism: 1
+  backoffLimit: 1                 # about one retry per run
+  activeDeadlineSeconds: 21600
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-GeForce-RTX-3090, NVIDIA-RTX-A5000, NVIDIA-A10, NVIDIA-L4, NVIDIA-RTX-5000-Ada-Generation]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; I=$JOB_COMPLETION_INDEX
+          P=($PAIRS); C=${P[$I]%%:*}; S=${P[$I]##*:}
+          mkdir -p $R/logs $R/runs
+          exec > >(tee -a $R/logs/pilot2-dinov3-c-radiov4-$C-s$S-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          echo "=== index $I: config $C seed $S"; nvidia-smi; nproc; date -u
+          bash /src/setup_env.sh > /work/pip-env.log 2>&1 || { tail -50 /work/pip-env.log; exit 1; }
+          python /src/proxy_wam.py --feats $R/feats --suites libero_spatial,libero_object,libero_goal,libero_10 \
+            --t5 $R/feats/t5 --config $C --seed $S --out $R/runs/pilot2-$C-s$S --max-steps 500
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: 11fed0358e0ade12438526beabfb660e30a80779}
+        - {name: PAIRS, value: "dinov3+c-radiov4:0"}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: /src}
+        - {name: OMP_NUM_THREADS, value: "3"}
+        - {name: MALLOC_ARENA_MAX, value: "2"}
+        resources:                    # from measured use (probe / pilot Prometheus); limits <= 1.2x requests
+          requests: {cpu: "6", memory: 44Gi, nvidia.com/gpu: "1", ephemeral-storage: 20Gi}
+          limits:   {cpu: "7200m", memory: 52Gi, nvidia.com/gpu: "1", ephemeral-storage: 24Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 24Gi}
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 2Gi}
