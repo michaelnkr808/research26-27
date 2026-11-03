@@ -1,0 +1,177 @@
+Tue Nov  3 06:29:29 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.09              KMD Version: 615.71.09     CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4090        On  |   00000000:81:00.0 Off |                  Off |
+| 30%   32C    P8             17W /  450W |       1MiB /  24564MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+24
+Tue Nov  3 06:29:29 UTC 2026
+Tue Nov  3 06:29:51 UTC 2026
+[profile      0s] device cuda, torch threads 24, instruction 'open the middle drawer of the cabinet'
+[profile      0s] GPU NVIDIA GeForce RTX 4090
+[profile     74s] pilot2-dinov3-s0: config dinov3, loaded in 73.8s
+[profile    126s] pilot2-dinov3-s0 batch 1: vae 9 ms, enc:dinov3 20 ms, prep 12 ms, denoise 188 ms, post 0 ms, act 227 ms | sustained 4.27 req/s, GPU 30.5% (89 samples), peak 2.91 GB
+[profile    179s] pilot2-dinov3-s0 batch 2: vae 13 ms, enc:dinov3 24 ms, prep 67 ms, denoise 194 ms, post 0 ms, act 300 ms | sustained 6.65 req/s, GPU 27.5% (89 samples), peak 3.04 GB
+[profile    235s] pilot2-dinov3-s0 batch 4: vae 21 ms, enc:dinov3 37 ms, prep 167 ms, denoise 200 ms, post 0 ms, act 422 ms | sustained 8.62 req/s, GPU 20.0% (89 samples), peak 3.31 GB
+[profile    300s] pilot2-dinov3-s0 batch 8: vae 43 ms, enc:dinov3 72 ms, prep 413 ms, denoise 264 ms, post 0 ms, act 761 ms | sustained 10.53 req/s, GPU 27.2% (89 samples), peak 3.84 GB
+[profile    379s] pilot2-dinov3-s0 batch 16: vae 81 ms, enc:dinov3 129 ms, prep 988 ms, denoise 204 ms, post 0 ms, act 1382 ms | sustained 12.12 req/s, GPU 24.2% (90 samples), peak 4.9 GB
+[profile    489s] pilot2-dinov3-s0 batch 32: vae 166 ms, enc:dinov3 252 ms, prep 2037 ms, denoise 236 ms, post 0 ms, act 2597 ms | sustained 12.52 req/s, GPU 21.5% (90 samples), peak 7.02 GB
+[profile    495s] pilot2-dinov3-s0 batch 2 with 4 torch threads: vae 13 ms, enc:dinov3 24 ms, prep 10 ms, denoise 193 ms, post 0 ms, act 238 ms
+=== pilot2-dinov3-s0 batch 2: top ops by self CUDA time (3 calls)
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+                                                   Name    Self CPU %      Self CPU   CPU total %     CPU total  CPU time avg     Self CUDA   Self CUDA %    CUDA total  CUDA time avg    # of Calls  
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+                                            aten::addmm         8.50%      95.841ms        12.54%     141.430ms      26.032us      70.173ms        31.75%      70.185ms      12.918us          5433  
+                                 ampere_sgemm_128x64_tn         0.00%       0.000us         0.00%       0.000us       0.000us      46.593ms        21.08%      46.593ms      64.712us           720  
+                                aten::cudnn_convolution         0.47%       5.337ms         0.85%       9.589ms      76.102us      33.813ms        15.30%      33.848ms     268.636us           126  
+                                            aten::copy_         4.15%      46.783ms        10.38%     117.027ms       8.325us      28.160ms        12.74%      28.184ms       2.005us         14058  
+                                              aten::mul         4.01%      45.202ms         6.88%      77.572ms       9.780us      20.729ms         9.38%      20.729ms       2.613us          7932  
+sm80_xmma_fprop_implicit_gemm_bf16bf16_bf16f32_f32_n...         0.00%       0.000us         0.00%       0.000us       0.000us      20.300ms         9.19%      20.300ms     615.138us            33  
+                     aten::_efficient_attention_forward         0.60%       6.795ms         1.71%      19.252ms      22.206us      17.434ms         7.89%      17.447ms      20.124us           867  
+                                              aten::add         3.39%      38.232ms         5.50%      62.035ms       9.395us      12.879ms         5.83%      12.879ms       1.950us          6603  
+fmha_cutlassF_bf16_aligned_64x128_rf_sm80(PyTorchMem...         0.00%       0.000us         0.00%       0.000us       0.000us      11.827ms         5.35%      11.827ms      16.427us           720  
+void at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us       9.753ms         4.41%       9.753ms       1.294us          7536  
+void at::native::unrolled_elementwise_kernel<at::nat...         0.00%       0.000us         0.00%       0.000us       0.000us       9.641ms         4.36%       9.641ms       2.176us          4431  
+void at::native::elementwise_kernel<128, 4, at::nati...         0.00%       0.000us         0.00%       0.000us       0.000us       8.218ms         3.72%       8.218ms       3.424us          2400  
+void cutlass::Kernel2<cutlass_80_wmma_tensorop_bf16_...         0.00%       0.000us         0.00%       0.000us       0.000us       6.938ms         3.14%       6.938ms       5.506us          1260  
+                                               aten::mm         0.14%       1.557ms         0.23%       2.606ms      18.095us       6.123ms         2.77%       6.123ms      42.522us           144  
+                                  ampere_sgemm_64x64_tn         0.00%       0.000us         0.00%       0.000us       0.000us       6.031ms         2.73%       6.031ms      41.882us           144  
+sm80_xmma_fprop_implicit_gemm_bf16bf16_bf16f32_f32_n...         0.00%       0.000us         0.00%       0.000us       0.000us       5.804ms         2.63%       5.804ms     214.974us            27  
+void at::native::elementwise_kernel<128, 2, at::nati...         0.00%       0.000us         0.00%       0.000us       0.000us       5.646ms         2.55%       5.646ms       2.002us          2820  
+fmha_cutlassF_f32_aligned_64x64_rf_sm80(PyTorchMemEf...         0.00%       0.000us         0.00%       0.000us       0.000us       5.432ms         2.46%       5.432ms      37.719us           144  
+                                             aten::mean         1.37%      15.453ms         2.00%      22.533ms      11.663us       5.262ms         2.38%       5.262ms       2.724us          1932  
+void at::native::reduce_kernel<512, 1, at::native::R...         0.00%       0.000us         0.00%       0.000us       0.000us       5.163ms         2.34%       5.163ms       2.689us          1920  
+                                aten::native_layer_norm         1.31%      14.812ms         3.10%      34.913ms      19.792us       4.832ms         2.19%       4.832ms       2.739us          1764  
+void at::native::(anonymous namespace)::vectorized_l...         0.00%       0.000us         0.00%       0.000us       0.000us       4.832ms         2.19%       4.832ms       2.739us          1764  
+void cutlass::Kernel2<cutlass_80_wmma_tensorop_bf16_...         0.00%       0.000us         0.00%       0.000us       0.000us       4.810ms         2.18%       4.810ms       2.713us          1773  
+                                              aten::cat        13.83%     156.022ms        14.36%     161.998ms     114.648us       4.073ms         1.84%       4.073ms       2.882us          1413  
+void cutlass::Kernel2<cutlass_80_tensorop_bf16_s1681...         0.00%       0.000us         0.00%       0.000us       0.000us       3.840ms         1.74%       3.840ms      12.675us           303  
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+Self CPU time total: 1.128s
+Self CUDA time total: 221.006ms
+
+=== pilot2-dinov3-s0 batch 2: top ops by self CPU time (3 calls)
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+                                                   Name    Self CPU %      Self CPU   CPU total %     CPU total  CPU time avg     Self CUDA   Self CUDA %    CUDA total  CUDA time avg    # of Calls  
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+                                       cudaLaunchKernel        21.91%     247.142ms        22.19%     250.322ms       5.458us       0.000us         0.00%      13.344us       0.000us         45867  
+                                              aten::cat        13.83%     156.022ms        14.36%     161.998ms     114.648us       4.073ms         1.84%       4.073ms       2.882us          1413  
+                                            aten::addmm         8.50%      95.841ms        12.54%     141.430ms      26.032us      70.173ms        31.75%      70.185ms      12.918us          5433  
+                                          aten::normal_         4.81%      54.196ms         4.81%      54.196ms       4.516ms       0.000us         0.00%       0.000us       0.000us            12  
+                                            aten::copy_         4.15%      46.783ms        10.38%     117.027ms       8.325us      28.160ms        12.74%      28.184ms       2.005us         14058  
+                                              aten::mul         4.01%      45.202ms         6.88%      77.572ms       9.780us      20.729ms         9.38%      20.729ms       2.613us          7932  
+                                            aten::empty         3.49%      39.308ms         3.49%      39.308ms       2.254us       0.000us         0.00%       0.000us       0.000us         17436  
+                                              aten::add         3.39%      38.232ms         5.50%      62.035ms       9.395us      12.879ms         5.83%      12.879ms       1.950us          6603  
+                                    aten::empty_strided         3.11%      35.045ms         3.11%      35.045ms       2.668us       0.000us         0.00%       0.000us       0.000us         13134  
+                                           aten::linear         2.89%      32.618ms        33.92%     382.567ms      42.980us       0.000us         0.00%      98.283ms      11.042us          8901  
+                                         aten::_to_copy         2.33%      26.238ms        14.96%     168.718ms      12.949us       0.000us         0.00%      23.909ms       1.835us         13029  
+                                         cuLaunchKernel         1.79%      20.135ms         1.80%      20.255ms       4.342us       0.000us         0.00%      12.672us       0.003us          4665  
+                                             aten::view         1.76%      19.803ms         1.76%      19.803ms       0.934us       0.000us         0.00%       0.000us       0.000us         21213  
+                                              aten::pow         1.52%      17.092ms         2.39%      26.906ms      13.189us       2.604ms         1.18%       2.953ms       1.448us          2040  
+                                             aten::mean         1.37%      15.453ms         2.00%      22.533ms      11.663us       5.262ms         2.38%       5.262ms       2.724us          1932  
+                                aten::native_layer_norm         1.31%      14.812ms         3.10%      34.913ms      19.792us       4.832ms         2.19%       4.832ms       2.739us          1764  
+                     aten::scaled_dot_product_attention         1.21%      13.596ms        17.68%     199.449ms     125.677us       0.000us         0.00%      40.611ms      25.590us          1587  
+                                       aten::as_strided         1.06%      11.957ms         1.06%      11.957ms       0.478us       0.000us         0.00%       0.000us       0.000us         25008  
+                                            aten::rsqrt         0.90%      10.143ms         1.49%      16.847ms       8.774us       2.151ms         0.97%       2.151ms       1.120us          1920  
+                                               aten::to         0.88%       9.971ms        15.84%     178.690ms      11.140us       0.000us         0.00%      23.909ms       1.490us         16041  
+                                  cudaStreamSynchronize         0.88%       9.943ms         0.88%       9.943ms     276.194us       0.000us         0.00%       0.000us       0.000us            36  
+                                        aten::transpose         0.81%       9.187ms         1.28%      14.491ms       1.434us       0.000us         0.00%       0.000us       0.000us         10107  
+                                            aten::slice         0.78%       8.805ms         1.07%      12.083ms       1.721us       0.000us         0.00%       0.000us       0.000us          7020  
+                                              aten::bmm         0.77%       8.632ms         1.06%      11.976ms      24.951us       2.150ms         0.97%       2.150ms       4.478us           480  
+                                            aten::where         0.74%       8.369ms         2.96%      33.437ms      23.220us       1.374ms         0.62%       3.408ms       2.367us          1440  
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+Self CPU time total: 1.128s
+Self CUDA time total: 221.006ms
+
+[profile    516s] pilot2-dinov3-s0 batch 2: ~16877 kernel launches per call
+[profile    549s] pilot2-dinov3+c-radiov4-s0: config dinov3+c-radiov4, loaded in 32.2s
+[profile    602s] pilot2-dinov3+c-radiov4-s0 batch 1: vae 9 ms, enc:dinov3 24 ms, enc:c-radiov4 22 ms, prep 19 ms, denoise 236 ms, post 0 ms, act 313 ms | sustained 3.24 req/s, GPU 29.1% (89 samples), peak 5.43 GB
+[profile    657s] pilot2-dinov3+c-radiov4-s0 batch 2: vae 14 ms, enc:dinov3 25 ms, enc:c-radiov4 35 ms, prep 98 ms, denoise 232 ms, post 0 ms, act 398 ms | sustained 5.0 req/s, GPU 30.4% (89 samples), peak 5.46 GB
+[profile    716s] pilot2-dinov3+c-radiov4-s0 batch 4: vae 21 ms, enc:dinov3 37 ms, enc:c-radiov4 58 ms, prep 169 ms, denoise 266 ms, post 0 ms, act 585 ms | sustained 7.11 req/s, GPU 29.8% (88 samples), peak 5.54 GB
+[profile    784s] pilot2-dinov3+c-radiov4-s0 batch 8: vae 43 ms, enc:dinov3 72 ms, enc:c-radiov4 110 ms, prep 444 ms, denoise 235 ms, post 0 ms, act 894 ms | sustained 8.91 req/s, GPU 30.8% (90 samples), peak 5.7 GB
+[profile    871s] pilot2-dinov3+c-radiov4-s0 batch 16: vae 82 ms, enc:dinov3 130 ms, enc:c-radiov4 219 ms, prep 1022 ms, denoise 308 ms, post 0 ms, act 1704 ms | sustained 9.52 req/s, GPU 31.4% (89 samples), peak 6.67 GB
+[profile    995s] pilot2-dinov3+c-radiov4-s0 batch 32: vae 165 ms, enc:dinov3 253 ms, enc:c-radiov4 425 ms, prep 2188 ms, denoise 271 ms, post 0 ms, act 3156 ms | sustained 9.95 req/s, GPU 34.8% (88 samples), peak 8.79 GB
+[profile   1003s] pilot2-dinov3+c-radiov4-s0 batch 2 with 4 torch threads: vae 12 ms, enc:dinov3 24 ms, enc:c-radiov4 34 ms, prep 21 ms, denoise 233 ms, post 0 ms, act 324 ms
+=== pilot2-dinov3+c-radiov4-s0 batch 2: top ops by self CUDA time (3 calls)
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+                                                   Name    Self CPU %      Self CPU   CPU total %     CPU total  CPU time avg     Self CUDA   Self CUDA %    CUDA total  CUDA time avg    # of Calls  
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+                                            aten::addmm         9.66%     111.600ms        14.29%     165.059ms      27.143us     128.287ms        40.55%     128.289ms      21.097us          6081  
+                                            aten::copy_         4.62%      53.337ms        11.79%     136.224ms       8.666us      47.977ms        15.17%      47.977ms       3.052us         15720  
+                                 ampere_sgemm_128x64_tn         0.00%       0.000us         0.00%       0.000us       0.000us      46.632ms        14.74%      46.632ms      64.767us           720  
+                                aten::cudnn_convolution         0.48%       5.588ms         0.77%       8.850ms      70.235us      32.193ms        10.18%      32.229ms     255.787us           126  
+                                              aten::mul         3.98%      46.012ms         6.70%      77.445ms       9.764us      20.037ms         6.33%      20.037ms       2.526us          7932  
+ampere_fp16_s1688gemm_fp16_128x128_ldg8_relu_f2f_sta...         0.00%       0.000us         0.00%       0.000us       0.000us      19.797ms         6.26%      19.797ms      61.103us           324  
+     ampere_fp16_s1688gemm_fp16_256x64_ldg8_relu_f2f_tn         0.00%       0.000us         0.00%       0.000us       0.000us      19.532ms         6.17%      19.532ms     120.566us           162  
+ampere_fp16_s1688gemm_fp16_128x64_sliced1x2_ldg8_rel...         0.00%       0.000us         0.00%       0.000us       0.000us      18.993ms         6.00%      18.993ms     117.239us           162  
+sm80_xmma_fprop_implicit_gemm_bf16bf16_bf16f32_f32_n...         0.00%       0.000us         0.00%       0.000us       0.000us      18.498ms         5.85%      18.498ms     578.052us            32  
+void at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us      17.644ms         5.58%      17.644ms      10.752us          1641  
+                     aten::_efficient_attention_forward         0.61%       7.070ms         1.55%      17.936ms      20.688us      16.585ms         5.24%      16.585ms      19.130us           867  
+                                              aten::add         3.52%      40.698ms         5.85%      67.545ms       9.743us      16.492ms         5.21%      16.492ms       2.379us          6933  
+                         aten::_flash_attention_forward         0.13%       1.473ms         0.43%       4.950ms      30.557us      12.008ms         3.80%      12.008ms      74.122us           162  
+void pytorch_flash::flash_fwd_kernel<Flash_fwd_kerne...         0.00%       0.000us         0.00%       0.000us       0.000us      12.008ms         3.80%      12.008ms      74.122us           162  
+fmha_cutlassF_bf16_aligned_64x128_rf_sm80(PyTorchMem...         0.00%       0.000us         0.00%       0.000us       0.000us      11.327ms         3.58%      11.327ms      15.732us           720  
+void at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us       9.604ms         3.04%       9.604ms       1.275us          7535  
+void at::native::unrolled_elementwise_kernel<at::nat...         0.00%       0.000us         0.00%       0.000us       0.000us       9.265ms         2.93%       9.265ms       2.087us          4439  
+void at::native::elementwise_kernel<128, 4, at::nati...         0.00%       0.000us         0.00%       0.000us       0.000us       7.886ms         2.49%       7.886ms       3.286us          2400  
+                                aten::native_layer_norm         1.77%      20.400ms         3.89%      44.960ms      21.533us       7.581ms         2.40%       7.581ms       3.631us          2088  
+void at::native::(anonymous namespace)::vectorized_l...         0.00%       0.000us         0.00%       0.000us       0.000us       7.581ms         2.40%       7.581ms       3.631us          2088  
+void cutlass::Kernel2<cutlass_80_wmma_tensorop_bf16_...         0.00%       0.000us         0.00%       0.000us       0.000us       6.646ms         2.10%       6.646ms       5.274us          1260  
+                                               aten::mm         0.16%       1.882ms         0.27%       3.088ms      20.589us       6.016ms         1.90%       6.016ms      40.104us           150  
+                                  ampere_sgemm_64x64_tn         0.00%       0.000us         0.00%       0.000us       0.000us       5.797ms         1.83%       5.797ms      40.259us           144  
+sm80_xmma_fprop_implicit_gemm_bf16bf16_bf16f32_f32_n...         0.00%       0.000us         0.00%       0.000us       0.000us       5.428ms         1.72%       5.428ms     201.028us            27  
+void at::native::elementwise_kernel<128, 2, at::nati...         0.00%       0.000us         0.00%       0.000us       0.000us       5.404ms         1.71%       5.404ms       1.916us          2820  
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+Self CPU time total: 1.155s
+Self CUDA time total: 316.356ms
+
+=== pilot2-dinov3+c-radiov4-s0 batch 2: top ops by self CPU time (3 calls)
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+                                                   Name    Self CPU %      Self CPU   CPU total %     CPU total  CPU time avg     Self CUDA   Self CUDA %    CUDA total  CUDA time avg    # of Calls  
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+                                       cudaLaunchKernel        17.14%     197.989ms        17.18%     198.468ms       4.032us       0.000us         0.00%       0.000us       0.000us         49227  
+                                            aten::addmm         9.66%     111.600ms        14.29%     165.059ms      27.143us     128.287ms        40.55%     128.289ms      21.097us          6081  
+                                              aten::cat         9.32%     107.666ms         9.86%     113.845ms      80.060us       4.003ms         1.27%       4.003ms       2.815us          1422  
+                                          aten::normal_         7.29%      84.259ms         7.29%      84.259ms       7.022ms       0.000us         0.00%       0.000us       0.000us            12  
+                                            aten::copy_         4.62%      53.337ms        11.79%     136.224ms       8.666us      47.977ms        15.17%      47.977ms       3.052us         15720  
+                                            aten::empty         4.01%      46.357ms         4.01%      46.357ms       2.351us       0.000us         0.00%       0.000us       0.000us         19716  
+                                              aten::mul         3.98%      46.012ms         6.70%      77.445ms       9.764us      20.037ms         6.33%      20.037ms       2.526us          7932  
+                                           aten::linear         3.84%      44.322ms        41.75%     482.214ms      47.234us       0.000us         0.00%     232.251ms      22.750us         10209  
+                                              aten::add         3.52%      40.698ms         5.85%      67.545ms       9.743us      16.492ms         5.21%      16.492ms       2.379us          6933  
+                                    aten::empty_strided         3.49%      40.336ms         3.49%      40.336ms       2.699us       0.000us         0.00%       0.000us       0.000us         14946  
+                                         aten::_to_copy         2.84%      32.759ms        17.19%     198.556ms      13.527us       0.000us         0.00%      42.574ms       2.900us         14679  
+                                             aten::view         1.81%      20.872ms         1.81%      20.872ms       0.888us       0.000us         0.00%       0.000us       0.000us         23505  
+                                aten::native_layer_norm         1.77%      20.400ms         3.89%      44.960ms      21.533us       7.581ms         2.40%       7.581ms       3.631us          2088  
+                                         cuLaunchKernel         1.76%      20.329ms         1.76%      20.329ms       4.358us       0.000us         0.00%       0.000us       0.000us          4665  
+                                              aten::pow         1.60%      18.444ms         2.48%      28.663ms      14.051us       2.513ms         0.79%       2.862ms       1.403us          2040  
+                                             aten::mean         1.29%      14.925ms         1.91%      22.021ms      11.398us       5.044ms         1.59%       5.044ms       2.611us          1932  
+                                       aten::as_strided         1.23%      14.242ms         1.23%      14.242ms       0.523us       0.000us         0.00%       0.000us       0.000us         27219  
+                     aten::scaled_dot_product_attention         1.22%      14.095ms        17.84%     206.078ms     117.826us       0.000us         0.00%      50.817ms      29.055us          1749  
+                                        aten::transpose         1.06%      12.254ms         1.67%      19.340ms       1.671us       0.000us         0.00%       0.000us       0.000us         11571  
+                                                aten::t         1.03%      11.882ms         2.15%      24.845ms       3.702us       0.000us         0.00%       0.000us       0.000us          6711  
+                                               aten::to         0.96%      11.048ms        18.15%     209.604ms      11.818us       0.000us         0.00%      42.574ms       2.400us         17736  
+                                  cudaStreamSynchronize         0.92%      10.675ms         0.92%      10.675ms     254.177us       0.000us         0.00%       0.000us       0.000us            42  
+                                            aten::rsqrt         0.90%      10.441ms         1.48%      17.143ms       8.929us       2.069ms         0.65%       2.069ms       1.078us          1920  
+                                          aten::reshape         0.86%       9.907ms         2.02%      23.327ms       1.974us       0.000us         0.00%       2.176ms       0.184us         11817  
+                                            aten::slice         0.84%       9.744ms         1.13%      13.051ms       1.849us       0.000us         0.00%       0.000us       0.000us          7059  
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+Self CPU time total: 1.155s
+Self CUDA time total: 316.356ms
+
+[profile   1027s] pilot2-dinov3+c-radiov4-s0 batch 2: ~17997 kernel launches per call
+RESULT_JSON {"gpu": "NVIDIA GeForce RTX 4090", "torch_threads": 24, "instruction": "open the middle drawer of the cabinet", "runs": {"pilot2-dinov3-s0": {"by_batch": {"1": {"median_s": {"vae": 0.009, "enc:dinov3": 0.0203, "prep": 0.0124, "denoise": 0.1875, "post": 0.0002, "act": 0.2273}, "calls": 193, "s": 45.2, "calls_per_s": 4.272, "items_per_s": 4.27, "gpu_util_mean": 30.5, "gpu_util_samples": 89, "peak_mem_gb": 2.91}, "2": {"median_s": {"vae": 0.0134, "enc:dinov3": 0.0243, "prep": 0.0674, "denoise": 0.1942, "post": 0.0002, "act": 0.2998}, "calls": 150, "s": 45.1, "calls_per_s": 3.326, "items_per_s": 6.65, "gpu_util_mean": 27.5, "gpu_util_samples": 89, "peak_mem_gb": 3.04}, "4": {"median_s": {"vae": 0.0214, "enc:dinov3": 0.0367, "prep": 0.1672, "denoise": 0.2002, "post": 0.0002, "act": 0.4215}, "calls": 98, "s": 45.5, "calls_per_s": 2.154, "items_per_s": 8.62, "gpu_util_mean": 20.0, "gpu_util_samples": 89, "peak_mem_gb": 3.31}, "8": {"median_s": {"vae": 0.0429, "enc:dinov3": 0.0717, "prep": 0.4127, "denoise": 0.2639, "post": 0.0002, "act": 0.7606}, "calls": 60, "s": 45.6, "calls_per_s": 1.316, "items_per_s": 10.53, "gpu_util_mean": 27.2, "gpu_util_samples": 89, "peak_mem_gb": 3.84}, "16": {"median_s": {"vae": 0.0812, "enc:dinov3": 0.1293, "prep": 0.9882, "denoise": 0.2037, "post": 0.0002, "act": 1.3821}, "calls": 35, "s": 46.2, "calls_per_s": 0.757, "items_per_s": 12.12, "gpu_util_mean": 24.2, "gpu_util_samples": 90, "peak_mem_gb": 4.9}, "32": {"median_s": {"vae": 0.1655, "enc:dinov3": 0.2516, "prep": 2.0373, "denoise": 0.2357, "post": 0.0003, "act": 2.5971}, "calls": 18, "s": 46.0, "calls_per_s": 0.391, "items_per_s": 12.52, "gpu_util_mean": 21.5, "gpu_util_samples": 90, "peak_mem_gb": 7.02}}, "load_s": 73.8, "config": "dinov3", "batch2_threads4_median_s": {"vae": 0.0133, "enc:dinov3": 0.0242, "prep": 0.0104, "denoise": 0.1927, "post": 0.0002, "act": 0.2377}, "batch2_kernel_launches_per_call": 16877}, "pilot2-dinov3+c-radiov4-s0": {"by_batch": {"1": {"median_s": {"vae": 0.0092, "enc:dinov3": 0.0243, "enc:c-radiov4": 0.0223, "prep": 0.0186, "denoise": 0.2361, "post": 0.0002, "act": 0.3132}, "calls": 146, "s": 45.1, "calls_per_s": 3.238, "items_per_s": 3.24, "gpu_util_mean": 29.1, "gpu_util_samples": 89, "peak_mem_gb": 5.43}, "2": {"median_s": {"vae": 0.0135, "enc:dinov3": 0.0247, "enc:c-radiov4": 0.0354, "prep": 0.098, "denoise": 0.2318, "post": 0.0002, "act": 0.3976}, "calls": 113, "s": 45.2, "calls_per_s": 2.5, "items_per_s": 5.0, "gpu_util_mean": 30.4, "gpu_util_samples": 89, "peak_mem_gb": 5.46}, "4": {"median_s": {"vae": 0.0207, "enc:dinov3": 0.0368, "enc:c-radiov4": 0.0581, "prep": 0.1693, "denoise": 0.2658, "post": 0.0002, "act": 0.5849}, "calls": 80, "s": 45.0, "calls_per_s": 1.776, "items_per_s": 7.11, "gpu_util_mean": 29.8, "gpu_util_samples": 88, "peak_mem_gb": 5.54}, "8": {"median_s": {"vae": 0.043, "enc:dinov3": 0.0723, "enc:c-radiov4": 0.1095, "prep": 0.4437, "denoise": 0.2353, "post": 0.0002, "act": 0.8942}, "calls": 51, "s": 45.8, "calls_per_s": 1.114, "items_per_s": 8.91, "gpu_util_mean": 30.8, "gpu_util_samples": 90, "peak_mem_gb": 5.7}, "16": {"median_s": {"vae": 0.0815, "enc:dinov3": 0.1297, "enc:c-radiov4": 0.2188, "prep": 1.0215, "denoise": 0.3079, "post": 0.0003, "act": 1.7038}, "calls": 27, "s": 45.4, "calls_per_s": 0.595, "items_per_s": 9.52, "gpu_util_mean": 31.4, "gpu_util_samples": 89, "peak_mem_gb": 6.67}, "32": {"median_s": {"vae": 0.1653, "enc:dinov3": 0.2532, "enc:c-radiov4": 0.4249, "prep": 2.1877, "denoise": 0.2714, "post": 0.0003, "act": 3.1561}, "calls": 14, "s": 45.0, "calls_per_s": 0.311, "items_per_s": 9.95, "gpu_util_mean": 34.8, "gpu_util_samples": 88, "peak_mem_gb": 8.79}}, "load_s": 32.2, "config": "dinov3+c-radiov4", "batch2_threads4_median_s": {"vae": 0.0125, "enc:dinov3": 0.0243, "enc:c-radiov4": 0.0337, "prep": 0.0208, "denoise": 0.2327, "post": 0.0002, "act": 0.3241}, "batch2_kernel_launches_per_call": 17997}}}
+=== GPU utilization over the profile (nvidia-smi, 30 s samples)
