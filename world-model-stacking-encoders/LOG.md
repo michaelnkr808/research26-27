@@ -895,3 +895,9 @@ SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min G
 - `jobs/job-rollout.template.yaml`: setup is `. /src/env_bundle.sh restore` (bundle key a172458a0893 still matches: setup scripts unchanged) and `--cuda-graph`. Not rendered or submitted yet.
 - ConfigMap recreated from dbbc71d (adds test_rollout.py). `jobs/rendered/job-profile-policy2.yaml` (as run 1, plus test_rollout.py in the pod first, and `--cuda-graph`); server dry run OK; submitted 07:24 UTC. Not run locally (user's choice).
 **Next:** when asked: read run 2 (tests pass; graph vs eager identical or within rounding; per-batch GPU util and req/s). If a batch reaches well over 40% policy-only, pick envs per pod from it, render the pilot rollout (fewer, longer pods), and ask before submitting.
+
+## 2026-11-03 (f) [agent] (profile run 2: admission failure, resubmitted; auto-watch on)
+- User (2026-11-03): "run checks automatically" → watch_job.sh in the background after each submit (memory check-jobs-only-on-request, exception 2026-11-03).
+- verified (kubectl): run 2 sat Pending ~2 h 50 min, then both pods were rejected at admission on k8s-chase-ci-07.calit2.optiputer.net (UnexpectedAdmissionError: device plugin "GPU is lost"); Job failed at backoffLimit 1 at 10:17 UTC. None of our code ran. My error: memory says single-pod Jobs need backoffLimit ≥ 3.
+- Fix: backoffLimit 4, that node excluded by hostname; otherwise unchanged (same commit dbbc71d, same ConfigMap). Server dry run OK; resubmitted 10:22 UTC; watcher running.
+**Next:** on watcher exit, read run 2 as in (e).

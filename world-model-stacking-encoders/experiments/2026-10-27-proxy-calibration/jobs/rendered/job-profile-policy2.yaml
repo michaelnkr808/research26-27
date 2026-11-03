@@ -3,6 +3,7 @@
 # and --cuda-graph (denoising loop replayed from CUDA graphs), plus a graph-vs-eager check of the executed action chunks.
 # First runs test_rollout.py in the pod (synthetic, CPU; user prefers no local runs).
 # Run 1 on an RTX 4090 took 18 min; estimate ~25 min (graph captures per batch size); deadline 8 h incl. expected queue.
+# Try 1 (07:24 UTC) never ran: both pods rejected at admission on k8s-chase-ci-07 ("GPU is lost"); node excluded.
 # Follows _standards/08: Job, real command that exits, no sleep, 1 GPU, no tolerations, us-west, limits <= 1.2x requests.
 apiVersion: batch/v1
 kind: Job
@@ -11,7 +12,7 @@ metadata:
   namespace: aria-world
 spec:
   completions: 1
-  backoffLimit: 1
+  backoffLimit: 4                 # admission errors count (memory: give single-pod Jobs >= 3)
   activeDeadlineSeconds: 28800
   ttlSecondsAfterFinished: 86400
   template:
@@ -27,6 +28,7 @@ spec:
                 values: [NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090, NVIDIA-RTX-A5000, NVIDIA-RTX-A6000, NVIDIA-L40, NVIDIA-L40S]
               - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
               - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net]}  # GPU lost, 2026-11-03
       containers:
       - name: main
         image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
@@ -49,7 +51,7 @@ spec:
           awk -F, 'NR>1 {gsub(/ %/,"",$2); s+=$2; n++} END {if (n) printf "mean %.1f%% over %d samples\n", s/n, n}' /work/gpu.csv
           date -u; echo "=== done"
         env:
-        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}
+        - {name: SRC_GIT_COMMIT, value: dbbc71d241e5b52fa88b072caae6e46cd1482987}
         - name: HF_TOKEN
           valueFrom:
             secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
