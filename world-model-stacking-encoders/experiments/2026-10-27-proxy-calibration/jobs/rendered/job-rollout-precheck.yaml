@@ -1,0 +1,72 @@
+# Pre-flight for the pilot rollout resubmit (user 2026-11-03: "double check that everything is correct"). CPU only,
+# read-only PVC: every input rollout.py run needs exists and is consistent (checkpoints, VAE, lp_tasks.json, T5 cache
+# for every instruction, subset file loads, job counts per checkpoint).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-rollout-precheck2
+  namespace: aria-world
+spec:
+  completions: 1
+  backoffLimit: 0
+  activeDeadlineSeconds: 3600
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["python", "-c"]
+        args:
+        - |
+          import hashlib, json, sys, torch
+          from pathlib import Path
+          sys.path.insert(0, "/src")
+          import lp_eval
+          R = Path("/mnt/proxy"); bad = []
+          def chk(ok, msg):
+              print(("OK   " if ok else "FAIL ") + msg, flush=True)
+              ok or bad.append(msg)
+          for run in ["pilot2-dinov3-s0", "pilot2-dinov3+c-radiov4-s0"]:
+              p = R / "runs" / run / "model.pt"
+              chk(p.exists(), f"{p} exists")
+              if p.exists():
+                  ck = torch.load(p, map_location="cpu", weights_only=False); c = ck["config"]
+                  n = sum(v.numel() for v in ck["model"].values())
+                  big = sorted(ck["model"].items(), key=lambda kv: -kv[1].numel())[:6]
+                  print("     largest tensors", [(k, tuple(v.shape)) for k, v in big])
+                  print(f"     config {c.get('config')} seed {c.get('seed')} commit {c.get('git_commit')} params {n} "
+                        f"stats {sorted(c.get('feature_stats', {}))} keys {sorted(c)}")
+          v = R / "models" / "Wan2.2_VAE.safetensors"
+          chk(v.exists() and v.stat().st_size > 1e8, f"{v} exists, {v.stat().st_size if v.exists() else 0} bytes")
+          t = json.loads((R / "lp_tasks.json").read_text())
+          nclean = sum(map(len, t["clean"].values()))
+          chk(nclean == 40, f"lp_tasks.json clean tasks {nclean} (expect 40)")
+          lines = [l for l in (R / "lp_instructions.txt").read_text().splitlines() if l]
+          t5 = R / "feats" / "t5"
+          import t5_cache
+          miss = [l for l in lines if not t5_cache.cache_path(t5, t5_cache.prompt_of(l)).exists()]
+          chk(not miss, f"T5 cache has all {len(lines)} lp_instructions ({len(miss)} missing: {miss[:3]})")
+          sub = lp_eval.load_subset("/src/pilot-subset.json")
+          print(f"     subset keys {sorted(sub) if isinstance(sub, dict) else type(sub)}")
+          nj = 3 * len(sub["episodes"]) + nclean
+          chk(nj == 340, f"jobs per checkpoint {nj} (expect 100 x 3 + 40 = 340; rollout.make_jobs needs fastwam, not installed here)")
+          print("PRECHECK", "PASS" if not bad else f"FAIL {bad}")
+        resources:
+          requests: {cpu: "1", memory: 4Gi}
+          limits:   {cpu: "1200m", memory: 4800Mi}
+        volumeMounts:
+        - {name: proxy, mountPath: /mnt/proxy, readOnly: true}
+        - {name: src, mountPath: /src, readOnly: true}
+      volumes:
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
