@@ -5,6 +5,8 @@
 # New output dir pilot-rollout2: the 46 records from the stopped pilot (old shard layout, old policy path) are not mixed in.
 # Sizing as the 2026-11-03 (a) render (cgroup peak 18.45 GB of 20Gi with 4 envs; CPU 1.5-3.3 of 4), backoffLimit 4,
 # the two nodes with GPU faults excluded.
+# 2026-11-03 21:05 UTC resubmit (user OK): pods sat Pending ~3 h 50 min; GPU list widened to A10, L4, A40 (24-48 GB),
+# since rollouts need at most ~10 GB GPU memory policy-only (profile run 2); the old list was carried over from training.
 # RUN.md step 9 (pilot rollouts) and step 11 (evaluation), pre-approved. Written mid-run: render per use (fill every
 # __PLACEHOLDER__ from measured use; jobs/rendered/), checklist in RUN.md "Manifests written during the run".
 # Indexed: pod i takes item i of pilot2-dinov3-s0@0/1 pilot2-dinov3+c-radiov4-s0@0/1 ("<run dir name>@<shard i>/<n>", space-separated): one checkpoint, one
@@ -35,7 +37,7 @@ spec:
             - matchExpressions:
               - key: nvidia.com/gpu.product
                 operator: In
-                values: [NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090, NVIDIA-RTX-A5000, NVIDIA-RTX-A6000, NVIDIA-L40, NVIDIA-L40S]
+                values: [NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090, NVIDIA-RTX-A5000, NVIDIA-RTX-A6000, NVIDIA-L40, NVIDIA-L40S, NVIDIA-A10, NVIDIA-L4, NVIDIA-A40]
               - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
               - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
               - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net, ry-gpu-08.sdsc.optiputer.net]}  # GPU faults, 2026-11-03

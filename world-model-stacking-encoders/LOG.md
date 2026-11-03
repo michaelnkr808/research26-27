@@ -923,6 +923,7 @@ SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min G
 ## 2026-11-03 (i) [agent] (pilot rollout 2 submitted)
 - User OK (2026-11-03, "yeah go for it"). `jobs/rendered/job-pilot-rollout2.yaml` submitted 17:15 UTC as rendered in (h). Watcher `watch_job.sh stacking-encoders-proxy-pilot-rollout2 2 120` in the background.
 **Next:** check pod GPU util (nvidia-smi + DCGM) ~15 min into the rollouts; < 40% → stop and report. On watcher exit: per-episode timings, GPU, RSS, errors, success rates per checkpoint; then sizing for stage 4.
+- 2026-11-03 21:04 UTC: both pods still Pending after ~3 h 50 min ("Insufficient nvidia.com/gpu" on every matching node). The GPU list was carried over from training without rechecking it (my oversight); rollouts need at most ~10 GB GPU memory policy-only (profile run 2, (h)). User OK ("resubmit with the wider list"): Job deleted (never ran) and resubmitted with NVIDIA-A10, NVIDIA-L4 and NVIDIA-A40 added; otherwise unchanged. Watcher restarted. (Prometheus DCGM shows ~279 A10s, 12 A40s; no L4 rows there.)
 
 ## 2026-11-03 (j) [agent] (review of proxy-calibration design)
 - **Goal:** assess the second experiment against the direction's standards.
