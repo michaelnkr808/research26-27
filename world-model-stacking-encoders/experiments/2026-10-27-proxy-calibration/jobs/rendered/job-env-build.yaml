@@ -45,7 +45,7 @@ spec:
           cd /src && python -c "import rollout, profile_policy; print('rollout + profile_policy import ok')"
           date -u; echo "=== done"
         env:
-        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}
+        - {name: SRC_GIT_COMMIT, value: d85628ce43dec48c562416a441c373aa22e71732}
         - {name: SIM_DIR, value: /work/sim}
         - {name: HF_HOME, value: /work/hf}
         - {name: PYTHONUNBUFFERED, value: "1"}

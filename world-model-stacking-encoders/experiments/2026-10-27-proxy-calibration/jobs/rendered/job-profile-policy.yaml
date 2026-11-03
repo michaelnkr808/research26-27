@@ -51,7 +51,7 @@ spec:
           awk -F, 'NR>1 {gsub(/ %/,"",$2); s+=$2; n++} END {if (n) printf "mean %.1f%% over %d samples\n", s/n, n}' /work/gpu.csv
           date -u; echo "=== done"
         env:
-        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}
+        - {name: SRC_GIT_COMMIT, value: d85628ce43dec48c562416a441c373aa22e71732}
         - name: HF_TOKEN
           valueFrom:
             secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
