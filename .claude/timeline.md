@@ -117,3 +117,10 @@
 - Read test showed parallel reads are about ten times faster; loader rewritten to read in parallel, same batches as before.
 - Next: user OK to rerun both pilots with bigger memory and a GPU check 15 min in.
 - See: world-model-stacking-encoders/LOG.md (2026-11-01 (b)-(g)), experiments/2026-10-27-proxy-calibration/RUN.md
+
+## 2026-11-02 — stacking-encoders: slide prep for the reworked proposal
+
+- Walked the user through the project story slide by slide for their new proposal deck (the user builds the slides): LIBERO groups, the paper's puzzle, the three cheap measures and their results table, why they missed the bad pair, the rerun (experiment 3) and its pre-registered rule.
+- Fixed slide content: LIBERO-Long (not LIBERO-100) is the fourth group; LIBERO-Plus is the same tasks under disturbances, not a superset; harm was only measured on LIBERO-Plus after training (no clean-LIBERO number for the pair).
+- A /btw side thread added a README key-findings note that the two answer keys differ in kind (df08d35). Pilot training runs finished and the pilot rollout was submitted by the run session.
+- See: world-model-stacking-encoders/experiments/2026-10-19-feasibility-tally/README.md, experiments/2026-10-21-target-diagnostics/README.md, experiments/2026-10-27-proxy-calibration/PLAN.md
