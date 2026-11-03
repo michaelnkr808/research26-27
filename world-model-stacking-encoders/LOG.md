@@ -919,3 +919,7 @@ SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min G
 - Rendered `experiments/2026-10-27-proxy-calibration/jobs/rendered/job-pilot-rollout2.yaml` from the template: 2 pods (one per checkpoint, all 340 jobs each: pilot subset × eval seeds 41-43 + 40 clean), 4 envs, `--cuda-graph`, env-bundle restore, 4 CPU / 20Gi (limits 4800m / 24Gi), same GPU list, chase-ci-07 and ry-gpu-08 excluded, backoffLimit 4, deadline 12 h, output dir rollouts/pilot-rollout2 (the 46 records from the stopped pilot are not reused). SRC_GIT_COMMIT dbbc71d; ConfigMap rollout.py equals the repo; server dry run OK. Not submitted (asks first).
 - Estimate (speculative): stopped pilot ran ~170-185 episodes/h per pod; with ~2x faster policy calls maybe 250-350/h, so ~1-1.5 h of rollouts per pod plus ~8 min setup, once scheduled. Queue waits today were 3-5 h.
 **Next:** user OK → submit pilot-rollout2, start watch_job.sh (2 pods), and check the pod's GPU util ~15 min into the rollouts. If GPU < 40% there, stop and report.
+
+## 2026-11-03 (i) [agent] (pilot rollout 2 submitted)
+- User OK (2026-11-03, "yeah go for it"). `jobs/rendered/job-pilot-rollout2.yaml` submitted 17:15 UTC as rendered in (h). Watcher `watch_job.sh stacking-encoders-proxy-pilot-rollout2 2 120` in the background.
+**Next:** check pod GPU util (nvidia-smi + DCGM) ~15 min into the rollouts; < 40% → stop and report. On watcher exit: per-episode timings, GPU, RSS, errors, success rates per checkpoint; then sizing for stage 4.
