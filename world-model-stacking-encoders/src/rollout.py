@@ -16,7 +16,8 @@ paper's composition evals (liu2026what App. E.3):
     14 x 14 per camera and z-scored with the training stats; both rounded through float16 as the training cache is.
     T5 context of the instruction from the t5_cache.py cache. 10 denoising steps.
   - noise: Fast-WAM reseeds both generators (video, action) with the eval seed at every inference call; done here per
-    episode, so an episode's result doesn't depend on which other episodes share its GPU batch.
+    episode, so an episode's result doesn't depend on which other episodes share its GPU batch. Reseeding gives the same
+    tensors every call, so Policy draws them once per (eval seed, channels) and keeps them on the device.
   - actions: denormalized, then the gripper as Fast-WAM: g -> 2g - 1, sign flipped, binarized (sign). In the dataset
     gripper 1 = open (fingers open ~10 steps later, checked 2026-10-28 on libero_goal); in the sim -1 = open.
 LIBERO-Plus (github.com/sylvestf/LIBERO-plus @ 4976dc3): classification id k = task index k - 1 in the suite's default
@@ -27,7 +28,10 @@ instructions (category Language Instructions, `_language_` in the name) are kept
 Clean LIBERO: the 10 base tasks per suite (base bddl and init files, which LIBERO-Plus keeps), init state = trial.
 
 Throughput (RUN.md "Rollouts and the 40% GPU floor"): --envs simulator worker processes step their own episodes on CPU
-and send observations to the main process, which batches every pending inference call on the GPU.
+and send observations to the main process, which batches every pending inference call on the GPU. The eager denoising
+loop was launch-bound (~17k small kernels per call, LOG 2026-11-03 (d)), so --cuda-graph replays it from one CUDA graph
+per batch shape; the main process's torch threads are capped at the pod's CPU quota (24 host threads on a 4-CPU pod made
+the CPU noise draw several times slower).
 
 One JSON line per (episode, eval seed) via lp_eval.result_row (+ steps, instruction, wall_s), appended and flushed as
 each episode ends; reruns skip records already in the file (resumable). Episodes that raise go to <out>.errors.jsonl and
@@ -207,31 +211,77 @@ class Featurizer:
         return out
 
 
+class GraphedInfer:
+    """PW.infer_actions (under bf16 autocast, as Policy.act) replayed from a CUDA graph, one per input shapes, captured
+    on first use into one shared memory pool. Replay runs the captured kernels on the inputs copied into the graph's
+    static tensors; profile_policy.py checks its actions against the eager path."""
+
+    def __init__(self, model):
+        self.model, self.graphs, self.pool = model, {}, torch.cuda.graph_pool_handle()
+
+    def _run(self, current, ctx, cmask, prop, lat, a):
+        with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+            return PW.infer_actions(self.model, current, ctx, cmask, prop, noise=(lat, a))
+
+    def _capture(self, args):
+        static = [x.clone() for x in args]
+        side = torch.cuda.Stream()
+        side.wait_stream(torch.cuda.current_stream())
+        with torch.cuda.stream(side):                       # warm-up off the default stream, as torch.cuda.graph needs
+            for _ in range(2):
+                self._run(*static)
+        torch.cuda.current_stream().wait_stream(side)
+        g = torch.cuda.CUDAGraph()
+        with torch.cuda.graph(g, pool=self.pool):
+            out = self._run(*static)
+        return g, static, out
+
+    @torch.no_grad()
+    def __call__(self, current, ctx, cmask, prop, noise):
+        args = (current, ctx, cmask, prop, noise[0], noise[1])
+        key = tuple((tuple(x.shape), x.dtype) for x in args)
+        if key not in self.graphs:
+            self.graphs[key] = self._capture(args)
+        g, static, out = self.graphs[key]
+        for st, x in zip(static, args):
+            st.copy_(x)
+        g.replay()
+        return out.clone()
+
+
 class Policy:
     """A trained proxy checkpoint (proxy_wam.py model.pt) with its training normalization."""
 
-    def __init__(self, model, cfg, featurize, t5_dir, device):
+    def __init__(self, model, cfg, featurize, t5_dir, device, cuda_graph=False):
         self.model, self.cfg, self.featurize, self.t5_dir, self.device = model.eval(), cfg, featurize, t5_dir, device
         self.sources = cfg["sources"][1:]
         self.a_norm = PW.MinMax(cfg["action_norm"]["lo"], cfg["action_norm"]["hi"])
         self.s_norm = PW.MinMax(cfg["state_norm"]["lo"], cfg["state_norm"]["hi"])
         self.fstats = {s: (torch.tensor(m, device=device), torch.tensor(sd, device=device))
                        for s, (m, sd) in cfg["feature_stats"].items()}
-        self.ctx = {}
+        self.ctx, self.noise = {}, {}
+        self.graphed = GraphedInfer(self.model) if cuda_graph else None
 
     @classmethod
-    def load(cls, run_dir, t5_dir, vae_path, device):
+    def load(cls, run_dir, t5_dir, vae_path, device, cuda_graph=False):
         ck = torch.load(Path(run_dir) / "model.pt", map_location="cpu", weights_only=False)
         cfg = ck["config"]
         model = PW.build_model(cfg["in_dim"], device, **cfg["model_kw"])
         model.load_state_dict(ck["model"])
-        return cls(model.to(device), cfg, Featurizer(cfg["sources"][1:], vae_path, device), t5_dir, device)
+        return cls(model.to(device), cfg, Featurizer(cfg["sources"][1:], vae_path, device), t5_dir, device, cuda_graph)
 
     def context(self, instruction):
         import t5_cache
         if instruction not in self.ctx:
             self.ctx[instruction] = t5_cache.load_context(self.t5_dir, instruction)[0]
         return self.ctx[instruction]
+
+    def start_noise(self, eval_seed, channels):
+        """request_noise(eval_seed, channels) on the device, drawn once (it is the same tensor every call)."""
+        k = (int(eval_seed), int(channels))
+        if k not in self.noise:
+            self.noise[k] = tuple(t.to(self.device) for t in request_noise(eval_seed, channels))
+        return self.noise[k]
 
     @torch.no_grad()
     def act(self, reqs):
@@ -247,11 +297,14 @@ class Policy:
         ctx = torch.stack([self.context(r["instruction"]) for r in reqs]).to(dev)
         cmask = torch.ones(ctx.shape[:2], dtype=torch.bool, device=dev)
         prop = torch.from_numpy(self.s_norm(np.stack([r["state"] for r in reqs]))).to(dev)
-        nz = [request_noise(r["eval_seed"], current.shape[1]) for r in reqs]
+        nz = [self.start_noise(r["eval_seed"], current.shape[1]) for r in reqs]
         noise = (torch.stack([n[0] for n in nz]), torch.stack([n[1] for n in nz]))
-        use_amp = torch.device(dev).type == "cuda"
-        with torch.autocast(device_type=torch.device(dev).type, dtype=torch.bfloat16, enabled=use_amp):
-            a = PW.infer_actions(self.model, current, ctx, cmask, prop, noise=noise)
+        if self.graphed is not None:
+            a = self.graphed(current, ctx, cmask, prop, noise)
+        else:
+            use_amp = torch.device(dev).type == "cuda"
+            with torch.autocast(device_type=torch.device(dev).type, dtype=torch.bfloat16, enabled=use_amp):
+                a = PW.infer_actions(self.model, current, ctx, cmask, prop, noise=noise)
         return to_exec(self.a_norm.inverse(a.float().cpu().numpy()))
 
 
@@ -337,6 +390,17 @@ def peak_rss_mb():
                 return round(int(line.split()[1]) / 1024)
     except OSError:
         return None
+
+
+def pod_cpus():
+    """CPUs this container may use: the cgroup v2 quota (cpu.max), rounded down, else os.cpu_count()."""
+    try:
+        quota, period = Path("/sys/fs/cgroup/cpu.max").read_text().split()
+        if quota != "max":
+            return max(1, int(quota) // int(period))
+    except (OSError, ValueError):
+        pass
+    return os.cpu_count() or 1
 
 
 def cgroup_mem_gb():
@@ -557,6 +621,8 @@ def main():
     s2.add_argument("--envs", type=int, default=8)
     s2.add_argument("--gather-s", type=float, default=0.05)
     s2.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    s2.add_argument("--cuda-graph", action="store_true", help="replay the denoising loop from CUDA graphs")
+    s2.add_argument("--torch-threads", type=int, default=pod_cpus(), help="main process (default: the pod's CPU quota)")
     s2.add_argument("--out", required=True, help="JSONL, one writer per file")
     args = p.parse_args()
     t0 = time.time()
@@ -633,10 +699,11 @@ def main():
     sub = lp_eval.load_subset(args.subset) if args.subset else None
     clean = json.loads(Path(args.tasks).read_text())["clean"]
     jobs = make_jobs(sub, args.clean, clean, tuple(int(x) for x in args.eval_seeds.split(",")), args.clean_seed)[i::n]
-    policy = Policy.load(args.run_dir, args.t5, args.vae_path, args.device)
+    torch.set_num_threads(args.torch_threads)
+    policy = Policy.load(args.run_dir, args.t5, args.vae_path, args.device, cuda_graph=args.cuda_graph)
     cfg = policy.cfg
     log(f"checkpoint {args.run_dir}: config {cfg['config']} seed {cfg['seed']} commit {cfg['git_commit']}; "
-        f"{len(jobs)} jobs in shard {i}/{n}")
+        f"{len(jobs)} jobs in shard {i}/{n}; torch threads {args.torch_threads}, cuda graph {args.cuda_graph}")
     meta = {"config": cfg["config"], "train_seed": int(cfg["seed"]), "checkpoint": str(args.run_dir)}
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     n_rec, n_err = run_jobs(jobs, policy.act, args.envs, args.out, meta, log=log, gather_s=args.gather_s)

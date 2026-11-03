@@ -164,6 +164,7 @@ def main():
             torch.save({"context": torch.randn(128, 4096, generator=g).to(torch.bfloat16),
                         "mask": torch.arange(128) < 20}, t5_cache.cache_path(d, t5_cache.prompt_of(instr)))
         pol = R.Policy(model, cfg, featurize, d, "cpu")
+        assert all(torch.equal(x, y) for x, y in zip(pol.start_noise(42, in_dim), R.request_noise(42, in_dim)))
         rng = np.random.default_rng(0)
         reqs = [{"agent": rng.integers(0, 255, (224, 224, 3), dtype=np.uint8),
                  "wrist": rng.integers(0, 255, (224, 224, 3), dtype=np.uint8),

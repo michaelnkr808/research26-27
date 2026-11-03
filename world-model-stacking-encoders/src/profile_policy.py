@@ -4,14 +4,16 @@ The pilot rollout spent 85% of its wall time inside Policy.act at batch ~2, yet 
 pieces of Policy.act (rollout.py) on synthetic requests at several batch sizes, for each checkpoint:
   vae      stack the two cameras, Wan 2.2 VAE encode of the current frame
   enc:<s>  one source encoder on both cameras + resize to the 14 x 14 grid
-  prep     z-score + concat, T5 context, proprio, starting noise (drawn on CPU, as Policy.act)
-  denoise  infer_actions, 10 joint denoising steps
+  prep     z-score + concat, T5 context, proprio, starting noise (Policy.start_noise: drawn once per eval seed)
+  denoise  infer_actions, 10 joint denoising steps (eager, or replayed from a CUDA graph with --cuda-graph)
   post     actions to CPU + to_exec
 plus the whole Policy.act (the pieces should sum to about it), and, per batch size, a sustained loop of Policy.act with
 nvidia-smi sampling GPU utilization. That loop is policy-only: in rollouts the GPU also waits while simulators step, so
 it is an upper bound on rollout utilization at that batch. A torch.profiler table at batch 2 names the top ops by CUDA
-and by CPU time, and the batch-2 breakdown is repeated with torch.set_num_threads(4) (the pod's CPU request; torch
-otherwise uses every host core it sees).
+and by CPU time. Torch threads = the pod's CPU quota (rollout.pod_cpus), as rollout.py run sets them.
+With --cuda-graph, each checkpoint first compares Policy.act with the graph against the eager path on the same requests
+(batch 1, 2, 8, 16; max abs difference of the executed action chunks, and whether they are identical).
+Run 1 (LOG 2026-11-03 (d)): eager, CPU noise per call, 24 threads.
 
 Synthetic inputs: random uint8 frames, mid-range proprio, one cached clean instruction. Timing doesn't depend on pixel
 values; the outputs are not used.
@@ -83,12 +85,15 @@ def act_pieces(policy, reqs):
     ctx = torch.stack([policy.context(r["instruction"]) for r in reqs]).to(dev)
     cmask = torch.ones(ctx.shape[:2], dtype=torch.bool, device=dev)
     prop = torch.from_numpy(policy.s_norm(np.stack([r["state"] for r in reqs]))).to(dev)
-    nz = [RO.request_noise(r["eval_seed"], current.shape[1]) for r in reqs]
+    nz = [policy.start_noise(r["eval_seed"], current.shape[1]) for r in reqs]
     noise = (torch.stack([n[0] for n in nz]), torch.stack([n[1] for n in nz]))
     t0 = mark("prep", t0)
-    use_amp = torch.device(dev).type == "cuda"
-    with torch.autocast(device_type=torch.device(dev).type, dtype=torch.bfloat16, enabled=use_amp):
-        a = PW.infer_actions(policy.model, current, ctx, cmask, prop, noise=noise)
+    if policy.graphed is not None:
+        a = policy.graphed(current, ctx, cmask, prop, noise)
+    else:
+        use_amp = torch.device(dev).type == "cuda"
+        with torch.autocast(device_type=torch.device(dev).type, dtype=torch.bfloat16, enabled=use_amp):
+            a = PW.infer_actions(policy.model, current, ctx, cmask, prop, noise=noise)
     t0 = mark("denoise", t0)
     RO.to_exec(policy.a_norm.inverse(a.float().cpu().numpy()))
     mark("post", t0)
@@ -134,6 +139,23 @@ def sustained(policy, reqs, seconds):
             "peak_mem_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2) if torch.cuda.is_available() else None}
 
 
+def graph_vs_eager(policy, instruction, rng, batches=(1, 2, 8, 16)):
+    """Executed action chunks from the CUDA-graph path vs the eager path on the same requests."""
+    out, graphed = {}, policy.graphed
+    for b in batches:
+        reqs = make_reqs(policy, b, instruction, rng)
+        a_graph = policy.act(reqs)
+        policy.graphed = None
+        try:
+            a_eager = policy.act(reqs)
+        finally:
+            policy.graphed = graphed
+        d = np.abs(a_graph - a_eager)
+        out[b] = {"max_abs_diff": float(d.max()), "identical": bool(np.array_equal(a_graph, a_eager)),
+                  "gripper_sign_flips": int((a_graph[..., -1] != a_eager[..., -1]).sum())}
+    return out
+
+
 def profiler_table(policy, reqs, rows=25):
     from torch.profiler import ProfilerActivity, profile
     acts = [ProfilerActivity.CPU] + ([ProfilerActivity.CUDA] if torch.cuda.is_available() else [])
@@ -160,27 +182,36 @@ def main():
     p.add_argument("--reps", type=int, default=10)
     p.add_argument("--sustain-s", type=float, default=45.0)
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    p.add_argument("--cuda-graph", action="store_true")
     p.add_argument("--out", required=True)
     args = p.parse_args()
     t_start = time.time()
     log = lambda m: print(f"[profile {time.time() - t_start:6.0f}s] {m}", flush=True)
     clean = json.loads(Path(args.tasks).read_text())["clean"]
     instruction = RO.base_language(sorted(clean["libero_goal"])[0])
+    torch.set_num_threads(RO.pod_cpus())
     threads0 = torch.get_num_threads()
-    log(f"device {args.device}, torch threads {threads0}, instruction '{instruction}'")
+    log(f"device {args.device}, torch threads {threads0}, cuda graph {args.cuda_graph}, instruction '{instruction}'")
     if torch.cuda.is_available():
         log(f"GPU {torch.cuda.get_device_name(0)}")
     result = {"gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None, "torch_threads": threads0,
-              "instruction": instruction, "runs": {}}
+              "cuda_graph": args.cuda_graph, "instruction": instruction, "runs": {}}
     for run in args.runs:
         name = Path(run).name
         res = result["runs"][name] = {"by_batch": {}}
         t0 = time.time()
-        policy = RO.Policy.load(run, args.t5, args.vae_path, args.device)
+        policy = RO.Policy.load(run, args.t5, args.vae_path, args.device, cuda_graph=args.cuda_graph)
         res["load_s"] = round(time.time() - t0, 1)
         res["config"] = policy.cfg["config"]
         log(f"{name}: config {policy.cfg['config']}, loaded in {res['load_s']}s")
         rng = np.random.default_rng(0)
+        if args.cuda_graph:
+            try:
+                res["graph_vs_eager"] = graph_vs_eager(policy, instruction, rng)
+                log(f"{name} graph vs eager: {res['graph_vs_eager']}")
+            except Exception:
+                res["graph_vs_eager"] = {"error": traceback.format_exc()}
+                log(f"{name} graph vs eager FAILED:\n{traceback.format_exc()}")
         for b in args.batches:
             try:
                 if torch.cuda.is_available():
@@ -198,18 +229,12 @@ def main():
                 torch.cuda.empty_cache() if torch.cuda.is_available() else None
         try:
             reqs = make_reqs(policy, 2, instruction, rng)
-            torch.set_num_threads(4)
-            res["batch2_threads4_median_s"] = breakdown(policy, reqs, args.reps)
-            torch.set_num_threads(threads0)
-            log(f"{name} batch 2 with 4 torch threads: " +
-                ", ".join(f"{k} {v * 1000:.0f} ms" for k, v in res["batch2_threads4_median_s"].items()))
             cuda_tab, cpu_tab, launches = profiler_table(policy, reqs)
             res["batch2_kernel_launches_per_call"] = launches
             print(f"=== {name} batch 2: top ops by self CUDA time (3 calls)\n{cuda_tab}", flush=True)
             print(f"=== {name} batch 2: top ops by self CPU time (3 calls)\n{cpu_tab}", flush=True)
             log(f"{name} batch 2: ~{launches} kernel launches per call")
         except Exception:
-            torch.set_num_threads(threads0)
             res["profiler_error"] = traceback.format_exc()
             log(f"{name} profiler FAILED:\n{traceback.format_exc()}")
         del policy
