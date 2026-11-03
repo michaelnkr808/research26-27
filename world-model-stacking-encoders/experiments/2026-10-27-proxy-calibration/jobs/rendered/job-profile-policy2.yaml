@@ -4,6 +4,8 @@
 # First runs test_rollout.py in the pod (synthetic, CPU; user prefers no local runs).
 # Run 1 on an RTX 4090 took 18 min; estimate ~25 min (graph captures per batch size); deadline 8 h incl. expected queue.
 # Try 1 (07:24 UTC) never ran: both pods rejected at admission on k8s-chase-ci-07 ("GPU is lost"); node excluded.
+# Try 2 (10:22) ran on ry-gpu-08 after 4 admission rejections there (node then taint-evicted): tests passed,
+# graph == eager exactly, then 'CUDA error: unspecified launch failure' in the batch-1 loop (likely the node); excluded.
 # Follows _standards/08: Job, real command that exits, no sleep, 1 GPU, no tolerations, us-west, limits <= 1.2x requests.
 apiVersion: batch/v1
 kind: Job
@@ -28,7 +30,7 @@ spec:
                 values: [NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090, NVIDIA-RTX-A5000, NVIDIA-RTX-A6000, NVIDIA-L40, NVIDIA-L40S]
               - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
               - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
-              - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net]}  # GPU lost, 2026-11-03
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net, ry-gpu-08.sdsc.optiputer.net]}  # GPU faults, 2026-11-03
       containers:
       - name: main
         image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime

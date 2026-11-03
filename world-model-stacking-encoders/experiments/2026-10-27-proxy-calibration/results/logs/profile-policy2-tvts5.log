@@ -1,0 +1,54 @@
+Tue Nov  3 15:48:55 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.09              KMD Version: 615.71.09     CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 3090        On  |   00000000:81:00.0 Off |                  N/A |
+| 30%   24C    P8             14W /  350W |       1MiB /  24576MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+16
+Tue Nov  3 15:48:55 UTC 2026
+Tue Nov  3 15:49:24 UTC 2026
+1 ok: instructions (10 name formats, mismatch rejected)
+2 ok: jobs (episodes x eval seeds, clean trials, shards partition)
+3 ok: observation processing (rotation, size, proprio)
+4 ok: gripper conversion
+5 ok: per-call noise matches Fast-WAM's seeding
+6 ok: policy batching is per-item (max diff 4.8e-07)
+7 ok: run_jobs (16 jobs; same records with 1 or 3 envs; errors kept apart; resumable)
+all checks passed
+[profile      0s] device cuda, torch threads 4, cuda graph True, instruction 'open the middle drawer of the cabinet'
+[profile      0s] GPU NVIDIA GeForce RTX 3090
+[profile     72s] pilot2-dinov3-s0: config dinov3, loaded in 71.7s
+[profile     80s] pilot2-dinov3-s0 graph vs eager: {1: {'max_abs_diff': 0.0, 'identical': True, 'gripper_sign_flips': 0}, 2: {'max_abs_diff': 0.0, 'identical': True, 'gripper_sign_flips': 0}, 8: {'max_abs_diff': 0.0, 'identical': True, 'gripper_sign_flips': 0}, 16: {'max_abs_diff': 0.0, 'identical': True, 'gripper_sign_flips': 0}}
+[profile    128s] pilot2-dinov3-s0 batch 1 FAILED:
+Traceback (most recent call last):
+  File "/src/profile_policy.py", line 221, in main
+    su = sustained(policy, reqs, args.sustain_s)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/src/profile_policy.py", line 129, in sustained
+    policy.act(reqs)
+  File "/opt/conda/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/src/..2026_11_03_15_48_42.1481833431/rollout.py", line 308, in act
+    return to_exec(self.a_norm.inverse(a.float().cpu().numpy()))
+                                       ^^^^^^^^^^^^^^^
+RuntimeError: CUDA error: unspecified launch failure
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+

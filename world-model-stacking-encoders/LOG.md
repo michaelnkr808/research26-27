@@ -901,3 +901,9 @@ SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min G
 - verified (kubectl): run 2 sat Pending ~2 h 50 min, then both pods were rejected at admission on k8s-chase-ci-07.calit2.optiputer.net (UnexpectedAdmissionError: device plugin "GPU is lost"); Job failed at backoffLimit 1 at 10:17 UTC. None of our code ran. My error: memory says single-pod Jobs need backoffLimit ≥ 3.
 - Fix: backoffLimit 4, that node excluded by hostname; otherwise unchanged (same commit dbbc71d, same ConfigMap). Server dry run OK; resubmitted 10:22 UTC; watcher running.
 **Next:** on watcher exit, read run 2 as in (e).
+
+## 2026-11-03 (g) [agent] (profile run 2 try 2: graph == eager exactly, then a GPU fault on ry-gpu-08; try 3 submitted)
+- verified (log `results/logs/profile-policy2-tvts5.log`, RTX 3090 on ry-gpu-08.sdsc.optiputer.net): scheduled ~15:15 UTC after ~5 h Pending; 4 pods rejected at admission on ry-gpu-08 (device plugin errors), node then taint-evicted those pods; the 5th pod ran 15:48. test_rollout.py: all 7 checks passed (incl. the start_noise equality). Torch threads 4. pilot2-dinov3-s0 loaded in 72 s; graph vs eager at batch 1, 2, 8, 16: max abs diff 0.0, identical, 0 gripper flips. Batch 1 breakdown ran (graph replays OK), then the sustained loop died with "CUDA error: unspecified launch failure"; Job failed at backoffLimit (5 failures).
+- Reading (speculative): a GPU fault on ry-gpu-08 (same node: admission rejections and the taint eviction minutes earlier; memory lists it as flaky), not the graph code, which had replayed cleanly ~a dozen times. If it recurs on another node, it's the code.
+- Try 3: ry-gpu-08 also excluded; otherwise unchanged. Submitted 15:57 UTC; watcher running.
+**Next:** on watcher exit, read run 2 as in (e). A second launch failure on a different node → treat as a code bug, run eager, and tell the user.
