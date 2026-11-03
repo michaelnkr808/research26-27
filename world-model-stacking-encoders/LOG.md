@@ -923,3 +923,10 @@ SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min G
 ## 2026-11-03 (i) [agent] (pilot rollout 2 submitted)
 - User OK (2026-11-03, "yeah go for it"). `jobs/rendered/job-pilot-rollout2.yaml` submitted 17:15 UTC as rendered in (h). Watcher `watch_job.sh stacking-encoders-proxy-pilot-rollout2 2 120` in the background.
 **Next:** check pod GPU util (nvidia-smi + DCGM) ~15 min into the rollouts; < 40% → stop and report. On watcher exit: per-episode timings, GPU, RSS, errors, success rates per checkpoint; then sizing for stage 4.
+
+## 2026-11-03 (j) [agent] (review of proxy-calibration design)
+- **Goal:** assess the second experiment against the direction's standards.
+- **Did:** reviewed `STANDARDS.md`, the general research standards, `PLAN.md`, `RUN.md`, decision 003, and recent log entries; checked current git status/history. No experiment data or cluster state was rechecked in this review.
+- **Found:** verified (design review): the experiment is explicitly framed as a proxy replication, with a locked paired D+R−D outcome, same-episode comparisons, episode-level treatment of the three eval seeds, a fixed proportional subset, and a calibration gate before interpreting the primary comparison. The 3 training seeds are correctly described as screening, not a training-variance estimate. Speculative (assessment): the proxy is useful and carefully bounded, but passing D-vs-none and D+L-vs-D does not establish fidelity for the specific interaction in D+R; a failed calibration means the primary comparison is uninterpretable under the pre-registered rule. The absent pretrained Wan 2.2 video prior remains the largest limitation, so a null proxy result cannot explain away the paper's D+R drop. Current run status comes from the latest log entry: the second rollout pilot was submitted, and its outcome was not checked in this review.
+- **Next:** complete the already planned rollout pilot and sizing; interpret the round only by the locked rule and keep claims proxy-specific.
+- **Open questions:** will the pilot meet the GPU-utilization floor, and will both calibration controls pass in the full round?
