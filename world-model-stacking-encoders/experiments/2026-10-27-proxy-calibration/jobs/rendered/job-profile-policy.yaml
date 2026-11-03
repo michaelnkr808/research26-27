@@ -1,0 +1,77 @@
+# Policy-call profile (user OK 2026-11-02: "yeah sure go ahead with it"; LOG 2026-11-03 (b) option 1, on the cluster
+# instead of the Mac). One GPU, no simulator: src/profile_policy.py times the pieces of Policy.act (VAE, each encoder,
+# prep, 10 denoising steps, post) at batch 1-32 for both pilot2 checkpoints, a sustained policy-only loop per batch with
+# nvidia-smi GPU utilization, a torch.profiler table at batch 2, and batch 2 with 4 torch threads.
+# Env: setup_env.sh only (no simulator needed; numpy 2.2.6 here vs 1.26.4 in rollout pods, which doesn't touch the GPU
+# path). Memory (speculative): pilot rollout cgroup peak 18.45 GB = main process + 4 simulators at ~2.5-3 GB each, so
+# the main process ~7 GB with DINOv3; C-RADIOv4 adds its weights. 4 CPU as the rollout pod.
+# Estimate ~35 min (setup ~5, 2 loads ~3, 2 x 6 batches x ~1 min, profiler); deadline 8 h incl. expected queue.
+# Follows _standards/08: Job, real command that exits, no sleep, 1 GPU, no tolerations, us-west, limits <= 1.2x requests.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-profile-policy
+  namespace: aria-world
+spec:
+  completions: 1
+  backoffLimit: 1
+  activeDeadlineSeconds: 28800
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090, NVIDIA-RTX-A5000, NVIDIA-RTX-A6000, NVIDIA-L40, NVIDIA-L40S]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; mkdir -p $R/logs $R/profile
+          exec > >(tee -a $R/logs/profile-policy-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          nvidia-smi; nproc; date -u
+          bash /src/setup_env.sh > /work/pip-env.log 2>&1 || { tail -50 /work/pip-env.log; exit 1; }
+          date -u
+          nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv -l 30 > /work/gpu.csv & SMI=$!
+          python /src/profile_policy.py --runs $R/runs/pilot2-dinov3-s0 $R/runs/pilot2-dinov3+c-radiov4-s0 \
+            --t5 $R/feats/t5 --vae-path $R/models/Wan2.2_VAE.safetensors --tasks $R/lp_tasks.json \
+            --batches 1 2 4 8 16 32 --out $R/profile/policy-$(date +%Y%m%d-%H%M%S).json
+          kill $SMI || true
+          echo "=== GPU utilization over the profile (nvidia-smi, 30 s samples)"
+          awk -F, 'NR>1 {gsub(/ %/,"",$2); s+=$2; n++} END {if (n) printf "mean %.1f%% over %d samples\n", s/n, n}' /work/gpu.csv
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: /src}
+        resources:
+          requests: {cpu: "4", memory: 14Gi, nvidia.com/gpu: "1", ephemeral-storage: 20Gi}
+          limits:   {cpu: "4800m", memory: 16Gi, nvidia.com/gpu: "1", ephemeral-storage: 24Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 24Gi}
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 2Gi}

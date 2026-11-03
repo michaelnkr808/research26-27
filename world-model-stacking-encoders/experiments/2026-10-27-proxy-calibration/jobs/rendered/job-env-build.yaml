@@ -1,0 +1,66 @@
+# Prebuilt rollout environment (user OK 2026-11-02: "yeah sure go ahead with it"; LOG 2026-11-03 (b) option 2). CPU only,
+# off GPU nodes. Builds the pip venv + .debs + LIBERO-Plus checkout once (src/env_bundle.sh build) to
+# /mnt/proxy/env/env-<key>.tar, timing each setup phase, then deletes them and restores from the bundle as a GPU pod
+# would (env_bundle.sh restore), timing that, and imports rollout.py + profile_policy.py in the restored env.
+# Sizing (speculative; no Prometheus record of a setup-only pod): pip + unzip are mostly one core; 2 CPU, 4Gi.
+# Ephemeral: venv ~2 GB + debs + 9.4 GB unzipped assets (twice, the first copy removed before the restore) + tar.
+# Estimate ~40 min; deadline 3 h (CPU pods usually schedule within minutes).
+# Follows _standards/08: Job, real command that exits, no sleep, no GPU, no tolerations, us-west, limits <= 1.2x requests.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-env-build
+  namespace: aria-world
+spec:
+  completions: 1
+  backoffLimit: 1
+  activeDeadlineSeconds: 10800
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; mkdir -p $R/logs
+          exec > >(tee -a $R/logs/env-build-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          nproc; date -u
+          echo "=== build"
+          bash /src/env_bundle.sh build
+          echo "=== restore test"
+          deactivate 2>/dev/null || true
+          rm -rf /work/venv /work/debs /work/sim /work/out
+          . /src/env_bundle.sh restore
+          cd /src && python -c "import rollout, profile_policy; print('rollout + profile_policy import ok')"
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}
+        - {name: SIM_DIR, value: /work/sim}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: /src}
+        resources:
+          requests: {cpu: "2", memory: 4Gi, ephemeral-storage: 40Gi}
+          limits:   {cpu: "2400m", memory: 4800Mi, ephemeral-storage: 46Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 46Gi}
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
