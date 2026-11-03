@@ -124,3 +124,11 @@
 - Fixed slide content: LIBERO-Long (not LIBERO-100) is the fourth group; LIBERO-Plus is the same tasks under disturbances, not a superset; harm was only measured on LIBERO-Plus after training (no clean-LIBERO number for the pair).
 - A /btw side thread added a README key-findings note that the two answer keys differ in kind (df08d35). Pilot training runs finished and the pilot rollout was submitted by the run session.
 - See: world-model-stacking-encoders/experiments/2026-10-19-feasibility-tally/README.md, experiments/2026-10-21-target-diagnostics/README.md, experiments/2026-10-27-proxy-calibration/PLAN.md
+
+## 2026-11-02/03 — stacking-encoders: both pilots trained; pilot rollout stopped for low GPU use
+
+- Reran both training pilots with the parallel loader. An L4 was too small for DINOv3 + C-RADIOv4, so the GPU list now has only full-24 GB / 48 GB cards. Both trained, about 12-18x faster than before, and a full run is now hours, not days.
+- Queues were the main cost: 1.7-6.5 h per pod. My free-capacity script overstates what's free.
+- Pilot simulator test: pre-check of all inputs passed. One pod ran with no errors, but the GPU was busy only ~25% (small batches, plus setup idle), so I deleted the Job.
+- Next: user to choose. Proposed profiling a policy call locally and moving setup to a CPU Job, then rerunning the pilot rollout.
+- See: world-model-stacking-encoders/LOG.md (2026-11-01 (h) to 2026-11-03 (b)), experiments/2026-10-27-proxy-calibration/jobs/rendered/
