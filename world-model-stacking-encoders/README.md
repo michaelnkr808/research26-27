@@ -31,6 +31,7 @@ Signed off by the user 2026-10-21 (input side) and 2026-10-27 (target side). Sou
   - our measures are the wrong ones.
 
   The scales also differ: paper Δ is success-rate points, ours is probe R². Only orderings are compared.
+  The two answer keys differ in kind, too. Ours is per frame: the action the human teleoperator recorded at that frame of a clean LIBERO-Goal demo (or D's real future features), with no robot ever acting. The paper's is per episode: whether the trained robot, acting on its own in a perturbed LIBERO-Plus scene, completed the task (success or fail). Our probes measure whether frozen features describe clean demos; the paper's harm appears in closed-loop behaviour under perturbation.
 - **Cost** (verified): large encoders are slow to extract (SAM 3 at 1008 px: 5.5 frames/s on a 2080 Ti; ~10 GPU-h for D, S, G on one suite). Diagnostics are cheap once features exist: 30–50 CPU-min per pair.
 - Starting point: liu2026what (arXiv 2610.13024v1) judges complementarity qualitatively and uses one training checkpoint per config. See `literature/notes/liu2026-what-visual-representations-wams.md`.
 
