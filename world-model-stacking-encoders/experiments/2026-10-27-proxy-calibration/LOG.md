@@ -57,3 +57,8 @@ Reviews and feedback that touch this experiment:
 - `jobs/rendered/job-pilot-rollout2.yaml`: SRC_GIT_COMMIT 2bab64f, 2 pods (one per checkpoint, all 340 jobs each), 4 envs, `--cuda-graph`, 4 CPU / 20Gi (limits 4800m / 24Gi), wide GPU list (3090, 4090, A5000, A6000, L40, L40S, A10, L4, A40), k8s-chase-ci-07 and ry-gpu-08 excluded, backoffLimit 4, deadline 36 h, output `rollouts/pilot-rollout2`. Server dry run OK. Not submitted: waiting on the user's OK.
 - Nothing of ours running in aria-world (env-build2 failed, env-build3 deleted, env-build4 complete).
 **Next:** user OK → submit pilot-rollout2, start `watch_job.sh stacking-encoders-proxy-pilot-rollout2 2 120`, check GPU util ~15 min into rollouts (after ~9 min setup + model load); < 40% → stop and report. Then per-episode timings, GPU, RSS, errors, success per checkpoint → sizing for stage 4 (sample-size rule, PLAN).
+
+## 2026-11-04 (j) [agent] (pilot rollout 2 submitted)
+- User OK (2026-11-04, "go for the pilot rollout").
+- No Job of that name existed; ConfigMap re-checked equal to the repo src (2bab64f). `jobs/rendered/job-pilot-rollout2.yaml` as in (i): server dry run OK, submitted 22:08:45 UTC. Watcher `watch_job.sh stacking-encoders-proxy-pilot-rollout2 2 120` in the background.
+**Next:** as (i): GPU util check ~15 min into rollouts (pod setup ~9 min + model load first); < 40% → stop and report. On watcher exit: per-episode timings, GPU, RSS, errors, success per checkpoint; then sizing.

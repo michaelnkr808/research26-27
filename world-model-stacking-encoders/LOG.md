@@ -1026,3 +1026,6 @@ SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min G
 - `experiments/2026-10-27-proxy-calibration/LOG.md`: index of this LOG's entries for the experiment (2026-10-27 (m) through 2026-11-04 (h), grouped by phase, from headings; nothing copied or moved) and a state entry (2026-11-04 (i): code, bundle, ConfigMap, the ready manifest, next steps). Run detail goes there from now on. Note: (h) above was written here in full after the docs entry; I hadn't seen the new convention yet.
 - README status, `PLAN.md` Now item, experiment README status (and its pointer to the experiment LOG) updated; experiment PLAN's 2026-10-28 status line now says where current status lives.
 **Next:** user OK → submit pilot-rollout2 (experiment LOG 2026-11-04 (i)).
+
+## 2026-11-04 (j) [agent] (proxy: pilot rollout 2 submitted)
+- User OK; submitted 22:08 UTC with the fixed env bundle; watcher on. Detail: `experiments/2026-10-27-proxy-calibration/LOG.md` 2026-11-04 (j).
