@@ -964,3 +964,9 @@ SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min G
 - Fix (3182e4a): setup_sim.sh SIM_DEBS path runs dpkg -i twice (the second pass installs the refused packages once their pre-dependency is in) and fails unless `dpkg --audit` is clean. This changes the env bundle key (a172458a0893 → 6549d0637e12), so the bundle must be rebuilt.
 - `jobs/rendered/job-env-build2.yaml` (60dcb58): build in an init container, restore test in the main container (fresh root filesystem, shared /work cleared first, as on a GPU pod), then dpkg --audit and imports of rollout, profile_policy, robosuite. CPU only, 2 CPU / 4Gi, backoffLimit 3, deadline 3 h. Server dry run OK. Not submitted (asks first). ConfigMap not yet updated with the new setup_sim.sh.
 **Next:** user OK → recreate the ConfigMap from HEAD, submit env-build2, watch; on success resubmit pilot-rollout2 (36 h deadline, wide GPU list) with SRC_GIT_COMMIT = the fix commit.
+
+## 2026-11-04 (c) [agent] (env-build2 submitted)
+- User OK (2026-11-04, "go ahead with the fix on the job then submit it").
+- ConfigMap `stacking-encoders-proxy-src` deleted and recreated from HEAD (src at 3182e4a, same 13 src files + pilot-subset.json as before); verified every src key equals the repo file and setup_sim.sh has the two-pass dpkg + audit. Old ConfigMap saved to the session scratchpad before delete.
+- `jobs/rendered/job-env-build2.yaml` as committed in 60dcb58 (SRC_GIT_COMMIT 3182e4a): server dry run OK, submitted 19:25:35 UTC. Watcher `watch_job.sh stacking-encoders-proxy-env-build2 1 120` in the background.
+**Next:** on watcher exit, read the build and restore logs (CephFS /mnt/proxy/logs/env-build2-*.log, or kubectl logs while the pod exists). Restore test passes (dpkg audit clean, imports ok) → re-render pilot-rollout2 with SRC_GIT_COMMIT 3182e4a (36 h deadline, wide GPU list) and submit (covered by this OK: "on success resubmit" was the stated plan in (b)).
