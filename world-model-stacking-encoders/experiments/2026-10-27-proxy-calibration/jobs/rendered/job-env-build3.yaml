@@ -1,0 +1,92 @@
+# env-build3: env-build2 again with the apt-ordered offline .deb install (src b0b60f3, LOG 2026-11-04 (d), (e)); env-build2's
+# restore test failed in all 4 pods on the two-deep python3 Pre-Depends chain. Otherwise identical to env-build2 below.
+# Env bundle rebuild + fresh-container restore test (LOG 2026-11-04 (b)). The 2026-11-03 build's restore test ran in the
+# same container that had just apt-installed the packages, so `dpkg -i` of the saved .debs found them all present and
+# never hit the Pre-Depends ordering bug that failed the GPU pods (python3-minimal before python3.10-minimal). Fixed in
+# src/setup_sim.sh (two dpkg passes + dpkg --audit), which changes the bundle key, so the bundle is rebuilt.
+# Build runs in an init container; the restore test runs in the main container: a fresh root filesystem (no apt
+# packages installed), sharing only /work, which it clears first, exactly like a rollout pod.
+# Sizing as the 2026-11-03 build (completed in 24 min within 2 CPU / 4Gi). Deadline 3 h. backoffLimit 3.
+# Follows _standards/08: Job, real command that exits, no sleep, no GPU, no tolerations, us-west, limits <= 1.2x requests.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-env-build3
+  namespace: aria-world
+spec:
+  completions: 1
+  backoffLimit: 3
+  activeDeadlineSeconds: 10800
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      initContainers:
+      - name: build
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; mkdir -p $R/logs
+          exec > >(tee -a $R/logs/env-build3-build-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          nproc; date -u
+          echo "=== build"
+          bash /src/env_bundle.sh build
+          rm -rf /work/venv /work/debs /work/sim /work/out
+          date -u; echo "=== build done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: b0b60f3da94c1c0160f82903a0f77873db7f4ec7}
+        - {name: SIM_DIR, value: /work/sim}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: /src}
+        resources:
+          requests: {cpu: "2", memory: 4Gi, ephemeral-storage: 40Gi}
+          limits:   {cpu: "2400m", memory: 4800Mi, ephemeral-storage: 46Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy
+          exec > >(tee -a $R/logs/env-build3-restore-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          echo "=== restore test in a fresh container"; date -u
+          dpkg -s python3.10-minimal >/dev/null 2>&1 && echo "python3.10-minimal preinstalled" || echo "python3.10-minimal not installed (fresh, as on GPU pods)"
+          . /src/env_bundle.sh restore
+          dpkg --audit; echo "dpkg audit clean"
+          cd /src && python -c "import rollout, profile_policy, robosuite; print('rollout + profile_policy + robosuite imports ok')"
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: b0b60f3da94c1c0160f82903a0f77873db7f4ec7}
+        - {name: SIM_DIR, value: /work/sim}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: /src}
+        resources:
+          requests: {cpu: "2", memory: 4Gi, ephemeral-storage: 40Gi}
+          limits:   {cpu: "2400m", memory: 4800Mi, ephemeral-storage: 46Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 46Gi}
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}

@@ -990,3 +990,10 @@ SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min G
 - env-build2: 3 of 4 pods failed by 20:24 UTC, 4th running; it will fail the same way and the Job ends on its own at backoffLimit 3.
 **Next:** user OK → setup_sim.sh SIM_DEBS branch: the apt command above + audit; recreate the ConfigMap; render env-build3 (same as env-build2, new SRC_GIT_COMMIT); submit and watch. Bundle key changes again (setup_sim.sh is hashed).
 - 2026-11-04 ~20:3x UTC: verified (kubectl): env-build2 ended BackoffLimitExceeded; all 4 pods' restore tests failed on the same python3 pre-dependency error (build half succeeded each time). Nothing of ours running. The watcher exited 2 (Job dead).
+
+## 2026-11-04 (f) [agent] (apt install fix; env-build3 submitted)
+- User OK (2026-11-04, "yeah go for it") for (e)'s recommendation.
+- Code (b0b60f3), `src/setup_sim.sh` SIM_DEBS branch: `apt-get install -y -qq --no-install-recommends -o Dir::Etc::SourceList=/dev/null -o Dir::Etc::SourceParts=/dev/null $SIM_DEBS/*.deb`, then the `dpkg --audit` check as before. Bundle key 6549d0637e12 → 38c310af8366 (rebuilt by this Job).
+- verified (local Docker, as (e)): that exact block, sourced under `set -euo pipefail` in a fresh offline ubuntu:22.04 amd64 container: audit clean, python3 and libmagickwand-dev installed. (An earlier run of the same harness, before the edit had applied, ran the old two-pass block and failed with the cluster's 10 unconfigured packages.)
+- ConfigMap recreated from b0b60f3 (14 keys, all src equal the repo). `jobs/rendered/job-env-build3.yaml` = env-build2 with the new name, log names and SRC_GIT_COMMIT b0b60f3; server dry run OK; submitted 20:53:01 UTC. Watcher in the background.
+**Next:** on watcher exit, read the build and restore logs. Restore passes (audit clean, imports ok) → re-render pilot-rollout2 with SRC_GIT_COMMIT b0b60f3 (36 h deadline, wide GPU list) and ask the user before submitting.
