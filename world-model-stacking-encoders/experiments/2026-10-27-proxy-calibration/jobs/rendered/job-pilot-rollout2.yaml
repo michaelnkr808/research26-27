@@ -9,6 +9,9 @@
 # since rollouts need at most ~10 GB GPU memory policy-only (profile run 2); the old list was carried over from training.
 # 2026-11-04 08:35 UTC resubmit (user OK): activeDeadlineSeconds 12 h -> 36 h; the deadline counts from Job creation, so
 # 12 h would have killed pods that start late in a long queue (still Pending after ~11.5 h).
+# 2026-11-04 resubmit: SRC_GIT_COMMIT dbbc71d -> 2bab64f. Only src/setup_sim.sh changed (offline .debs installed by apt,
+# which orders Pre-Depends; the dpkg -i install failed every earlier pod in setup). Bundle env-9182f8131559 built and
+# restore-tested in a fresh container by env-build4 (LOG 2026-11-04 (b)-(g)). Policy code unchanged.
 # RUN.md step 9 (pilot rollouts) and step 11 (evaluation), pre-approved. Written mid-run: render per use (fill every
 # __PLACEHOLDER__ from measured use; jobs/rendered/), checklist in RUN.md "Manifests written during the run".
 # Indexed: pod i takes item i of pilot2-dinov3-s0@0/1 pilot2-dinov3+c-radiov4-s0@0/1 ("<run dir name>@<shard i>/<n>", space-separated): one checkpoint, one
@@ -66,7 +69,7 @@ spec:
           awk -F, 'NR>1 {gsub(/ %/,"",$2); s+=$2; n++} END {if (n) printf "mean %.1f%% over %d samples\n", s/n, n}' /work/gpu.csv
           wc -l $OUT; date -u; echo "=== done"
         env:
-        - {name: SRC_GIT_COMMIT, value: dbbc71d241e5b52fa88b072caae6e46cd1482987}
+        - {name: SRC_GIT_COMMIT, value: 2bab64f6496dd22fefa64a6149539979c0840589}
         - {name: ITEMS, value: "pilot2-dinov3-s0@0/1 pilot2-dinov3+c-radiov4-s0@0/1"}
         - name: HF_TOKEN
           valueFrom:
