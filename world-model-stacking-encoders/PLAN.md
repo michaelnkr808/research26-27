@@ -5,7 +5,7 @@ Living agenda. Only work that is running, next, or parked lives here. Results go
 Each experiment folder has its own `PLAN.md` (the design, written before running) and `README.md` (what came out).
 
 ## Now
-- **Multi-seed proxy replication** (decision 003): `experiments/2026-10-27-proxy-calibration/`. Pilot rollout 2 submitted 2026-11-03 (LOG (i)); next is sizing for the full round (15 training runs: none, D, R, D+R, D+L × 3 seeds).
+- **Multi-seed proxy replication** (decision 003): `experiments/2026-10-27-proxy-calibration/`. Pilot rollout 2 blocked: its pods failed in setup (offline .deb install breaks in fresh containers; fixed in 3182e4a, LOG 2026-11-04 (b)). Waiting on the user's OK for the env rebuild + fresh-container restore test (`jobs/rendered/job-env-build2.yaml`), then resubmit pilot rollout 2; then sizing for the full round (15 training runs: none, D, R, D+R, D+L × 3 seeds).
 
 ## Next
 1. **Seed-noise check before the full round** (presentation feedback, point 2; user chose 2026-11-03). Train the full-length D runs for training seeds 0 and 1 first, roll both out on the same episodes, and compare. If two seeds of the same config differ by about as much as the harm threshold (half the paper's D+R − D drop), 3 seeds can't settle the question; rethink seeds or N before training the other 13 runs. Costs no extra runs (both are among the 15); it only orders them. To do first: write the comparison rule down before the runs finish. Needs the user's OK before submitting.
