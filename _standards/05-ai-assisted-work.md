@@ -4,15 +4,16 @@ Most of the work here is done by AI agents (Claude Code and subagents). These ru
 
 ## Session protocol (every agent session)
 **Start of session:**
-1. Read `_standards/`, the direction's `STANDARDS.md`, its `README.md`, and the last few `LOG.md` entries.
+1. Read `_standards/`, the direction's `STANDARDS.md`, `README.md`, `PLAN.md`, and the last few `LOG.md` entries. If working on an experiment, also read its `PLAN.md` and the last few entries of its `LOG.md`.
 2. Check `git status` and `git log -5` to see the current state.
 3. Restate the goal for the session in one line. If it's unclear, ask.
 
 **End of session:**
-1. Append an entry to `LOG.md` (template in `04`). Mark the entry `[agent]` and include what was verified and what wasn't.
-2. Update the `README.md` status and key findings if they changed.
-3. Commit the work (see "Git" below).
-4. Leave a concrete **Next** step, so the next session, human or agent, can start without re-deriving context.
+1. Append an entry to `LOG.md` (template in `04`). Mark the entry `[agent]` and include what was verified and what wasn't. If the session worked on an experiment, the detail goes in that experiment's `LOG.md` and a short summary in the direction's.
+2. Update `PLAN.md` if any item started, finished, changed, or was dropped, **in the same commit** as the LOG entry (drift guard). A finished item becomes one line under "Recently done"; a dropped one keeps its reason in the LOG or a decision record.
+3. Update the `README.md` status and key findings if they changed. If an experiment produced results, write them in its `README.md`.
+4. Commit the work (see "Git" below).
+5. Leave a concrete **Next** step, so the next session, human or agent, can start without re-deriving context.
 
 ## Truthfulness rules
 - **Never fabricate** citations, data, metrics, quotes, library APIs, or results. If something is unknown, say so.

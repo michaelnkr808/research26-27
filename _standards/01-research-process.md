@@ -4,7 +4,7 @@
 - **Write the question down.** Every direction's `README.md` starts with one or two sentences stating the research question. If you can't write it, the work isn't scoped yet.
 - **Define what "done" looks like.** Name the result, artifact, or decision that would answer the question, and the evidence that would count.
 - **Survey prior work first.** Do a literature/prior-art pass before building anything (see `02`). Record what already exists and how your work differs.
-- **State hypotheses before running experiments.** Write the expected outcome in `LOG.md` *before* you see results, so hindsight can't rewrite the prediction.
+- **State hypotheses before running experiments.** Write the expected outcome in the experiment's `PLAN.md` and commit it *before* you see results, so hindsight can't rewrite the prediction (see `04`).
 
 ## While doing the work
 - **Start small, then scale.** Begin with the simplest baseline or smallest experiment that could fail informatively.

@@ -26,14 +26,15 @@ This is the root of all research for the 2026–27 cycle. Each **research direct
 ```
 <direction-name>/
 ├── STANDARDS.md      # topic rules (copy from _template/)
-├── README.md         # question, status, key findings so far
-├── LOG.md            # dated research log (append-only)
+├── README.md         # front page: question, short status, key findings, key files
+├── PLAN.md           # living agenda: now, next, parked, recently done
+├── LOG.md            # direction timeline: short session summaries (append-only)
 ├── decisions/        # one file per significant decision (ADR-style)
 ├── literature/       # paper notes + references.bib
 ├── data/             # raw/ (never edited) and processed/
 ├── src/              # code
-├── experiments/      # one folder per run or experiment, with config + results
+├── experiments/      # one folder per experiment: PLAN.md (design, before), LOG.md (running it), README.md (what came out), results/
 └── writing/          # drafts, figures, final outputs
 ```
 
-To start a new direction, copy `_template/` to a new folder named in `kebab-case`, then fill in `README.md` and `STANDARDS.md`.
+To start a new direction, copy `_template/` to a new folder named in `kebab-case`, then fill in `README.md`, `STANDARDS.md`, and `PLAN.md`. To start an experiment, copy `experiments/_new-experiment/` to `experiments/YYYY-MM-DD-<short-name>/`. What each file is for: `_standards/04-documentation.md`.

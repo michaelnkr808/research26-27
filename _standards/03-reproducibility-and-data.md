@@ -18,7 +18,9 @@
 ## Experiments
 Each experiment goes in its own folder, `experiments/YYYY-MM-DD-<short-name>/`, which contains:
 - `config.*`: every parameter, so nothing is set by hand on the command line without being recorded
-- `README.md`: hypothesis, command to run, commit hash, outcome, and a link to the matching `LOG.md` entry
+- `PLAN.md`: question, design, and predictions, written before running (see `04`)
+- `LOG.md`: step-by-step record of running it
+- `README.md`: command to run, commit hash, outcome, and links to the matching `LOG.md` entries
 - `results/`: raw outputs, metrics, and figures
 
 **Never overwrite results.** A rerun gets a new folder, or a suffix such as `-v2`.
