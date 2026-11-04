@@ -14,10 +14,12 @@ LP_COMMIT=4976dc30028e805ff8094b55501d532c48fec182
 # SIM_DEBS (env_bundle.sh restore): install the bundle's saved .debs offline and skip pip (the bundle's venv has the
 # packages); SIM_KEEP_DEBS (env_bundle.sh build): keep the downloaded .debs there for the bundle.
 if [ -n "${SIM_DEBS:-}" ]; then
-  # dpkg -i doesn't order by Pre-Depends: in a fresh container python3-minimal sorts before the python3.10-minimal it
-  # pre-depends on and is refused (LOG 2026-11-04 (b)). The first pass installs the rest; the second finishes the refused
-  # ones and configures what waited on them. Fail if anything is still half-installed.
-  dpkg -i $SIM_DEBS/*.deb >/dev/null 2>&1 || dpkg -i $SIM_DEBS/*.deb >/dev/null
+  # dpkg -i installs in argument order and ignores Pre-Depends, so in a fresh container the python3 -> python3-minimal ->
+  # python3.10-minimal chain fails (LOG 2026-11-04 (b), (d)). apt orders the install itself; with no sources it only sees
+  # these files and what is installed, so it stays offline and fails loudly if a package is missing (LOG 2026-11-04 (e)).
+  # Not --no-download: with it apt 2.4 stops on "Pathname to install is not absolute". Fail if anything is half-installed.
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends -o Dir::Etc::SourceList=/dev/null \
+    -o Dir::Etc::SourceParts=/dev/null $SIM_DEBS/*.deb >/dev/null
   [ -z "$(dpkg --audit)" ] || { dpkg --audit; exit 1; }
 else
   KEEP=${SIM_KEEP_DEBS:-/var/cache/apt/archives}; mkdir -p $KEEP/partial
