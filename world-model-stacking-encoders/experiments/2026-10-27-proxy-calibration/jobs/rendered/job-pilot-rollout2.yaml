@@ -7,6 +7,8 @@
 # the two nodes with GPU faults excluded.
 # 2026-11-03 21:05 UTC resubmit (user OK): pods sat Pending ~3 h 50 min; GPU list widened to A10, L4, A40 (24-48 GB),
 # since rollouts need at most ~10 GB GPU memory policy-only (profile run 2); the old list was carried over from training.
+# 2026-11-04 08:35 UTC resubmit (user OK): activeDeadlineSeconds 12 h -> 36 h; the deadline counts from Job creation, so
+# 12 h would have killed pods that start late in a long queue (still Pending after ~11.5 h).
 # RUN.md step 9 (pilot rollouts) and step 11 (evaluation), pre-approved. Written mid-run: render per use (fill every
 # __PLACEHOLDER__ from measured use; jobs/rendered/), checklist in RUN.md "Manifests written during the run".
 # Indexed: pod i takes item i of pilot2-dinov3-s0@0/1 pilot2-dinov3+c-radiov4-s0@0/1 ("<run dir name>@<shard i>/<n>", space-separated): one checkpoint, one
@@ -25,7 +27,7 @@ spec:
   completions: 2
   parallelism: 2
   backoffLimit: 4
-  activeDeadlineSeconds: 43200
+  activeDeadlineSeconds: 129600
   ttlSecondsAfterFinished: 86400
   template:
     spec:
