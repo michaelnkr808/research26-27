@@ -23,7 +23,9 @@ if [ -n "${SIM_DEBS:-}" ]; then
   [ -z "$(dpkg --audit)" ] || { dpkg --audit; exit 1; }
 else
   KEEP=${SIM_KEEP_DEBS:-/var/cache/apt/archives}; mkdir -p $KEEP/partial
-  apt-get update -qq
+  # apt-get update can wait forever on a connection the server already closed (env-build3 sat 30 min at 0 CPU on
+  # nautilus-it-cpu07, LOG 2026-11-04 (f)); fail after 10 min so the Job retries in a new pod instead.
+  timeout 600 apt-get update -qq
   DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends -o Dir::Cache::archives=$KEEP \
     -o APT::Keep-Downloaded-Packages=true curl unzip libmagickwand-dev libexpat1 \
     libfontconfig1 libgl1 libegl1 libglib2.0-0 libosmesa6 libgomp1 >/dev/null
