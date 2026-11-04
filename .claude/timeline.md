@@ -132,3 +132,10 @@
 - Pilot simulator test: pre-check of all inputs passed. One pod ran with no errors, but the GPU was busy only ~25% (small batches, plus setup idle), so I deleted the Job.
 - Next: user to choose. Proposed profiling a policy call locally and moving setup to a CPU Job, then rerunning the pilot rollout.
 - See: world-model-stacking-encoders/LOG.md (2026-11-01 (h) to 2026-11-03 (b)), experiments/2026-10-27-proxy-calibration/jobs/rendered/
+
+## 2026-11-03/04 — stacking-encoders: rollout GPU fix works; pilot rollout blocked by a setup bug
+
+- Profiling on the cluster showed the policy wasted GPU time on tiny kernel launches and CPU noise prep. Fixed (cached noise, thread cap, CUDA graph replay); actions are identical to the old path and the GPU stays busy in a policy-only test.
+- Pilot rollout 2 sat ~12 h in the queue (GPU list widened to A10/L4/A40, deadline raised to 36 h, both with user OK). When pods finally started, they failed in setup: the prebuilt env's offline package install breaks on a fresh machine. My earlier restore test missed it by running on an already-installed machine.
+- Fix committed; an env rebuild Job that tests the restore on a truly fresh container is ready and waiting for the user's OK. User decided experiment READMEs get written at the end, consistently.
+- See: world-model-stacking-encoders/LOG.md (2026-11-03 (c) to 2026-11-04 (b)), experiments/2026-10-27-proxy-calibration/jobs/rendered/job-env-build2.yaml
