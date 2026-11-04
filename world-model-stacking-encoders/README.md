@@ -1,6 +1,6 @@
 # Stacking Encoders
 
-**Status:** exploring. The cheap frozen-feature tests (input side and target side) did not flag the harmful DINOv3 + C-RADIOv4 pair. Now running the multi-seed proxy replication (pilot rollouts, 2026-11-03). Current agenda: `PLAN.md`. Full history: `LOG.md`.
+**Status:** exploring. The cheap frozen-feature tests (input side and target side) did not flag the harmful DINOv3 + C-RADIOv4 pair. Now running the multi-seed proxy replication (pilot rollouts, 2026-11-03). Current agenda: `PLAN.md`. History: `LOG.md` (direction level), each experiment's own `LOG.md` (details).
 **Goal:** publish (user, 2026-10-19). Venue and timeline to discuss with the PhD mentor on Thursday 2026-10-22.
 **Question (draft, not yet confirmed):** Can a cheap, *conditional* measure of what encoder B adds to encoder A (task-relevant information not recoverable from A), computed on frozen features from robot data, predict which encoder combinations improve a World Action Model (WAM) before training, where symmetric similarity (CKA) does not?
 - Secondary, possibly a separate paper: why do general-purpose encoders match or beat specialists?
@@ -36,7 +36,7 @@ Signed off by the user 2026-10-21 (input side) and 2026-10-27 (target side). Sou
 - Research proposal for the mentor: one-page version `writing/proposals-2026-10-27/p1-short.md` (Google Doc: https://docs.google.com/document/d/1JJj8KcgBusH65LHY6CsFEiFqACy2lQI3f-wcgI3WF40/edit); full notes `writing/proposals-2026-10-27/p1-stacking-encoders.html` (Google Doc: https://docs.google.com/document/d/1GgJm4coJ8Kn2J_D0IfIBYZpXSwlVU_3wVz17nUM7MBY/edit). Sibling candidate directions: `../world-model-embedding-choice/`, `../world-model-planning-horizon/`
 - Research proposal draft for the mentor (2026-10-25, due 2026-10-27): Claude Doc https://claude.ai/artifact/B6uCkLxYV5FmWUUDKRQbzF (LOG 2026-10-25)
 - `STANDARDS.md`: topic rules (compute budget + Nautilus rules filled; rest TBD)
-- `LOG.md`: research log
+- `LOG.md`: research log for the direction (short session summaries; before 2026-11-04 it holds the full detail too). Each experiment folder has `PLAN.md`, `LOG.md`, `README.md`.
 - `decisions/`: decision records (001: proxy-policy ground truth; 002 (accepted 2026-10-19): feasibility tally before training; 003 (accepted 2026-10-27): go straight to the multi-seed proxy policy)
 - `literature/`: paper notes and references.bib (incl. agostinelli2022, the closest prior work per the mentor)
 - `writing/hypotheses-draft.md`: definitions, candidate hypotheses, the feasibility experiment, a novelty statement draft, and Thursday prep

@@ -2,7 +2,7 @@
 
 Living agenda. Only work that is running, next, or parked lives here. Results go in the experiment's `README.md`, history in `LOG.md`, conclusions in `README.md` "Key findings". When an item finishes, replace it with one line under "Recently done" pointing to the LOG entry, and prune that list now and then. Every session that changes an item updates this file in the same commit as its LOG entry.
 
-Each experiment folder has its own `PLAN.md` (the design, written before running) and `README.md` (what came out).
+Each experiment folder has its own `PLAN.md` (the design, written before running), `LOG.md` (the step-by-step record of running it, with exact numbers), and `README.md` (what came out). The direction `LOG.md` keeps short session summaries and work outside any experiment (decisions, literature, feedback, plan changes).
 
 ## Now
 - **Multi-seed proxy replication** (decision 003): `experiments/2026-10-27-proxy-calibration/`. Pilot rollout 2 blocked: its pods failed in setup (offline .deb install breaks in fresh containers; fixed in 3182e4a, LOG 2026-11-04 (b)). Waiting on the user's OK for the env rebuild + fresh-container restore test (`jobs/rendered/job-env-build2.yaml`), then resubmit pilot rollout 2; then sizing for the full round (15 training runs: none, D, R, D+R, D+L × 3 seeds).
