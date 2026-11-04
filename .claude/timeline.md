@@ -139,3 +139,10 @@
 - Pilot rollout 2 sat ~12 h in the queue (GPU list widened to A10/L4/A40, deadline raised to 36 h, both with user OK). When pods finally started, they failed in setup: the prebuilt env's offline package install breaks on a fresh machine. My earlier restore test missed it by running on an already-installed machine.
 - Fix committed; an env rebuild Job that tests the restore on a truly fresh container is ready and waiting for the user's OK. User decided experiment READMEs get written at the end, consistently.
 - See: world-model-stacking-encoders/LOG.md (2026-11-03 (c) to 2026-11-04 (b)), experiments/2026-10-27-proxy-calibration/jobs/rendered/job-env-build2.yaml
+
+## 2026-11-03/04 — stacking-encoders: proposal slides finished; plan/archive doc layout
+
+- Helped the user finish their reworked proposal deck in Vanshika's six-section format (they wrote it; I checked content against the project files, explained LIBERO demos vs rollouts and per-frame vs per-episode, and gave paste-ready related-works and citation lines).
+- Recorded the written presentation feedback; most "design flaw" points were already handled (held-out demo split, conditional gain). User chose two new plan items: a seed-noise check before the full round and a cheap test on perturbed frames.
+- User decided on a living root PLAN.md (plans only) with PLAN.md in every experiment folder, and LOG/READMEs as the archive. Set up in stacking-encoders; shared _standards/_template not updated yet (handoff prompt given for a docs agent).
+- See: world-model-stacking-encoders/PLAN.md, world-model-stacking-encoders/LOG.md (2026-11-03 (k), (l))
