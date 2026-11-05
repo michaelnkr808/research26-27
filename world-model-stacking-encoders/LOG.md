@@ -1031,4 +1031,4 @@ SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min G
 - User OK; submitted 22:08 UTC with the fixed env bundle; watcher on. Detail: `experiments/2026-10-27-proxy-calibration/LOG.md` 2026-11-04 (j).
 
 ## 2026-11-05 (a) [agent] (proxy: pilot rollout 2 finished)
-- Job Complete 2/2 at 04:11 UTC, no errors. Detail: `experiments/2026-10-27-proxy-calibration/LOG.md` 2026-11-05 (b).
+- Job Complete 2/2 at 04:11 UTC, no errors; pod 1 GPU use fell below the 40% floor for part of the run, user to decide. Detail: `experiments/2026-10-27-proxy-calibration/LOG.md` 2026-11-05 (b).
