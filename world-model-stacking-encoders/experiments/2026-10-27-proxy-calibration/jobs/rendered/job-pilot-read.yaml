@@ -1,0 +1,52 @@
+# Reads the two pilot-rollout2 result files off the PVC to the log so they can be recovered on the Mac (kubectl cp is
+# for small files only and CephFS read access from outside needs a pod). For each file it prints sha256, line count,
+# then the bytes as gzip + base64 between BEGIN/END markers. RUN.md step 9 (pilot sizing; pilot2 result files).
+# CPU only, read-only mount, no GPU, no writes. Image pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime is the one
+# job-read-lengths.yaml and job-probe.yaml already use (cached on nodes); only coreutils, gzip and base64 are used.
+# Follows _standards/08: Job, real command that exits, no sleep, no tolerations, limits <= 1.2x requests, deadline, ttl, us-west.
+# User OK to submit: pending (Phase 1 only; nothing submitted).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-pilot-read
+  namespace: aria-world
+spec:
+  completions: 1
+  backoffLimit: 1
+  activeDeadlineSeconds: 7200         # counts from Job creation, queue time included; the work itself takes seconds
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          D=/mnt/proxy/rollouts/pilot-rollout2
+          for f in pilot2-dinov3-s0.0of1.jsonl pilot2-dinov3+c-radiov4-s0.0of1.jsonl; do
+            echo "FILE $f"
+            ls -l "$D/$f"
+            echo "SHA256 $(sha256sum "$D/$f" | cut -d' ' -f1) $f"
+            echo "LINES $(wc -l < "$D/$f") $f"
+            echo "BEGIN_GZ_B64 $f"
+            gzip -9 -n -c "$D/$f" | base64
+            echo "END_GZ_B64 $f"
+          done
+          echo "=== done"
+        resources:
+          requests: {cpu: 500m, memory: 512Mi}
+          limits:   {cpu: 600m, memory: 600Mi}
+        volumeMounts:
+        - {name: proxy, mountPath: /mnt/proxy, readOnly: true}
+      volumes:
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
