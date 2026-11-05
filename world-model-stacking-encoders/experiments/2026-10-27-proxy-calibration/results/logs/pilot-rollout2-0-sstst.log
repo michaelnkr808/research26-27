@@ -1,0 +1,146 @@
+=== index 0: pilot2-dinov3-s0 shard 0/1 -> /mnt/proxy/rollouts/pilot-rollout2/pilot2-dinov3-s0.0of1.jsonl
+Wed Nov  4 23:19:55 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.09              KMD Version: 615.71.09     CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA L4                      On  |   00000000:C6:00.0 Off |                    0 |
+| N/A   43C    P8             17W /   72W |       0MiB /  23034MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+23
+Wed Nov  4 23:19:55 UTC 2026
+debconf: delaying package configuration, since apt-utils is not installed
+articulated_objects
+new_objects
+scenes
+serving_region.xml
+stable_hope_objects
+stable_scanned_objects
+textures
+turbosquid_objects
+wall.xml
+wall_frames.stl
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+sim ok: numpy 1.26.4 mujoco 3.3.2 robosuite 1.4.0
+TIMING restore: untar 119 s, debs + assets unzip + checks 400 s (/mnt/proxy/env/env-9182f8131559.tar)
+fastwam ok, torch 2.7.1+cu128 cuda True
+[rollout      82s] checkpoint /mnt/proxy/runs/pilot2-dinov3-s0: config dinov3 seed 0 commit 11fed0358e0ade12438526beabfb660e30a80779; 340 jobs in shard 0/1; torch threads 4, cuda graph True
+[rollout      82s] 340 jobs, 0 already in /mnt/proxy/rollouts/pilot-rollout2/pilot2-dinov3-s0.0of1.jsonl, 340 to run on 4 envs
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+
+
+
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+[rollout     142s] progress: 4 done, 0 errors, 332 queued, 4 running; 239 episodes/h; mean batch 2.0; policy busy 48%; cgroup memory now/peak GB (25.5, 25.77)
+[rollout     202s] progress: 9 done, 0 errors, 327 queued, 4 running; 269 episodes/h; mean batch 2.0; policy busy 59%; cgroup memory now/peak GB (24.18, 25.77)
+[rollout     262s] progress: 16 done, 0 errors, 320 queued, 4 running; 319 episodes/h; mean batch 2.0; policy busy 62%; cgroup memory now/peak GB (24.7, 25.77)
+
+[rollout     323s] progress: 24 done, 0 errors, 312 queued, 4 running; 359 episodes/h; mean batch 1.9; policy busy 65%; cgroup memory now/peak GB (24.69, 25.77)
+[rollout     383s] progress: 32 done, 0 errors, 304 queued, 4 running; 383 episodes/h; mean batch 1.9; policy busy 66%; cgroup memory now/peak GB (25.52, 25.77)
+[rollout     443s] progress: 40 done, 0 errors, 296 queued, 4 running; 399 episodes/h; mean batch 1.9; policy busy 67%; cgroup memory now/peak GB (25.53, 25.77)
+[rollout     503s] progress: 46 done, 0 errors, 290 queued, 4 running; 393 episodes/h; mean batch 1.8; policy busy 68%; cgroup memory now/peak GB (24.26, 25.77)
+/work/sim/LIBERO-plus/libero/libero/envs/env_wrapper.py:52: DeprecationWarning: The binary mode of fromstring is deprecated, as it behaves surprisingly on unicode inputs. Use frombuffer instead
+  x = cv2.imdecode(np.fromstring(x.make_blob(), np.uint8),
+[rollout     563s] progress: 48 done, 0 errors, 288 queued, 4 running; 359 episodes/h; mean batch 1.8; policy busy 64%; cgroup memory now/peak GB (24.42, 25.77)
+/work/sim/LIBERO-plus/libero/libero/envs/env_wrapper.py:52: DeprecationWarning: The binary mode of fromstring is deprecated, as it behaves surprisingly on unicode inputs. Use frombuffer instead
+  x = cv2.imdecode(np.fromstring(x.make_blob(), np.uint8),
+/work/sim/LIBERO-plus/libero/libero/envs/env_wrapper.py:52: DeprecationWarning: The binary mode of fromstring is deprecated, as it behaves surprisingly on unicode inputs. Use frombuffer instead
+  x = cv2.imdecode(np.fromstring(x.make_blob(), np.uint8),
+[rollout     623s] progress: 52 done, 0 errors, 284 queued, 4 running; 346 episodes/h; mean batch 1.7; policy busy 61%; cgroup memory now/peak GB (24.42, 25.77)
+[rollout     683s] progress: 56 done, 0 errors, 280 queued, 4 running; 335 episodes/h; mean batch 1.7; policy busy 60%; cgroup memory now/peak GB (24.93, 25.77)
+[rollout     743s] progress: 63 done, 0 errors, 273 queued, 4 running; 343 episodes/h; mean batch 1.7; policy busy 60%; cgroup memory now/peak GB (25.54, 25.77)
+[rollout     803s] progress: 69 done, 0 errors, 267 queued, 4 running; 344 episodes/h; mean batch 1.7; policy busy 61%; cgroup memory now/peak GB (25.21, 25.77)
+
+[rollout     863s] progress: 80 done, 0 errors, 256 queued, 4 running; 369 episodes/h; mean batch 1.7; policy busy 62%; cgroup memory now/peak GB (24.31, 25.77)
+[rollout     923s] progress: 92 done, 0 errors, 244 queued, 4 running; 394 episodes/h; mean batch 1.7; policy busy 62%; cgroup memory now/peak GB (24.66, 25.77)
+[rollout     983s] progress: 104 done, 0 errors, 232 queued, 4 running; 415 episodes/h; mean batch 1.7; policy busy 63%; cgroup memory now/peak GB (24.45, 25.77)
+[rollout    1044s] progress: 116 done, 0 errors, 220 queued, 4 running; 434 episodes/h; mean batch 1.7; policy busy 64%; cgroup memory now/peak GB (24.67, 25.77)
+
+[rollout    1104s] progress: 120 done, 0 errors, 216 queued, 4 running; 423 episodes/h; mean batch 1.7; policy busy 61%; cgroup memory now/peak GB (24.63, 25.77)
+[rollout    1164s] progress: 121 done, 0 errors, 215 queued, 4 running; 403 episodes/h; mean batch 1.6; policy busy 59%; cgroup memory now/peak GB (24.63, 25.77)
+[rollout    1224s] progress: 125 done, 0 errors, 211 queued, 4 running; 394 episodes/h; mean batch 1.6; policy busy 56%; cgroup memory now/peak GB (24.63, 25.77)
+[rollout    1284s] progress: 126 done, 0 errors, 210 queued, 4 running; 377 episodes/h; mean batch 1.6; policy busy 54%; cgroup memory now/peak GB (24.73, 25.77)
+[rollout    1344s] progress: 129 done, 0 errors, 207 queued, 4 running; 368 episodes/h; mean batch 1.6; policy busy 53%; cgroup memory now/peak GB (24.63, 25.77)
+[rollout    1404s] progress: 134 done, 0 errors, 202 queued, 4 running; 365 episodes/h; mean batch 1.6; policy busy 52%; cgroup memory now/peak GB (24.48, 25.77)
+[rollout    1464s] progress: 137 done, 0 errors, 199 queued, 4 running; 357 episodes/h; mean batch 1.6; policy busy 51%; cgroup memory now/peak GB (24.63, 25.77)
+[rollout    1524s] progress: 145 done, 0 errors, 191 queued, 4 running; 362 episodes/h; mean batch 1.6; policy busy 50%; cgroup memory now/peak GB (24.64, 25.77)
+[rollout    1584s] progress: 157 done, 0 errors, 179 queued, 4 running; 376 episodes/h; mean batch 1.6; policy busy 51%; cgroup memory now/peak GB (24.79, 25.77)
+
+[rollout    1644s] progress: 169 done, 0 errors, 167 queued, 4 running; 389 episodes/h; mean batch 1.6; policy busy 52%; cgroup memory now/peak GB (24.75, 25.77)
+[rollout    1704s] progress: 180 done, 0 errors, 156 queued, 4 running; 399 episodes/h; mean batch 1.6; policy busy 53%; cgroup memory now/peak GB (24.29, 25.77)
+[rollout    1764s] progress: 191 done, 0 errors, 145 queued, 4 running; 409 episodes/h; mean batch 1.6; policy busy 53%; cgroup memory now/peak GB (24.81, 25.77)
+/work/sim/LIBERO-plus/libero/libero/envs/env_wrapper.py:52: DeprecationWarning: The binary mode of fromstring is deprecated, as it behaves surprisingly on unicode inputs. Use frombuffer instead
+  x = cv2.imdecode(np.fromstring(x.make_blob(), np.uint8),
+[rollout    1824s] progress: 200 done, 0 errors, 136 queued, 4 running; 413 episodes/h; mean batch 1.6; policy busy 53%; cgroup memory now/peak GB (24.55, 25.77)
+[rollout    1885s] progress: 212 done, 0 errors, 124 queued, 4 running; 423 episodes/h; mean batch 1.6; policy busy 54%; cgroup memory now/peak GB (24.36, 25.77)
+[rollout    1945s] progress: 224 done, 0 errors, 112 queued, 4 running; 433 episodes/h; mean batch 1.6; policy busy 54%; cgroup memory now/peak GB (24.55, 25.77)
+[rollout    2005s] progress: 234 done, 0 errors, 102 queued, 4 running; 438 episodes/h; mean batch 1.6; policy busy 55%; cgroup memory now/peak GB (25.04, 25.77)
+[rollout    2065s] progress: 245 done, 0 errors, 91 queued, 4 running; 445 episodes/h; mean batch 1.6; policy busy 55%; cgroup memory now/peak GB (25.21, 25.77)
+
+[rollout    2125s] progress: 257 done, 0 errors, 79 queued, 4 running; 453 episodes/h; mean batch 1.6; policy busy 55%; cgroup memory now/peak GB (25.21, 25.77)
+[rollout    2185s] progress: 269 done, 0 errors, 67 queued, 4 running; 461 episodes/h; mean batch 1.6; policy busy 56%; cgroup memory now/peak GB (24.99, 25.77)
+[rollout    2245s] progress: 275 done, 0 errors, 61 queued, 4 running; 458 episodes/h; mean batch 1.6; policy busy 56%; cgroup memory now/peak GB (24.99, 25.77)
+[rollout    2305s] progress: 286 done, 0 errors, 50 queued, 4 running; 463 episodes/h; mean batch 1.6; policy busy 56%; cgroup memory now/peak GB (25.27, 25.77)
+[rollout    2365s] progress: 297 done, 0 errors, 39 queued, 4 running; 468 episodes/h; mean batch 1.6; policy busy 56%; cgroup memory now/peak GB (24.96, 25.77)
+[rollout    2425s] progress: 305 done, 0 errors, 31 queued, 4 running; 469 episodes/h; mean batch 1.6; policy busy 57%; cgroup memory now/peak GB (25.31, 25.77)
+[rollout    2485s] progress: 315 done, 0 errors, 21 queued, 4 running; 472 episodes/h; mean batch 1.6; policy busy 57%; cgroup memory now/peak GB (24.7, 25.77)
+[rollout    2545s] progress: 327 done, 0 errors, 9 queued, 4 running; 478 episodes/h; mean batch 1.6; policy busy 57%; cgroup memory now/peak GB (24.76, 25.77)
+[rollout    2605s] progress: 338 done, 0 errors, 0 queued, 2 running; 482 episodes/h; mean batch 1.6; policy busy 57%; cgroup memory now/peak GB (19.52, 25.77)
+[rollout    2612s] finished: 340 records, 0 errors in 2530s (484 episodes/h); 10165 policy calls, mean batch 1.6, policy busy 57%; cgroup memory now/peak GB (13.95, 25.77)
+=== GPU utilization over the run (nvidia-smi, 30 s samples)
+mean 56.7% over 88 samples
+340 /mnt/proxy/rollouts/pilot-rollout2/pilot2-dinov3-s0.0of1.jsonl
+Thu Nov  5 00:12:12 UTC 2026
+=== done
