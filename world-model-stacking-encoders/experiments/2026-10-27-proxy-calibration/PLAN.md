@@ -182,7 +182,13 @@ Added by the worker "train-wave1" (LOG 2026-11-06 (a)). A dated record of a user
 
 **Training order (user, 2026-11-03):** the seed-noise check comes first. The full-length `dinov3` runs for training seeds 0 and 1 are trained before the other 13 runs; submitted as Job `stacking-encoders-proxy-train-wave1-dinov3` (LOG 2026-11-06 (a)).
 
+**Training GPU list for all 15 runs (user, 2026-11-06: "Add A40, keep it for all"):** RTX 3090, RTX 4090, RTX A5000, RTX A6000, L40, L40S and A40 (the wave-1 list plus A40), driver > 569, us-west, hosts k8s-chase-ci-07 and ry-gpu-08 excluded. Seed 1 trained on a 3090; seed 0 was resubmitted as `stacking-encoders-proxy-train-wave1b-dinov3-s0` with this list (LOG 2026-11-06 (c)), so the two seed-check runs may be on different GPU models.
+
+**Time limit (user, 2026-11-06, from the lead's chat):** asked whether RUN.md's roughly 7-day stage-4 limit (stop 5) can stretch for the full benchmark, the user said "yes we have time and your time estimates are always long". This is a user override of RUN.md stop 5 for this round (the full-benchmark evaluation of about 120 to 130 h on 8 GPUs, plus training, may exceed 7 days). RUN.md itself is not edited and still says about 7 days; this amendment overrides it. The other stop conditions (8 GPUs, 20 Jobs, GPU floor, and so on) are unchanged.
+
 ## DRAFT, needs the user's OK before any wave-1 rollout record is read: seed-noise comparison rule
+
+**Superseded 2026-11-06: the rule is locked in "Seed-noise rule (locked 2026-11-06)" below. This draft stays as history.**
 
 **Source of the idea (user's choice, 2026-11-03):** direction `PLAN.md` "Next" item 1 and direction LOG 2026-11-03 (k): "If two seeds of the same config differ by about as much as the harm threshold (half the paper's D+R − D drop), 3 seeds can't settle the question; rethink seeds or N before training the other 13 runs", and "write the comparison rule down before the runs finish". That wording points to threshold option 1 below (T = 2.7); options 2 and 3 are new in this draft.
 
@@ -205,6 +211,20 @@ Added by the worker "train-wave1" (LOG 2026-11-06 (a)). A dated record of a user
 3. Report the mean success next to the delta and let the user judge, with no automatic rule. Tradeoff: no new threshold, but not a pre-registered rule.
 
 **Not covered by this draft (open):** whether to use the delta's episode-resampling interval (it describes episode sampling only, which on 10,030 episodes is narrow, and is not evidence about training-seed variability); and any per-category noise delta (small cells are noisier, and the rule is on the overall mean).
+
+## Seed-noise rule (locked 2026-11-06)
+
+**Provenance.** The user chose the seed-noise check on 2026-11-03 (direction `PLAN.md` "Next" item 1; LOG 2026-11-03 (k)). On 2026-11-06, in the lead's chat, the lead explained the draft above and recommended threshold option 1 (T = 2.7, the harm threshold) and floor option 2. The user answered: "i just want you to stay as faithful to the paper as possible". The lead replied that the paper has no training-seed check at all (one checkpoint per config) and that the options anchored to the paper's own numbers are threshold option 1 and floor option 2, and said it would lock those unless the user objected. The user did not object. Locked on that basis, 2026-11-06, before any wave-1 rollout record was read.
+
+**What is compared.** The two full-length `dinov3` checkpoints, training seed 1 and training seed 0, on the full benchmark (10,030 LIBERO-Plus episodes). Each episode's score is the mean success over eval seeds 41, 42, 43. Noise delta = mean over the 10,030 episodes of score(`dinov3`, seed 1) - score(`dinov3`, seed 0), in percentage points, reported with its sign and with the numbers of episodes where seed 1 scored lower and higher. The rule uses |noise delta|. Seed 0 and seed 1 may have trained on different GPU models (LOG 2026-11-06 (c)); that is noted, not corrected for.
+
+**Outcome.**
+- T = 2.7 points (the harm threshold, half the paper's D+R - D drop of -5.41). If |noise delta| is at or above 2.7: "3 seeds can't settle the question; rethink seeds (or N) before the other 13 runs." This is a stop for the user's decision, not a new design.
+- Floor: if either seed's mean LIBERO-Plus success is below 2.7 points, the answer is "can't tell; user decides", whatever the noise delta (a delta near 0 means nothing when both runs score near 0).
+- Otherwise (|noise delta| below 2.7 and both means at or above 2.7): "go ahead" with the other 13 runs.
+- The thresholds are not changed after seeing the result.
+
+**Note (speculative, not tested).** This check is probably conservative: the same-seed D+R - D comparison is probably less noisy than the cross-seed delta, because `make_plan` in `proxy_wam.py` (line 270) depends only on the seed and the episode list, so D and D+R at the same seed see the same batch order, while seed 1 vs seed 0 also changes the batch order. So it errs toward "rethink seeds". A single delta from two seeds is one draw, a rough guide, not an estimate of the training-seed variance.
 
 ## Eval bookkeeping for the paired analysis (agent, 2026-10-28; after the reviewer amendment)
 `src/lp_eval.py` + `src/test_lp_eval.py` (6 synthetic checks pass):
