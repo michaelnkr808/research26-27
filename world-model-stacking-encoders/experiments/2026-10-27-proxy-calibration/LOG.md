@@ -131,3 +131,197 @@ Not available for the pilot: the actual per-episode `wall_s` and `steps` by cate
 
 Recommendation: A first (needed anyway for the success rates, and no GPU), then B plus C if the slow categories turn out CPU-heavy (B for the dips, C for the average). Not E. D only if the user accepts losing the Prometheus check.
 **Next:** the user decides whether to approve the CPU-only Job that reads the two JSONLs (success rates and `wall_s` / `steps` by category), and which of B, C, D, F (if any) to apply before any stage 4 rollout. Nothing on the cluster or in the code has been changed.
+
+## 2026-11-05 (d) [agent] (pilot read Job: JSONLs recovered; sizing, cap, stage 4 estimate, timing by category)
+Worker "pilot-read". The user approved submitting the read Job in this session (2026-11-05: "go, submit the pilot-read job"). Paths relative to this folder. Nothing on the cluster was deleted; the other pod in the namespace (`vissam-feedback-stage1-v1-*`) was not touched. No GPU Job, no change to `src/` apart from the new read-only `src/pilot_timings.py`, no change to any locked rule text.
+
+**1. The read Job**
+- verified (read the whole manifest `jobs/rendered/job-pilot-read.yaml`, cherry-picked from 815416b): one container, image `pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime`, requests cpu 500m / mem 512Mi, limits 600m / 600Mi, no GPU, the PVC `stacking-encoders-proxy` mounted `readOnly: true` at /mnt/proxy, only `ls`, `sha256sum`, `wc -l`, `gzip | base64`; no writes, no sleep, no tolerations, us-west, deadline 7200 s, ttl 86400. Not edited.
+- verified: `kubectl create --dry-run=server -f jobs/rendered/job-pilot-read.yaml` -> `job.batch/stacking-encoders-proxy-pilot-read created (server dry run)`; then `kubectl create -f ...` -> `job.batch/stacking-encoders-proxy-pilot-read created`. (The shell's `date -u` printed `Fri Nov  6 07:13:56 UTC 2026` at submit, which does not match the 2026-11-05 clock of the other entries; I did not investigate.)
+- verified: one-shot checks: ContainerCreating for about 6 min (image pull, "Successfully pulled image ... in 3m1.838s"), then `pod/stacking-encoders-proxy-pilot-read-stvfp   0/1   Completed   0   6m32s`.
+- verified: log saved with `kubectl logs job/stacking-encoders-proxy-pilot-read -n aria-world > results/logs/pilot-read-stvfp.log` (50,493 bytes, ends `=== done`).
+- verified (from that log): `pilot2-dinov3-s0.0of1.jsonl` 165,253 bytes, SHA256 `c07ab4a83598fed2ae8e86856535f66e7c170db3c90f024c7082cf9479dc2c01`, LINES 340. `pilot2-dinov3+c-radiov4-s0.0of1.jsonl` 172,047 bytes, SHA256 `0670ec3e168912aceaf47ba108a7c4ca88fddba8cf46fed67a9fbc214660d111`, LINES 340.
+- verified: decoded (base64, gunzip, in Python) into `results/pilot/`; the decoded bytes' sha256 equals the Job's printed value for both (script printed True, True), and:
+  ```
+  c07ab4a83598fed2ae8e86856535f66e7c170db3c90f024c7082cf9479dc2c01  pilot/pilot2-dinov3-s0.0of1.jsonl
+  0670ec3e168912aceaf47ba108a7c4ca88fddba8cf46fed67a9fbc214660d111  pilot/pilot2-dinov3+c-radiov4-s0.0of1.jsonl
+       340 pilot/pilot2-dinov3-s0.0of1.jsonl
+       340 pilot/pilot2-dinov3+c-radiov4-s0.0of1.jsonl
+  ```
+  `.gitignore` does not ignore them (`git check-ignore` exit 1) and they are small text files, so they are committed.
+
+**2. Test under Python 3.11** (venv in the session scratchpad, not the repo: `/opt/homebrew/bin/python3.11 -m venv <scratchpad>/venv311; pip install numpy==2.2.6`. `lp_eval.py` and `test_lp_eval.py` import only the stdlib and numpy; numpy is pinned as in requirements.txt.)
+- verified: `python --version` -> `Python 3.11.14`.
+- verified: `python world-model-stacking-encoders/src/test_lp_eval.py`:
+  ```
+  1 ok: proportional subset (sums to N, within 1 of share, >= 1 per cell, exclusion, determinism)
+  2 ok: per-episode averaging over eval seeds, planted per-seed drops exact (-0.660, -1.650, +0.330 pts)
+  3 ok: identical configs give exactly 0
+  4 ok: missing / duplicate / foreign eval seeds, missing episodes, foreign-subset rows rejected
+  5 ok: locked verdict on 14 planted cases incl. every boundary; missing train seed rejected
+  6 ok: sizing recovers planted sd (33.501 pts -> N 1386)
+  7 ok: CIs resample whole episodes
+  8 ok: secondary per-config, per-category and clean numbers
+  9 ok: CLI end to end (subset with exclusion, sizing, analyze + verdict)
+  all checks passed
+  ```
+
+**3. Sizing (Step 9, locked rule; `--train-seed 0`, the pilot's train seed, per `lp_eval.py sizing --help`)**
+- verified, command and output verbatim:
+  ```
+  python world-model-stacking-encoders/src/lp_eval.py sizing --subset results/pilot/pilot-subset.json --results results/pilot/pilot2-dinov3-s0.0of1.jsonl results/pilot/pilot2-dinov3+c-radiov4-s0.0of1.jsonl --train-seed 0
+  pilot sizing (train seed 0, 100 episodes): sd 3.333 pts, sd* 5.000 pts, N 14 (SE target 1.35 pts)
+  ```
+  sd = 3.333, sd* = 1.5 x sd = 5.000, N = ceil((5.000 / 1.35)^2) = 14.
+- verified (counted from the files): the pilot checkpoints almost never succeed. Pilot sanity counts (rollouts with success = 1), sizing inputs only, not results: `dinov3`: LIBERO-Plus 1 of 300 rollouts, clean LIBERO 0 of 40. `dinov3+c-radiov4`: LIBERO-Plus 0 of 300, clean 0 of 40. The one success is libero_goal episode 1410 ("Language Instructions"), eval seed 43, `dinov3` only. That is a per-episode difference of one third in one episode and 0 in the other 99, which gives an sd of about 3.3 points (reasoned, matches the printed value). **So sd, and therefore N = 14, rests on a single successful rollout out of 600. It is not a usable estimate of how much the two real (10-epoch) models will disagree. N = 14 is also below the proportional draw's 28-cell minimum (at least 1 per cell).** Flagged for the user; the rule is locked and I did not alter it or choose for the user. (speculative: 500-step checkpoints are too weak for a paired-difference sd to mean anything; fixing that would change the locked pilot design, so it needs the user's decision.)
+
+**4. Cap and stage 4 estimate (RUN.md Step 9 cap: 15 checkpoints x (subset x 3 eval seeds + clean LIBERO) in about 48 h on at most 8 GPUs)**
+- Method (verified arithmetic; the small script is in the session scratchpad only): speed from each pod's own log and records. GPU-seconds per rollout = the pod's rollout elapsed time (pod 0: 2530 s, pod 1: 2729 s, from the "finished ... in Ns" lines) split between LIBERO-Plus and clean in proportion to the sum of the records' `wall_s` of each kind. Budget = 8 GPUs x 48 h = 384 GPU-h. Per checkpoint: 3N LIBERO-Plus rollouts + 40 clean (the pilot's 40 clean trials; assumption: the final clean list is the same size, RUN.md does not fix its size). Cap N = (384 GPU-h x 3600 / 15 - clean cost) / (3 x GPU-s per LIBERO-Plus rollout). The estimate excludes pod startup (restore about 7 to 8 min plus model load per pod) and queue time.
+
+| | pod 0 (D, L4) | pod 1 (D+R, L40) |
+|---|---|---|
+| rollout speed (log) | 484 episodes/h, 2530 s for 340 | 449 episodes/h, 2729 s for 340 |
+| GPU-s per LIBERO-Plus / clean rollout | 7.64 / 5.97 | 8.32 / 5.85 |
+| cap N (episodes) | 4012 | 3684 |
+| stage 4 rollouts at N = 14 (42 + 40 per checkpoint x 15 checkpoints) | 2.3 GPU-h = 0.29 h on 8 GPUs | 2.4 GPU-h = 0.30 h on 8 GPUs |
+| (reference) all 10,030 episodes | 959 GPU-h = 120 h on 8 GPUs | 1044 GPU-h = 130 h on 8 GPUs |
+| (reference) SE at the cap with sd* = 5.0 | 0.079 pts | 0.082 pts |
+
+- N = 14 does not exceed either cap (about 3700 to 4000), so the cap does not bind and no reduced N is needed. The cap N and its SE are listed for reference only: the SE uses sd* = 5.0 from the degenerate pilot above, so it is not a precision claim. The two speeds differ by about 8%; I did not pick one. Pod startup, queue time and any GPU-floor fix that changes envs per pod would move the real numbers (not estimated). Stage 4 training time is not in this estimate.
+
+**5. Timing by suite x category (option A of LOG (c)); `src/pilot_timings.py` reproduces it**
+- Command (verified; prints tables only, writes nothing): `python world-model-stacking-encoders/src/pilot_timings.py --subset results/pilot/pilot-subset.json --results results/pilot/pilot2-dinov3-s0.0of1.jsonl results/pilot/pilot2-dinov3+c-radiov4-s0.0of1.jsonl --logs results/logs/pilot-rollout2-0-sstst.log results/logs/pilot-rollout2-1-lz8ts.log --dip 1:1151:1766`. Rows are in job order (subset episode order x eval seeds, then 40 clean). Columns: n, mean `wall_s`, mean `steps`, mean `wall_s`/`steps`, successes. Caveats kept from LOG (c): `steps` includes the 30 wait steps and `wall_s` includes building the env, so wall/steps is rough. Almost every episode ran to the step limit, so `steps` is the same inside a suite (730 in libero_10, 430 elsewhere) and the wall_s differences are real time differences.
+- Summary (verified; pod 0 = D on the L4, pod 1 = D+R on the L40; entries are mean wall_s, then mean wall_s/steps). The full table is the script output at the end of this entry.
+
+| suite / category (jobs) | pod 0 | pod 1 |
+|---|---|---|
+| libero_10 / Sensor Noise (45-56) | 67.3 s, 0.092 | 91.9 s, 0.126 |
+| libero_10 / other categories | 33-41 s, 0.045-0.056 | 29-39 s, 0.040-0.054 |
+| libero_goal / Sensor Noise (120-131) | 138.1 s, 0.321 | 186.2 s, 0.433 |
+| libero_goal / Objects Layout (132-143) | 15.4 s, 0.036 | 17.3 s, 0.040 |
+| libero_goal / other categories | 18.6-20.7 s, 0.046-0.048 | 18.9-20.1 s, 0.044-0.047 |
+| libero_object / Sensor Noise (195-206) | 27.9 s, 0.065 | 32.7 s, 0.076 |
+| libero_object / other categories | 20.0-20.5 s, 0.046-0.048 | 18.9-19.5 s, 0.044-0.046 |
+| libero_spatial / Sensor Noise (270-278) | 30.0 s, 0.070 | 35.9 s, 0.083 |
+| libero_spatial / other categories | 20.7-22.3 s, 0.048-0.052 | 21.5-22.7 s, 0.050-0.053 |
+| clean (40 trials) | 23.7 s, 0.047 | 23.3 s, 0.046 |
+
+- verified: **Sensor Noise is the CPU-heavy category.** In all four suites and both pods its episodes are slower than the same suite's other categories: libero_10 about 2x, libero_object about 1.4 to 1.7x, libero_spatial about 1.4 to 1.7x, libero_goal about 7 to 10x on average (single libero_goal Sensor Noise episodes took up to about 400 s, wall/step about 0.92, against 15 to 20 s for the others). **Objects Layout is not slow** (libero_goal: 15.4 s and 17.3 s, the fastest category; in line with the rest of its suite in the other three). That settles the point LOG (c) left open: Objects Layout was not a cause; it only sat next to Sensor Noise in the job order.
+- Records have no start or end times (verified: the keys are benchmark, suite, episode_id, category, config, train_seed, eval_seed, checkpoint, subset_id, success, steps, instruction, wall_s, final_state, worker_peak_rss_mb). So the overlap check uses estimated times: the file is written as episodes finish, so line i is the i-th completion; I interpolated its end time from the done counts in the pod's progress lines (about +-30 s) and set start = end - wall_s. Pod 1's GPU near-zero stretch (about 03:43:30 to 03:53:45 UTC per LOG (c)) maps to rollout clock about 1151 to 1766 s (it finished at 2813 s = 04:11:12; my arithmetic).
+- verified, in that window (pod 1): the first four libero_goal Sensor Noise episodes (jobs 120 to 123) started at about 1098 to 1140 s and took 127 to 205 s each, jobs 124 and 125 took 127 s, and jobs 126, 127, 128 took 391 to 397 s each, ending at about 1682, 1706 and 1736 s. So Sensor Noise episodes were running in every part of the window, and the last of them finished after it. Only jobs 129 to 131 of the block finished normally (17 to 20 s).
+- verified (the check LOG (c) asked for): the non-Sensor-Noise episodes that overlapped the block ran at normal speed. Pod 1: the libero_goal Objects Layout (jobs 132 to 143) and Light Conditions (144 to 152) episodes that ran between about 1480 and 1750 s took 14.9 to 23.5 s each (measured wall_s), wall/step 0.035 to 0.055, the same as in the rest of the run. So the slowness stayed with the Sensor Noise episodes and did not slow their neighbours on the same pod at the same time. That argues against a pod-wide stall in those minutes (for example a CephFS stall, which would have slowed all four workers) and for a per-episode cost of Sensor Noise. Caveat (reasoned): the placement of the neighbours in time depends on the +-30 s estimate, but their wall_s values are measured and short, which is what carries the argument.
+- Does it support the CPU-heavy-category idea? Yes for Sensor Noise (verified above), no for Objects Layout. That the slowness comes from the perturbation's CPU work (Wand/ImageMagick) is still speculative; the table only shows that the category costs 1.4x to 10x the time per step. The GPU near-zero stretch then follows LOG (c)'s mechanism (speculative, consistent with the data): while 3 to 4 workers each ran a Sensor Noise episode at 0.3 to 0.9 s per step, the policy was called rarely.
+- Pod 0 (L4) shows the same pattern in the table. It has no DCGM series, so no dip window was mapped for it and the overlap listing was run for pod 1 only.
+- Consequence for LOG (c)'s fix options (not applied; the user chooses): option B (interleave the job order) fits the data, since the libero_goal Sensor Noise block costs 7 to 10x per episode and putting such episodes among fast ones would stop all four workers being slow together. That is a reading of the table, not a test.
+
+**Next:** (1) The user decides how to handle the sizing: the locked rule gives N = 14, but sd rests on one successful rollout in 600 (500-step pilot checkpoints). Whether N = 14 is acceptable (the proportional draw needs at least 28 anyway), or the sizing basis should change (which amends the locked pilot design), is the user's call. (2) The user picks the GPU-floor fix (B and/or C of LOG (c)); the Sensor Noise result supports B. (3) The final subset draw (proportional, excluding the pilot episodes) has not been done; it waits on (1).
+
+Output of `pilot_timings.py` (verbatim, full):
+```
+
+=== experiments/2026-10-27-proxy-calibration/results/pilot/pilot2-dinov3-s0.0of1.jsonl  (340 records)
+cell (suite / category)                    jobs        n   mean_wall_s  mean_steps  mean_wall/steps(s)  succ
+libero_10 / Background Textures            0-8          9         40.6       730.0              0.0557     0
+libero_10 / Robot Initial States           9-20        12         33.5       730.0              0.0459     0
+libero_10 / Camera Viewpoints              21-32       12         32.8       730.0              0.0450     0
+libero_10 / Language Instructions          33-44       12         33.2       730.0              0.0454     0
+libero_10 / Sensor Noise                   45-56       12         67.3       730.0              0.0922     0
+libero_10 / Objects Layout                 57-65        9         32.8       730.0              0.0449     0
+libero_10 / Light Conditions               66-74        9         34.3       730.0              0.0470     0
+libero_goal / Background Textures          75-83        9         20.7       430.0              0.0480     0
+libero_goal / Robot Initial States         84-95       12         20.0       430.0              0.0466     0
+libero_goal / Camera Viewpoints            96-107      12         19.7       430.0              0.0459     0
+libero_goal / Language Instructions        108-119     12         18.6       408.1              0.0456     1
+libero_goal / Sensor Noise                 120-131     12        138.1       430.0              0.3212     0
+libero_goal / Objects Layout               132-143     12         15.4       430.0              0.0359     0
+libero_goal / Light Conditions             144-152      9         20.2       430.0              0.0470     0
+libero_object / Background Textures        153-158      6         20.5       430.0              0.0477     0
+libero_object / Robot Initial States       159-170     12         20.3       430.0              0.0471     0
+libero_object / Camera Viewpoints          171-182     12         20.0       430.0              0.0465     0
+libero_object / Language Instructions      183-194     12         20.0       430.0              0.0465     0
+libero_object / Sensor Noise               195-206     12         27.9       430.0              0.0649     0
+libero_object / Objects Layout             207-218     12         20.0       430.0              0.0465     0
+libero_object / Light Conditions           219-227      9         20.0       430.0              0.0464     0
+libero_spatial / Background Textures       228-236      9         20.7       430.0              0.0482     0
+libero_spatial / Robot Initial States      237-245      9         22.3       430.0              0.0518     0
+libero_spatial / Camera Viewpoints         246-257     12         21.7       430.0              0.0504     0
+libero_spatial / Language Instructions     258-269     12         21.0       430.0              0.0488     0
+libero_spatial / Sensor Noise              270-278      9         30.0       430.0              0.0698     0
+libero_spatial / Objects Layout            279-290     12         21.9       430.0              0.0508     0
+libero_spatial / Light Conditions          291-299      9         21.9       430.0              0.0510     0
+clean /                                    clean       40         23.7       505.0              0.0470     0
+
+=== experiments/2026-10-27-proxy-calibration/results/pilot/pilot2-dinov3+c-radiov4-s0.0of1.jsonl  (340 records)
+cell (suite / category)                    jobs        n   mean_wall_s  mean_steps  mean_wall/steps(s)  succ
+libero_10 / Background Textures            0-8          9         39.1       730.0              0.0536     0
+libero_10 / Robot Initial States           9-20        12         29.5       730.0              0.0405     0
+libero_10 / Camera Viewpoints              21-32       12         30.3       730.0              0.0415     0
+libero_10 / Language Instructions          33-44       12         30.7       730.0              0.0421     0
+libero_10 / Sensor Noise                   45-56       12         91.9       730.0              0.1259     0
+libero_10 / Objects Layout                 57-65        9         34.4       730.0              0.0471     0
+libero_10 / Light Conditions               66-74        9         31.6       730.0              0.0433     0
+libero_goal / Background Textures          75-83        9         20.1       430.0              0.0468     0
+libero_goal / Robot Initial States         84-95       12         19.2       430.0              0.0446     0
+libero_goal / Camera Viewpoints            96-107      12         19.9       430.0              0.0463     0
+libero_goal / Language Instructions        108-119     12         19.2       430.0              0.0447     0
+libero_goal / Sensor Noise                 120-131     12        186.2       430.0              0.4330     0
+libero_goal / Objects Layout               132-143     12         17.3       430.0              0.0403     0
+libero_goal / Light Conditions             144-152      9         18.9       430.0              0.0439     0
+libero_object / Background Textures        153-158      6         19.5       430.0              0.0455     0
+libero_object / Robot Initial States       159-170     12         19.3       430.0              0.0450     0
+libero_object / Camera Viewpoints          171-182     12         18.9       430.0              0.0441     0
+libero_object / Language Instructions      183-194     12         19.0       430.0              0.0443     0
+libero_object / Sensor Noise               195-206     12         32.7       430.0              0.0760     0
+libero_object / Objects Layout             207-218     12         18.9       430.0              0.0440     0
+libero_object / Light Conditions           219-227      9         19.1       430.0              0.0444     0
+libero_spatial / Background Textures       228-236      9         21.6       430.0              0.0503     0
+libero_spatial / Robot Initial States      237-245      9         22.3       430.0              0.0518     0
+libero_spatial / Camera Viewpoints         246-257     12         21.5       430.0              0.0501     0
+libero_spatial / Language Instructions     258-269     12         21.9       430.0              0.0509     0
+libero_spatial / Sensor Noise              270-278      9         35.9       430.0              0.0834     0
+libero_spatial / Objects Layout            279-290     12         22.7       430.0              0.0528     0
+libero_spatial / Light Conditions          291-299      9         22.1       430.0              0.0515     0
+clean /                                    clean       40         23.3       505.0              0.0461     0
+
+-- episodes whose estimated run [start, end] overlaps rollout-clock 1151-1766 s (pod 1)
+line job  suite / category                         eval_seed  start_s   end_s  wall_s  steps  wall/steps
+ 120 123  libero_goal / Sensor Noise                 41      1098    1225   127.4    430    0.2963
+ 121 120  libero_goal / Sensor Noise                 41      1102    1305   203.1    430    0.4723
+ 122 121  libero_goal / Sensor Noise                 42      1121    1325   204.2    430    0.4748
+ 123 122  libero_goal / Sensor Noise                 43      1140    1345   205.2    430    0.4771
+ 124 124  libero_goal / Sensor Noise                 42      1278    1405   127.0    430    0.2954
+ 125 125  libero_goal / Sensor Noise                 43      1298    1425   127.0    430    0.2954
+ 126 129  libero_goal / Sensor Noise                 41      1425    1445    19.9    430    0.0463
+ 127 130  libero_goal / Sensor Noise                 42      1448    1465    17.2    430    0.0401
+ 128 131  libero_goal / Sensor Noise                 43      1462    1480    18.0    430    0.0419
+ 129 132  libero_goal / Objects Layout               41      1480    1495    15.3    430    0.0355
+ 130 133  libero_goal / Objects Layout               42      1495    1510    14.9    430    0.0347
+ 131 134  libero_goal / Objects Layout               43      1510    1525    15.5    430    0.0360
+ 132 135  libero_goal / Objects Layout               41      1530    1545    15.1    430    0.0352
+ 133 136  libero_goal / Objects Layout               42      1550    1565    15.0    430    0.0349
+ 134 137  libero_goal / Objects Layout               43      1569    1585    15.7    430    0.0364
+ 135 138  libero_goal / Objects Layout               41      1578    1600    22.5    430    0.0522
+ 136 139  libero_goal / Objects Layout               42      1597    1615    18.3    430    0.0425
+ 137 140  libero_goal / Objects Layout               43      1611    1630    19.4    430    0.0450
+ 138 141  libero_goal / Objects Layout               41      1624    1645    21.2    430    0.0493
+ 139 142  libero_goal / Objects Layout               42      1640    1657    17.5    430    0.0406
+ 140 143  libero_goal / Objects Layout               43      1652    1669    17.7    430    0.0412
+ 141 126  libero_goal / Sensor Noise                 41      1285    1682   396.4    430    0.9219
+ 142 144  libero_goal / Light Conditions             41      1675    1694    18.3    430    0.0427
+ 143 127  libero_goal / Sensor Noise                 42      1309    1706   397.4    430    0.9243
+ 144 145  libero_goal / Light Conditions             42      1694    1711    16.6    430    0.0387
+ 145 146  libero_goal / Light Conditions             43      1698    1716    17.7    430    0.0412
+ 146 147  libero_goal / Light Conditions             41      1698    1721    23.2    430    0.0540
+ 147 148  libero_goal / Light Conditions             42      1709    1726    17.1    430    0.0399
+ 148 149  libero_goal / Light Conditions             43      1713    1731    18.2    430    0.0423
+ 149 128  libero_goal / Sensor Noise                 43      1345    1736   391.4    430    0.9103
+ 150 151  libero_goal / Light Conditions             42      1724    1741    17.2    430    0.0400
+ 151 150  libero_goal / Light Conditions             41      1722    1746    23.5    430    0.0547
+ 152 152  libero_goal / Light Conditions             43      1733    1751    18.1    430    0.0420
+ 153 153  libero_object / Background Textures        41      1735    1756    20.8    430    0.0483
+ 154 155  libero_object / Background Textures        43      1742    1761    18.9    430    0.0440
+ 155 154  libero_object / Background Textures        42      1745    1766    20.8    430    0.0483
+ 156 156  libero_object / Background Textures        41      1751    1771    19.9    430    0.0464
+ 157 158  libero_object / Background Textures        43      1758    1776    17.7    430    0.0413
+ 158 157  libero_object / Background Textures        42      1762    1781    19.2    430    0.0446
+```
