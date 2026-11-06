@@ -146,6 +146,22 @@ def main():
     print(f"2b ok: job order (shuffle keeps the {len(base)} keys, seeded, off = old order, shards of 1/2/8 cover "
           f"each once, longest category run {longest_run(lp2(base))} -> {longest_run(lp2(sh0))})")
 
+    # 2c. Resume guard: a file written under one order seed / shard count is refused under another; same settings pass.
+    with tempfile.TemporaryDirectory() as d:
+        f = Path(d, "r.jsonl")
+        mk = lambda sd, i, n: R.order_jobs(base, sd)[i::n]
+        R.check_resume(mk(0, 1, 4), f)                                       # no file yet: fine
+        f.write_text("".join(json.dumps(dict(zip(("benchmark", "suite", "episode_id", "eval_seed"), R.job_key(j))))
+                             + "\n" for j in mk(0, 1, 4)[:10]))
+        R.check_resume(mk(0, 1, 4), f)                                       # same seed, shard count and index: fine
+        for bad in (mk(1, 1, 4), mk(-1, 1, 4), mk(0, 0, 2), mk(0, 2, 4)):   # other seed, off, other n, other shard
+            try:
+                R.check_resume(bad, f)
+                raise RuntimeError("stale resume accepted")
+            except SystemExit as e:
+                assert "order-seed" in str(e)
+    print("2c ok: resume guard (same settings resume; other seed, shard count or shard index refused)")
+
     # 3. Observation processing: 180 deg rotation of both cameras, 224 crop-resize, proprio = pos + axis-angle + qpos.
     img = np.zeros((R.RENDER, R.RENDER, 3), np.uint8)
     img[:32, :32] = 255                                                        # bright top-left block

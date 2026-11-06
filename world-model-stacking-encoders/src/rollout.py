@@ -149,6 +149,18 @@ def order_jobs(jobs, order_seed):
     return jobs
 
 
+def check_resume(jobs, out):
+    """Refuse to resume a file that holds records outside this shard's job list. `done_keys` is per file, so a file
+    written under another order seed, shard count or Python version would make this pod rerun jobs that other pods'
+    files already hold (duplicates). Raises SystemExit; run_jobs is untouched."""
+    stray = done_keys(out) - {job_key(j) for j in jobs}
+    if stray:
+        raise SystemExit(f"{out} holds {len(stray)} records that are not in this shard's {len(jobs)} jobs (example "
+                         f"{sorted(stray)[0]}). Likely cause: a different --order-seed, --shard count, subset/--clean "
+                         f"setting or Python version than the run that wrote the file. Use the same settings "
+                         f"(--order-seed -1 reproduces the pre-shuffle pilot order) or a new --out.")
+
+
 # ---------------------------------------------------------------------------
 # Observation and action processing (Fast-WAM's eval path)
 # ---------------------------------------------------------------------------
@@ -714,6 +726,7 @@ def main():
     clean = json.loads(Path(args.tasks).read_text())["clean"]
     jobs = order_jobs(make_jobs(sub, args.clean, clean, tuple(int(x) for x in args.eval_seeds.split(",")),
                                 args.clean_seed), args.order_seed)[i::n]
+    check_resume(jobs, args.out)
     torch.set_num_threads(args.torch_threads)
     policy = Policy.load(args.run_dir, args.t5, args.vae_path, args.device, cuda_graph=args.cuda_graph)
     cfg = policy.cfg
