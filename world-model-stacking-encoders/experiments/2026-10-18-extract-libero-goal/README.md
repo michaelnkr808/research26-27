@@ -41,3 +41,10 @@ The features stay on the PVC (`/persistent/stacking-encoders/features/`). They'r
 - Estimated vs. actual GPU-hours: predicted under 0.75 h, actual 0.88 h (1 GPU × 53 min).
 - Cleanup: Job and ConfigMap deleted; namespace has no pods or Jobs. Features remain on `michael-persistent`.
 - speculative sizing for all 4 LIBERO suites (×4 frames, assuming similar demo lengths): ~38 GB for these 2 encoders alone. That doesn't fit the 20 GB PVC, so the full extraction needs CephFS or a bigger volume.
+
+## Pointers (added 2026-11-06 in a docs pass; facts from the sources named)
+- **Status:** finished, Job exit 0 (Results above).
+- **Commit:** script `f4a7b82` (also `SRC_GIT_COMMIT` in `job.yaml`). The direction LOG names `89fb593` next to the Job run (`../../LOG.md` 2026-10-18/19).
+- **Outputs:** the features are on PVC `michael-persistent` at `/persistent/stacking-encoders/features/{siglip2,c-radiov4}/libero_goal/` (4.4G + 5.2G; not in git). The Job log is `results/job.log`, with a copy on the PVC under `/persistent/stacking-encoders/logs/`. Provenance: `../../data/README.md`.
+- **LOG entries:** `../../LOG.md` 2026-10-17 (c) (script written) and 2026-10-18/19 (the run). Index in this folder's `LOG.md`.
+- **Later use:** DINOv3, SAM 3 and VGGT-Omega were extracted from the same HDF5 files in `../2026-10-19-feasibility-tally/`. DINOv3 was left out here because its repo is gated and the HF token Secret did not exist yet (README line 7). SAM 3 and VGGT-Omega were left out because they had no loaders yet: they were stubs in `src/extract_features.py` (`../../LOG.md` 2026-10-17 (c)) and the loaders came in `0cd09b5` (message "add sam3 and vggt-omega loaders"). Their repos are gated too. These two caches were the input of `../2026-10-19-diagnostics-libero-goal/`.

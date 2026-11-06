@@ -140,3 +140,9 @@ kubectl logs -n aria-world <pod> > results/<name>-job.log
 kubectl delete job -n aria-world <job>; kubectl delete configmap -n aria-world <configmap>
 ```
 The JSONs in `results/` are cut from the `=== result json` blocks of the diagnostics logs.
+
+## Pointers (added 2026-11-06 in a docs pass; facts from the sources named)
+- **Status:** finished. The user reviewed the tally and signed it off for the README key findings on 2026-10-21 (`../../LOG.md` 2026-10-21 (h)); the key findings are in `../../README.md`.
+- **Commits:** diagnostics `7dc80ca` (all three diagnostics Jobs, `SRC_GIT_COMMIT` in `diag-*-job.yaml`; the result JSONs record the same); extraction `0cd09b5` and `9e3bdb2` (above). `../../LOG.md` 2026-10-21 (g) gives `1e342dc` for the D+S Job submission. That is the commit of the `diag-ds-job.yaml` manifest (message "tally diagnostics Job manifest for (D,S)"); `src/diagnostics.py` did not change between `7dc80ca` and `1e342dc` (checked with `git diff --stat` on 2026-11-06), so both describe the same code.
+- **Outputs:** `results/tally-libero_goal-dinov3-{siglip2,c-radiov4,sam3,vggt-omega}.json` (result JSONs), `results/diag-*-job.log` and `results/extract-try{1,2,3}-job.log` (pod logs). Features: CephFS PVC `stacking-encoders-features` (D, S, G) and `michael-persistent` (L, R); see `../../data/README.md`.
+- **LOG entries:** `../../LOG.md` 2026-10-19 (e) (pre-registration), 2026-10-19/20 (f) (extraction events), 2026-10-21 (g) (completion), 2026-10-21 (h) (sign-off). Index in this folder's `LOG.md`. The target-side follow-up is `../2026-10-21-target-diagnostics/`.

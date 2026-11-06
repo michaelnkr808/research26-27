@@ -9,11 +9,11 @@
 - Forward + backward only, with no optimizer step. Optimizer/ZeRO memory is computed analytically from the reported param counts.
 - Micro-batches 1, 2, 4, 8, 16, each with gradient checkpointing off and on. Stops at the first OOM.
 
-**Hardware:** 1× L40 or L40S 48 GB (`nvidia.com/gpu` + `gpu.product` affinity), image `pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime`. Manifests: `job-l40.yaml` and `job-a40.yaml` (`nvidia.com/a40`). Both are submitted; the first to start is kept and the other deleted. The GPU actually used is recorded in the log's `nvidia-smi` output.
+**Hardware:** 1× L40 or L40S 48 GB (`nvidia.com/gpu` + `gpu.product` affinity), image `pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime`. Manifests: `job-l40.yaml` and `job-a40.yaml` (`nvidia.com/a40`). Both were submitted; the first to start was to be kept and the other deleted (neither ever started: both were deleted unrun after 1.5 to 2.5 h Pending, see "v5" below and `../../LOG.md` 2026-10-17). The GPU actually used is recorded in the log's `nvidia-smi` output.
 - The first attempt (`job.yaml`, 1× RTX A6000) sat Pending for ~1 h with no free A6000. It was deleted unrun, and the user approved switching cards.
 - Timings on an L40 are not A6000 timings. Converting speed requires an assumed L40:A6000 throughput ratio, and that ratio gets labeled as an assumption. Memory numbers transfer directly.
 
-**Command:**
+**Command (as planned; the run that produced the results used `job-a6000-lowcpu.yaml`, see "v5" below):**
 ```
 kubectl create configmap stacking-encoders-bench-src -n aria-world --from-file=../../src/bench_fastwam_step.py
 kubectl apply -f job-l40.yaml
@@ -21,8 +21,15 @@ kubectl logs -n aria-world job/stacking-encoders-fastwam-step-bench-l40 > result
 kubectl delete job -n aria-world stacking-encoders-fastwam-step-bench-l40
 kubectl delete configmap -n aria-world stacking-encoders-bench-src
 ```
+**Command that was actually run (v5):** the same steps with `job-a6000-lowcpu.yaml` and Job name `stacking-encoders-fastwam-step-bench-a6000-lowcpu` (name from the yaml; the log was pulled to `results/job.log` per `../../LOG.md` 2026-10-17).
 
-**Commit:** see git log for the commit that adds this folder (made before submission).
+**Commit:** the low-CPU A6000 Job and script change that produced the results is `ff1b457` (2026-10-16; `../../LOG.md` 2026-10-17). The first script and Job manifest were committed as `1eaecbf` before the first submission (`../../LOG.md` 2026-10-16 (d)). Fast-WAM code: `7faa711`.
+
+**Where the outputs are:** `results/job.log` (raw pod log, the only output; no JSON was saved). Job and ConfigMap were deleted after the log was pulled (`../../LOG.md` 2026-10-17).
+
+**LOG entries:** `../../LOG.md` 2026-10-16 (d) (submission, Pending), 2026-10-17 (collection, results), 2026-10-17 (b) (reviewed for decision 001). Index in this folder's `LOG.md`.
+
+**Status:** finished. Unreviewed single run, not a finding (`../../LOG.md` 2026-10-17, Next).
 
 ## Predictions (written before running; speculative)
 - Trainable params ≈ 6B. Resident bf16 weights + grads ≈ 24 GB, plus the VAE.
