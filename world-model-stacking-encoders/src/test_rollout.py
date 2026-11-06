@@ -110,6 +110,42 @@ def main():
     assert sorted(map(R.job_key, sum(shards, []))) == sorted(map(R.job_key, jobs))
     print("2 ok: jobs (episodes x eval seeds, clean trials, shards partition)")
 
+    # 2b. Job order: a seeded shuffle before the shard split. Same keys, same order for the same seed, shards still
+    #     partition it, seed -1 is the old episode-major order, and category blocks are broken up.
+    cats = [f"cat{c}" for c in range(8)]
+    sub2 = {"subset_id": "blk", "episodes": [{"suite": "libero_goal", "id": 100 * c + k, "name": f"t{c}_{k}", "category": cat}
+                                             for c, cat in enumerate(cats) for k in range(12)]}
+    clean2 = {"libero_goal": ["a", "b"], "libero_10": ["c"]}
+    base = R.make_jobs(sub2, 2, clean2)                                     # 8 x 12 x 3 = 288 subset jobs + 6 clean
+    keyset = sorted(map(R.job_key, base))
+    sh0, sh0b, sh1 = R.order_jobs(base, 0), R.order_jobs(base, 0), R.order_jobs(base, 1)
+    assert sorted(map(R.job_key, sh0)) == keyset and len(sh0) == len(base)  # same set of jobs, none lost or added
+    assert [R.job_key(j) for j in base] == [R.job_key(j) for j in R.make_jobs(sub2, 2, clean2)]   # input untouched
+    assert list(map(R.job_key, sh0)) == list(map(R.job_key, sh0b))          # same seed, same order
+    assert list(map(R.job_key, sh0)) != list(map(R.job_key, sh1))           # different seed, different order
+    assert list(map(R.job_key, sh0)) != list(map(R.job_key, base))         # and not the episode-major order
+    assert R.order_jobs(base, -1) == base and R.order_jobs(base, -1) is not base   # flag off: exactly the old order
+    for n in (1, 2, 8):                                                     # every pod slices the same full order
+        got = sum((R.order_jobs(base, 0)[i::n] for i in range(n)), [])
+        assert sorted(map(R.job_key, got)) == keyset and len(got) == len(base), n   # covers each job exactly once
+
+    def longest_run(js):
+        best = run = 0
+        prev = None
+        for j in js:
+            run = run + 1 if j["category"] == prev else 1
+            prev, best = j["category"], max(best, run)
+        return best
+    # Unshuffled, a category is one block of 12 episodes x 3 seeds = 36 jobs in a row. Shuffled over 288 subset jobs
+    # in 8 equal categories, the expected longest run is about log(288)/log(8) = 2.7, in practice 3-5. Bound: at most
+    # a third of a block (12), far above that expectation, so it tests "blocks are broken up", not one lucky seed.
+    lp2 = lambda js: [j for j in js if j["benchmark"] == L.LP]
+    assert longest_run(lp2(base)) == 36
+    for sd in (0, 1, 2):
+        assert longest_run(lp2(R.order_jobs(base, sd))) <= 12, (sd, longest_run(lp2(R.order_jobs(base, sd))))
+    print(f"2b ok: job order (shuffle keeps the {len(base)} keys, seeded, off = old order, shards of 1/2/8 cover "
+          f"each once, longest category run {longest_run(lp2(base))} -> {longest_run(lp2(sh0))})")
+
     # 3. Observation processing: 180 deg rotation of both cameras, 224 crop-resize, proprio = pos + axis-angle + qpos.
     img = np.zeros((R.RENDER, R.RENDER, 3), np.uint8)
     img[:32, :32] = 255                                                        # bright top-left block
