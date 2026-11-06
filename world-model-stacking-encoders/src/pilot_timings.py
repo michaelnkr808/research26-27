@@ -7,7 +7,7 @@ Per result file (one pod): wall_s, steps and wall_s/steps by suite x category in
 episodes in file order, each under eval seeds 41, 42, 43, then the clean trials; rollout.make_jobs). Caveats: `steps`
 includes the 30 wait steps and `wall_s` includes building the env, so wall_s/steps is a rough number. The records carry
 no timestamps. The file is written as episodes finish, so line i is the i-th completion; with the pod's progress lines
-(done count per ~60 s on the rollout clock) the end time of line i is interpolated, to about +-30 s, and start =
+(done count per ~60 s on the rollout clock) the end time of line i is interpolated, to within about 60 s (job order is FIFO but estimated starts can invert), and start =
 end - wall_s. `--dip POD:START:END` (rollout-clock seconds) lists the episodes whose estimated run overlapped that window.
 Writes nothing; prints tables.
 """
