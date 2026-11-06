@@ -66,7 +66,7 @@ Reference R²_D (Δ_D only, r = 64, k-mean): 0.364–0.372 across pairs.
 - Try 1: ~0.4 CPU-h, OOM-killed.
 
 ## Command, commit, outputs and pointers (added 2026-11-06 in a docs pass; facts from the sources named)
-- **Status:** finished 2026-10-28 03:35Z (try 2); H-E fails the pre-registered rule (Results above). The user signed the result into the direction README key findings on 2026-10-27 (`../../LOG.md` 2026-10-27 (k)). The header of `job.yaml` still says "NOT YET SUBMITTED"; that comment predates the submission and was not edited (`job.yaml` is a record of the manifest).
+- **Status:** finished 2026-10-28 at about 03:35Z (try 2); H-E fails the pre-registered rule (Results above). The user signed the result into the direction README key findings on 2026-10-27 (`../../LOG.md` 2026-10-27 (k)). The header of `job.yaml` still says "NOT YET SUBMITTED"; that comment predates the submission and was not edited (`job.yaml` is a record of the manifest).
 - **Command** (steps from `RUN.md`, names from `job.yaml` and `../../LOG.md` 2026-10-27 (f) to (k)):
 ```
 kubectl create configmap stacking-encoders-target-src -n aria-world --from-file=../../src/diagnostics.py --from-file=../../src/target_diagnostics.py   # at 52d1226

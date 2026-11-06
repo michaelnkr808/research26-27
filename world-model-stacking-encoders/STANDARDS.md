@@ -38,7 +38,7 @@
   - Image orientation in LIBERO HDF5 (OpenGL convention; rotate 180°).
 
 ## Tools and environment
-- Languages, libraries, hardware: Python 3.11.14; PyTorch 2.7.1 (CUDA 12.8 build on the cluster), h5py, transformers 4.57.6, timm, open_clip_torch, numpy 2.2.6, with the full pin list in `experiments/2026-10-27-proxy-calibration/requirements.txt` (versions as used on the Mac, 2026-10-28). The tally Jobs used `transformers==5.18.0` for SAM 3 and VGGT-Ω (`experiments/2026-10-19-feasibility-tally/extract-job.yaml`). Fast-WAM at commit `7faa711` is installed with `--no-deps`. Hardware: a Mac (CPU or MPS) for local tests and Nautilus GPUs and CPU nodes for Jobs (GPU model per run is in each experiment's LOG).
+- Languages, libraries, hardware: Python 3.11.14; PyTorch 2.7.1 (CUDA 12.8 build on the cluster), h5py, transformers 4.57.6, timm, open_clip_torch, numpy 2.2.6, with the full pin list in `experiments/2026-10-27-proxy-calibration/requirements.txt` (versions as used on the Mac, 2026-10-28). One Job, the tally extraction Job, pinned `transformers==5.18.0` because SAM 3 is not in 4.57 (comment in `experiments/2026-10-19-feasibility-tally/extract-job.yaml`); it is not a direction-wide pin. Fast-WAM at commit `7faa711` is installed with `--no-deps`. Hardware: a Mac (CPU or MPS) for local tests and Nautilus GPUs and CPU nodes for Jobs (GPU model per run is in each experiment's LOG).
 - Environment file: `experiments/2026-10-27-proxy-calibration/requirements.txt` (proxy-calibration code). For the earlier experiments there is no environment file; each Job yaml carries its own `pip install` pins (`experiments/*/job.yaml`, `extract-job.yaml`, `diag-*-job.yaml`), and the proxy round builds its environment with `src/setup_env.sh`.
 - Experiment tracker (W&B / MLflow / local logs): local logs. No W&B or MLflow is used (Fast-WAM's wandb pin is left out on purpose; `experiments/2026-10-27-proxy-calibration/requirements.txt`). Each run's config, source commit and metrics go into result JSONs and pod logs under the experiment's `results/`, and the step-by-step record goes into the experiment `LOG.md` (`../_standards/04`).
 - Compute budget: **no GPU-hour cap** (Nautilus is free; see override below). All GPU work follows `../_standards/08-compute-nautilus.md`. Specifically:
@@ -51,7 +51,7 @@
 
 ## Conventions
 - Notation or terminology: encoders by letter as in Table 10 (D=DINOv3, V=V-JEPA 2.1, L=SigLIP 2, S=SAM 3, G=VGGT-Ω, H=HRP, U=UniTok, R=C-RADIOv4). "Similarity" = CKA; "complementarity" = gain(B|A) on a named task target. Never use the two interchangeably.
-- Figure and table conventions: no figure convention is recorded yet; no image files exist in the direction folder (checked 2026-11-06). Tables in experiment READMEs give the metric, the 95% demo-level bootstrap CI in brackets, the paper's delta from Table 10 beside it, and the encoder by letter code with its full name (`experiments/2026-10-19-feasibility-tally/README.md`, `experiments/2026-10-21-target-diagnostics/README.md`). Plain-language text in chat spells encoder names out.
+- Figure and table conventions:
 - Target output format or venue: a publication (user goal, 2026-10-19). Venue to be decided with the mentor.
 
 ## Overrides of general standards
