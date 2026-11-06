@@ -10,6 +10,7 @@
 # demo index.
 # Try 1 (2026-10-27, 9Gi/10Gi) was OOM-killed; see LOG 2026-10-27 (f) and (h). This is try 2: lower-memory code, staged
 # features, resized. NOT YET SUBMITTED. Needs user approval and the same pre-checks as try 1 (RUN.md).
+# Update 2026-11-06: this Job was later submitted and ran 2026-10-27; see README.md in this folder.
 apiVersion: batch/v1
 kind: Job
 metadata:

@@ -1,17 +1,13 @@
 # Stacking Encoders
 
-**Status:** exploring. The cheap frozen-feature tests (input side and target side) did not flag the harmful DINOv3 + C-RADIOv4 pair. Now running the multi-seed proxy replication, stage 4 (as of 2026-11-06). Pilot results were read 2026-11-05 (experiment LOG (d)): the 500-step pilot checkpoints almost never succeed, so the pilot couldn't size the evaluation, and the user chose the paper's full LIBERO-Plus benchmark for every checkpoint (PLAN amendment 2026-11-06). The mid-run GPU dip traced to some Sensor Noise episodes running back to back; the rollout job order is now shuffled (`--order-seed`, merged 00f2e91). Seed-noise check: full-length `dinov3` seed 1 trained (verified, 2026-11-06); seed 0 is queued for a GPU; the comparison rule is locked in the experiment PLAN. Seed 1's full-benchmark rollout is prepared but blocked: the LIBERO-Plus `task_classification.json` must be downloaded by the user first. Current agenda: `PLAN.md`. History: `LOG.md` (direction level), each experiment's own `LOG.md` (details).
+**Status:** exploring. The cheap frozen-feature tests (input side and target side) did not flag the harmful DINOv3 + C-RADIOv4 pair. The multi-seed proxy replication (stage 4) is running (as of 2026-11-06); details are in `PLAN.md` and `experiments/2026-10-27-proxy-calibration/LOG.md`. Current agenda: `PLAN.md`. History: `LOG.md` (direction level), each experiment's own `LOG.md` (details).
 **Goal:** publish (user, 2026-10-19). Venue and timeline to discuss with the PhD mentor on Thursday 2026-10-22.
 **Question (draft, not yet confirmed):** Can a cheap, *conditional* measure of what encoder B adds to encoder A (task-relevant information not recoverable from A), computed on frozen features from robot data, predict which encoder combinations improve a World Action Model (WAM) before training, where symmetric similarity (CKA) does not?
 - Secondary, possibly a separate paper: why do general-purpose encoders match or beat specialists?
 - **Hypothesis not chosen yet.** Candidates and definitions (similarity vs complementarity) are in `writing/hypotheses-draft.md`.
-**Mentor feedback (2026-10-19), driving the current plan:**
-- Low similarity ≠ complementarity, so define complementarity.
-- Fix the hypothesis first.
-- Start with 1 dataset and 5–10 encoders, CKA, and a manual tally.
-- Position against agostinelli2022 (ensemble transferability metrics).
+**Mentor feedback (2026-10-19):** recorded in `LOG.md` 2026-10-19 (d), `decisions/002-feasibility-before-proxy-training.md` and `writing/hypotheses-draft.md`. Later mentor feedback: `LOG.md` 2026-10-27 (f) (mentor meeting outcome; run spec for the target-side diagnostics), 2026-10-27 (g) (LIBERO study session; the "intermediate steps" point), 2026-10-27 (h) (target-side Job try 2; the mentor also wants the target-encoder run) and 2026-11-06 [agent, docs] (mentor meeting 2026-11-06 recorded).
 **Plan:** see `PLAN.md` (living agenda: now, next, parked, recently done).
-**Reviewer feedback (2026-10-28, two rounds, accepted by user):** the proxy round is a *proxy replication*; if it doesn't reproduce the D+R drop, that doesn't show the paper's result was noise, only whether a higher-fidelity multi-seed WAM replication is worth running. Primary analysis = paired D+R − D per training seed on the same episodes (PLAN outcome rule, decision 003 amendment). Open for a workshop paper: five configs test one anomaly, not a predictor; a low-cost retrospective, exploratory check of our diagnostics against the paper's 16 composition results is a candidate next analysis (suggestive only; not started).
+**Reviewer feedback (2026-10-28):** recorded in `LOG.md` 2026-10-28 (b) (reviewer feedback: proxy round reframed as a proxy replication), 2026-10-28 (e) (second reviewer round) and 2026-10-28 (f) (decision rule locked before the pilot; two more reviewer rounds), and in the experiment PLAN's outcome rule and decision 003's amendment.
 **What done looks like:** A conditional metric that ranks combo gains better than CKA, single-encoder score, and objective-overlap reasoning, on multi-seed ground truth. It must also explain harmful combos (e.g. D+R). Or a documented negative result.
 
 ## Key findings so far
@@ -33,19 +29,20 @@ Signed off by the user 2026-10-21 (input side) and 2026-10-27 (target side). Sou
 - Starting point: liu2026what (arXiv 2610.13024v1) judges complementarity qualitatively and uses one training checkpoint per config. See `literature/notes/liu2026-what-visual-representations-wams.md`.
 
 ## Key files
-- Research proposal for the mentor: one-page version `writing/proposals-2026-10-27/p1-short.md` (Google Doc: https://docs.google.com/document/d/1JJj8KcgBusH65LHY6CsFEiFqACy2lQI3f-wcgI3WF40/edit); full notes `writing/proposals-2026-10-27/p1-stacking-encoders.html` (Google Doc: https://docs.google.com/document/d/1GgJm4coJ8Kn2J_D0IfIBYZpXSwlVU_3wVz17nUM7MBY/edit). Sibling candidate directions: `../world-model-embedding-choice/`, `../world-model-planning-horizon/`
-- Research proposal draft for the mentor (2026-10-25, due 2026-10-27): Claude Doc https://claude.ai/artifact/B6uCkLxYV5FmWUUDKRQbzF (LOG 2026-10-25)
-- `STANDARDS.md`: topic rules (compute budget + Nautilus rules filled; rest TBD)
+- Research proposal for the mentor: one-page version `writing/proposals-2026-10-27/p1-short.md` (Google Doc: https://docs.google.com/document/d/1JJj8KcgBusH65LHY6CsFEiFqACy2lQI3f-wcgI3WF40/edit); full notes `writing/proposals-2026-10-27/p1-stacking-encoders.html` (Google Doc: https://docs.google.com/document/d/1GgJm4coJ8Kn2J_D0IfIBYZpXSwlVU_3wVz17nUM7MBY/edit)
+- `STANDARDS.md`: topic rules (scope, domain sources, baselines, metrics and pitfalls, tools and environment, compute budget and Nautilus rules are filled; only the figure/table convention is blank)
 - `LOG.md`: research log for the direction (short session summaries; before 2026-11-04 it holds the full detail too). Each experiment folder has `PLAN.md`, `LOG.md`, `README.md`.
 - `decisions/`: decision records (001: proxy-policy ground truth; 002 (accepted 2026-10-19): feasibility tally before training; 003 (accepted 2026-10-27): go straight to the multi-seed proxy policy)
-- `literature/`: paper notes and references.bib (incl. agostinelli2022, the closest prior work per the mentor)
+- `literature/`: paper notes and references.bib (LIBERO, LIBERO-Plus and liu2026what; the agostinelli2022 note, the closest prior work per the mentor, is in `literature/notes/`, not in the bib)
 - `writing/hypotheses-draft.md`: definitions, candidate hypotheses, the feasibility experiment, a novelty statement draft, and Thursday prep
 - `experiments/2026-10-16-fastwam-step-bench/`: 1-GPU Fast-WAM training-step benchmark. A6000: ~1.3 samples/s/GPU, unreviewed, not a finding.
 - `src/bench_fastwam_step.py`: the benchmark script
 - `src/extract_features.py`: Phase 1 frozen-feature extraction (LIBERO HDF5 → per-encoder HDF5). Loaders: SigLIP 2, C-RADIOv4, DINOv3, SAM 3, VGGT-Ω. V-JEPA 2.1, UniTok and HRP are stubs.
 - `experiments/2026-10-18-extract-libero-goal/`: first extraction Job. Features are on PVC `michael-persistent` at `/persistent/stacking-encoders/features/`.
-- `src/target_diagnostics.py`, `src/test_target_diagnostics.py`: target-side diagnostics (H-E: T0 loss share, T1 target predictability, T2 reduced-rank interference) + synthetic tests; `experiments/2026-10-21-target-diagnostics/`: PLAN and Job manifest (not yet run)
+- `src/target_diagnostics.py`, `src/test_target_diagnostics.py`: target-side diagnostics (H-E: T0 loss share, T1 target predictability, T2 reduced-rank interference) + synthetic tests; `experiments/2026-10-21-target-diagnostics/`: PLAN, Job manifest and results (ran 2026-10-27; see its `README.md`)
 - `src/diagnostics.py`, `src/test_diagnostics.py`: Phase 1 diagnostics (CKA, probes, gain, demo-level bootstrap CIs) + synthetic tests; `experiments/2026-10-19-diagnostics-libero-goal/`: first results (pilot)
 - `experiments/2026-10-19-feasibility-tally/`: the decision-002 tally (D + L, R, S, G on libero_goal). Manifests, logs, result JSONs, full tables.
+- `data/README.md`: provenance of every dataset and feature cache (source, version, license, where stored)
+- `experiments/2026-10-27-proxy-calibration/`: the multi-seed proxy replication (decision 003): proxy-policy training, rollouts on LIBERO-Plus, paired analysis. Running; see its `README.md` and `LOG.md`.
 - `data/pvc-features-cephfs.yaml`: CephFS PVC `stacking-encoders-features` (100Gi, RWX). Holds the D, S, G features (17.6G) under `stacking-encoders/features/`. L and R stay on `michael-persistent`.
 - `literature/liu2026what-table{1,10}-*.csv`: paper tables, checked against the arXiv HTML 2026-10-18
