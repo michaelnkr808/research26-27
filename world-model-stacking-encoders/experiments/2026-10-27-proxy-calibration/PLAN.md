@@ -243,3 +243,15 @@ Added by the worker "train-wave1" (LOG 2026-11-06 (a)). A dated record of a user
 
 ## Gates
 User, 2026-10-28: steps 4–6 pre-approved and auto-chained ("move from stage to stage autonomously unless there is some major problem"); stop conditions and exact steps in `RUN.md`. Still gated: STANDARDS (more than 8 GPUs at once or more than 20 Jobs), anything outside RUN.md, protocol or outcome-rule changes, deleting data.
+
+## Amendment 2026-11-06 (b): A40/A6000 are special resources
+
+Added by the worker "train-a40" (LOG 2026-11-06 (f)). A dated record; the locked text above, including "Amendment 2026-11-06", is unchanged.
+
+**Finding (verified, public Prometheus, run by the lead 2026-11-06 about 23:10 UTC; queries and results in LOG (f)):** A40 and RTX A6000 are NRP special resources (`nvidia.com/a40`, `nvidia.com/rtxa6000`). Every node that advertises either has `nvidia_com_gpu` allocatable 0 or absent. So a pod asking for `nvidia.com/gpu: 1` with `gpu.product` NVIDIA-A40 or NVIDIA-RTX-A6000 can never match those nodes.
+
+**Consequence:** the A40 added to the training GPU list by "Amendment 2026-11-06" ("Add A40, keep it for all") added no capacity, and neither did the A6000 entry that was already in the list. The same two entries in the evaluation Job's GPU list add nothing. The lists still work for the other cards (RTX 3090, 4090, A5000, L40, L40S, and for evaluation A10, L4).
+
+**User decision (2026-11-06, on the lead's option 1, race an A40-named twin of seed 0):** "I like 1. just be sure to properly kill the other one". Job `stacking-encoders-proxy-train-wave1c-dinov3-s0-a40` asks for `nvidia.com/a40: "1"`, has no `gpu.product` term, and writes `/mnt/proxy/runs/dinov3-s0-a40`; everything else equals wave 1b. Whichever of it and `stacking-encoders-proxy-train-wave1b-dinov3-s0` is scheduled first is kept; the other Job is deleted (graceful delete). If the twin wins, evaluation of seed 0 must point at `dinov3-s0-a40` (`rollout.py` takes config and seed from the run dir's `config.json`, not its name).
+
+**Going forward:** future renders drop NVIDIA-A40 and NVIDIA-RTX-A6000 from `gpu.product` lists. A named-resource variant (`nvidia.com/a40` or `nvidia.com/rtxa6000`) is added only with the user's OK.

@@ -484,3 +484,33 @@ Worker "rollout-s1b" (resumed). UTC. Entry (d) is unchanged; this entry supersed
 - (a) `backoffLimit` 4 is Job-wide. A deterministically failing episode makes its pod exit 1 at the end (`rollout.py` lines 738-739, `SystemExit` when `n_err`) on every retry, so retries would burn the limit and could fail the Job. Check `/mnt/proxy/rollouts/eval-dinov3-s1/*.errors.jsonl` early.
 - (b) The 96 h deadline covers one queue wait, but at parallelism 2 each of the 4 waves queues again; this only matters if parallelism stays low. A deadline kill can be resumed (the JSONL resumes with the same settings).
 - (c) Correction to (d) Next (5): `--order-seed` already defaults to 0 in `rollout.py`, so passing it is for explicitness, not required. (The template still lacks the /subset mount.)
+
+## 2026-11-06 (f) [agent] (A40-named twin of the seed-0 training Job, submitted to race wave 1b)
+Worker "train-a40". UTC. Base main at 729c3c6.
+
+**Finding (verified by the lead, see the subsection below):** A40 and RTX A6000 are NRP special resources; no node that advertises them has `nvidia.com/gpu` allocatable above 0, so the `gpu.product` A40/A6000 entries in our lists never matched anything (PLAN "Amendment 2026-11-06 (b)").
+
+**User decision (2026-11-06, verbatim, on the lead's option 1):** "I like 1. just be sure to properly kill the other one".
+
+### Lead's read-only Prometheus check (2026-11-06 ~23:10 UTC, public https://prometheus.nrp-nautilus.io, run by the lead, not by this worker)
+- Queries: `kube_node_status_allocatable{resource="nvidia_com_a40"} > 0` and the same for `nvidia_com_rtxa6000`. Then `kube_node_status_allocatable{resource="nvidia_com_gpu"} and on(node) (kube_node_status_allocatable{resource="<r>"} > 0)`. Then per node: `sum by (node)` of allocatable, `kube_pod_container_resource_requests{resource="<r>"}` for pods with `kube_pod_status_phase{phase="Running"}==1`, `kube_node_spec_taint` and `kube_node_labels` (region).
+- Results: 3 nodes advertise nvidia_com_a40 (k8s-usra-01.calit2.optiputer.net 2, rci-nautilus01.msu.montana.edu 2, bak-hpc1.csub.edu 8). 10 advertise nvidia_com_rtxa6000. On every one of these 13 nodes, nvidia_com_gpu allocatable is 0 or absent: 2 of the 3 A40 nodes and 9 of the 10 A6000 nodes export it as 0, and the rest don't export it. So `nvidia.com/gpu` plus a gpu.product of NVIDIA-A40/NVIDIA-RTX-A6000 can't match (verified).
+- Leads: bak-hpc1.csub.edu (us-west, A40) had 8 allocatable and 3 requested by running pods, so 5 free, with only the taint `nvidia.com/gpu:PreferNoSchedule`. nrp-01.csumb.edu (us-west, A6000) had 8 allocatable and 7 requested, so 1 free, with no taints. Every other A40/A6000 node was full, outside us-west, or had a NoSchedule/NoExecute taint (reservation, testing, unreachable). Driver major isn't exported for any of them.
+- Caveat: Prometheus can overstate free capacity (it counts only Running pods' requests and ignores reservations and scheduler state), so the leads are leads, not proof (speculative until a pod schedules).
+
+**Manifest** `jobs/rendered/job-train-wave1c-dinov3-s0-a40.yaml` (commit 59492e7), diff vs `job-train-wave1b-dinov3-s0.yaml` (verified, `diff`; apart from a 15-line header comment):
+- name `...-wave1b-dinov3-s0` -> `stacking-encoders-proxy-train-wave1c-dinov3-s0-a40`
+- affinity: the `nvidia.com/gpu.product` term removed; driver > 569, region us-west and the two host exclusions kept
+- `nvidia.com/gpu: "1"` -> `nvidia.com/a40: "1"` in requests and limits
+- `--out $R/runs/$C-s$S` -> `--out $R/runs/$C-s$S-a40` (`/mnt/proxy/runs/dinov3-s0-a40`); log file `train-wave1-dinov3-...` -> `train-wave1c-dinov3-$C-s$S-a40-<timestamp>.log`
+- Unchanged: image, code ConfigMap and SRC_GIT_COMMIT, PAIRS `dinov3:0`, CPU, memory, ephemeral storage, env, backoffLimit 4, `activeDeadlineSeconds` 129600 (36 h from this Job's creation), ttl, no tolerations.
+- Collision check (verified by reading `src/proxy_wam.py`): the script writes only under `--out` (`config.json`, `ckpt.pt`, `model.pt`, `train.json`); it reads `$R/feats` and the ConfigMap. The only other write is the tee log, now suffixed. The two Jobs cannot touch the same file.
+
+**Quota (verified, `kubectl describe quota -n aria-world`):** the namespace has `a100-limit`, `gh200-limit`, `h100-limit`, `h200-limit` (all Hard 0) and pod-count bans `high-priority-ban`, `low-priority-ban`; no `nvidia.com/a40` limit.
+**Server dry run (verified):** `kubectl create --dry-run=server -f ...` -> `job.batch/stacking-encoders-proxy-train-wave1c-dinov3-s0-a40 created (server dry run)`. (A first attempt failed on my own YAML slip, a stray `operator: In` line left after removing the gpu.product term; fixed before the committed version.)
+
+**Codex review (`review --wait --scope branch --base 729c3c6`):** one finding, P1: the seed-0 evaluation passes `--run-dir /mnt/proxy/runs/dinov3-s0`, but this Job writes `dinov3-s0-a40`, so evaluation would not find the checkpoint. Not a manifest bug: the separate folder is the lead's requirement so the two Jobs never share files. Action: none in the manifest; recorded here and in PLAN. Whichever Job wins, the eval Job for seed 0 must use that Job's run dir (`dinov3-s0-a40` if the twin wins). The lead should carry this to the seed-0 eval render.
+
+**Submit (verified):** `kubectl create -f` at **2026-11-06 23:11:25 UTC** -> `job.batch/stacking-encoders-proxy-train-wave1c-dinov3-s0-a40 created`. About 60 s later: Job Running 0/1, pod `stacking-encoders-proxy-train-wave1c-dinov3-s0-a40-0-bj6bf` **Pending**, PodScheduled False, Unschedulable: "0/538 nodes are available: 227 node(s) had untolerated taint(s), 23 Insufficient memory, 23 node(s) were unschedulable, 31 Insufficient cpu, 4 Insufficient ephemeral-storage, 83 Insufficient nvidia.com/a40 ... 537 Preemption is not helpful". The wave-1b Job and the eval Job were not touched.
+
+**Next:** the lead watches both pods; when either is scheduled, delete the other Job (`kubectl delete job <name> -n aria-world`, graceful) and resume this worker if wanted. This Job's 36 h deadline ends about 2026-11-08 11:11 UTC. Seed-0 evaluation must use the winner's run dir.
