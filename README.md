@@ -33,7 +33,7 @@ This is the root of all research for the 2026–27 cycle. Each **research direct
 ├── literature/       # paper notes + references.bib
 ├── data/             # raw/ (never edited) and processed/
 ├── src/              # code
-├── experiments/      # one folder per experiment: PLAN.md (design, before), LOG.md (running it), README.md (what came out), results/
+├── experiments/      # one folder per experiment: config.* (parameters), PLAN.md (design, before), LOG.md (running it), README.md (what came out), results/
 └── writing/          # drafts, figures, final outputs
 ```
 
