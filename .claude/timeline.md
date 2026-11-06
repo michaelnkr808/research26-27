@@ -146,3 +146,10 @@
 - Recorded the written presentation feedback; most "design flaw" points were already handled (held-out demo split, conditional gain). User chose two new plan items: a seed-noise check before the full round and a cheap test on perturbed frames.
 - User decided on a living root PLAN.md (plans only) with PLAN.md in every experiment folder, and LOG/READMEs as the archive. Set up in stacking-encoders; shared _standards/_template not updated yet (handoff prompt given for a docs agent).
 - See: world-model-stacking-encoders/PLAN.md, world-model-stacking-encoders/LOG.md (2026-11-03 (k), (l))
+
+## 2026-11-05 — stacking-encoders: lead session; pilot rollout 2 checked, GPU dip diagnosed, result read blocked on login
+
+- Ran as the lead: workers did a status check and a read-only GPU-dip diagnosis, a separate review agent checked each, and both were corrected and merged. Both pilot runs finished cleanly; the second one's GPU sat mostly idle for ~10 min, which breaks the runbook's 40% rule.
+- The dip looks like the workload, not the node: both pods slowed at the same points in their to-do list, where CPU-heavy sensor-noise scenes are bunched together (speculative until per-episode timings are read).
+- User OK'd a tiny read-only Job to fetch the pilot result files; it wasn't submitted because kubectl's login refresh fails inside the worker's sandbox. The GPU fix waits on the timings.
+- See: world-model-stacking-encoders/LOG.md (2026-11-05 [agent, lead]), experiments/2026-10-27-proxy-calibration/LOG.md (2026-11-05 (b), (c)), branch worktree-agent-a1345b33d3e874b25
