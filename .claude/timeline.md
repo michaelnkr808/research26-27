@@ -168,3 +168,12 @@
 - Seed-noise check started: DINOv3 seed 1 trained (about 4 h on a 3090). Seed 0 was stuck in the queue, so it was resubmitted with the A40 allowed. The comparison rule is locked, anchored to the paper's numbers. The time limit can stretch.
 - Seed 1's full-benchmark rollout is ready to go once the user downloads one LIBERO-Plus file. The permission system blocks agent downloads, so outside code and files now go through a user `!` command.
 - See: world-model-stacking-encoders/LOG.md (2026-11-06 [agent, lead]), world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/LOG.md (2026-11-05 (d), 2026-11-06 (a)–(c)), experiments/2026-10-27-proxy-calibration/PLAN.md (Amendment 2026-11-06, Seed-noise rule)
+
+## 2026-11-06: root docs-cleanup lead (done, merged to local main, not pushed)
+
+- Ran the docs cleanup the earlier lead had planned. Workers did the edits; a fresh reviewer fact-checked each branch against its sources before merge. The checks caught real errors (wrong access dates, cache sizes marked "not recorded" that were in the LOG, a strike count dated as rechecked when it wasn't), all fixed before merging.
+- User decisions: removed `world-model-embedding-choice/` and `world-model-planning-horizon/` (not interested; recoverable at 252524e); stacking `references.bib` cut to LIBERO, LIBERO-Plus and liu2026what (Agostinelli dropped from the bib only); formatter edits to two `src/` files discarded (layout only, code identical); three old stacking worktrees removed.
+- Root: template PLAN.md and experiment folder committed; `.claude/worktrees/` and `vis-aria-depth/` ignored; CLAUDE.md, README and templates agree with `_standards/`; `_standards/08` brought in line with the stacking LOG, point-in-time facts dated, rules unchanged.
+- Stacking: new `data/README.md` (provenance), STANDARDS tool fields, finished-experiment READMEs, README trimmed to `_standards/04` shape, 2026-11-06 mentor meeting logged and its three points added to PLAN Next.
+- Open: the 1-of-3 idle-strike count dates from 2026-10-16 and the 2026-11-01 pilot may have added one (nobody has read the Violations page); no A40/A6000 pod has ever scheduled through `gpu.product`, though the current training list includes them; template lacks a `data/README.md` and owner/misuse slots; VAE cache size stays an estimate (user).
+- See: world-model-stacking-encoders/LOG.md (the three 2026-11-06 [agent, docs] entries), `_standards/08-compute-nautilus.md`, commits a8483c9..55588db
