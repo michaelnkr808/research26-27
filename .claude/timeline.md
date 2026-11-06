@@ -153,3 +153,10 @@
 - The dip looks like the workload, not the node: both pods slowed at the same points in their to-do list, where CPU-heavy sensor-noise scenes are bunched together (speculative until per-episode timings are read).
 - User OK'd a tiny read-only Job to fetch the pilot result files; it wasn't submitted because kubectl's login refresh fails inside the worker's sandbox. The GPU fix waits on the timings.
 - See: world-model-stacking-encoders/LOG.md (2026-11-05 [agent, lead]), experiments/2026-10-27-proxy-calibration/LOG.md (2026-11-05 (b), (c)), branch worktree-agent-a1345b33d3e874b25
+
+## 2026-11-06 — root docs-audit lead: audit plan drafted (not dispatched); H100 reproduction estimate
+
+- Read `_standards/` and every direction as the lead archiving session and drafted a three-worker docs audit: (1) commit the template files and check standards/template/root README agree, (2) bring embedding-choice and planning-horizon up to the new template (PLAN.md, README shape), (3) stacking-encoders parts the live run session isn't editing (finished experiments, a new `data/README.md`, STANDARDS tool fields, decisions and literature formats). Nothing dispatched or changed.
+- Waiting on the user: how to handle the live stacking-encoders session (recommended: a handoff for its README/PLAN/LOG/proxy folder), keep vis-aria-depth out (separate app repo), whether the docs session that wrote the untracked `_template/PLAN.md` and `_template/experiments/_new-experiment/` is closed, OK to remove the old agent worktree, and whether the README feedback blocks stay. Found along the way: the standards rewrite landed inside an unrelated commit (8ec6494); stacking `references.bib` has only 2 entries.
+- A worker estimated reproducing every GPU-runnable finding of liu2026what on one H100: years (about 3–16; core Tables 1 + 10 about 7 months to 3 years), all speculative. The paper gives no compute or step counts, and one 80 GB card is too tight for its recipe. The detail exists only in this session's scratchpad and in memory, and isn't in the stacking-encoders LOG yet.
+- See: `_standards/04-documentation.md`, `_template/`, `world-model-stacking-encoders/README.md`
