@@ -12,6 +12,10 @@
 # /subset; the pod gunzips it to /work/full-subset.json and checks the sha256 before rollout.py starts.
 # parallelism 2 first (user-approved); the lead raises it to 8 (kubectl patch job ... spec.parallelism) only if the GPU
 # check shows >= 40% (RUN.md "Rollouts and the 40% GPU floor"). Shard files: /mnt/proxy/rollouts/eval-dinov3-s1/dinov3-s1.<i>of8.jsonl.
+# RESUBMITTED 2026-11-06 with MEMORY 28Gi request / 33Gi limit (the text below describes the first submit at 20Gi / 24Gi). User:
+# "yeah just hike up the memory to be safe". Reviewer: the pilot-2 drift was measured over about 70% of its jobs, so the scale-up
+# is about 16x, and a linear drift would reach about 24-29 GB (speculative); pod 0 alone drifted about 0.9 GB. 28Gi/33Gi = the
+# training Jobs; median use of about 15 GB stays above NRP's 20% of the request. Nothing else changed.
 # Sizing as pilot rollout 2: 4 CPU / 20Gi request, limits 4800m / 24Gi, 4 envs, --cuda-graph, same GPU list and host exclusions,
 # backoffLimit 4. Memory: pilot 2 working set (Prometheus, 2-min samples, main container) peaked 16.4 GB (pod 0) and 16.3 GB
 # (pod 1) against the 21.5 GB (20Gi) request, i.e. 76%, flat at 15.5-16.4 GB after startup with a drift of about +0.5 GB over 340
@@ -89,8 +93,8 @@ spec:
         - {name: PYOPENGL_PLATFORM, value: egl}
         - {name: NVIDIA_DRIVER_CAPABILITIES, value: "compute,utility,graphics"}
         resources:                    # from measured use (pilot rollout Prometheus); limits <= 1.2x requests
-          requests: {cpu: "4", memory: 20Gi, nvidia.com/gpu: "1", ephemeral-storage: 50Gi}
-          limits:   {cpu: "4800m", memory: 24Gi, nvidia.com/gpu: "1", ephemeral-storage: 58Gi}
+          requests: {cpu: "4", memory: 28Gi, nvidia.com/gpu: "1", ephemeral-storage: 50Gi}
+          limits:   {cpu: "4800m", memory: 33Gi, nvidia.com/gpu: "1", ephemeral-storage: 58Gi}
         volumeMounts:
         - {name: work, mountPath: /work}
         - {name: src, mountPath: /src, readOnly: true}
