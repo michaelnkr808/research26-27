@@ -45,6 +45,10 @@ venv/
 
 # Claude Code local settings
 .claude/settings.local.json
+.claude/worktrees/
+
+# Separate app repo with its own GitHub remote, not part of this research record
+vis-aria-depth/
 
 # Personal notes (not part of the research record)
 NOTES.md
