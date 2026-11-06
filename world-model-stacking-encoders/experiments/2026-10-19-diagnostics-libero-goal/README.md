@@ -79,3 +79,10 @@ Sanity: self = 1, shuffled ≈ 0.
 **Not measured:** uncertainty. The gain differences (e.g. +0.008 vs +0.069) need demo-level bootstrap CIs before anyone reads them.
 
 GPU-hours: 0 (CPU only; ~1.5 h of 4-CPU time across both runs).
+
+## Pointers and follow-up (added 2026-11-06 in a docs pass; facts from the sources named)
+- **Status:** finished. A pipeline pilot, not a finding (see Results).
+- **Commits:** run 1 `d6e3905`, run 2 `a89ece6` (Results above; `a89ece6` is also `SRC_GIT_COMMIT` in `job.yaml`).
+- **Outputs:** `results/run1-libero_goal-siglip2-cradiov4.json`, `results/run2-libero_goal-siglip2-cradiov4.json`, and the pod logs `results/run1-job.log`, `results/run2-job.log`. Inputs are the features from `../2026-10-18-extract-libero-goal/`; provenance in `../../data/README.md`.
+- **LOG entries:** `../../LOG.md` 2026-10-19 (the runs and bugs), 2026-10-19 (b) (user decision), 2026-10-19 (c) (the second entry of that letter: implementation of the change below). Index in this folder's `LOG.md`.
+- **Follow-up that changed the method after these runs:** the user decided on 2026-10-19 to drop resid(B|A) and use gain(B|A) as the asymmetric metric, with demo-level bootstrap 95% CIs on every probe number (`../../LOG.md` 2026-10-19 (b)). `../../src/diagnostics.py` was changed to that at `7dc80ca` (`../../LOG.md` 2026-10-19 (c), second entry). The results above are from the earlier version of the script and have no CIs. CIs for the first real tally are in `../2026-10-19-feasibility-tally/`.

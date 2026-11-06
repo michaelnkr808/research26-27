@@ -64,3 +64,17 @@ Reference R²_D (Δ_D only, r = 64, k-mean): 0.364–0.372 across pairs.
 ## Resources
 - Cluster: ~11.5 CPU-h (2 CPU × 5 h 45 m), no GPU. Peak RSS 12.85 GiB (during D+R), estimate was 12.5–13 GiB; CPU 1.7–1.9 cores average. Estimated 1–3 CPU-h in PLAN, ~3 h wall locally (LOG (k)); actual wall 5 h 45 m (node ~4× slower than the Mac for this linear algebra).
 - Try 1: ~0.4 CPU-h, OOM-killed.
+
+## Command, commit, outputs and pointers (added 2026-11-06 in a docs pass; facts from the sources named)
+- **Status:** finished 2026-10-28 03:35Z (try 2); H-E fails the pre-registered rule (Results above). The user signed the result into the direction README key findings on 2026-10-27 (`../../LOG.md` 2026-10-27 (k)). The header of `job.yaml` still says "NOT YET SUBMITTED"; that comment predates the submission and was not edited (`job.yaml` is a record of the manifest).
+- **Command** (steps from `RUN.md`, names from `job.yaml` and `../../LOG.md` 2026-10-27 (f) to (k)):
+```
+kubectl create configmap stacking-encoders-target-src -n aria-world --from-file=../../src/diagnostics.py --from-file=../../src/target_diagnostics.py   # at 52d1226
+kubectl apply -f job.yaml
+kubectl logs -n aria-world <pod of job/stacking-encoders-target-diag> > results/target-diag-<UTC timestamp>.log
+kubectl delete job -n aria-world stacking-encoders-target-diag; kubectl delete configmap -n aria-world stacking-encoders-target-src
+```
+  Inside the Job, for each partner B in siglip2, sam3, vggt-omega, c-radiov4: `python /src/target_diagnostics.py --feats /work/feats --suite libero_goal --raw /work/data/libero_goal --base dinov3 --partner $B --n-boot 1000 --seed 0 --out .../target-libero_goal-dinov3-$B.json`. The four JSONs were cut out of the pod log (`RUN.md` step 7).
+- **Commits:** code `52d1226` (`SRC_GIT_COMMIT` in `job.yaml`; also `git_commit` in each result JSON, `../../LOG.md` 2026-10-27 (j)); Job submitted at repo commit `567413d` (`../../LOG.md` 2026-10-27 (i)). Try 1 ran code `b68ba54`.
+- **Outputs:** `results/target-libero_goal-dinov3-{siglip2,sam3,vggt-omega,c-radiov4}.json`, full pod log `results/target-diag-20261027T214944Z.log`, try-1 log `results/try1-oom-20261027T185533Z.log`. Inputs: the cached libero_goal features (`../../data/README.md`).
+- **LOG entries:** `../../LOG.md` 2026-10-21 (i) and (j) (pre-registration and amendment), 2026-10-21 (k) (code), 2026-10-27 (f) (try 1 OOM), (h) (try 2 prepared), (i) (submitted), (j) (complete), (k) (cleanup), (l) (plain-language write-up). There are two entries headed 2026-10-27 (f); try 1 is the second. Index in this folder's `LOG.md`.
