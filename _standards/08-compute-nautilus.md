@@ -2,16 +2,19 @@
 
 All GPU work runs on the NRP Nautilus Kubernetes cluster. These rules come from two sources, and each one is tagged with its source:
 
-- **[NRP]**: the official docs at <https://nrp.ai/documentation/>, checked 2026-10-16 against the raw source in the site repo (<https://gitlab.nrp-nautilus.io/prp/nrp-site>, commit `f926199`, 2026-10-15). That covers the [Cluster Policies](https://nrp.ai/documentation/userdocs/start/policies) page, the [AUP PDF](https://nrp.ai/NRP-AUP.pdf), and the code for the portal's Violations page. The policies change, so recheck at least once a quarter and before any large run, and update this file when they change.
+- **[NRP]**: the official docs at <https://nrp.ai/documentation/>, checked 2026-10-16 against the raw source in the site repo (<https://gitlab.nrp-nautilus.io/prp/nrp-site>, commit `f926199`, 2026-10-15). That covers the [Cluster Policies](https://nrp.ai/documentation/userdocs/start/policies) page, the [AUP PDF](https://nrp.ai/NRP-AUP.pdf), and the code for the portal's Violations page. The policies change, so recheck at least once a quarter and before any large run, and update this file when they change. Last recheck recorded in the repo: 2026-10-28, live Policies page (last updated 2026-10-26) and Jobs page (2026-10-25); wording unchanged on the numbers used below (`world-model-stacking-encoders/LOG.md` 2026-10-28 (g), policy check). The recheck did not change this file, and the pinned commit above is still the one checked on 2026-10-16.
 - **[lab]**: lessons learned on this cluster during 2025–26 (see `../research25-26/LangSplat/README.md`, `../research25-26/spring26research_recap.md`, and `../research25-26/notes (mds)/degauss_full_notes.md`). These are field experience and are not in the official docs.
 
 Where the two disagree, the official policy decides what's allowed. A lab lesson can only make a rule stricter.
 
 ## Our setup [lab]
 - **Namespace:** `aria-world`. It is **shared with the lab**.
-- **PVCs:** `scenescript-persistent` (lab-shared, about 40 GB, `rook-ceph-block`, ReadWriteOnce) and `michael-persistent` (personal, 20 GB, `rook-ceph-block`, ReadWriteOnce). Both mount at `/persistent`.
-- **Manifests:** `../nautilus-scripts/` has `cp-pod.yml` (CPU-only staging pod), `scenescript-pod.yml` (GPU dev pod), and `pvc-template.yaml`.
-- **Base image:** `minarami/scenescript:latest` (PyTorch 2.4, CUDA 12.1).
+- **PVCs:**
+  - `scenescript-persistent` (lab-shared, about 40 GB, `rook-ceph-block`, ReadWriteOnce) and `michael-persistent` (personal, 20 GB, `rook-ceph-block`, ReadWriteOnce). Both mount at `/persistent`. These sizes are from the older lab setup; the stacking LOG only records that the namespace had 5 PVCs, all `rook-ceph-block`, on 2026-10-19 (`world-model-stacking-encoders/LOG.md` 2026-10-19 (b)). Not rechecked since.
+  - `stacking-encoders-features` (CephFS `rook-cephfs`, 100Gi, ReadWriteMany): created and Bound (`world-model-stacking-encoders/LOG.md` 2026-10-19/20 (f); manifest `world-model-stacking-encoders/data/pvc-features-cephfs.yaml`). Mounted at `/mnt/features`.
+  - `stacking-encoders-proxy` (CephFS `rook-cephfs`, 1Ti, ReadWriteMany): created and Bound (`world-model-stacking-encoders/LOG.md` 2026-10-28 (m); manifest `world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/jobs/pvc-proxy.yaml`). Mounted at `/mnt/proxy`.
+- **Manifests:** `../nautilus-scripts/` (a sibling folder of this repo, outside it) has `cp-pod.yml` (CPU-only staging pod), `scenescript-pod.yml` (GPU dev pod), and `pvc-template.yaml`. The stacking direction's Job manifests are under `world-model-stacking-encoders/experiments/` (see "Minimal Job template" below).
+- **Base image:** `minarami/scenescript:latest` (PyTorch 2.4, CUDA 12.1) for the older lab pods. The stacking Jobs use `pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime` for GPU work and `python:3.11.14-slim` for CPU-only work, and install their Python packages inside the pod (`world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/jobs/job-train.template.yaml`; `world-model-stacking-encoders/experiments/2026-10-19-diagnostics-libero-goal/README.md`).
 - A direction's `STANDARDS.md` records which PVC, image, and GPU types it uses.
 
 ## Pick the right workload type [NRP]
@@ -45,7 +48,7 @@ Also: **never force-delete pods** (*"Never force Delete Pods."*). A pod stuck in
 - **Your live status:** the [Violations page](https://nrp.ai/userinfo) shows any running pods that are outside the policy and the thresholds currently in force. Check it after every GPU launch.
 - **What the docs don't say** (checked 2026-10-16): how long a GPU can be idle before anything happens, over what window utilization is averaged (that's computed by the portal backend, which isn't in the public repo), or that flagged pods get killed automatically. Being flagged is a violation; the published consequences are the 4-pod cap and a possible namespace ban. **There is no documented idle-GPU timeout, so don't rely on one.** A practical reading (speculative): from 30 minutes after startup, every 10-minute check can catch a GPU pod sitting below 40%.
 - Keep GPU utilization **above 40%, and ideally near 100%**. Check it on the [namespace GPU dashboard](https://grafana.nrp-nautilus.io/d/dRG9q0Ymz/k8s-compute-resources-namespace-gpus) [NRP].
-- **Idle-GPU strikes [lab]:** we've been told that idle GPU jobs get killed under a 3-strike rule, with suspension on strike 3, and this account is at **1 of 3**. That strike system appears **nowhere** in the public docs, the AUP, or the portal code (all checked 2026-10-16). It's probably enforced by admins or a backend not in the repo (speculative). Treat it as real, and ask NRP support for the exact rule so this line can be replaced with the official one.
+- **Idle-GPU strikes [lab]:** we've been told that idle GPU jobs get killed under a 3-strike rule, with suspension on strike 3, and this account is at **1 of 3** (as of 2026-11-01, the latest repo record; the repo gives no newer count and the Violations page was not read by an agent: `world-model-stacking-encoders/LOG.md` 2026-11-01 (f); not rechecked). That strike system appears **nowhere** in the public docs, the AUP, or the portal code (all checked 2026-10-16). It's probably enforced by admins or a backend not in the repo (speculative). Treat it as real, and ask NRP support for the exact rule so this line can be replaced with the official one.
 - Start with **1 GPU** on a subsample. Go above 1 only once you've shown the job is GPU-bound [NRP].
 - Agents: **never** leave an interactive GPU pod running at the end of a session. Check with `kubectl get pods -n aria-world` and delete your own pods before you stop.
 
@@ -65,7 +68,7 @@ Also: **never force-delete pods** (*"Never force Delete Pods."*). A pod stuck in
 - You can pin CUDA runtime or driver versions with the `nvidia.com/cuda.runtime.major/minor` and `nvidia.com/cuda.driver.major` labels.
 - **CPU-only jobs:** keep them off GPU nodes with node anti-affinity on `feature.node.kubernetes.io/pci-10de.present NotIn ["true"]`. For large CPU jobs, also use `priorityClassName: opportunistic` [NRP].
 - [lab] `../nautilus-scripts/pod-michael-pod.yaml` is a **dumped live pod** (it has `status`, `uid`, `nodeName`, and tolerations added by the system). Don't `kubectl apply` it. Use `scenescript-pod.yml` as the template.
-- [lab] GPUs that worked for us: RTX 4090, RTX A5000, RTX 3090, TITAN RTX, RTX A4000, RTX 3080, V100, RTX 2080 Ti, A10.
+- [lab] GPUs that worked for us: RTX 4090, RTX A5000, RTX 3090, TITAN RTX, RTX A4000, RTX 3080, V100, RTX 2080 Ti, A10. Stacking-direction Jobs have since run on TITAN RTX, RTX 2080 Ti, L4, RTX 5000 Ada, RTX 4090 and RTX 3090 (`world-model-stacking-encoders/LOG.md` 2026-10-18/19, 2026-10-19/20 (f), 2026-10-29 (e), 2026-10-29 (h), 2026-10-29 (k), 2026-11-01 (f); `world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/LOG.md` 2026-11-06 (c)). Its current training GPU list (3090, 4090, A5000, A6000, L40, L40S, A40) is in the same LOG, 2026-11-06 (c).
 
 ## Storage [NRP unless tagged]
 - **RBD (`rook-ceph-block*`)**: ReadWriteOnce, one pod at a time. Fine for conda/pip envs and compiling. Recommended for data that doesn't need to be shared.
@@ -113,7 +116,7 @@ Sources: `userdocs/storage/ceph.md`, `storage/intro.md`, `storage/purging.md`, `
 
 **Mounting.**
 - Create the PVC with `storageClassName: rook-cephfs` and `accessModes: [ReadWriteMany]`, and wait for `kubectl get pvc <name>` to show `Bound`.
-- Add region affinity so the pod runs near the storage: `topology.kubernetes.io/region In [us-west]` for `rook-cephfs`. List the labels with `kubectl get nodes -L topology.kubernetes.io/region`. Verified 2026-10-19: 288 nodes carry `us-west`. [lab, speculative] The affinity also shrinks the GPU pool, so if a Job won't schedule, weigh latency against waiting.
+- Add region affinity so the pod runs near the storage: `topology.kubernetes.io/region In [us-west]` for `rook-cephfs`. List the labels with `kubectl get nodes -L topology.kubernetes.io/region`. As of 2026-10-19, 288 nodes carried `us-west` (`world-model-stacking-encoders/LOG.md` 2026-10-19 (c)); not rechecked since. [lab, speculative] The affinity also shrinks the GPU pool, so if a Job won't schedule, weigh latency against waiting.
 - Don't mount CephFS as a home directory. The GUI-desktop page says *"NEVER MOUNT TO `/home/ubuntu`"*. Mount it under a subfolder such as `/mnt/persistent`.
 - If the node holding a Ceph mount goes offline, the pod stays stuck until the node comes back. Ceph does not migrate it; only Linstor does. Combined with the "never force-delete pods" rule, a stuck pod means waiting.
 
@@ -122,9 +125,9 @@ Sources: `userdocs/storage/ceph.md`, `storage/intro.md`, `storage/purging.md`, `
 - Same rules as other Ceph storage: not archival, purged after 6 months unaccessed, and use `find -delete` rather than `rm -rf` for folders with more than 10k files.
 - Usage dashboard: [Ceph cluster on Grafana](https://grafana.nrp-nautilus.io/d/r6lloPJmz/ceph-cluster).
 
-**Not in the docs** (checked 2026-10-19): CephFS quotas per namespace, expected throughput numbers, or any backup or snapshot guarantee. We haven't measured throughput on our namespace yet.
+**Not in the docs** (checked 2026-10-19): CephFS quotas per namespace, expected throughput numbers, or any backup or snapshot guarantee. On our namespace, a read test on one node on 2026-11-01 gave about 30 MB/s with 1 thread and about 300 MB/s with 16 threads, and some nodes wrote under 1 MB/s (`world-model-stacking-encoders/LOG.md` 2026-11-01 (g) and 2026-11-01 (f)). These are single-node measurements, not a guarantee.
 
-[lab] First planned use: `world-model-stacking-encoders/data/pvc-features-cephfs.yaml` (100Gi `rook-cephfs`, shared feature cache). As of 2026-10-19 it is drafted but not created.
+[lab] First use: `world-model-stacking-encoders/data/pvc-features-cephfs.yaml` (100Gi `rook-cephfs`, shared feature cache). It was drafted 2026-10-19 and created after the user's OK (`world-model-stacking-encoders/LOG.md` 2026-10-19/20 (f)). A second CephFS volume, `stacking-encoders-proxy` (1Ti), was created 2026-10-28 (`world-model-stacking-encoders/LOG.md` 2026-10-28 (m)).
 
 ## Moving data
 - `kubectl cp` is **for small files only**. It goes through the API server, and more than a few MB can hurt the cluster [NRP]. [lab] In practice it drops streams above about 10 MB.
@@ -155,7 +158,7 @@ You accept the AUP when you get access, and again every 12 months. The parts tha
 - [lab] Cross-building CUDA images on the Mac (linux/amd64 under QEMU) has failed for us. Building the env on the pod (on RBD, not CephFS) is the fallback.
 
 ## Minimal Job template
-This is adapted from the patterns in the NRP docs and has **not yet been run** on our namespace. Fill in the placeholders, check it into `experiments/<run>/`, and commit before submitting (per `03`).
+This is adapted from the patterns in the NRP docs. The template itself (with `/persistent` and a conda env path) has not been run as written. Many Jobs built on the same pattern have run on our namespace since; for a working example see `world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/jobs/job-train.template.yaml` and its rendered runs in `world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/jobs/rendered/` (for instance `world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/jobs/rendered/job-train-wave1-dinov3.yaml`, whose seed 1 completed: `world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/LOG.md` 2026-11-06 (c)). Fill in the placeholders, check it into `experiments/<run>/`, and commit before submitting (per `03`).
 
 ```yaml
 apiVersion: batch/v1
