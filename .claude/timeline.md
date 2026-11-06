@@ -160,3 +160,11 @@
 - Waiting on the user: how to handle the live stacking-encoders session (recommended: a handoff for its README/PLAN/LOG/proxy folder), keep vis-aria-depth out (separate app repo), whether the docs session that wrote the untracked `_template/PLAN.md` and `_template/experiments/_new-experiment/` is closed, OK to remove the old agent worktree, and whether the README feedback blocks stay. Found along the way: the standards rewrite landed inside an unrelated commit (8ec6494); stacking `references.bib` has only 2 entries.
 - A worker estimated reproducing every GPU-runnable finding of liu2026what on one H100: years (about 3–16; core Tables 1 + 10 about 7 months to 3 years), all speculative. The paper gives no compute or step counts, and one 80 GB card is too tight for its recipe. The detail exists only in this session's scratchpad and in memory, and isn't in the stacking-encoders LOG yet.
 - See: `_standards/04-documentation.md`, `_template/`, `world-model-stacking-encoders/README.md`
+
+## 2026-11-06 — stacking-encoders lead: pilot read, full benchmark chosen, seed-noise training wave started
+
+- Pulled the pilot results off the cluster. The short pilot models almost never succeed, so they couldn't size the experiment. The user chose to evaluate every model on the paper's full LIBERO-Plus benchmark.
+- The GPU dip came from a few slow camera-noise episodes running back to back. Rollouts now shuffle their job order, with a guard against restarting on mismatched files. Merged and tested.
+- Seed-noise check started: DINOv3 seed 1 trained (about 4 h on a 3090). Seed 0 was stuck in the queue, so it was resubmitted with the A40 allowed. The comparison rule is locked, anchored to the paper's numbers. The time limit can stretch.
+- Seed 1's full-benchmark rollout is ready to go once the user downloads one LIBERO-Plus file. The permission system blocks agent downloads, so outside code and files now go through a user `!` command.
+- See: world-model-stacking-encoders/LOG.md (2026-11-06 [agent, lead]), world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/LOG.md (2026-11-05 (d), 2026-11-06 (a)–(c)), experiments/2026-10-27-proxy-calibration/PLAN.md (Amendment 2026-11-06, Seed-noise rule)
