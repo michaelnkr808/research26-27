@@ -89,6 +89,16 @@ def main():
         assert L.load_subset(Path(d, "s.json"))["subset_id"] == sub["subset_id"]
     print("1 ok: proportional subset (sums to N, within 1 of share, >= 1 per cell, exclusion, determinism)")
 
+    # 1b. n = total (the full-benchmark file): every episode exactly once, every cell at its full size, for any seed.
+    for sd in (0, 5):
+        full = L.make_subset(cls, total, seed=sd)
+        want_keys = sorted((s, e["id"]) for s in cls for e in cls[s])
+        assert sorted((e["suite"], e["id"]) for e in full["episodes"]) == want_keys and full["n"] == total
+        assert len(set(want_keys)) == total
+        assert {k: v for k, v in Counter((e["suite"], e["category"]) for e in full["episodes"]).items()} == dict(sizes)
+    assert L.make_subset(cls, total, seed=0)["subset_id"] == L.make_subset(cls, total, seed=5)["subset_id"]
+    print("1b ok: n = total returns every episode exactly once, every cell at full size, any seed")
+
     # 2. Records per episode x eval seed, averaged per episode before pairing. On seed s, D+R loses k_s eval-seed
     #    successes spread so that some episodes drop by 1/3 and some by 2/3 (k = 2, 5, 0), and on seed 2 one episode
     #    D failed everywhere is solved under one eval seed. Deltas must be exactly 100 * (-k/3)/n points.
