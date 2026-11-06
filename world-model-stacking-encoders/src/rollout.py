@@ -137,6 +137,30 @@ def make_jobs(subset=None, clean_per_task=0, clean_tasks=None, eval_seeds=lp_eva
     return jobs
 
 
+def order_jobs(jobs, order_seed):
+    """Deterministic interleaving of the job list (LOG 2026-11-05: episodes of one perturbation category cost very
+    different CPU per step, and in episode-major order all simulator workers hit the slow category together, so the
+    GPU waited). A seeded shuffle of a copy: every pod computes the same full order from the same jobs and seed, so
+    the `[i::n]` shards of it still partition the jobs. order_seed < 0 keeps the episode-major order (the pilot's).
+    Results don't depend on job order (per-episode seeding, see the module docstring)."""
+    jobs = list(jobs)
+    if order_seed >= 0:
+        random.Random(order_seed).shuffle(jobs)
+    return jobs
+
+
+def check_resume(jobs, out):
+    """Refuse to resume a file that holds records outside this shard's job list. `done_keys` is per file, so a file
+    written under another order seed, shard count or Python version would make this pod rerun jobs that other pods'
+    files already hold (duplicates). Raises SystemExit; run_jobs is untouched."""
+    stray = done_keys(out) - {job_key(j) for j in jobs}
+    if stray:
+        raise SystemExit(f"{out} holds {len(stray)} records that are not in this shard's {len(jobs)} jobs (example "
+                         f"{sorted(stray)[0]}). Likely cause: a different --order-seed, --shard count, subset/--clean "
+                         f"setting or Python version than the run that wrote the file. Use the same settings "
+                         f"(--order-seed -1 reproduces the pre-shuffle pilot order) or a new --out.")
+
+
 # ---------------------------------------------------------------------------
 # Observation and action processing (Fast-WAM's eval path)
 # ---------------------------------------------------------------------------
@@ -617,6 +641,8 @@ def main():
     s2.add_argument("--eval-seeds", default="41,42,43")
     s2.add_argument("--clean", type=int, default=0, help="clean LIBERO trials per task (one eval seed)")
     s2.add_argument("--clean-seed", type=int, default=41)
+    s2.add_argument("--order-seed", type=int, default=0, help="seed of the job-order shuffle applied before the "
+                    "shard split (same on every pod); -1 = episode-major order, as the pilot")
     s2.add_argument("--shard", default="0/1", help="i/n: this run takes jobs i, i+n, ...")
     s2.add_argument("--envs", type=int, default=8)
     s2.add_argument("--gather-s", type=float, default=0.05)
@@ -698,12 +724,14 @@ def main():
     i, n = map(int, args.shard.split("/"))
     sub = lp_eval.load_subset(args.subset) if args.subset else None
     clean = json.loads(Path(args.tasks).read_text())["clean"]
-    jobs = make_jobs(sub, args.clean, clean, tuple(int(x) for x in args.eval_seeds.split(",")), args.clean_seed)[i::n]
+    jobs = order_jobs(make_jobs(sub, args.clean, clean, tuple(int(x) for x in args.eval_seeds.split(",")),
+                                args.clean_seed), args.order_seed)[i::n]
+    check_resume(jobs, args.out)
     torch.set_num_threads(args.torch_threads)
     policy = Policy.load(args.run_dir, args.t5, args.vae_path, args.device, cuda_graph=args.cuda_graph)
     cfg = policy.cfg
     log(f"checkpoint {args.run_dir}: config {cfg['config']} seed {cfg['seed']} commit {cfg['git_commit']}; "
-        f"{len(jobs)} jobs in shard {i}/{n}; torch threads {args.torch_threads}, cuda graph {args.cuda_graph}")
+        f"{len(jobs)} jobs in shard {i}/{n}, order seed {args.order_seed}; torch threads {args.torch_threads}, cuda graph {args.cuda_graph}")
     meta = {"config": cfg["config"], "train_seed": int(cfg["seed"]), "checkpoint": str(args.run_dir)}
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     n_rec, n_err = run_jobs(jobs, policy.act, args.envs, args.out, meta, log=log, gather_s=args.gather_s)
