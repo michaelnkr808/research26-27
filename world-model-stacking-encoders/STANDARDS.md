@@ -38,20 +38,20 @@
   - Image orientation in LIBERO HDF5 (OpenGL convention; rotate 180°).
 
 ## Tools and environment
-- Languages, libraries, hardware:
-- Environment file:
-- Experiment tracker (W&B / MLflow / local logs):
+- Languages, libraries, hardware: Python 3.11.14; PyTorch 2.7.1 (CUDA 12.8 build on the cluster), h5py, transformers 4.57.6, timm, open_clip_torch, numpy 2.2.6, with the full pin list in `experiments/2026-10-27-proxy-calibration/requirements.txt` (versions as used on the Mac, 2026-10-28). The tally Jobs used `transformers==5.18.0` for SAM 3 and VGGT-Ω (`experiments/2026-10-19-feasibility-tally/extract-job.yaml`). Fast-WAM at commit `7faa711` is installed with `--no-deps`. Hardware: a Mac (CPU or MPS) for local tests and Nautilus GPUs and CPU nodes for Jobs (GPU model per run is in each experiment's LOG).
+- Environment file: `experiments/2026-10-27-proxy-calibration/requirements.txt` (proxy-calibration code). For the earlier experiments there is no environment file; each Job yaml carries its own `pip install` pins (`experiments/*/job.yaml`, `extract-job.yaml`, `diag-*-job.yaml`), and the proxy round builds its environment with `src/setup_env.sh`.
+- Experiment tracker (W&B / MLflow / local logs): local logs. No W&B or MLflow is used (Fast-WAM's wandb pin is left out on purpose; `experiments/2026-10-27-proxy-calibration/requirements.txt`). Each run's config, source commit and metrics go into result JSONs and pod logs under the experiment's `results/`, and the step-by-step record goes into the experiment `LOG.md` (`../_standards/04`).
 - Compute budget: **no GPU-hour cap** (Nautilus is free; see override below). All GPU work follows `../_standards/08-compute-nautilus.md`. Specifically:
   - Every reportable run is a **Job** that runs a real command and exits. **Never `sleep infinity`, or any trailing `sleep`, in a Job** (ban risk).
   - Interactive pods are for short debugging only, and are deleted at session end (check `kubectl get pods -n aria-world`).
   - Utilization above 40% of requested GPUs; requests and limits within 20% of each other; start on 1 GPU.
   - **Gate (stop and ask):** more than 8 GPUs at once, or a sweep of more than 20 Jobs.
   - Log estimated vs. actual GPU-hours per run anyway, for planning.
-- Checkpoint storage location: TBD. Personal PVC is only 20 GB, so cached features and checkpoints probably need CephFS or Ceph S3 (speculative sizing).
+- Checkpoint storage location: CephFS PVC `stacking-encoders-proxy` (1Ti, `rook-cephfs`), proxy training checkpoints at `/mnt/proxy/runs/<config>-s<seed>/ckpt.pt` and rollout records at `/mnt/proxy/rollouts/*.jsonl` (`experiments/2026-10-27-proxy-calibration/RUN.md` steps 10 and 11, `jobs/pvc-proxy.yaml`). Cached features are on that PVC and on `stacking-encoders-features` (see `data/README.md`). Checkpoints stay out of git. The personal PVC `michael-persistent` is only 20Gi (`experiments/2026-10-18-extract-libero-goal/job.yaml` line 5). CephFS is not archival (purged after 6 months unaccessed; `data/pvc-features-cephfs.yaml`).
 
 ## Conventions
 - Notation or terminology: encoders by letter as in Table 10 (D=DINOv3, V=V-JEPA 2.1, L=SigLIP 2, S=SAM 3, G=VGGT-Ω, H=HRP, U=UniTok, R=C-RADIOv4). "Similarity" = CKA; "complementarity" = gain(B|A) on a named task target. Never use the two interchangeably.
-- Figure and table conventions:
+- Figure and table conventions: no figure convention is recorded yet; no image files exist in the direction folder (checked 2026-11-06). Tables in experiment READMEs give the metric, the 95% demo-level bootstrap CI in brackets, the paper's delta from Table 10 beside it, and the encoder by letter code with its full name (`experiments/2026-10-19-feasibility-tally/README.md`, `experiments/2026-10-21-target-diagnostics/README.md`). Plain-language text in chat spells encoder names out.
 - Target output format or venue: a publication (user goal, 2026-10-19). Venue to be decided with the mentor.
 
 ## Overrides of general standards
