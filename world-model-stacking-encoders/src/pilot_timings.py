@@ -99,6 +99,51 @@ def main():
                 r = x["r"]
                 print(f"{x['line']:4d} {str(x['job']):4s} {r['suite'] + ' / ' + r['category']:40s} {r['eval_seed']:4d} "
                       f"{x['start']:9.0f} {x['end']:7.0f} {r['wall_s']:7.1f} {r['steps']:6d} {r['wall_s'] / r['steps']:9.4f}")
+    if len(a.results) == 2:
+        sensor_noise_split(sub, a.results)
+
+
+SLOW_FACTOR = 1.5  # the author's own cutoff for "slow", not a rule from PLAN or RUN.md
+
+
+def sensor_noise_split(subset, result_paths):
+    """Per Sensor Noise pilot episode: wall_s per eval seed on each pod, pod 1 / pod 0 ratio, and slow / normal.
+    Slow = mean wall_s over both pods and 3 seeds > SLOW_FACTOR x the mean wall_s of the same suite's non-Sensor-Noise
+    LIBERO-Plus records (both pods). Needs exactly two result files (pod 0, pod 1)."""
+    data = []
+    for p in result_paths:
+        d, other = {}, {}
+        for r in load(p):
+            if r["benchmark"] != "libero_plus":
+                continue
+            if r["category"] == "Sensor Noise":
+                d.setdefault((r["suite"], r["episode_id"]), {})[r["eval_seed"]] = r["wall_s"]
+            else:
+                other.setdefault(r["suite"], []).append(r["wall_s"])
+        data.append((d, other))
+    base = {s: sum(data[0][1][s] + data[1][1][s]) / len(data[0][1][s] + data[1][1][s]) for s in data[0][1]}
+    print(f"\n=== Sensor Noise pilot episodes, per episode (pod 0 = first file, pod 1 = second)")
+    print(f"'slow' = both-pod mean wall_s > {SLOW_FACTOR} x the suite's non-Sensor-Noise mean wall_s: "
+          f"THE AUTHOR'S OWN CUTOFF, not a rule. Suite bases (s): "
+          + ", ".join(f"{s} {b:.1f}" for s, b in sorted(base.items())))
+    print("suite / episode           pod0 wall_s 41/42/43      pod1 wall_s 41/42/43      pod1/pod0   class")
+    slow, normal, rs, rn = [], [], [], []
+    for e in subset["episodes"]:
+        if e["category"] != "Sensor Noise":
+            continue
+        k = (e["suite"], int(e["id"]))
+        a, b = data[0][0][k], data[1][0][k]
+        m0, m1 = sum(a.values()) / 3, sum(b.values()) / 3
+        ratio = m1 / m0
+        is_slow = (m0 + m1) / 2 > SLOW_FACTOR * base[e["suite"]]
+        (slow if is_slow else normal).append(k)
+        (rs if is_slow else rn).append(ratio)
+        print(f"{k[0] + ' ' + str(k[1]):24s} " + "/".join(f"{a[s]:6.1f}" for s in (41, 42, 43)).ljust(25)
+              + "  " + "/".join(f"{b[s]:6.1f}" for s in (41, 42, 43)).ljust(25) + f"  {ratio:6.2f}   "
+              + ("slow" if is_slow else "normal"))
+    print(f"slow: {len(slow)} of {len(slow) + len(normal)}: {slow}")
+    print(f"normal: {len(normal)}: {normal}")
+    print(f"pod1/pod0 ratio range: slow {min(rs):.2f}-{max(rs):.2f}, normal {min(rn):.2f}-{max(rn):.2f}")
 
 
 if __name__ == "__main__":
