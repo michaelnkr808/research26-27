@@ -1,10 +1,10 @@
 # Research workspace (ML, agent-driven)
 
-Before doing any work here, read `README.md` and every file in `_standards/`. When working inside a research direction subfolder, also read that folder's `STANDARDS.md`, its `README.md`, its `PLAN.md`, and the latest entries in its `LOG.md`.
+Before doing any work here, read `README.md` and every file in `_standards/`. When working inside a research direction subfolder, also read that folder's `STANDARDS.md`, its `README.md`, its `PLAN.md`, and the latest entries in its `LOG.md`. If working on an experiment, also read its `PLAN.md` and the latest entries in its `LOG.md`.
 
 Follow the session protocol in `_standards/05-ai-assisted-work.md` every session:
 - **Start:** read the standards, check `git status`/`git log`, and restate the goal.
-- **End:** append a `LOG.md` entry marked `[agent]`, update `PLAN.md` if any item changed, update `README.md` status, commit, and leave a Next step.
+- **End:** append a `LOG.md` entry marked `[agent]`, update `PLAN.md` if any item started, finished, changed, or was dropped (same commit), update `README.md` status, commit, and leave a Next step.
 
 Hard rules:
 - Never fabricate citations, data, or results.
