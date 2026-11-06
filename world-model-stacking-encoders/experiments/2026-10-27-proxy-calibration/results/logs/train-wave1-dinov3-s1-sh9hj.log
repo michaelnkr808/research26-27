@@ -1,0 +1,79 @@
+=== index 1: config dinov3 seed 1
+Fri Nov  6 10:45:12 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.09              KMD Version: 615.71.09     CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 3090        On  |   00000000:01:00.0 Off |                  N/A |
+| 48%   47C    P8             25W /  350W |      35MiB /  24576MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+3
+Fri Nov  6 10:45:12 UTC 2026
+[proxy     215s] 1712 episodes, 277713 frames, 40 tasks, in_dim 1072 ({'vae': 48, 'dinov3': 1024}), 21696 steps, loaded in 215s
+[proxy     242s] {"step": 0, "lr": 0.0, "loss": 5.59683, "loss/vae": 2.09, "loss/dinov3": 2.21921, "loss/action": 1.28763, "sec": 26.2807, "data_wait_s": 23.83547, "disk_read_s": 22.3744}
+[proxy     560s] {"step": 433, "lr": 4e-05, "loss": 3.2402, "loss/vae": 1.34858, "loss/dinov3": 1.63915, "loss/action": 0.25247, "sec": 344.29029, "data_wait_s": 47.94573, "disk_read_s": 72.40369}
+[proxy     865s] {"step": 866, "lr": 8e-05, "loss": 2.46316, "loss/vae": 0.94978, "loss/dinov3": 1.37832, "loss/action": 0.13507, "sec": 649.35109, "data_wait_s": 75.681, "disk_read_s": 124.15952}
+[proxy    1170s] {"step": 1299, "lr": 0.0001, "loss": 2.06984, "loss/vae": 0.6276, "loss/dinov3": 1.32437, "loss/action": 0.11787, "sec": 954.38785, "data_wait_s": 110.52505, "disk_read_s": 195.57665}
+[proxy    1457s] {"step": 1732, "lr": 0.0001, "loss": 2.01983, "loss/vae": 0.57678, "loss/dinov3": 1.32877, "loss/action": 0.11429, "sec": 1241.00818, "data_wait_s": 123.43748, "disk_read_s": 232.53934}
+[proxy    1758s] {"step": 2165, "lr": 0.0001, "loss": 2.16128, "loss/vae": 0.59148, "loss/dinov3": 1.4447, "loss/action": 0.1251, "sec": 1542.10558, "data_wait_s": 155.2869, "disk_read_s": 294.90731}
+[proxy    2050s] {"step": 2598, "lr": 0.0001, "loss": 1.84555, "loss/vae": 0.48528, "loss/dinov3": 1.26446, "loss/action": 0.09581, "sec": 1834.1269, "data_wait_s": 184.03643, "disk_read_s": 357.04199}
+[proxy    2321s] {"step": 3031, "lr": 0.0001, "loss": 1.86788, "loss/vae": 0.46081, "loss/dinov3": 1.30869, "loss/action": 0.09838, "sec": 2105.70736, "data_wait_s": 211.4583, "disk_read_s": 415.47926}
+[proxy    2591s] {"step": 3464, "lr": 0.0001, "loss": 1.94, "loss/vae": 0.50526, "loss/dinov3": 1.3424, "loss/action": 0.09234, "sec": 2375.61873, "data_wait_s": 230.76552, "disk_read_s": 470.53976}
+[proxy    2884s] {"step": 3897, "lr": 0.0001, "loss": 1.95723, "loss/vae": 0.47651, "loss/dinov3": 1.38801, "loss/action": 0.09271, "sec": 2668.182, "data_wait_s": 238.79006, "disk_read_s": 495.74432}
+[proxy    3157s] {"step": 4330, "lr": 9e-05, "loss": 1.78384, "loss/vae": 0.40472, "loss/dinov3": 1.29333, "loss/action": 0.08579, "sec": 2941.36375, "data_wait_s": 257.5136, "disk_read_s": 541.02808}
+[proxy    3449s] {"step": 4763, "lr": 9e-05, "loss": 1.63389, "loss/vae": 0.38375, "loss/dinov3": 1.16386, "loss/action": 0.08628, "sec": 3233.56924, "data_wait_s": 272.51235, "disk_read_s": 577.68479}
+[proxy    3742s] {"step": 5196, "lr": 9e-05, "loss": 1.80588, "loss/vae": 0.43948, "loss/dinov3": 1.28006, "loss/action": 0.08634, "sec": 3526.18975, "data_wait_s": 284.82606, "disk_read_s": 605.98379}
+[proxy    4022s] {"step": 5629, "lr": 9e-05, "loss": 1.5933, "loss/vae": 0.34912, "loss/dinov3": 1.16539, "loss/action": 0.07879, "sec": 3806.86828, "data_wait_s": 289.25708, "disk_read_s": 633.24624}
+[proxy    4288s] {"step": 6062, "lr": 9e-05, "loss": 1.7257, "loss/vae": 0.38919, "loss/dinov3": 1.26738, "loss/action": 0.06913, "sec": 4071.98792, "data_wait_s": 306.47436, "disk_read_s": 676.38745}
+[proxy    4565s] {"step": 6495, "lr": 8e-05, "loss": 1.77472, "loss/vae": 0.40752, "loss/dinov3": 1.28945, "loss/action": 0.07775, "sec": 4349.35238, "data_wait_s": 339.47514, "disk_read_s": 746.60577}
+[proxy    4825s] {"step": 6928, "lr": 8e-05, "loss": 1.7207, "loss/vae": 0.38581, "loss/dinov3": 1.25175, "loss/action": 0.08313, "sec": 4609.50989, "data_wait_s": 359.36908, "disk_read_s": 797.66486}
+[proxy    5116s] {"step": 7361, "lr": 8e-05, "loss": 1.67525, "loss/vae": 0.37506, "loss/dinov3": 1.22606, "loss/action": 0.07413, "sec": 4900.75849, "data_wait_s": 407.31242, "disk_read_s": 886.80335}
+[proxy    5384s] {"step": 7794, "lr": 8e-05, "loss": 1.54905, "loss/vae": 0.35572, "loss/dinov3": 1.12428, "loss/action": 0.06904, "sec": 5168.4466, "data_wait_s": 433.59408, "disk_read_s": 938.43192}
+[proxy    5641s] {"step": 8227, "lr": 7e-05, "loss": 1.57927, "loss/vae": 0.33601, "loss/dinov3": 1.16238, "loss/action": 0.08088, "sec": 5424.99323, "data_wait_s": 444.697, "disk_read_s": 979.7876}
+[proxy    5897s] {"step": 8660, "lr": 7e-05, "loss": 1.79598, "loss/vae": 0.40082, "loss/dinov3": 1.31, "loss/action": 0.08516, "sec": 5681.50607, "data_wait_s": 458.55248, "disk_read_s": 1023.97254}
+[proxy    6172s] {"step": 9093, "lr": 7e-05, "loss": 1.54576, "loss/vae": 0.34542, "loss/dinov3": 1.11708, "loss/action": 0.08326, "sec": 5956.3801, "data_wait_s": 491.8607, "disk_read_s": 1094.61877}
+[proxy    6444s] {"step": 9526, "lr": 6e-05, "loss": 1.55831, "loss/vae": 0.32012, "loss/dinov3": 1.16484, "loss/action": 0.07336, "sec": 6227.94372, "data_wait_s": 522.83783, "disk_read_s": 1166.01407}
+[proxy    6726s] {"step": 9959, "lr": 6e-05, "loss": 1.63565, "loss/vae": 0.35668, "loss/dinov3": 1.19873, "loss/action": 0.08025, "sec": 6510.1471, "data_wait_s": 552.69448, "disk_read_s": 1229.40982}
+[proxy    6992s] {"step": 10392, "lr": 6e-05, "loss": 1.56728, "loss/vae": 0.33366, "loss/dinov3": 1.15925, "loss/action": 0.07437, "sec": 6776.57923, "data_wait_s": 577.69404, "disk_read_s": 1285.71135}
+[proxy    7261s] {"step": 10825, "lr": 5e-05, "loss": 1.59851, "loss/vae": 0.34301, "loss/dinov3": 1.19107, "loss/action": 0.06443, "sec": 7044.93641, "data_wait_s": 597.71888, "disk_read_s": 1343.83177}
+[proxy    7521s] {"step": 11258, "lr": 5e-05, "loss": 1.63594, "loss/vae": 0.35871, "loss/dinov3": 1.20715, "loss/action": 0.07008, "sec": 7305.10635, "data_wait_s": 623.03375, "disk_read_s": 1404.17716}
+[proxy    7793s] {"step": 11691, "lr": 5e-05, "loss": 1.55396, "loss/vae": 0.32515, "loss/dinov3": 1.16276, "loss/action": 0.06604, "sec": 7577.73936, "data_wait_s": 657.65258, "disk_read_s": 1470.43895}
+[proxy    8045s] {"step": 12124, "lr": 4e-05, "loss": 1.5429, "loss/vae": 0.33254, "loss/dinov3": 1.14041, "loss/action": 0.06995, "sec": 7829.54754, "data_wait_s": 669.70152, "disk_read_s": 1512.9003}
+[proxy    8316s] {"step": 12557, "lr": 4e-05, "loss": 1.76749, "loss/vae": 0.3748, "loss/dinov3": 1.32867, "loss/action": 0.06403, "sec": 8100.56856, "data_wait_s": 702.2041, "disk_read_s": 1576.23879}
+[proxy    8599s] {"step": 12990, "lr": 4e-05, "loss": 1.4209, "loss/vae": 0.3091, "loss/dinov3": 1.04716, "loss/action": 0.06464, "sec": 8382.95064, "data_wait_s": 745.04593, "disk_read_s": 1657.37578}
+[proxy    8862s] {"step": 13423, "lr": 4e-05, "loss": 1.76445, "loss/vae": 0.37683, "loss/dinov3": 1.32292, "loss/action": 0.0647, "sec": 8645.89293, "data_wait_s": 765.10996, "disk_read_s": 1701.91306}
+[proxy    9160s] {"step": 13856, "lr": 3e-05, "loss": 1.62256, "loss/vae": 0.3357, "loss/dinov3": 1.22446, "loss/action": 0.06239, "sec": 8944.4762, "data_wait_s": 826.54539, "disk_read_s": 1795.88751}
+[proxy    9426s] {"step": 14289, "lr": 3e-05, "loss": 1.61616, "loss/vae": 0.33397, "loss/dinov3": 1.21739, "loss/action": 0.06479, "sec": 9210.61224, "data_wait_s": 849.99375, "disk_read_s": 1847.65007}
+[proxy    9701s] {"step": 14722, "lr": 3e-05, "loss": 1.65721, "loss/vae": 0.35123, "loss/dinov3": 1.24363, "loss/action": 0.06234, "sec": 9485.71864, "data_wait_s": 890.61238, "disk_read_s": 1934.03665}
+[proxy    9978s] {"step": 15155, "lr": 2e-05, "loss": 1.59179, "loss/vae": 0.32376, "loss/dinov3": 1.20616, "loss/action": 0.06187, "sec": 9762.03818, "data_wait_s": 931.85354, "disk_read_s": 2011.5724}
+[proxy   10253s] {"step": 15588, "lr": 2e-05, "loss": 1.81752, "loss/vae": 0.3927, "loss/dinov3": 1.35626, "loss/action": 0.06856, "sec": 10037.73095, "data_wait_s": 975.54084, "disk_read_s": 2101.41241}
+[proxy   10516s] {"step": 16021, "lr": 2e-05, "loss": 1.83086, "loss/vae": 0.40552, "loss/dinov3": 1.36727, "loss/action": 0.05807, "sec": 10300.53701, "data_wait_s": 999.33572, "disk_read_s": 2164.42225}
+[proxy   10786s] {"step": 16454, "lr": 2e-05, "loss": 1.59081, "loss/vae": 0.33421, "loss/dinov3": 1.19706, "loss/action": 0.05954, "sec": 10570.07174, "data_wait_s": 1027.25836, "disk_read_s": 2215.87729}
+[proxy   11046s] {"step": 16887, "lr": 1e-05, "loss": 1.78896, "loss/vae": 0.37497, "loss/dinov3": 1.34636, "loss/action": 0.06763, "sec": 10830.50264, "data_wait_s": 1043.05878, "disk_read_s": 2263.51876}
+[proxy   11313s] {"step": 17320, "lr": 1e-05, "loss": 1.61617, "loss/vae": 0.3268, "loss/dinov3": 1.22413, "loss/action": 0.06524, "sec": 11097.68829, "data_wait_s": 1065.37208, "disk_read_s": 2314.14551}
+[proxy   11592s] {"step": 17753, "lr": 1e-05, "loss": 1.71419, "loss/vae": 0.36243, "loss/dinov3": 1.2756, "loss/action": 0.07616, "sec": 11375.93122, "data_wait_s": 1107.68393, "disk_read_s": 2397.49014}
+[proxy   11858s] {"step": 18186, "lr": 1e-05, "loss": 1.51496, "loss/vae": 0.32878, "loss/dinov3": 1.11732, "loss/action": 0.06887, "sec": 11641.97582, "data_wait_s": 1132.38154, "disk_read_s": 2454.84589}
+[proxy   12138s] {"step": 18619, "lr": 1e-05, "loss": 1.60844, "loss/vae": 0.33952, "loss/dinov3": 1.19562, "loss/action": 0.07331, "sec": 11922.68325, "data_wait_s": 1183.31443, "disk_read_s": 2555.03838}
+[proxy   12414s] {"step": 19052, "lr": 0.0, "loss": 1.50177, "loss/vae": 0.31654, "loss/dinov3": 1.11561, "loss/action": 0.06962, "sec": 12198.34035, "data_wait_s": 1216.54478, "disk_read_s": 2631.98343}
+[proxy   12677s] {"step": 19485, "lr": 0.0, "loss": 1.6547, "loss/vae": 0.36952, "loss/dinov3": 1.20492, "loss/action": 0.08027, "sec": 12461.74294, "data_wait_s": 1241.77002, "disk_read_s": 2693.88416}
+[proxy   12946s] {"step": 19918, "lr": 0.0, "loss": 1.66354, "loss/vae": 0.36513, "loss/dinov3": 1.22695, "loss/action": 0.07146, "sec": 12730.27692, "data_wait_s": 1276.30164, "disk_read_s": 2766.39498}
+[proxy   13226s] {"step": 20351, "lr": 0.0, "loss": 1.63073, "loss/vae": 0.33086, "loss/dinov3": 1.22983, "loss/action": 0.07004, "sec": 13010.38485, "data_wait_s": 1323.93973, "disk_read_s": 2854.67638}
+[proxy   13487s] {"step": 20784, "lr": 0.0, "loss": 1.44721, "loss/vae": 0.28136, "loss/dinov3": 1.10144, "loss/action": 0.06441, "sec": 13271.35709, "data_wait_s": 1341.95537, "disk_read_s": 2894.70099}
+[proxy   13746s] {"step": 21217, "lr": 0.0, "loss": 1.45372, "loss/vae": 0.28275, "loss/dinov3": 1.1075, "loss/action": 0.06347, "sec": 13530.00889, "data_wait_s": 1354.62785, "disk_read_s": 2930.76922}
+[proxy   14002s] {"step": 21650, "lr": 0.0, "loss": 1.37619, "loss/vae": 0.26843, "loss/dinov3": 1.04429, "loss/action": 0.06347, "sec": 13786.38499, "data_wait_s": 1373.3617, "disk_read_s": 2990.0542}
+[proxy   14026s] {"step": 21695, "lr": 0.0, "loss": 1.71572, "loss/vae": 0.36914, "loss/dinov3": 1.28374, "loss/action": 0.06285, "sec": 13810.74846, "data_wait_s": 1373.42375, "disk_read_s": 2990.17074}
+[proxy   14027s] wrote /mnt/proxy/runs/dinov3-s1, 31647943 params
+Fri Nov  6 14:39:33 UTC 2026
+=== done

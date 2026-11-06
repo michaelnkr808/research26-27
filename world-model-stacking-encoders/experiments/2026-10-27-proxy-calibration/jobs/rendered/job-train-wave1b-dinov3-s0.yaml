@@ -1,0 +1,92 @@
+# WAVE 1b (2026-11-06): seed 0 only, resubmitted. The wave-1 Job (job-train-wave1-dinov3.yaml) trained seed 1 (done 14:39 UTC on an
+# RTX 3090) but seed 0 sat Pending 9 h. User, 2026-11-06, asked about seed 0's 9 h in the queue: "Add A40, keep it for all"
+# (stop the queued seed-0 run, resubmit it alone with the current GPU list plus the A40, and use that list for all 15 runs).
+# Differences from the wave-1 manifest: name, completions 1 / parallelism 1, PAIRS "dinov3:0", and NVIDIA-A40 added to the GPU
+# list (label string as in job-pilot-rollout2.yaml). Everything else is identical (code commit 2bab64f, resources, deadline 36 h
+# from creation, node exclusions, env, backoffLimit). The comment below describes the original two-seed Job.
+# RUN.md step 10, wave 1 (user decision 2026-11-03: seed-noise check first): config dinov3, training seeds 0 and 1, full length
+# (10 epochs = 21,696 steps at batch 128; defaults, no --max-steps), out /mnt/proxy/runs/dinov3-s0 and dinov3-s1. No earlier Job
+# wrote there (the pilots used pilot-* and pilot2-*); proxy_wam.py would resume from <out>/ckpt.pt, so a leftover would matter.
+# Rendered from job-train.template.yaml. Differences from the template, all taken from the pilot2 manifests: env OMP_NUM_THREADS=3
+# and MALLOC_ARENA_MAX=2 (pilot2-dinov3's speed and memory were measured with them); same GPU list as the pilot2 Jobs; the two hosts
+# with GPU faults on 2026-11-03 (rollout Jobs) excluded by hostname; backoffLimit 4 (as the rollout Jobs; a retry resumes from ckpt.pt).
+# Sizing (direction LOG 2026-11-02 (c) and (f)): pilot2-dinov3 on an L40S: 0.71 s/step, CPU 2.8-3.2 cores, memory working set 22 GiB at 500 steps, and
+# the full run holds a 17.8 GiB replay buffer -> CPU 4 (the D+R pilot2 ran on 4), memory 28Gi (limit 33Gi = 1.18x). 21,696 x 0.71 s =
+# 4.3 h on an L40S; ~6.4 h at the 3090's D+R pace of 1.06 s/step; plus ~0.2 h setup and index load. activeDeadlineSeconds 129600
+# (36 h) counts from creation, queue included (pilot2 pods queued 1.7-5.5 h; one expired unscheduled at 6 h): 2 x the slow
+# estimate + queue + a retry, and below the 48 h stop line.
+# Setup is `bash /src/setup_env.sh` (pip), as in the pilot2 training Jobs; the template does not use the env bundle.
+# --- template header follows ---
+# RUN.md step 9 (pilot: 2 pairs, --max-steps ~500) and step 10 (the round: 15 pairs, defaults), pre-approved. Written
+# mid-run: render per use (fill every __PLACEHOLDER__ from measured use; jobs/rendered/), checklist in RUN.md
+# "Manifests written during the run". Indexed: pod i trains pair i of dinov3:0 dinov3:1 ("config:seed", space-separated), so
+# the index order sets which runs start first. Resumable: proxy_wam.py continues from <out>/ckpt.pt (written every
+# --ckpt-every steps), so a retried pod picks up where it stopped. One writer per run dir.
+# Follows _standards/08: Job, real command that exits, no sleep, 1 GPU per pod, limits within 20%, no tolerations.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-train-wave1b-dinov3-s0
+  namespace: aria-world
+spec:
+  completionMode: Indexed
+  completions: 1
+  parallelism: 1
+  backoffLimit: 4                 # counts failed pods across both indexes; retries resume from ckpt.pt
+  activeDeadlineSeconds: 129600
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090, NVIDIA-RTX-A5000, NVIDIA-RTX-A6000, NVIDIA-L40, NVIDIA-L40S, NVIDIA-A40]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net, ry-gpu-08.sdsc.optiputer.net]}  # GPU faults, 2026-11-03
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; I=$JOB_COMPLETION_INDEX
+          P=($PAIRS); C=${P[$I]%%:*}; S=${P[$I]##*:}
+          mkdir -p $R/logs $R/runs
+          exec > >(tee -a $R/logs/train-wave1-dinov3-$C-s$S-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          echo "=== index $I: config $C seed $S"; nvidia-smi; nproc; date -u
+          bash /src/setup_env.sh > /work/pip-env.log 2>&1 || { tail -50 /work/pip-env.log; exit 1; }
+          python /src/proxy_wam.py --feats $R/feats --suites libero_spatial,libero_object,libero_goal,libero_10 \
+            --t5 $R/feats/t5 --config $C --seed $S --out $R/runs/$C-s$S
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: 2bab64f6496dd22fefa64a6149539979c0840589}
+        - {name: PAIRS, value: "dinov3:0"}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: /src}
+        - {name: OMP_NUM_THREADS, value: "3"}
+        - {name: MALLOC_ARENA_MAX, value: "2"}
+        resources:                    # from measured use (probe / pilot Prometheus); limits <= 1.2x requests
+          requests: {cpu: "4", memory: 28Gi, nvidia.com/gpu: "1", ephemeral-storage: 20Gi}
+          limits:   {cpu: "4800m", memory: 33Gi, nvidia.com/gpu: "1", ephemeral-storage: 24Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 24Gi}
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 2Gi}
