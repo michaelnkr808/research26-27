@@ -644,3 +644,9 @@ Worker "s1-shards67". UTC. Base 295b19c.
 - speculative: shard 6's first 135 episodes ran on an A40 and the rest will run on another card model; that can add slight numerical noise but does not break pairing (per-episode seeding; the resume keys do not depend on the card).
 
 **Next:** the lead's 30-min GPU, memory and errors check on the first pod of each eval Job. When shard 6's pod starts, its log should say "135 already in" (if it says 0, the resume did not take). The check Job and the old A40 Job can be left to their ttl.
+
+**Review corrections (lead's reviewer, 2026-11-07):** a read-only reviewer confirmed the resume is safe (135 records skipped, 3,631 appended, nothing run twice or skipped), the check Job was read-only and GPU-free, and the manifest diff is correct. Corrections to the entry above:
+1. "The check Job and the old A40 Job can be left to their ttl" is wrong for the A40 Job: it was deleted in LOG (d) and is gone (verified by the reviewer with kubectl get). Only the check Job is left to its ttl.
+2. The per-record `write` and `flush` in `rollout.py` are at lines 526-527, not 520-523 as cited above.
+3. The submission bullet is verified: the reviewer's `kubectl get` showed the Job `stacking-encoders-proxy-eval-dinov3-s1-shards67` Running 0/2 and its pod Pending.
+4. For the seed-noise analysis: `check_resume`/`done_keys` compare only (benchmark, suite, episode_id, eval_seed), not the checkpoint, commit or GPU. Run dir, SRC_GIT_COMMIT and command are identical between `-a40` and `-shards67` (reviewer's diff, verified). The records do not store the GPU model, so the only record of which rows of `dinov3-s1.6of8.jsonl` ran on the A40 is this LOG: the first 135 lines (file size 65,647 B, sha256 a13c6094589a8faa4213802d7cbfc8955d7a8d043754a421cfa88b81a7a151ba), because the pod appends.
