@@ -64,3 +64,17 @@ What "WAM introduces" (mentor's question), candidate answers to check:
 - Goals: publish. Say which venue tier and timeline you have in mind (e.g. a workshop paper first vs a main conference).
 - Bring: one primary hypothesis (H-B recommended), the definitions above, the 7-pair feasibility plan, and the draft novelty statement.
 - Ask her: is the 7-pair tally against the paper's labels an acceptable first check, given that it's single-checkpoint? And which related work does she think is closest besides agostinelli2022?
+
+## Update 2026-11-06: fusion-step suspects (user idea; speculative, not tested)
+The user asked whether the way liu2026what combines encoder features (channel-wise concatenation, features at matching grid locations) could be why some pairs hurt, e.g. D+R (worse than either D or R alone: paper note, Table 10 vs Table 1). The user decided it should be the next experiment after the proxy replication, but only if the proxy fails to show the drop (see the open questions and LOG 2026-11-06 [agent, planning]). Nothing below was run.
+
+1. **Scale.** Paper: "source-specific processing" is all it says about normalizing features (App. E.1; paper note). Our proxy: z-scores every source per channel with training-set stats, our choice where the paper is silent (proxy PLAN, Stage 1). Suspect: one source's features could dominate the concatenated vector in the paper's model, and our z-scoring would remove that. Confidence: speculative.
+2. **Double counting as targets.** Paper: each source's future-feature loss is summed with weight 1.0 (App. E.1 Eq. 9; paper note). Our proxy: copies this (video loss split per source, Eq. 9). Suspect: C-RADIOv4 partly distills DINOv3 (recalled, not verified; the proxy PLAN outcome rule item 3 says it distills DINOv3, SigLIP 2 and SAM 3), so the model is graded twice on near-duplicate futures. This overlaps H-C (redundancy hurts feature fusion). Confidence: speculative; the distillation fact is recalled.
+3. **Grid mismatch.** Paper: how it aligns encoders with different grids is not stated in the notes we have. Our proxy: resizes C-RADIOv4's 28 x 28 grid bilinearly to 14 x 14 per camera (proxy PLAN, Stage 1, our choice). Suspect: the paper aligns grids differently, and the resize could blur or mix locations. Confidence: speculative.
+
+Because of choices 1 and 3, our proxy could hide the very drop it is trying to reproduce (speculative).
+
+**Open questions (raised by the lead, not resolved):**
+- (a) If no change brings the drop back, that null result cannot separate the combining step from what the proxy lacks (the pretrained Wan 2.2 video prior, full model size). This matches the outcome rule's own caveat.
+- (b) Suspect 2 may not be testable by undoing one of our choices, because the proxy already copies the paper's loss. How to test it is open.
+- (c) The design (which changes, how many seeds, what counts as "the drop appears") is written later and goes to the user for sign-off before anything runs. Then it is handed to the implementation-agent session as high-level direction.
