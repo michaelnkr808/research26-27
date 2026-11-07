@@ -122,3 +122,10 @@ Step-by-step record of running this experiment (Jobs, errors, reruns, exact numb
 **Status:** nothing is left open except the user's sign-off; `PLAN.md` stays DRAFT. Direction `PLAN.md` Next 3 and the direction LOG pointer entry updated (the wording about who decides now says "the user"; the user's pronouns are not stated in the files).
 **Test-set use (`_standards/07`):** none.
 **Next:** the user signs off; then hand to the implementation session. Cluster work needs the user's own OK.
+
+## 2026-11-07 [agent, planning] design signed off by the user; handed to the implementation session
+**Goal:** record the user's sign-off of the perturbed-frame test design. Nothing was run; documentation edits only. Older entries are not edited.
+**Did:** the user signed off in the planning-lead session on 2026-11-07, verbatim: "yeah i sign off on it". All open points had been decided first (Q1-Q23 in `PLAN.md`). `PLAN.md` status changed from DRAFT to signed off, with a dated sign-off line; the "stays DRAFT until sign-off" sentence updated to match; `README.md` status line and the direction `PLAN.md` Next 3 updated. No design content changed. From here on, changes go through dated amendments only (`_standards/04`).
+**Found:** nothing new. The design is handed to the implementation session.
+**Test-set use (`_standards/07`):** none.
+**Next:** the implementation session runs Handoff step 1 and confirms with the user before submitting any cluster Job.

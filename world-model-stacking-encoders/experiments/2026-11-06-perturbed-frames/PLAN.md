@@ -1,8 +1,10 @@
 # Plan: perturbed-frame test (frozen features, no policy training)
 
-**Status:** DRAFT, not signed off by the user; nothing runs before sign-off.
+**Status:** SIGNED OFF by the user 2026-11-07. Nothing runs on the cluster without the user's own OK.
 
-Written 2026-11-06 by a planning agent from docs and source reading only. Labels: `verified` (checked in a repo file this session), `recalled` (from memory, not checked), `speculative` (a guess or a proposal). Direction agenda item: `../../PLAN.md` Next 3. The Feasibility section was filled from a read of the LIBERO-Plus source at `4976dc3` (2026-11-06); the design is still a draft.
+Signed off by the user 2026-11-07 ("yeah i sign off on it"); from here on, changes go through dated amendments only (_standards/04).
+
+Written 2026-11-06 by a planning agent from docs and source reading only. Labels: `verified` (checked in a repo file this session), `recalled` (from memory, not checked), `speculative` (a guess or a proposal). Direction agenda item: `../../PLAN.md` Next 3. The Feasibility section was filled from a read of the LIBERO-Plus source at `4976dc3` (2026-11-06); the design was signed off 2026-11-07.
 
 ## Question
 Under the picture changes that LIBERO-Plus applies, does adding C-RADIOv4 (R) to DINOv3 (D) help less, or hurt more, than adding SigLIP 2 (L), SAM 3 (S) or VGGT-Ω (G)? The paper's D+R drop is measured under LIBERO-Plus perturbations (`literature/liu2026what-table10-composition.csv`; `../../README.md`, Key findings), while our frozen-feature tests used clean frames only (verified, `../2026-10-19-feasibility-tally/README.md`). On clean frames R adds the most action information on top of D (gain +0.037 vs +0.014 to +0.033 for the others; verified, tally README). This test asks whether that changes under perturbation.
@@ -42,7 +44,7 @@ Decided 2026-11-07, second batch (lead's picks, user accepted). The user's reply
 
 **Fixture placement (Q19), decided 2026-11-07: option 1.** The user asked which option is most faithful to the paper; the lead answered option 1, and the user replied, verbatim: "okay go with option 1". Reason (lead's, one line): it keeps LIBERO-Plus's own code for all four perturbations and keeps the robot state and scene that the demo's action label came from consistent; no option reproduces the paper's closed-loop evaluation. Option 1: before restoring each saved state, copy that demo's fixture positions (body pos, and body quat; identity `1 0 0 0` when the `model_file` body has no quat attribute, as `flat_stove_1_main` has none in the file opened, reviewer-verified, and this agrees with the bddl, where the stove region has no `yaw_rotation`; identity as MuJoCo's default is recalled) from its `model_file` into the LIBERO-Plus env, the same way for all five conditions. The fixtures are the bodies whose pos differs between demos' `model_file` strings (`wooden_cabinet_1_main`, `flat_stove_1_main`, `wine_rack_1_main` in the one file opened; the list for each of the other 9 task files is to be read from that file's `model_file` differences, not hard-coded to these three names). The smoke test checks that the fixtures land where the demo had them (Handoff step 2). See Feasibility 7b risk (f) and question 19.
 
-Nothing is left open except the user's sign-off (the last two points, the resize method and the mean-feature sizes, were decided 2026-11-07, Q22 and Q23). The design stays DRAFT until then. Decided by the user 2026-11-07 (reply to the review round): the extra fixture check is added (Q20; Feasibility 7b and Handoff step 2) and rule B is reported both ways (Q21; "The 'stands out' rule"). The demo-file check is done (7b).
+Nothing is left open except the user's sign-off (the last two points, the resize method and the mean-feature sizes, were decided 2026-11-07, Q22 and Q23). The user signed off 2026-11-07 ("yeah i sign off on it"). Decided by the user 2026-11-07 (reply to the review round): the extra fixture check is added (Q20; Feasibility 7b and Handoff step 2) and rule B is reported both ways (Q21; "The 'stands out' rule"). The demo-file check is done (7b).
 
 Everything below is a proposal and needs the user's OK, except where it is marked as decided.
 
