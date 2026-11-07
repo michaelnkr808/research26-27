@@ -26,12 +26,17 @@ Examples:
   python lp_eval.py subset --classification task_classification.json --n 900 --seed 1 --exclude pilot.json --out final.json
   python lp_eval.py sizing --subset pilot.json --results pilot_rollouts/*.jsonl
   python lp_eval.py analyze --subset final.json --results rollouts/*.jsonl --out paired.json
+  python lp_eval.py seednoise --a-dir rollouts/eval-dinov3-s1 --b-dir rollouts/eval-dinov3-s0 --subset full-subset.json
+
+seednoise applies the locked seed-noise rule (PLAN "Seed-noise rule (locked 2026-11-06)") to the two finished dinov3
+runs (A = training seed 1, B = training seed 0), each a directory of 8 shard files `*of8.jsonl`.
 """
 
 import argparse
 import hashlib
 import json
 import math
+import sys
 from collections import defaultdict
 from fractions import Fraction
 from pathlib import Path
@@ -56,6 +61,16 @@ CAL_B_MIN_MEAN = Fraction("-1.35")   # (b) D+L - D: mean >= -1.35 (non-inferiori
 HARM_MAX_MEAN = Fraction("-2.7")     # D+R - D: every seed < 0 and mean <= -2.7 (half the paper's -5.41)
 SE_TARGET = 1.35                     # sample-size rule: sd* / sqrt(N) <= 1.35 points
 SD_INFLATION = 1.5                   # sd* = 1.5 sd (variance x 2.25)
+
+# Seed-noise rule (PLAN "Seed-noise rule (locked 2026-11-06)"), percentage points, exact.
+SN_T = Fraction("2.7")               # threshold on |noise delta| and floor on each seed's mean LIBERO-Plus success
+SN_SHARDS = 8
+SN_CANT_TELL = "can't tell; user decides"
+SN_RETHINK = "3 seeds can't settle the question; rethink seeds (or N) before the other 13 runs"
+SN_GO = "go ahead"
+SN_GPU_NOTE = ("Note: the two training seeds may have trained on different GPU models (LOG 2026-11-06 (c)); "
+               "noted, not corrected for.")
+SN_PARTIAL = "PARTIAL INPUT: not a verdict"
 
 V_CAL_FAIL = "calibration failed: don't interpret the D+R comparison from this proxy"
 V_EFFECT = "substantial proxy effect (trigger for the higher-fidelity run, not statistical proof)"
@@ -319,6 +334,129 @@ def report(prim, sec, a, b, ver=None):
     return "\n".join(lines)
 
 
+def seednoise_outcome(mean_a, mean_b, delta):
+    """The locked seed-noise outcome from exact Fractions (points). Precedence: floor, then |delta| >= T, else go."""
+    if mean_a < SN_T or mean_b < SN_T:
+        return SN_CANT_TELL
+    if abs(delta) >= SN_T:
+        return SN_RETHINK
+    return SN_GO
+
+
+def _sn_load(directory):
+    """(shard files, rows) of one seed's directory. Only `*of8.jsonl`, never `*.jsonl` (that would also match the
+    `.errors.jsonl` files)."""
+    files = sorted(Path(directory).glob("*of8.jsonl"))
+    return files, read_rows(files)
+
+
+def _sn_episodes(rows):
+    """{(suite, episode_id): {eval_seed: success}} for LIBERO-Plus rows (duplicates are caught separately)."""
+    eps = defaultdict(dict)
+    for r in rows:
+        if r["benchmark"] == LP:
+            eps[(r["suite"], r["episode_id"])][r["eval_seed"]] = r["success"]
+    return eps
+
+
+def seednoise(a_dir, b_dir, subset_path=None):
+    """Apply the locked seed-noise rule. Returns a dict with `problems` (completeness failures; empty = complete),
+    the numbers computed on the episodes both seeds have, and `outcome` (None whenever there are problems)."""
+    problems = []
+    runs = {}
+    for name, d in (("A", a_dir), ("B", b_dir)):
+        files, rows = _sn_load(d)
+        if len(files) != SN_SHARDS:
+            problems.append(f"seed {name}: {len(files)} shard files matching *of8.jsonl in {d}, need {SN_SHARDS}")
+        runs[name] = (files, rows)
+    all_rows = runs["A"][1] + runs["B"][1]
+    if not all_rows:
+        problems.append("no rows at all")
+    configs = sorted({r["config"] for r in all_rows})
+    if len(configs) != 1:
+        problems.append(f"configs {configs}, need exactly one (the same in both seeds)")
+    tseeds = {name: sorted({r["train_seed"] for r in runs[name][1]}) for name in "AB"}
+    for name in "AB":
+        if len(tseeds[name]) != 1:
+            problems.append(f"seed {name}: train_seed values {tseeds[name]}, need exactly one")
+    if len(tseeds["A"]) == 1 and len(tseeds["B"]) == 1 and tseeds["A"] == tseeds["B"]:
+        problems.append(f"A and B have the same train_seed {tseeds['A'][0]}, need different ones")
+    sids = sorted({r["subset_id"] for r in all_rows})
+    if len(sids) > 1:
+        problems.append(f"subset_id values {sids}, need one")
+    dups = 0
+    for name in "AB":
+        cnt = defaultdict(int)
+        for r in runs[name][1]:
+            cnt[(r["benchmark"], r["suite"], r["episode_id"], r["eval_seed"])] += 1
+        dups += sum(1 for n in cnt.values() if n > 1)
+    if dups:
+        problems.append(f"{dups} duplicate (benchmark, suite, episode_id, eval_seed) keys within a seed")
+    eps = {name: _sn_episodes(runs[name][1]) for name in "AB"}
+    for name in "AB":
+        bad = [k for k, v in eps[name].items() if set(v) != set(EVAL_SEEDS)]
+        if bad:
+            problems.append(f"seed {name}: {len(bad)} LIBERO-Plus episodes without exactly eval seeds {EVAL_SEEDS}, "
+                            f"e.g. {bad[0]} has {sorted(eps[name][bad[0]])}")
+    ka, kb = set(eps["A"]), set(eps["B"])
+    if ka != kb:
+        problems.append(f"episode sets differ: {len(ka - kb)} only in A, {len(kb - ka)} only in B")
+    if subset_path:
+        sub = load_subset(subset_path)
+        want = {(e["suite"], e["id"]) for e in sub["episodes"]}
+        for name in "AB":
+            have = set(eps[name])
+            if have != want:
+                problems.append(f"seed {name}: episodes differ from the subset file: {len(want - have)} missing, "
+                                f"{len(have - want)} extra")
+        if sids and sids != [sub["subset_id"]]:
+            problems.append(f"rows' subset_id {sids} differs from the subset file's {sub['subset_id']}")
+    # numbers, on the episodes both seeds have (all of them when complete); mean over the eval seeds present
+    common = sorted(ka & kb)
+    sc = {name: {k: Fraction(sum(eps[name][k].values()), len(eps[name][k])) for k in common} for name in "AB"}
+    n = len(common)
+    zero = Fraction(0)
+    mean_a = sum(sc["A"].values(), zero) * 100 / n if n else zero
+    mean_b = sum(sc["B"].values(), zero) * 100 / n if n else zero
+    d = [sc["A"][k] - sc["B"][k] for k in common]
+    delta = sum(d, zero) * 100 / n if n else zero
+    return {"problems": problems, "config": configs[0] if len(configs) == 1 else configs,
+            "train_seed_a": tseeds["A"], "train_seed_b": tseeds["B"], "subset_id": sids,
+            "shards": {"A": len(runs["A"][0]), "B": len(runs["B"][0])},
+            "n_episodes": n, "n_episodes_a": len(ka), "n_episodes_b": len(kb),
+            "clean_records_excluded": {name: sum(1 for r in runs[name][1] if r["benchmark"] == CLEAN) for name in "AB"},
+            "mean_a_pts": mean_a, "mean_b_pts": mean_b, "delta_pts": delta,
+            "a_lower": sum(x < 0 for x in d), "a_higher": sum(x > 0 for x in d), "equal": sum(x == 0 for x in d),
+            "threshold_pts": SN_T, "outcome": None if problems else seednoise_outcome(mean_a, mean_b, delta)}
+
+
+def seednoise_report(r, partial):
+    lines = []
+    if partial:
+        lines += [SN_PARTIAL, ""]
+    if r["problems"]:
+        lines.append("Completeness problems (ignored because of --partial):" if partial
+                     else "COMPLETENESS FAILURES (no outcome):")
+        lines += [f"  - {p}" for p in r["problems"]]
+        lines.append("")
+    lines += [f"config {r['config']}; A = training seed {r['train_seed_a']}, B = training seed {r['train_seed_b']}; "
+              f"subset_id {r['subset_id']}",
+              f"shard files: A {r['shards']['A']}, B {r['shards']['B']}",
+              f"LIBERO-Plus episodes compared: {r['n_episodes']} (A has {r['n_episodes_a']}, B has {r['n_episodes_b']})",
+              f"clean-LIBERO records excluded from the rule: A {r['clean_records_excluded']['A']}, "
+              f"B {r['clean_records_excluded']['B']}",
+              f"mean LIBERO-Plus success (points): A {float(r['mean_a_pts']):.3f}, B {float(r['mean_b_pts']):.3f}",
+              f"noise delta A - B (points, with sign): {float(r['delta_pts']):+.3f}",
+              f"episodes with A lower: {r['a_lower']}, A higher: {r['a_higher']}, equal: {r['equal']}",
+              f"threshold T = {float(r['threshold_pts'])} points",
+              SN_GPU_NOTE]
+    if partial:
+        lines += ["", SN_PARTIAL + " (no outcome line is printed)"]
+    elif not r["problems"]:
+        lines += ["", f"OUTCOME: {r['outcome']}"]
+    return "\n".join(lines)
+
+
 def _jsonable(prim):
     return {s: {k: v for k, v in x.items() if k != "delta_exact"} for s, x in prim.items()}
 
@@ -345,7 +483,28 @@ def main():
     s3.add_argument("--results", nargs="+", required=True)
     s3.add_argument("--train-seed", type=int, default=0)
     s3.add_argument("--out", default=None)
+    s4 = sp.add_parser("seednoise", help="locked seed-noise rule on two finished dinov3 runs (A = seed 1, B = seed 0)")
+    s4.add_argument("--a-dir", required=True, help="shard directory of training seed 1 (A)")
+    s4.add_argument("--b-dir", required=True, help="shard directory of training seed 0 (B)")
+    s4.add_argument("--subset", default=None, help="full-subset.json to check the episode list against")
+    s4.add_argument("--partial", action="store_true", help="skip completeness failures (format check); no outcome")
+    s4.add_argument("--json-out", default=None, help="machine-readable summary")
     args = p.parse_args()
+
+    if args.cmd == "seednoise":
+        r = seednoise(args.a_dir, args.b_dir, args.subset)
+        if args.partial:
+            r["outcome"] = None
+        print(seednoise_report(r, args.partial))
+        if args.json_out and (args.partial or not r["problems"]):
+            out = {k: (float(v) if isinstance(v, Fraction) else v) for k, v in r.items()}
+            out.update(partial=args.partial, gpu_note=SN_GPU_NOTE)
+            if args.partial:
+                out["note"] = SN_PARTIAL
+            Path(args.json_out).write_text(json.dumps(out, indent=1))
+        if r["problems"] and not args.partial:
+            sys.exit(1)
+        return
 
     if args.cmd == "subset":
         raw = Path(args.classification).read_bytes()

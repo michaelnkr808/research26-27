@@ -5,6 +5,7 @@ import math
 import subprocess
 import sys
 import tempfile
+from fractions import Fraction
 from collections import Counter
 from pathlib import Path
 
@@ -251,7 +252,159 @@ def main():
         assert out["verdict"]["verdict"] == L.V_CAL_FAIL and not out["verdict"]["calibration_a"]
         assert [round(out["primary"][str(s)]["delta_pts"], 6) for s in range(3)] == [round(-20 / 12, 6)] * 3
     print("9 ok: CLI end to end (subset with exclusion, sizing, analyze + verdict)")
+    test_seednoise()
     print("all checks passed")
+
+
+# ---------------------------------------------------------------------------
+# seednoise (locked seed-noise rule), synthetic shard directories only
+# ---------------------------------------------------------------------------
+
+SN_N = 1000          # 1 success among the 3000 rollouts of one seed = 1/30 point, so 81 = exactly 2.7 points
+
+
+def sn_eps(n=SN_N, offset=0):
+    return [{"suite": "libero_goal", "id": offset + i, "category": CATS[i % 3]} for i in range(n)]
+
+
+def sn_write(d, counts, config="dinov3", train_seed=1, sid="sid0", eps=None, shards=8, name="dinov3-s1",
+             drop_eval=None, dup=False, clean=0, errors=True):
+    """Write one seed's shard dir in the real layout. counts[i] = successes (0..3) of episode i over eval seeds
+    41, 42, 43; rows are spread over `shards` files named <name>.<k>of8.jsonl, plus junk .errors.jsonl files."""
+    d = Path(d)
+    d.mkdir(parents=True, exist_ok=True)
+    eps = eps or sn_eps(len(counts))
+    rows = []
+    for e, c in zip(eps, counts):
+        for j, es in enumerate(SEEDS):
+            if drop_eval == (e["id"], es):
+                continue
+            rows.append(L.result_row(L.LP, e["suite"], e["id"], e["category"], config, train_seed, es, "ck", sid, j < c))
+    if dup:
+        rows.append(rows[0])
+    for i in range(clean):
+        rows.append(L.result_row(L.CLEAN, "libero_goal", i, "clean", config, train_seed, 41, "ck", sid, 1))
+    for k in range(shards):
+        (d / f"{name}.{k}of8.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows[k::shards]))
+        if errors:
+            (d / f"{name}.{k}of8.errors.jsonl").write_text("{not json at all\n")
+    return d
+
+
+def sn_counts(zeros=0):
+    """SN_N episodes with 1 success each, except the first `zeros` with 0: mean = 100 * (SN_N - zeros) / 3000 points."""
+    return [0 if i < zeros else 1 for i in range(SN_N)]
+
+
+def sn_low(ones):
+    """SN_N episodes, the first `ones` with 1 success, the rest 0: mean = 100 * ones / 3000 points."""
+    return [1 if i < ones else 0 for i in range(SN_N)]
+
+
+def sn_run(tmp, a_counts, b_counts, a=None, b=None, subset=None):
+    ad = sn_write(Path(tmp) / "a", a_counts, **{"train_seed": 1, "name": "dinov3-s1", **(a or {})})
+    bd = sn_write(Path(tmp) / "b", b_counts, **{"train_seed": 0, "name": "dinov3-s0-a40", **(b or {})})
+    return L.seednoise(ad, bd, subset)
+
+
+def test_seednoise():
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        n = [0]
+
+        def run(a_counts, b_counts, **kw):
+            n[0] += 1
+            return sn_run(tmp / f"r{n[0]}", a_counts, b_counts, **kw)
+
+        # outcomes. Both seeds ~33 points; B has `k` episodes at 0, so delta = 100 k / 3000 exactly.
+        r = run(sn_counts(), sn_counts(20))
+        assert not r["problems"] and r["outcome"] == L.SN_GO, r
+        assert r["a_higher"] == 20 and r["a_lower"] == 0 and r["equal"] == SN_N - 20
+        assert r["delta_pts"] == Fraction(100 * 20, 3000) and r["delta_pts"] > 0
+        r = run(sn_counts(), sn_counts(81))
+        assert r["delta_pts"] == Fraction("2.7") and r["outcome"] == L.SN_RETHINK, r      # exactly T: rethink
+        assert run(sn_counts(), sn_counts(80))["outcome"] == L.SN_GO                        # just under T
+        r = run(sn_counts(81), sn_counts())                                                 # negative delta, same size
+        assert r["delta_pts"] == Fraction("-2.7") and r["outcome"] == L.SN_RETHINK and r["a_lower"] == 81
+        # floors: mean exactly 2.7 is not below the floor; 2.7 minus one rollout is
+        r = run(sn_low(81), sn_low(81))
+        assert r["mean_a_pts"] == Fraction("2.7") and r["mean_b_pts"] == Fraction("2.7") and r["outcome"] == L.SN_GO
+        assert run(sn_low(81), sn_low(80))["outcome"] == L.SN_CANT_TELL
+        assert run(sn_low(80), sn_low(81))["outcome"] == L.SN_CANT_TELL
+        # floor beats the delta: B scores 0, delta is 33 points
+        r = run(sn_counts(), sn_counts(SN_N))
+        assert r["delta_pts"] > L.SN_T and r["outcome"] == L.SN_CANT_TELL
+        # per-episode averaging over eval seeds, sign, and the equal count
+        r = run([3] * 10 + [0] * 10, [0] * 10 + [3] * 10)
+        assert r["mean_a_pts"] == 50 and r["delta_pts"] == 0 and r["a_higher"] == 10 and r["a_lower"] == 10
+        # clean-LIBERO rows are counted and excluded
+        r = run(sn_counts(), sn_counts(20), a={"clean": 5}, b={"clean": 3})
+        assert r["clean_records_excluded"] == {"A": 5, "B": 3} and r["outcome"] == L.SN_GO and r["n_episodes"] == SN_N
+        # .errors.jsonl files hold junk and must be ignored (every run above has them; check they exist)
+        assert len(list((tmp / "r1" / "a").glob("*errors.jsonl"))) == 8 and not r["problems"]
+
+        # completeness failures, one at a time, each with no outcome
+        ok = sn_counts()
+
+        def fails(text, **kw):
+            r = run(ok, ok, **kw)
+            assert r["outcome"] is None and any(text in p for p in r["problems"]), (text, r["problems"])
+
+        fails("7 shard files", a={"shards": 7})
+        fails("configs", b={"config": "dinov3+c-radiov4"})
+        fails("same train_seed", b={"train_seed": 1})
+        fails("subset_id values", b={"sid": "sid1"})
+        fails("duplicate", a={"dup": True})
+        fails("without exactly eval seeds", b={"drop_eval": (5, 42)})
+        fails("episode sets differ", b={"eps": sn_eps(offset=1)})
+        # train_seed inconsistent within one seed
+        d = tmp / "mix"
+        a = sn_write(d / "a", ok, train_seed=1)
+        rows = [json.loads(x) for x in (a / "dinov3-s1.0of8.jsonl").read_text().splitlines()]
+        rows[0]["train_seed"] = 2
+        (a / "dinov3-s1.0of8.jsonl").write_text("".join(json.dumps(x) + "\n" for x in rows))
+        r = L.seednoise(a, sn_write(d / "b", ok, train_seed=0, name="dinov3-s0"))
+        assert r["outcome"] is None and any("train_seed values" in p for p in r["problems"]), r["problems"]
+        # subset file: matching passes, a different episode list fails
+        eps = sn_eps()
+        sub = {"subset_id": L.subset_id(eps), "episodes": eps}
+        (tmp / "sub.json").write_text(json.dumps(sub))
+        r = run(ok, ok, a={"sid": sub["subset_id"]}, b={"sid": sub["subset_id"]}, subset=tmp / "sub.json")
+        assert not r["problems"] and r["outcome"] == L.SN_GO, r["problems"]
+        eps2 = sn_eps(SN_N - 1)
+        (tmp / "sub2.json").write_text(json.dumps({"subset_id": L.subset_id(eps2), "episodes": eps2}))
+        fails("differ from the subset file", subset=tmp / "sub2.json")
+
+        # CLI: full run prints the outcome and exits 0; an incomplete run exits non-zero with no outcome line
+        def cli(a_kw=None):
+            n[0] += 1
+            base = tmp / f"c{n[0]}"
+            sn_write(base / "a", sn_counts(), train_seed=1, name="dinov3-s1", **(a_kw or {}))
+            sn_write(base / "b", sn_counts(20), train_seed=0, name="dinov3-s0-a40")
+            return base
+
+        def go(base, *flags):
+            return subprocess.run([sys.executable, str(Path(L.__file__)), "seednoise", "--a-dir", str(base / "a"),
+                                   "--b-dir", str(base / "b"), *flags], capture_output=True, text=True)
+        base = cli()
+        r = go(base, "--json-out", str(base / "o.json"))
+        assert r.returncode == 0 and f"OUTCOME: {L.SN_GO}" in r.stdout and L.SN_GPU_NOTE in r.stdout, r.stdout
+        o = json.loads((base / "o.json").read_text())
+        assert o["outcome"] == L.SN_GO and abs(o["delta_pts"] - 2000 / 3000) < 1e-9 and o["partial"] is False
+        base = cli({"shards": 5})
+        r = go(base)
+        assert r.returncode != 0 and "COMPLETENESS FAILURES" in r.stdout and "OUTCOME" not in r.stdout, r.stdout
+        r = go(base, "--partial", "--json-out", str(base / "p.json"))
+        assert r.returncode == 0 and r.stdout.startswith(L.SN_PARTIAL) and "OUTCOME" not in r.stdout, r.stdout
+        for out in (r.stdout, (base / "p.json").read_text()):
+            for text in (L.SN_GO, L.SN_RETHINK, L.SN_CANT_TELL):
+                assert text not in out, text
+        assert json.loads((base / "p.json").read_text())["outcome"] is None
+        # partial on a complete input still prints no outcome
+        r = go(cli(), "--partial")
+        assert r.returncode == 0 and "OUTCOME" not in r.stdout and L.SN_GO not in r.stdout
+    print("10 ok: seednoise (3 outcomes, exact boundaries, floor precedence, completeness failures, --partial, "
+          ".errors.jsonl ignored, clean rows excluded)")
 
 
 if __name__ == "__main__":
