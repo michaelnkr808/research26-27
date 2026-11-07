@@ -389,6 +389,7 @@ def test_seednoise():
         base = cli()
         r = go(base, "--json-out", str(base / "o.json"))
         assert r.returncode == 0 and f"OUTCOME: {L.SN_GO}" in r.stdout and L.SN_GPU_NOTE in r.stdout, r.stdout
+        assert "WARNING: no --subset given and 1000 LIBERO-Plus episodes" in r.stdout, r.stdout   # not the full 10030
         o = json.loads((base / "o.json").read_text())
         assert o["outcome"] == L.SN_GO and abs(o["delta_pts"] - 2000 / 3000) < 1e-9 and o["partial"] is False
         base = cli({"shards": 5})

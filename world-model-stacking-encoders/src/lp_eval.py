@@ -65,6 +65,7 @@ SD_INFLATION = 1.5                   # sd* = 1.5 sd (variance x 2.25)
 # Seed-noise rule (PLAN "Seed-noise rule (locked 2026-11-06)"), percentage points, exact.
 SN_T = Fraction("2.7")               # threshold on |noise delta| and floor on each seed's mean LIBERO-Plus success
 SN_SHARDS = 8
+SN_FULL_N = 10030                    # full LIBERO-Plus benchmark; only used for a warning when no subset file is given
 SN_CANT_TELL = "can't tell; user decides"
 SN_RETHINK = "3 seeds can't settle the question; rethink seeds (or N) before the other 13 runs"
 SN_GO = "go ahead"
@@ -411,6 +412,10 @@ def seednoise(a_dir, b_dir, subset_path=None):
                                 f"{len(have - want)} extra")
         if sids and sids != [sub["subset_id"]]:
             problems.append(f"rows' subset_id {sids} differs from the subset file's {sub['subset_id']}")
+    warnings = []
+    if not subset_path and len(ka & kb) != SN_FULL_N:
+        warnings.append(f"no --subset given and {len(ka & kb)} LIBERO-Plus episodes compared, not the full "
+                        f"{SN_FULL_N}: pass --subset full-subset.json before trusting the outcome")
     # numbers, on the episodes both seeds have (all of them when complete); mean over the eval seeds present
     common = sorted(ka & kb)
     sc = {name: {k: Fraction(sum(eps[name][k].values()), len(eps[name][k])) for k in common} for name in "AB"}
@@ -420,7 +425,7 @@ def seednoise(a_dir, b_dir, subset_path=None):
     mean_b = sum(sc["B"].values(), zero) * 100 / n if n else zero
     d = [sc["A"][k] - sc["B"][k] for k in common]
     delta = sum(d, zero) * 100 / n if n else zero
-    return {"problems": problems, "config": configs[0] if len(configs) == 1 else configs,
+    return {"problems": problems, "warnings": warnings, "config": configs[0] if len(configs) == 1 else configs,
             "train_seed_a": tseeds["A"], "train_seed_b": tseeds["B"], "subset_id": sids,
             "shards": {"A": len(runs["A"][0]), "B": len(runs["B"][0])},
             "n_episodes": n, "n_episodes_a": len(ka), "n_episodes_b": len(kb),
@@ -450,6 +455,7 @@ def seednoise_report(r, partial):
               f"episodes with A lower: {r['a_lower']}, A higher: {r['a_higher']}, equal: {r['equal']}",
               f"threshold T = {float(r['threshold_pts'])} points",
               SN_GPU_NOTE]
+    lines += [f"WARNING: {w}" for w in r["warnings"]]
     if partial:
         lines += ["", SN_PARTIAL + " (no outcome line is printed)"]
     elif not r["problems"]:

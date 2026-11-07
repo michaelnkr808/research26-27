@@ -818,3 +818,4 @@ Lead session ("implementation-agent"). UTC. Covers about 20:50-22:26.
 - speculative: nothing here says what the real result will be.
 
 **Next:** after all 16 shards are in, run `seednoise` with `--subset` on the real directories and show the lead the printed output before anything acts on it.
+- Codex review (one round): without `--subset`, two identical but truncated episode sets pass the checks and give an outcome. Fixed as a warning, not a failure (the spec makes `--subset` optional): without `--subset`, if the compared count is not 10,030, a "WARNING: ... pass --subset" line is printed before the outcome and stored in the JSON. verified by a CLI test.
