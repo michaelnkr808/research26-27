@@ -53,7 +53,7 @@ for k in ("full1", "full2"):
 
 BLUE, BLUE2, ORANGE, INK, GREY = "#1f5fa8", "#6fa3d8", "#d9480f", "#1a1a1a", "#555555"
 plt.rcParams.update({"font.size": 17, "font.family": "sans-serif"})
-fig, ax = plt.subplots(figsize=(11, 6.2), dpi=200)
+fig, ax = plt.subplots(figsize=(11, 7.2), dpi=200)
 fig.patch.set_facecolor("white")
 
 for key, col, lab in (("full1", BLUE, "Full training, run 1"), ("full2", BLUE2, "Full training, run 2")):
@@ -66,7 +66,7 @@ ax.scatter([ts], [tl], color=ORANGE, s=110, zorder=6, edgecolor="white", linewid
 ax.set_xlim(-300, 22000)
 ax.set_xlabel("Training steps", fontsize=19, color=INK)
 ax.set_ylabel("Training error (lower is better)", fontsize=19, color=INK)
-ax.set_title("The trial models stopped very early", fontsize=26, fontweight="bold", color=INK, loc="left", pad=34)
+ax.set_title("The trial model got only a sliver of full training", fontsize=24, fontweight="bold", color=INK, loc="left", pad=34)
 ax.text(0, 1.03, "Trial: 500 steps. Full runs: about 21,700 steps each.", transform=ax.transAxes,
         fontsize=16, color=GREY, va="bottom")
 for s in ("top", "right"):
@@ -78,13 +78,16 @@ ax.set_xticks([0, 5000, 10000, 15000, 20000])
 ax.set_xticklabels(["0", "5,000", "10,000", "15,000", "20,000"])
 
 ymax = max(p[1] for k in data for p in data[k])
-ax.annotate("Trial model stopped here\n(~500 steps)", xy=(ts, tl), xytext=(4200, ymax * 0.80),
+ax.annotate("Trial model ended here\n(500 steps)", xy=(ts, tl), xytext=(4200, ymax * 0.80),
             fontsize=18, fontweight="bold", color=ORANGE, va="center",
             arrowprops=dict(arrowstyle="-|>", color=ORANGE, lw=2.5))
 ax.legend(loc="upper right", fontsize=16, frameon=False)
 
-fig.text(0.01, 0.01, "Raw logged values, no smoothing. Dots are logged points (full runs log every ~433 steps; trial every 10).",
-         fontsize=11, color=GREY, ha="left", va="bottom")
-fig.tight_layout(rect=(0, 0.03, 1, 1))
+fig.text(0.01, 0.01,
+         "The trial used its own shortened learning schedule, so its curve isn't a\n"
+         "step-for-step match to the full runs.\n"
+         "Raw logged values, no smoothing. Full runs log every ~433 steps; the trial every 10.",
+         fontsize=18, color=GREY, ha="left", va="bottom", linespacing=1.3)
+fig.tight_layout(rect=(0, 0.2, 1, 1))
 fig.savefig(OUT, dpi=200, facecolor="white")
 print("wrote", OUT)
