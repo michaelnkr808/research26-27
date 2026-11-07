@@ -1,0 +1,69 @@
+# Read-only check of seed-1 eval shard 6's partial file before shards 6-7 are resubmitted (LOG 2026-11-07 (e)). rollout.py's resume
+# (done_keys, src/rollout.py lines 475-481) does json.loads on every line with no try/except, so a partly written last line from the
+# A40 pod's SIGTERM would crash the resumed pod. This prints: ls -la of the folder; for dinov3-s1.6of8.jsonl the byte size, sha256,
+# whether the last byte is a newline, the line count, how many lines parse with the four resume keys, and for any bad line its number,
+# length and last 200 bytes; whether the errors file and any 7of8 files exist. CPU only, PVC mounted readOnly, no writes, no GPU.
+# Rendered from jobs/rendered/job-pilot-read.yaml (same image, structure, sizing). User, 2026-11-07: "check first sounds fine".
+# Follows _standards/08: Job, real command that exits, no sleep, no tolerations, limits <= 1.2x requests, deadline, ttl, us-west.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-check-s1-shard6
+  namespace: aria-world
+spec:
+  completions: 1
+  backoffLimit: 1
+  activeDeadlineSeconds: 7200         # counts from Job creation, queue time included; the work itself takes seconds
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          D=/mnt/proxy/rollouts/eval-dinov3-s1
+          ls -la $D
+          python3 - <<'PY'
+          import hashlib, json, os
+          D = "/mnt/proxy/rollouts/eval-dinov3-s1"
+          p = D + "/dinov3-s1.6of8.jsonl"
+          b = open(p, "rb").read()
+          print("size", len(b), "sha256", hashlib.sha256(b).hexdigest())
+          print("last byte is newline:", b[-1:] == b"\n")
+          lines = b.split(b"\n")
+          if lines and lines[-1] == b"":
+              lines = lines[:-1]
+          keys = ("benchmark", "suite", "episode_id", "eval_seed")
+          ok = 0
+          for n, l in enumerate(lines, 1):
+              if not l.strip():
+                  continue
+              try:
+                  r = json.loads(l)
+                  assert all(k in r for k in keys)
+                  ok += 1
+              except Exception as e:
+                  print("BAD line", n, "len", len(l), "err", repr(e), "last200", repr(l[-200:]))
+          print("lines", len(lines), "parse_ok_with_keys", ok)
+          print("errors file exists:", os.path.exists(D + "/dinov3-s1.6of8.errors.jsonl"))
+          print("7of8 files:", [f for f in os.listdir(D) if "7of8" in f])
+          PY
+          echo "=== done"
+        resources:
+          requests: {cpu: 500m, memory: 512Mi}
+          limits:   {cpu: 600m, memory: 600Mi}
+        volumeMounts:
+        - {name: proxy, mountPath: /mnt/proxy, readOnly: true}
+      volumes:
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
