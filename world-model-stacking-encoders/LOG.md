@@ -1293,3 +1293,8 @@ No operating rule changed.
 **Goal:** record the user's sign-off of the perturbed-frame design.
 **Did:** the user signed off ("yeah i sign off on it"); experiment `PLAN.md`, `LOG.md`, `README.md` and Next 3 here updated in the same commit. No design change; later changes go through dated amendments only.
 **Next:** the implementation session runs Handoff step 1 and confirms with the user before submitting any cluster Job. Test-set use: none.
+
+## 2026-11-07 [agent, planning] (seed-noise script merged: PLAN and README lines updated)
+**Goal:** update the text that still said the seed-noise comparison script does not exist.
+**Did:** merged main (e220ee3) and changed the wording about the script in direction `PLAN.md` ("Now" and Next 1) and in the proxy-calibration `README.md`, citing the proxy-calibration `LOG.md` (l): `lp_eval.py seednoise` exists, refuses a verdict unless every shard is complete, reads only `*of8.jsonl`, and was tested on synthetic data only. No results added; direction `README.md` had no such wording.
+**Next:** unchanged; the script runs after all 16 shards finish.
