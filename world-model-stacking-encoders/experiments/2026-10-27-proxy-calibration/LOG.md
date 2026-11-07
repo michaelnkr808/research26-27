@@ -703,3 +703,48 @@ Lead session ("implementation-agent"). UTC. Checked at about 19:50-20:05 (the le
 - Nothing changed on the cluster in this entry.
 
 **Next:** the user's choice on the L40 pod and on restricting the remaining shards to slower cards.
+
+## 2026-11-07 (j) [agent] (NRP GPU-utilization policy: what the docs actually say)
+
+Read-only web research by worker nrp-policy; no cluster commands, no code changes. All fetches 2026-11-07 via WebFetch. Source for everything below: https://nrp.ai/documentation/userdocs/start/policies/ (the older domain https://nationalresearchplatform.org/documentation/userdocs/start/policies redirected to https://nrp.ai/). WebFetch returns a model-processed extract, not raw HTML, so quotes below are as returned by it in several independent fetches that agreed with each other; a spot-check against the live page is still worthwhile. Not fetched: https://nrp.ai/userinfo (needs login, skipped), the Violations page on the Nautilus portal (portal login), the Grafana GPU dashboard.
+
+**1. What is the GPU rule? (threshold, window, per pod or per GPU)**
+- verified: "A user can not submit more than 4 pods, violating the following conditions:" followed by "GPU utilization is more than 40% of the requested GPUs." (TL;DR wording: "A single user can't submit more than 4 pods violating the following limits:").
+- verified: under "Requesting GPUs": "Check the GPU dashboard for your namespace to make sure the utilization is above 40%, and ideally is close to 100%."
+- verified: the page gives no time window (no minutes, hours, or days) for GPU, CPU, or RAM utilization. Our "10-minute mean" is not in the page.
+- verified: it does not say per pod vs per GPU vs per namespace beyond the phrase "of the requested GPUs"; the 4-pod limit is per user.
+- verified: "These restrictions do not apply to pods requesting 1 CPU core and 2GB memory."
+
+**2. Hard violation, or guideline? What happens, after how long?**
+- verified: the written consequence of the 40% rule is the cap on pods: a user "can not submit more than 4 pods" that violate it. That is a limit on how many violating pods you may have, not a kill-on-dip rule. The page states no automatic strike, no pod kill, and no timer for dropping below 40%.
+- verified: ban language is general and vague: "Admins monitor resource utilization and will ban namespaces with under-utilized resources requests." and "Do not waste resources. Namespaces with consistently underutilized requests risk being banned." No ban duration and no definition of "consistently" is given.
+- verified: "Keep checking the Violations page on the Nautilus portal to see if your pods are violating the usage policies." (The Violations page itself was not fetched.)
+- Reading (speculative): a brief dip below 40% is not described as a violation event; sustained low use that admins notice is the ban risk, and more than 4 flagged pods at once breaks the stated rule. How the 4-pod cap is enforced (blocked submit vs. admin action) is not written.
+
+**3. Strikes and "3 strikes"**
+- verified: the only "3" on the page is for deletion of workloads, not utilization: "You will receive 3 notifications if your workload is not on the exception list. After that, your workload will be deleted. Any data in persistent volumes will remain." It sits in the workload-purging section about Deployments older than 2 weeks ("Deployments are automatically deleted after 2 weeks (unless the namespace is added to the exceptions list and runs a permanent service)").
+- verified: no "strike" concept for GPU utilization appears. A "1 of 3 idle strikes" count is not supported by this page. Whether the aria-world admins told us of strikes through another channel is not something this page can confirm (recalled, from earlier sessions' memory notes, unverified).
+- verified: explicit bans: "Users running a Job with `sleep` command or equivalent (script ending with “sleep”) will be banned from using the cluster."
+
+**4. How is it measured? Nodes that don't report?**
+- verified: the page says only "Check the GPU dashboard for your namespace" (links a Grafana URL) and "Use monitoring to accurately set the resource requests." DCGM and Prometheus are not named in the policy prose. Nothing is said about nodes that export no metrics (gpu05/06.fullerton.edu).
+- speculative: the dashboard is probably built from the same DCGM data, so pods on non-reporting nodes may show as no data rather than low; unverified.
+
+**5. Exceptions**
+- verified: exceptions are for interactive-time and Deployment limits: "Time limit: such pods will be destroyed in 6 hours unless you request an exception for your namespace"; "If you need to run some permanent services beyond two weeks, contact admins in Nautilus Support and ask for an exception." and "Please provide an estimated period of service functioning and a brief description of what the service does." Routed to Nautilus Support (the site's /contact page).
+- verified: "Long idle pods can’t be added to the exceptions list, since those are considered temporary."
+- verified: no written exception path for CPU-bound GPU workloads like simulation, and nothing explicitly allowing or forbidding it. Asking Nautilus Support is the only documented route (speculative that they would grant it).
+
+**6. CPU and RAM**
+- verified: "CPU usage is within 20-200% of the requested CPUs." and "Memory (RAM) usage is within 20-150% of the requested memory." Same 4-pod rule and same 1 CPU / 2 GB exemption as the GPU line; no time window.
+- verified: limits: "Your resource `limits` must be within 20% of the resource `requests`." For more than about 100 pods or jobs, "you must choose your resource `limit` = `request`." Over the memory limit the pod is killed (OOM); over the CPU limit it "puts pressure on the node."
+
+**Interactive pods (relevant to our pods only if they lack a controller):** pods without a controller are "interactive", destroyed after 6 hours, limited to 2 GPUs, 32 GB RAM, 16 CPU cores. Our rollouts are Jobs, so this should not apply (speculative).
+
+**Agreement with RUN.md** ("Rollouts and the 40% GPU floor" and stop 10, lines 12, 20, 33; step 9 line 62):
+- Agrees: 40% GPU, CPU 20-200%, RAM 20-150% of requests exist as written thresholds; 1 CPU / 2 GB exemption (RUN.md mentions it for the watcher).
+- Disagrees or overstated: (1) RUN.md treats 40% as a floor checked "over 10-minute windows"; the docs give no window. (2) Watcher exit 4 ("GPU pod idle below 40% (NRP floor)") treats it as a hard stop; the docs word it as a "no more than 4 violating pods per user" cap plus a ban risk for consistently under-used requests, with no automatic kill. (3) The "1 of 3 idle strikes" note has no basis on this page; the only "3" is deletion notifications for Deployments. (4) The RUN.md watcher checks RAM only for >= 20%; the docs cap RAM at 150% too (minor).
+- Not covered by docs: DCGM metrics, nodes without DCGM, any simulation exception.
+- Practical reading (speculative): one L40 pod at ~20% GPU is a violating pod but well under the 4-pod cap; L4 pods dipping to the 30s for 10 minutes are not described as violations by any written rule. Sustained low use across many pods is the real risk. Asking Nautilus Support about CPU-bound simulation would settle it.
+
+**Next:** the lead decides whether to relax watcher exit 4 and the "10-minute window" wording in RUN.md, and whether to ask Nautilus Support (contact page) for written confirmation about CPU-bound rollouts and what "consistently underutilized" means.
