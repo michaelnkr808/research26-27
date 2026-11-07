@@ -65,6 +65,7 @@ SD_INFLATION = 1.5                   # sd* = 1.5 sd (variance x 2.25)
 # Seed-noise rule (PLAN "Seed-noise rule (locked 2026-11-06)"), percentage points, exact.
 SN_T = Fraction("2.7")               # threshold on |noise delta| and floor on each seed's mean LIBERO-Plus success
 SN_SHARDS = 8
+SN_CONFIG, SN_A_SEED, SN_B_SEED = "dinov3", 1, 0   # the rule compares dinov3 at training seed 1 (A) vs 0 (B)
 SN_FULL_N = 10030                    # full LIBERO-Plus benchmark; only used for a warning when no subset file is given
 SN_CANT_TELL = "can't tell; user decides"
 SN_RETHINK = "3 seeds can't settle the question; rethink seeds (or N) before the other 13 runs"
@@ -360,9 +361,12 @@ def _sn_episodes(rows):
     return eps
 
 
-def seednoise(a_dir, b_dir, subset_path=None):
+def seednoise(a_dir, b_dir, subset_path=None, config=SN_CONFIG, a_seed=SN_A_SEED, b_seed=SN_B_SEED,
+              expected_n=SN_FULL_N):
     """Apply the locked seed-noise rule. Returns a dict with `problems` (completeness failures; empty = complete),
-    the numbers computed on the episodes both seeds have, and `outcome` (None whenever there are problems)."""
+    the numbers computed on the episodes both seeds have, and `outcome` (None whenever there are problems).
+    Without a subset file the compared episode count must be `expected_n` (10,030): episodes that error every time
+    land in .errors.jsonl in both seeds, so set equality alone cannot show completeness."""
     problems = []
     runs = {}
     for name, d in (("A", a_dir), ("B", b_dir)):
@@ -374,15 +378,22 @@ def seednoise(a_dir, b_dir, subset_path=None):
     if not all_rows:
         problems.append("no rows at all")
     configs = sorted({r["config"] for r in all_rows})
-    if len(configs) != 1:
-        problems.append(f"configs {configs}, need exactly one (the same in both seeds)")
+    if configs != [config]:
+        problems.append(f"configs {configs}, need exactly [{config!r}] (the same in both seeds)")
+    bad_success = sum(1 for r in all_rows if not (isinstance(r["success"], int) and r["success"] in (0, 1)))
+    if bad_success:
+        problems.append(f"{bad_success} rows whose success is not 0 or 1 (int or bool)")
     tseeds = {name: sorted({r["train_seed"] for r in runs[name][1]}) for name in "AB"}
     for name in "AB":
         if len(tseeds[name]) != 1:
             problems.append(f"seed {name}: train_seed values {tseeds[name]}, need exactly one")
+    for name, want_seed in (("A", a_seed), ("B", b_seed)):
+        if len(tseeds[name]) == 1 and tseeds[name] != [want_seed]:
+            problems.append(f"seed {name}: train_seed {tseeds[name][0]}, need {want_seed}")
     if len(tseeds["A"]) == 1 and len(tseeds["B"]) == 1 and tseeds["A"] == tseeds["B"]:
         problems.append(f"A and B have the same train_seed {tseeds['A'][0]}, need different ones")
-    sids = sorted({r["subset_id"] for r in all_rows})
+    # LIBERO-Plus rows only: clean-LIBERO rows carry their own subset_id ("clean1", rollout.py)
+    sids = sorted({r["subset_id"] for r in all_rows if r["benchmark"] == LP})
     if len(sids) > 1:
         problems.append(f"subset_id values {sids}, need one")
     dups = 0
@@ -412,20 +423,23 @@ def seednoise(a_dir, b_dir, subset_path=None):
                                 f"{len(have - want)} extra")
         if sids and sids != [sub["subset_id"]]:
             problems.append(f"rows' subset_id {sids} differs from the subset file's {sub['subset_id']}")
-    warnings = []
-    if not subset_path and len(ka & kb) != SN_FULL_N:
-        warnings.append(f"no --subset given and {len(ka & kb)} LIBERO-Plus episodes compared, not the full "
-                        f"{SN_FULL_N}: pass --subset full-subset.json before trusting the outcome")
+    if not ka or not kb:
+        problems.append("zero LIBERO-Plus episodes in " + ("A and B" if not ka and not kb else "A" if not ka else "B"))
+    if not subset_path and len(ka & kb) != expected_n:
+        problems.append(f"no --subset given and {len(ka & kb)} LIBERO-Plus episodes compared, need {expected_n}")
     # numbers, on the episodes both seeds have (all of them when complete); mean over the eval seeds present
     common = sorted(ka & kb)
-    sc = {name: {k: Fraction(sum(eps[name][k].values()), len(eps[name][k])) for k in common} for name in "AB"}
+    def _ok(v):                       # invalid success values are already a problem; keep the arithmetic from crashing
+        return int(v) if isinstance(v, int) and v in (0, 1) else 0
+    sc = {name: {k: Fraction(sum(_ok(v) for v in eps[name][k].values()), len(eps[name][k])) for k in common}
+          for name in "AB"}
     n = len(common)
     zero = Fraction(0)
     mean_a = sum(sc["A"].values(), zero) * 100 / n if n else zero
     mean_b = sum(sc["B"].values(), zero) * 100 / n if n else zero
     d = [sc["A"][k] - sc["B"][k] for k in common]
     delta = sum(d, zero) * 100 / n if n else zero
-    return {"problems": problems, "warnings": warnings, "config": configs[0] if len(configs) == 1 else configs,
+    return {"problems": problems, "config": configs[0] if len(configs) == 1 else configs,
             "train_seed_a": tseeds["A"], "train_seed_b": tseeds["B"], "subset_id": sids,
             "shards": {"A": len(runs["A"][0]), "B": len(runs["B"][0])},
             "n_episodes": n, "n_episodes_a": len(ka), "n_episodes_b": len(kb),
@@ -455,7 +469,6 @@ def seednoise_report(r, partial):
               f"episodes with A lower: {r['a_lower']}, A higher: {r['a_higher']}, equal: {r['equal']}",
               f"threshold T = {float(r['threshold_pts'])} points",
               SN_GPU_NOTE]
-    lines += [f"WARNING: {w}" for w in r["warnings"]]
     if partial:
         lines += ["", SN_PARTIAL + " (no outcome line is printed)"]
     elif not r["problems"]:
@@ -493,12 +506,15 @@ def main():
     s4.add_argument("--a-dir", required=True, help="shard directory of training seed 1 (A)")
     s4.add_argument("--b-dir", required=True, help="shard directory of training seed 0 (B)")
     s4.add_argument("--subset", default=None, help="full-subset.json to check the episode list against")
+    s4.add_argument("--config", default=SN_CONFIG)
+    s4.add_argument("--a-seed", type=int, default=SN_A_SEED)
+    s4.add_argument("--b-seed", type=int, default=SN_B_SEED)
     s4.add_argument("--partial", action="store_true", help="skip completeness failures (format check); no outcome")
     s4.add_argument("--json-out", default=None, help="machine-readable summary")
     args = p.parse_args()
 
     if args.cmd == "seednoise":
-        r = seednoise(args.a_dir, args.b_dir, args.subset)
+        r = seednoise(args.a_dir, args.b_dir, args.subset, args.config, args.a_seed, args.b_seed)
         if args.partial:
             r["outcome"] = None
         print(seednoise_report(r, args.partial))

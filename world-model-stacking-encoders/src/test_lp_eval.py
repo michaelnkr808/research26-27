@@ -268,9 +268,10 @@ def sn_eps(n=SN_N, offset=0):
 
 
 def sn_write(d, counts, config="dinov3", train_seed=1, sid="sid0", eps=None, shards=8, name="dinov3-s1",
-             drop_eval=None, dup=False, clean=0, errors=True):
+             drop_eval=None, dup=False, clean=0, errors=True, success_override=None):
     """Write one seed's shard dir in the real layout. counts[i] = successes (0..3) of episode i over eval seeds
-    41, 42, 43; rows are spread over `shards` files named <name>.<k>of8.jsonl, plus junk .errors.jsonl files."""
+    41, 42, 43; rows are spread over `shards` files named <name>.<k>of8.jsonl, plus junk <name>.<k>of8.jsonl.errors.jsonl files (the real name, rollout.py).
+    Clean rows carry subset_id "clean1" like the real writer."""
     d = Path(d)
     d.mkdir(parents=True, exist_ok=True)
     eps = eps or sn_eps(len(counts))
@@ -280,14 +281,16 @@ def sn_write(d, counts, config="dinov3", train_seed=1, sid="sid0", eps=None, sha
             if drop_eval == (e["id"], es):
                 continue
             rows.append(L.result_row(L.LP, e["suite"], e["id"], e["category"], config, train_seed, es, "ck", sid, j < c))
+            if success_override is not None and j == 0 and e["id"] == 0:
+                rows[-1]["success"] = success_override
     if dup:
         rows.append(rows[0])
     for i in range(clean):
-        rows.append(L.result_row(L.CLEAN, "libero_goal", i, "clean", config, train_seed, 41, "ck", sid, 1))
+        rows.append(L.result_row(L.CLEAN, "libero_goal", i, "clean", config, train_seed, 41, "ck", "clean1", 1))
     for k in range(shards):
         (d / f"{name}.{k}of8.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows[k::shards]))
         if errors:
-            (d / f"{name}.{k}of8.errors.jsonl").write_text("{not json at all\n")
+            (d / f"{name}.{k}of8.jsonl.errors.jsonl").write_text("{not json at all\n")
     return d
 
 
@@ -301,10 +304,10 @@ def sn_low(ones):
     return [1 if i < ones else 0 for i in range(SN_N)]
 
 
-def sn_run(tmp, a_counts, b_counts, a=None, b=None, subset=None):
+def sn_run(tmp, a_counts, b_counts, a=None, b=None, subset=None, **kw):
     ad = sn_write(Path(tmp) / "a", a_counts, **{"train_seed": 1, "name": "dinov3-s1", **(a or {})})
     bd = sn_write(Path(tmp) / "b", b_counts, **{"train_seed": 0, "name": "dinov3-s0-a40", **(b or {})})
-    return L.seednoise(ad, bd, subset)
+    return L.seednoise(ad, bd, subset, **{"expected_n": SN_N, **kw})
 
 
 def test_seednoise():
@@ -350,6 +353,27 @@ def test_seednoise():
             r = run(ok, ok, **kw)
             assert r["outcome"] is None and any(text in p for p in r["problems"]), (text, r["problems"])
 
+        # item 1: real clean rows are tagged "clean1" (not the LIBERO-Plus subset_id); they must not trip subset_id checks
+        r = run(ok, ok, a={"clean": 2}, b={"clean": 2})
+        assert not r["problems"] and r["subset_id"] == ["sid0"], r
+        # item 2: no subset file -> the compared count must be the full 10,030 (default), else a failure, no outcome
+        r = run(ok, ok, expected_n=L.SN_FULL_N)
+        assert r["outcome"] is None and any("need 10030" in p for p in r["problems"]), r["problems"]
+        # item 3: zero LIBERO-Plus episodes
+        r = run([], [], expected_n=0)
+        assert r["outcome"] is None and any("zero LIBERO-Plus" in p for p in r["problems"]), r["problems"]
+        # item 4: success must be 0 or 1
+        for bad in (2, -1, 0.5, "1", []):
+            fails("not 0 or 1", a={"success_override": bad})
+        r = run(ok, ok, a={"success_override": True})                    # bool is allowed
+        assert not r["problems"]
+        # item 5: config and train seeds default to dinov3 / A=1 / B=0
+        fails("need exactly ['dinov3']", a={"config": "other"}, b={"config": "other"})
+        fails("need 1", a={"train_seed": 2})
+        fails("need 0", b={"train_seed": 3})
+        r = run(ok, ok, config="other", a_seed=2, b_seed=3, a={"config": "other", "train_seed": 2},
+                b={"config": "other", "train_seed": 3})
+        assert not r["problems"]
         fails("7 shard files", a={"shards": 7})
         fails("configs", b={"config": "dinov3+c-radiov4"})
         fails("same train_seed", b={"train_seed": 1})
@@ -376,20 +400,26 @@ def test_seednoise():
         fails("differ from the subset file", subset=tmp / "sub2.json")
 
         # CLI: full run prints the outcome and exits 0; an incomplete run exits non-zero with no outcome line
+        sub_id = sub["subset_id"]
+
         def cli(a_kw=None):
             n[0] += 1
             base = tmp / f"c{n[0]}"
-            sn_write(base / "a", sn_counts(), train_seed=1, name="dinov3-s1", **(a_kw or {}))
-            sn_write(base / "b", sn_counts(20), train_seed=0, name="dinov3-s0-a40")
+            sn_write(base / "a", sn_counts(), train_seed=1, name="dinov3-s1", sid=sub_id, clean=4, **(a_kw or {}))
+            sn_write(base / "b", sn_counts(20), train_seed=0, name="dinov3-s0-a40", sid=sub_id, clean=4)
             return base
 
-        def go(base, *flags):
+        def go(base, *flags, subset=True):
+            sf = ["--subset", str(tmp / "sub.json")] if subset else []
             return subprocess.run([sys.executable, str(Path(L.__file__)), "seednoise", "--a-dir", str(base / "a"),
-                                   "--b-dir", str(base / "b"), *flags], capture_output=True, text=True)
+                                   "--b-dir", str(base / "b"), *sf, *flags], capture_output=True, text=True)
         base = cli()
         r = go(base, "--json-out", str(base / "o.json"))
         assert r.returncode == 0 and f"OUTCOME: {L.SN_GO}" in r.stdout and L.SN_GPU_NOTE in r.stdout, r.stdout
-        assert "WARNING: no --subset given and 1000 LIBERO-Plus episodes" in r.stdout, r.stdout   # not the full 10030
+        # no subset file and 1000 (not 10030) episodes: failure, exit 1, no outcome, no JSON
+        r2 = go(base, "--json-out", str(base / "nosub.json"), subset=False)
+        assert r2.returncode == 1 and "OUTCOME" not in r2.stdout and "need 10030" in r2.stdout, r2.stdout
+        assert not (base / "nosub.json").exists()
         o = json.loads((base / "o.json").read_text())
         assert o["outcome"] == L.SN_GO and abs(o["delta_pts"] - 2000 / 3000) < 1e-9 and o["partial"] is False
         base = cli({"shards": 5})
