@@ -1,0 +1,153 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    nrp.ai/username: http://cilogon.org/serverE/users/436081
+  creationTimestamp: "2026-11-06T23:11:25Z"
+  generation: 1
+  labels:
+    batch.kubernetes.io/controller-uid: 88d8e55b-729d-4d7a-8da2-fbe5b5642ade
+    batch.kubernetes.io/job-name: stacking-encoders-proxy-train-wave1c-dinov3-s0-a40
+    controller-uid: 88d8e55b-729d-4d7a-8da2-fbe5b5642ade
+    job-name: stacking-encoders-proxy-train-wave1c-dinov3-s0-a40
+  name: stacking-encoders-proxy-train-wave1c-dinov3-s0-a40
+  namespace: aria-world
+  resourceVersion: "15441060447"
+  uid: 88d8e55b-729d-4d7a-8da2-fbe5b5642ade
+spec:
+  activeDeadlineSeconds: 129600
+  backoffLimit: 4
+  completionMode: Indexed
+  completions: 1
+  manualSelector: false
+  parallelism: 1
+  podReplacementPolicy: TerminatingOrFailed
+  selector:
+    matchLabels:
+      batch.kubernetes.io/controller-uid: 88d8e55b-729d-4d7a-8da2-fbe5b5642ade
+  suspend: false
+  template:
+    metadata:
+      labels:
+        batch.kubernetes.io/controller-uid: 88d8e55b-729d-4d7a-8da2-fbe5b5642ade
+        batch.kubernetes.io/job-name: stacking-encoders-proxy-train-wave1c-dinov3-s0-a40
+        controller-uid: 88d8e55b-729d-4d7a-8da2-fbe5b5642ade
+        job-name: stacking-encoders-proxy-train-wave1c-dinov3-s0-a40
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/cuda.driver.major
+                operator: Gt
+                values:
+                - "569"
+              - key: topology.kubernetes.io/region
+                operator: In
+                values:
+                - us-west
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                - k8s-chase-ci-07.calit2.optiputer.net
+                - ry-gpu-08.sdsc.optiputer.net
+      containers:
+      - args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; I=$JOB_COMPLETION_INDEX
+          P=($PAIRS); C=${P[$I]%%:*}; S=${P[$I]##*:}
+          mkdir -p $R/logs $R/runs
+          exec > >(tee -a $R/logs/train-wave1c-dinov3-$C-s$S-a40-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          echo "=== index $I: config $C seed $S"; nvidia-smi; nproc; date -u
+          bash /src/setup_env.sh > /work/pip-env.log 2>&1 || { tail -50 /work/pip-env.log; exit 1; }
+          python /src/proxy_wam.py --feats $R/feats --suites libero_spatial,libero_object,libero_goal,libero_10 \
+            --t5 $R/feats/t5 --config $C --seed $S --out $R/runs/$C-s$S-a40
+          date -u; echo "=== done"
+        command:
+        - bash
+        - -c
+        env:
+        - name: SRC_GIT_COMMIT
+          value: 2bab64f6496dd22fefa64a6149539979c0840589
+        - name: PAIRS
+          value: dinov3:0
+        - name: HF_HOME
+          value: /work/hf
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: PYTHONPATH
+          value: /src
+        - name: OMP_NUM_THREADS
+          value: "3"
+        - name: MALLOC_ARENA_MAX
+          value: "2"
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        imagePullPolicy: IfNotPresent
+        name: main
+        resources:
+          limits:
+            cpu: 4800m
+            ephemeral-storage: 24Gi
+            memory: 33Gi
+            nvidia.com/a40: "1"
+          requests:
+            cpu: "4"
+            ephemeral-storage: 20Gi
+            memory: 28Gi
+            nvidia.com/a40: "1"
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /work
+          name: work
+        - mountPath: /src
+          name: src
+          readOnly: true
+        - mountPath: /mnt/proxy
+          name: proxy
+        - mountPath: /dev/shm
+          name: dshm
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir:
+          sizeLimit: 24Gi
+        name: work
+      - configMap:
+          defaultMode: 420
+          name: stacking-encoders-proxy-src
+        name: src
+      - name: proxy
+        persistentVolumeClaim:
+          claimName: stacking-encoders-proxy
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 2Gi
+        name: dshm
+  ttlSecondsAfterFinished: 86400
+status:
+  completedIndexes: "0"
+  completionTime: "2026-11-07T03:36:05Z"
+  conditions:
+  - lastProbeTime: "2026-11-07T03:36:05Z"
+    lastTransitionTime: "2026-11-07T03:36:05Z"
+    message: Reached expected number of succeeded pods
+    reason: CompletionsReached
+    status: "True"
+    type: SuccessCriteriaMet
+  - lastProbeTime: "2026-11-07T03:36:05Z"
+    lastTransitionTime: "2026-11-07T03:36:05Z"
+    message: Reached expected number of succeeded pods
+    reason: CompletionsReached
+    status: "True"
+    type: Complete
+  ready: 0
+  startTime: "2026-11-06T23:11:26Z"
+  succeeded: 1
+  terminating: 0
+  uncountedTerminatedPods: {}
