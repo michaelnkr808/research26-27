@@ -9,14 +9,19 @@ Under the picture changes that LIBERO-Plus applies, does adding C-RADIOv4 (R) to
 
 Why look at the pair and not each encoder alone: C-RADIOv4 alone holds up about as well as DINOv3 in the paper's per-category Table 1 (camera 62.6 vs 64.2, light 97.3 vs 98.5, background 86.2 vs 83.9, noise 86.6 vs 86.0; verified, `literature/liu2026what-table1-single-source.csv`). The paper gives no per-category numbers for compositions (verified, paper note). So the harm, if it is visible at all in frozen features, has to show up in the pair.
 
-## Decided by the user (2026-11-06, in the lead session's chat)
+## Decided by the user (2026-11-06 and 2026-11-07, in the lead session's chat)
 - **Perturbation types: camera, lighting, background, sensor noise only.** User: "yeah lets just do the 4 picture types i guess". Left out, with the lead's reasons: robot initial state (changes the robot's state, so a frozen demo moment is no longer the same moment); language (the image does not change); object layout (moves the target or adds physical distractors; the distractor-only half was offered as an optional fifth and the user declined it).
 - **Measurements: both, with the probe as the main result.** User: "yea with the probe as the main result".
   - Main: an action probe trained on clean frames and tested on perturbed re-renders of the same demo moments. The demo's recorded action stays the correct label because the robot state is unchanged. This mirrors the paper: train on clean LIBERO, evaluate on LIBERO-Plus.
   - Secondary sanity check: feature drift, meaning how far each encoder's features move between the clean and the perturbed version of the same frame, on a scale that can be compared across encoders.
 - Context the lead gave the user: C-RADIOv4 alone holds up about as well as DINOv3 per category (above), so the test looks at the pair. With only 4 partners, D+R ranking last by chance is 1 in 4, so a hit is a hint, not proof (`../../PLAN.md` Next 3 says the same).
 
-Everything below is a proposal and needs the user's OK.
+Decided later (2026-11-06/07, same chat):
+- **Data: the libero_goal HDF5 demos, same train/val/test split as the tally.** User: "yeah lets just use the same LIBERO-Goal demos but dont we also need to add in the 4 picture pertubations". The lead clarified that the demos are only the starting moments: the clean frames train the probe, and the same moments are re-rendered under the four types for testing. Nothing about the design changes from that.
+- **"Stands out" rule: P decides; B is reported alongside (reported only, it does not decide); A is not used.** The lead explained B as the higher bar (R's gain under perturbation must go below zero, clearly, while the other three stay at or above zero) and P as the relative one (R loses more of its advantage than the others, by more than noise), and asked "P as the rule that decides, with B reported alongside?". User: "1. looks good".
+- **Probe capacity: add the matched-dimension control.** Reduce every encoder's features to a common size and run the comparison that way as well, beside the full-size one. User, replying to the lead's recommendation: "shrinking it seems fine?". The full-size comparison is primary (it is where rule P is applied); the matched-dimension result is reported beside it. The method (PCA) and the common size below are still a proposal.
+
+Everything below is a proposal and needs the user's OK, except where it is marked as decided.
 
 ## Proposed design (needs the user's OK)
 
@@ -24,7 +29,7 @@ Everything below is a proposal and needs the user's OK.
 Two candidates:
 - **libero_goal HDF5** (`yifengzhu-hf/LIBERO-datasets`). The tally and diagnostics used it, so the clean probes, the demo-level split (100 test demos) and the cached D, L, R, S, G features already exist and the clean numbers are directly comparable (verified, `../../data/README.md` sections 1 and 4a). Images are 128x128.
 - **Fast-WAM's `yuanty/LIBERO-fastwam`** (what the proxy round and the paper use). More faithful to the paper (512x512 frames, the paper's 1,712 episodes) but the frozen-feature probe results for it do not exist, and no D, L, R, S, G probe has been run on it (verified, data README sections 3 and 4b: only D, R and L caches exist there, no S or G).
-- **Recommendation (speculative): libero_goal HDF5**, same train/val/test split as the tally. Reason: the whole test is a comparison against our own clean results, and S and G caches exist only for this data. Fidelity to the paper's data matters less here because no policy is trained.
+- **Decided by the user (above): libero_goal HDF5**, same train/val/test split as the tally. The reasoning behind the recommendation: Reason: the whole test is a comparison against our own clean results, and S and G caches exist only for this data. Fidelity to the paper's data matters less here because no policy is trained.
 - **Simulator states:** not settled by the repo for either dataset. The libero_goal contents list in the data README names images, actions, rewards and a language instruction per file, and does not mention simulator states. That list is incomplete, though: `src/diagnostics.py` (lines 87-88) reads `obs/joint_states` and `obs/gripper_states` from the same files, and the README line names neither. So a key missing from the README list proves nothing about the file (verified: the README line and the code were both read this session). Original LIBERO files are, from memory, supposed to carry per-step `states` and `robot_states` and a scene-file attribute (recalled, unverified). Fast-WAM's dataset lists images, an 8-d `observation.state` (end-effector pose 6 + gripper 2) and 7-d actions, and no simulator state (verified, proxy `PLAN.md` "Step 1 findings"). So this stays a feasibility question (below).
 
 ### Which demo moments
@@ -57,16 +62,16 @@ D plus R, L, S, G, with the same checkpoints and extraction settings as the tall
 Primary definition (proposal): for encoder E, drift_c(E) = mean over test frames of ||f(x') − f(x)||² divided by the mean over test frames of ||f(x) − mean(f)||², using clean-train standardized global features. Reads as "the fraction of how much this encoder's features normally vary between frames that the perturbation moves them". Dividing by the encoder's own spread is what makes it comparable across encoders with different feature sizes and scales. Single-encoder drift only; pair drift is dropped. With per-dimension standardization, the drift of a concatenation D+B comes out roughly as a dimension-weighted average of drift(D) and drift(B) (reasoning, not tested), so it adds nothing beyond the two single-encoder numbers. Same bootstrap over demos.
 Alternatives: (a) 1 − cosine between f(x) and f(x'), divided by the median 1 − cosine between two different random frames of the same encoder; (b) linear CKA between the clean and perturbed feature matrices of the same encoder (scale-free, but a single number per encoder, so no demo-level CI without extra work). Drift is a sanity check: a feature can move a lot without moving the action-relevant part of it (speculative), so drift does not decide anything on its own.
 
-### The "stands out" rule (to be locked by the user before any result is seen)
-Primary candidate (**P**): D+R stands out if (i) e(R) is the largest of the four partners' e(B), and (ii) the lower end of the 95% paired-bootstrap CI of e(R) minus the next-largest e(B) is above 0.
-Alternatives:
-- **A**: R has the largest e_c(B) in at least 3 of the 4 types separately. No CI test. A weaker, looser rule.
-- **B**: sign-based, on the level of the gain under perturbation. Pooled gain g(B) = the mean over the four types of gain_c(B|D). B fires if g(R) < 0 with the upper end of its 95% paired-bootstrap CI below 0, and g(B) is not below 0 for the other three partners, meaning each other partner's point estimate is at or above 0 (proposed reading; the CI-based reading is stricter). B tests the gain level under perturbation, which is closest to the paper's delta (D+B vs D under perturbation). P and A test the change from clean. They ask different questions, so they can disagree.
+### The "stands out" rule (decided by the user, 2026-11-06/07: P decides, B reported alongside, A not used)
+**P (decides)**: D+R stands out if (i) e(R) is the largest of the four partners' e(B), and (ii) the lower end of the 95% paired-bootstrap CI of e(R) minus the next-largest e(B) is above 0.
+Reported alongside, not deciding:
+- **A**: not used (it was a looser per-type version of P; the user dropped it).
+- **B (reported only)**: sign-based, on the level of the gain under perturbation. Pooled gain g(B) = the mean over the four types of gain_c(B|D). B fires if g(R) < 0 with the upper end of its 95% paired-bootstrap CI below 0, and g(B) is not below 0 for the other three partners, meaning each other partner's point estimate is at or above 0 (proposed reading; the CI-based reading is stricter). B tests the gain level under perturbation, which is closest to the paper's delta (D+B vs D under perturbation). P and A test the change from clean. They ask different questions, so they can disagree.
 Also reported either way: the full ordering of the four pairs by e(B) beside the paper's ordering L (+1.83) > S (+0.49) > G (+0.40) > R (−5.41) (verified, tally README), with no significance claim. With 4 partners, "R is largest" has a 1 in 4 chance by chance (arithmetic). That figure covers only the ranking part: rule P also has its CI condition and rule B is a sign test, so their chance rates are not 1 in 4 and are not computed here. A hit is a hint (`../../PLAN.md` Next 3).
 Note a mismatch to keep in mind: the paper's number per pair is closed-loop success under perturbation; ours is frame-level action regression from a linear probe. They differ in kind (`../../README.md`, Key findings).
 
 ### Caveat: probe capacity differs between pairs
-The concatenated global probe input is 6,656-d for D+R, 6,144-d for D+G and 4,096-d for D+L and D+S (verified, tally README, Config). A larger e(R) could come partly from the bigger input (a higher-capacity linear probe may fall further when features shift), not from R as such. The tally pre-registered no matched-dimension control, and the direction `PLAN.md` Parked list has "Dimension-matched features in the frozen-feature tests". Options: report with this caveat only, or add a matched-dimension control (for example PCA of each partner to a common size, fit on clean train frames). Open question for the user.
+The concatenated global probe input is 6,656-d for D+R, 6,144-d for D+G and 4,096-d for D+L and D+S (verified, tally README, Config). A larger e(R) could come partly from the bigger input (a higher-capacity linear probe may fall further when features shift), not from R as such. The tally pre-registered no matched-dimension control, and the direction `PLAN.md` Parked list has "Dimension-matched features in the frozen-feature tests". Decided by the user (2026-11-06/07): add a matched-dimension control, reported beside the full-size comparison, which stays primary (rule P is applied there). Proposal for the method, not decided: PCA of every encoder's clean features to one common size, fit on clean train frames only and applied unchanged to the other conditions; the common size is not fixed (it must be at most the smallest encoder's dimension, 1,024 per camera for the D, S and L globals per the tally README, Config, and is to be chosen before any result is seen). The same rules (P decides, B reported) are computed on the matched-dimension results and reported as a separate row.
 
 ### Predictions (speculative; for the user to confirm or change before running)
 - All pairs lose some probe accuracy under perturbation (e_c(B) is defined relative to D alone, so this is about drop_c(D) > 0). Confidence: fairly high.
@@ -103,16 +108,16 @@ From the repo's own files (verified, this session): the libero_goal HDF5 content
 If states or a faithful replay are not available, this design cannot produce "same demo moment, perturbed" frames, and the fallback is a design decision for the user (not made here).
 
 ## Open questions for the user
-1. Data: libero_goal HDF5 (recommended) or Fast-WAM's dataset?
+1. ~~Data~~ decided: libero_goal HDF5 (see Decided by the user).
 2. Is the clean re-render control acceptable, with the stored-vs-re-render pipeline check on train/val demos and a tolerance you set (proposed: val R² of D within 0.01)? (It adds one condition: 25% more than the four perturbed conditions alone, which is 20% of the five-condition total.)
 3. One perturbation draw per (demo, type), or two (double the cost)?
 4. Sampling: LIBERO-Plus's own sub-types and difficulty levels (recommended, depends on the source check), or one fixed moderate setting per type?
-5. Which "stands out" rule do you lock: P (recommended), A, or B? Or P plus the others as reported-only? Note P and A ask about the change from clean; B asks about the gain level under perturbation.
+5. ~~Which rule~~ decided: P decides, B reported alongside, A not used.
 6. Drift definition: the variance-normalized one (proposed), or one of the alternatives?
 7. Predictions: confirm or change before any run.
 8. If the feasibility check says a stored demo moment cannot be re-rendered under a new camera, light or texture, what then? (Options to discuss: replay from initial states; build perturbed episodes without the demo's actions, which loses the label; drop the type.)
 9. Is it acceptable that the LIBERO-Plus sub-type list above stays unverified until the source copy is read?
-10. Probe capacity: add a matched-dimension control (PCA to a common size), or report with the caveat only?
+10. Probe capacity: the control is decided. Still open: the method (PCA proposed) and the common size.
 11. If the re-renders differ from the stored frames, train the probes on re-rendered train frames instead? (That means re-rendering and re-extracting train/val for all five encoders, a large extra cost, and it gives up direct comparability with the tally's clean results.)
 12. Report each camera (agentview, wrist) separately as well as combined?
 13. If LIBERO-Plus perturbations are pre-built episodes and not functions on a restored state (see Feasibility 0), use those episodes for the 10 libero_goal tasks, or stop and rethink?
