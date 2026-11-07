@@ -1164,3 +1164,10 @@ SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min G
 **Found:** the file holds the simulator states and the demo's own scene XML, the stored images line up with the next stored state (as the PLAN had read from the script), and the stored camera is the same as LIBERO-Plus's tabletop camera up to rounding. Nothing contradicts the draft. Only this one file was opened. User: "yeah just the two, you can finish it while the queue sits": "trained" means the two seed-noise DINOv3 models, which are done, so the design can be finished and handed over after sign-off.
 **Next:** the user settles the remaining proposals and signs off; cluster work needs the user's own OK.
 **Open questions:** listed in the experiment PLAN.
+
+## 2026-11-07 [agent, planning] (perturbed-frame test: user accepts the remaining design picks)
+**Goal:** record the user's answer to the last six design choices for the perturbed-frame test.
+**Did:** user: "yes to all also". Recorded in the experiment PLAN and `LOG.md`: how drift is measured, how the encoder sizes are matched, the tolerance, the predictions, what happens if the smoke test fails (stop and ask), and that noise is added at the larger render size and then shrunk. Direction PLAN Next 3 notes sign-off is next.
+**Found:** two small points remain open: the shrink method and the mean-feature sizes.
+**Next:** the user signs off; cluster work needs the user's own OK.
+**Open questions:** listed in the experiment PLAN.
