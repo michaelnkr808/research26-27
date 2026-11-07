@@ -1249,3 +1249,14 @@ No operating rule changed.
 **Found:** speculative (from the backend code at `5b2e3ce8`, live config not public): what NRP acts on is a GPU average over hours (1 d Violations page; 3 h warning; 6 h admin list, from about 3 h of age), per GPU, only on nodes that export DCGM. Our L4 pods on nautilus-it-gpu05/06 are invisible to it; pods on fast cards with DCGM are the exposed ones. A warning is not a strike; a strike is recorded when an admin deletes the pod and the owner is identified.
 **Next:** the implementation session stops and reruns seed-0 shard 0 on slower cards, updates RUN.md stop 10 and the watcher, and merges its LOG (j). The user decides whether remaining eval chunks are kept off fast cards (lead's recommendation) and may ask NRP support about CPU-bound rollout pods.
 **Open questions:** whether NRP admins already acted on the L40 pod (not visible to us); the account's real strike count (still assumed 1 of 3, user 2026-11-06).
+
+## 2026-11-07 [agent, planning] (status refresh: README, PLAN Now, proxy-calibration README to LOG (k))
+**Goal:** the status text was stale; bring it up to the newest experiment LOG entry (k). Files on main were the only source.
+**Did:** direction `README.md` status line, `PLAN.md` "Now", and the experiment `README.md` status paragraph now say: both DINOv3 seeds trained; 7 of 16 eval shards done, 0 errors; L40 pod deleted about 22:07; the L4-only Jobs `-s0-l4`, `-s1-l4` (submitted about 22:13, mostly Pending) hold 7 of the 9 unfinished shards; the other 2 are on the two leftover L4 pods; seed-noise rule locked, comparison script not written; the experiment README status date is now 2026-11-07. `PLAN.md` "Next" and "Recently done" were not touched (nothing finished). Reviewer fixes applied in a second commit.
+**Found:**
+- verified (read in experiment LOG (k), (b) and 2026-11-06 (c), not re-checked on the cluster): shard counts, L40 deletion, L4-only Jobs, seeds trained.
+- speculative: the orphan finish time (about 06:30-07:00 UTC 2026-11-08) is the reviewer's estimate in (k). Risk recorded in (k): NRP's 6-hour bare-pod rule could delete the pods first, at about 02:46 and 03:13 UTC; the orphan watcher and the standing one-shard L4 resubmit OK cover that.
+- speculative: "few nodes match L4" is a reviewer's report in (k) ("2 of 536 nodes"), unchecked.
+- Difference noted: the handed summary said the comparison script waits on the user's OK; (k) does not say that (the comparison follows after all 16 shards), so the files say only "not written yet".
+**Next:** the implementation session updates these lines as shards finish.
+**Open questions:** whether the orphan pods survive the 6-hour rule; whether the L4 queue clears soon.
