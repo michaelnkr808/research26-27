@@ -760,3 +760,50 @@ Read-only web research by worker nrp-policy; no cluster commands, no code change
 8. Corrections to my own text above. (a) The "Deployments are automatically deleted after 2 weeks..." quote comes from the "Long-running idle pods" section, not the purging section (reviewer; I did not re-fetch the section placement). (b) "verified: the written consequence ... not a kill-on-dip rule" and "verified: ... only documented route" were inferences; read both as speculative. (c) The interactive-pod facts were quoted from the policies page, so verified as page text; whether they apply to our Jobs is speculative. (d) Agreement point (3) was misattributed: RUN.md has no strike note. The "1 of 3 idle strikes" note is in `_standards/08-compute-nautilus.md` (about line 51) and `world-model-stacking-encoders/STANDARDS.md` (about line 60), per the reviewer, not checked by me. Lines 49 and 51 of `_standards/08` ("not in the public repo", "appears nowhere in ... the portal code") are now outdated; not edited here. (e) Revised practical reading, speculative: a 10-minute dip does not flag a pod, since NRP averages over 1 day / 3 h / 6 h. But the L40 pod (s0 shard 0, about 20% GPU) is in the zone where NRP would warn after about 3 h and an admin may delete after about 6 h, and a deletion records a strike. L4 pods near 40% with dips are lower risk but not safe if their 6 h average falls under 40.
 
 **Next:** the lead decides on the L40 pod and restricting remaining shards to slower cards; update RUN.md (10-minute window, watcher exit 4 wording) and the outdated `_standards/08` lines 49 and 51; optionally ask Nautilus Support about the `nautilus.io/sim` label and CPU-bound simulation.
+
+## 2026-11-07 (k) [agent, lead] (five more shards done; L40 pod stopped; remaining shards moved to L4-only Jobs after a resume check; orphan watcher)
+Lead session ("implementation-agent"). UTC. Covers about 20:50-22:26.
+- verified (pod logs, saved under `results/logs/` and committed with this entry): five more shards finished, all exit 0, all on L4s at nautilus-it-gpu05/06. Whole-run GPU means are each pod's own nvidia-smi average (30 s samples; gpu05/06 export no DCGM).
+  - seed 1 shard 7 (`-s1-shards67-1-pdnx4`, 660 lines): finished 20:17:13, "3766 records, 0 errors in 33591s (404 episodes/h)", mean 49.0% over 1121 samples.
+  - seed 0 shard 2 (`-s0-2-bc8vc`, 649 lines; refetched because the first fetch ended before "=== done"): 20:46:11, "3766 records, 0 errors in 32978s (411 episodes/h)", mean 51.7% over 1100 samples.
+  - seed 1 shard 0 (`-s1-main-0-bcjxr`, 688 lines): 20:50:53, "3767 records, 0 errors in 35257s (385 episodes/h)", mean 47.7% over 1176 samples.
+  - seed 1 shard 1 (`-s1-main-1-g2zl7`, 682 lines): 21:12:32, "3767 records, 0 errors in 34879s (389 episodes/h)", mean 48.3% over 1166 samples.
+  - seed 0 shard 3 (`-s0-3-xxjc7`, 668 lines): 21:12:43, "3766 records, 0 errors in 34119s (397 episodes/h)", mean 50.2% over 1138 samples.
+  - With LOG (i) (seed 0 shard 1 at 48.2%, seed 1 shard 6 at 50.4%), all seven finished L4 shards averaged 47.7-51.7% GPU over their whole runs. Done: seed 0 shards 1, 2, 3 and seed 1 shards 0, 1, 6, 7 (7 of 16). verified (`wc -l` lines in the logs): each output file holds 3766 or 3767 records; seed 1 shard 6 holds 3766 (135 from the A40 pod + 3631).
+- verified: the s1-main `watch_job.sh` exited 6 at about 20:50, as shard 0 finished. Reading (speculative): the same end-of-shard CPU drop as LOG (i). After that no watcher ran until the orphan watcher below.
+- verified (public Prometheus, 22:01): the L40 pod `-s0-0-4xdb2` (rci-tide-gpu-05.sdsu.edu) had DCGM means of 22.8% over the trailing 6 h and 21.7% over 30 min, at pod age 14,233 s (about 3.95 h). Its last log line seen at 22:01 was `[rollout 12857s] progress: 1244 done, 0 errors, 2519 queued, 4 running; 350 episodes/h; mean batch 1.2; policy busy 25%`. That is slower per hour than the L4 shards (385-411 episodes/h).
+- The user got NRP's idle-GPU warning email. Relayed by the planning session, user's words there: "yep kill it i got the email". This was not taken as approval in this session.
+- User decision in this session (AskUserQuestion, about 22:06; verbatim label): "Swap to L4-only (Recommended)". Option text: "I delete the L40 pod and the three waiting pods now, and leave the two running L4 shards alone. Then a worker submits new jobs for the seven unfinished shards that can only land on L4 cards. This counts as your go for those new jobs. The waiting could take a bit longer since fewer cards qualify."
+- verified (lead, kubectl, 22:06-22:08):
+  - Saved the live specs of Jobs `-s0` and `-s1-main` to the scratchpad (not committed).
+  - Ran `kubectl delete job stacking-encoders-proxy-eval-dinov3-s0 stacking-encoders-proxy-eval-dinov3-s1-main --cascade=orphan`.
+  - Deleted pods `-s0-0-4xdb2` (L40), and `-s0-4-tbkzv`, `-s0-6-9tdqh`, `-s1-main-2-n6n4f` (all three Pending; never started).
+  - Left running, now orphans with no owner: `-s0-5-q8fkj` (seed 0 shard 5, gpu05 L4, created 20:46) and `-s1-main-3-pf7v7` (seed 1 shard 3, gpu05 L4, created 21:13).
+  - The L40 pod was NotFound at 22:11.
+- verified (lead, 22:12): the resume file is clean. Copied `rollouts/eval-dinov3-s0/dinov3-s0-a40.0of8.jsonl` with a read-only `kubectl exec ... cat` into `-s0-5-q8fkj`: 665,851 bytes, 1359 lines, every line parses as JSON, ends with a newline, and 1359 distinct `done_keys` tuples (no duplicates). The file holds more than the 1244 in the last log line, because the pod ran until about 22:08 (file mtime). The log also seems to lag, since rollout output passes through `sed` in a pipe (speculative: block buffering). In the output dirs, only finished shards and the two orphans have files; s0 shards 4, 6, 7 and s1 shards 2, 4, 5 start fresh.
+- Worker eval-l4 (commit 74ffff8, merged as d824ee2 with the user's OK below) wrote `jobs/rendered/job-eval-dinov3-s0-l4.yaml` and `jobs/rendered/job-eval-dinov3-s1-l4.yaml`.
+  - These are copies of `job-eval-dinov3-s0.yaml` and `job-eval-dinov3-s1-main.yaml` with only these changed: the names, completions 4 / 3, parallelism 3 / 3, ITEMS `dinov3-s0-a40@{0,4,6,7}/8` / `dinov3-s1@{2,4,5}/8`, `gpu.product` set to [NVIDIA-L4] only, plus a header comment.
+  - Total possible GPUs: 3 + 3 + 2 orphans = 8.
+  - verified (worker, code read): `src/rollout.py` `done_keys` (lines 474-481) runs `json.loads` on every line with no try/except, so a partial last line would crash startup (`check_resume`, `run_jobs`).
+  - Appends are one `write` + `flush` per record (lines 526-527).
+  - The worker held s0-l4 until the lead's file check above, rechecked that the L40 pod was NotFound, and created both Jobs at about 22:13 (s1-l4 first).
+  - At 22:13 `-s1-l4-2-4zghh` (seed 1 shard 5) was Running on gpu06 (L4), and the other five pods were Pending.
+- Review (fresh read-only reviewer, kubectl worked). Passed:
+  - The diffs hold only the allowed changes.
+  - The live Jobs match the committed files field by field.
+  - The ITEMS lists resolve through the script to the intended output paths, and every shard of both seeds is covered exactly once (done, orphan or new).
+  - The affinity is a single term, so a pod can only land on an L4.
+  - Findings:
+    1. The shard-0 tail. Already resolved by the check above.
+    2. The orphans have no restart safety net. Also, NRP's policies page says bare pods "will be destroyed in 6 hours". Neither pod has `activeDeadlineSeconds`, and how NRP enforces the rule is unknown. If it counts from creation: about 02:46 and 03:13 UTC on 2026-11-08, before the shards would finish (about 06:30-07:00).
+    3. Capacity: the Pending pods' scheduler message says only 2 of 536 nodes match the affinity (reviewer-reported; I didn't check). So 8 at once is a ceiling.
+    4. No LOG entry for 74ffff8 (this entry). Cosmetic: header lines copied from the source YAMLs are stale (parallelism 2, "raise to 8").
+  - verified (lead): grep of 11 Go files from NRP's public portal repo `prp/k8s_portal` (master, including `main.go`, `usage.go`, `quotas.go`, `handlers.go`) finds no bare-pod reaper. `OwnerReferences` appears only in `usage.go` (lines 512, 542, finding a pod's controller). So the 6-hour rule is enforced somewhere else (unknown; speculative).
+- User decisions in this session (about 22:20; verbatim "1. yes 2. yes"):
+  1. On "If NRP removes one of the two older pods tonight (explained below), can a worker resubmit just that shard on an L4 without asking you again first?": yes. This is a standing go for a one-shard L4 Job (same manifest pattern) if an orphan disappears.
+  2. On "Can I merge two branches into the main project? One holds my notes on NRP's policy code, the other holds the two new job files.": yes.
+  - Merged d498883 (LOG (j)) and d824ee2 (the L4 Jobs). Removed both worktrees and the branches `proxy-calibration-nrp-policy-j`, `proxy-calibration-eval-l4` and `worktree-agent-a7ce9b5ec6cc686fd`.
+- Watcher, started about 22:24 in the background: `watch_orphans.sh` in the lead's scratchpad (not committed). It polls public Prometheus `kube_pod_status_phase` for the two orphans every 600 s. Exits: 0 a pod Succeeded, 7 Failed, 5 a pod missing on 2 polls in a row, 3 Prometheus empty for 3 polls. First poll 22:24:43: both Running.
+- Not changed: RUN.md stop 10, the "Rollouts and the 40% GPU floor" section and step 9 still call 40% a floor checked over 10-minute windows. The watcher's exit 4 still says "NRP floor". The user has not yet confirmed a softer rule; see LOG (j) for what NRP's code actually checks.
+
+**Next:** on the orphan watcher's exit, save the finished pod's log (exit 0), or resubmit that shard on an L4 after a tail check of its file (exit 5/7, pre-approved). Save each new pod's log as it finishes. After all 16 shards: the seed-noise comparison (PLAN "Seed-noise rule"). The RUN.md / watcher exit-4 wording waits on the user.
