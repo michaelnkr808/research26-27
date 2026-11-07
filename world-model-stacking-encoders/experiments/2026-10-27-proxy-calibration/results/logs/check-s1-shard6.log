@@ -1,0 +1,10 @@
+total 65
+drwxr-xr-x 2 root root     1 Nov  7 04:26 .
+drwxr-xr-x 5 root root     3 Nov  7 04:16 ..
+-rw-r--r-- 1 root root 65647 Nov  7 04:51 dinov3-s1.6of8.jsonl
+size 65647 sha256 a13c6094589a8faa4213802d7cbfc8955d7a8d043754a421cfa88b81a7a151ba
+last byte is newline: True
+lines 135 parse_ok_with_keys 135
+errors file exists: False
+7of8 files: []
+=== done
