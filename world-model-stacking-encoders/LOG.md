@@ -1096,3 +1096,10 @@ SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min G
 **Pointers:** README mentor and reviewer pointers carry heading titles because the LOG has duplicate headings; they also cite 2026-10-27 (g), (h) and 2026-10-28 (f), checked against those entries.
 **Next:** the live session updates the jobs part of the README status at its close. Then pick up PLAN Next 3 to 5 when the user chooses.
 **Open questions:** none new.
+
+## 2026-11-06 [agent, lead, implementation] (seed-1 full-benchmark eval submitted; seed 0 training on an A40 after a twin race)
+**Goal:** resume stage 4 of the proxy replication after a /clear: start seed 1's full-benchmark evaluation and get seed 0 trained.
+**Did:** the user downloaded `task_classification.json` (sha256 matches). A worker built the full 10,030-episode subset file and updated the code ConfigMap in place. It submitted seed 1's eval as 8 shards at parallelism 2, which a review agent checked and found nothing serious. The memory request was raised to 28Gi/33Gi before any pod started (user: "yeah just hike up the memory to be safe"). The A40 we'd added to seed 0's GPU list turned out to add nothing: A40 and A6000 are NRP named resources. We raced an A40-named twin of the seed-0 Job (user's option 1). It won, and the original Job was deleted before it ever started. All branches are merged to main. Detail: `experiments/2026-10-27-proxy-calibration/LOG.md` 2026-11-06 (d)–(g), PLAN "Amendment 2026-11-06 (b)".
+**Found (verified):** seed 0 is training on an A40 at about the same pace as seed 1, with the GPU busy. Seed 1's eval pods are still queued, waiting for GPUs.
+**Next:** see experiment LOG (g) Next. In short: GPU and memory check once the eval pods run, then parallelism 7 (8 after training). Collect seed 0 when it finishes and ask before its eval.
+**Open questions:** none new.

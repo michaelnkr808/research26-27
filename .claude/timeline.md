@@ -185,3 +185,10 @@
 - A worker updated `_standards/08` to state the mismatch as verified, pointing at that LOG entry; whether a by-name request schedules is still untested. User decisions: assume 1 of 3 idle strikes; the LIBERO bib entries are fine as arXiv versions.
 - Next: once the A40 twin runs (or clearly can't), update the "untested" line in `_standards/08`.
 - See: `_standards/08-compute-nautilus.md` (special resources bullet), world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/LOG.md (2026-11-06 (f))
+
+## 2026-11-06 — stacking-encoders implementation lead: seed-1 full-benchmark eval submitted; seed 0 training on an A40
+
+- Resumed after a /clear. The user downloaded the LIBERO-Plus file. A worker built the full benchmark episode list, updated the cluster code in place, and submitted seed 1's evaluation as 8 pieces, starting with 2. A review found nothing serious. Memory was raised before any pod started (user's call).
+- Found that the A40 we'd added for training never counted: A40/A6000 cards go out under their own resource name. With the user's OK we raced an A40-named copy of the seed-0 training job. It got a machine in about 25 min, and the original was deleted cleanly before it started.
+- At close: seed 0 is training with its GPU busy, due about 2 h later. Seed 1's eval pods are still queued. The watchers end with the session, so next session: check pods, then do the GPU/memory/error check and scale up to 7 pods.
+- See: world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/LOG.md (2026-11-06 (d)–(g)), PLAN.md "Amendment 2026-11-06 (b)"

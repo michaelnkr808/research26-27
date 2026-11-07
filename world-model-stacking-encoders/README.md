@@ -1,6 +1,6 @@
 # Stacking Encoders
 
-**Status:** exploring. The cheap frozen-feature tests (input side and target side) did not flag the harmful DINOv3 + C-RADIOv4 pair. The multi-seed proxy replication (stage 4) is running (as of 2026-11-06); details are in `PLAN.md` and `experiments/2026-10-27-proxy-calibration/LOG.md`. Current agenda: `PLAN.md`. History: `LOG.md` (direction level), each experiment's own `LOG.md` (details).
+**Status:** exploring. The cheap frozen-feature tests (input side and target side) did not flag the harmful DINOv3 + C-RADIOv4 pair. The multi-seed proxy replication (stage 4) is running: as of 2026-11-07 ~01:30 UTC, DINOv3 seed 0 is training on an A40 and seed 1's full-benchmark evaluation is queued for GPUs (details in `PLAN.md` and `experiments/2026-10-27-proxy-calibration/LOG.md` 2026-11-06 (g)). Current agenda: `PLAN.md`. History: `LOG.md` (direction level), each experiment's own `LOG.md` (details).
 **Goal:** publish (user, 2026-10-19). Venue and timeline to discuss with the PhD mentor on Thursday 2026-10-22.
 **Question (draft, not yet confirmed):** Can a cheap, *conditional* measure of what encoder B adds to encoder A (task-relevant information not recoverable from A), computed on frozen features from robot data, predict which encoder combinations improve a World Action Model (WAM) before training, where symmetric similarity (CKA) does not?
 - Secondary, possibly a separate paper: why do general-purpose encoders match or beat specialists?

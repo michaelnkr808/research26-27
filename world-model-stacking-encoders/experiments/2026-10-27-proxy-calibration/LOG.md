@@ -514,3 +514,30 @@ Worker "train-a40". UTC. Base main at 729c3c6.
 **Submit (verified):** `kubectl create -f` at **2026-11-06 23:11:25 UTC** -> `job.batch/stacking-encoders-proxy-train-wave1c-dinov3-s0-a40 created`. About 60 s later: Job Running 0/1, pod `stacking-encoders-proxy-train-wave1c-dinov3-s0-a40-0-bj6bf` **Pending**, PodScheduled False, Unschedulable: "0/538 nodes are available: 227 node(s) had untolerated taint(s), 23 Insufficient memory, 23 node(s) were unschedulable, 31 Insufficient cpu, 4 Insufficient ephemeral-storage, 83 Insufficient nvidia.com/a40 ... 537 Preemption is not helpful". The wave-1b Job and the eval Job were not touched.
 
 **Next:** the lead watches both pods; when either is scheduled, delete the other Job (`kubectl delete job <name> -n aria-world`, graceful) and resume this worker if wanted. This Job's 36 h deadline ends about 2026-11-08 11:11 UTC. Seed-0 evaluation must use the winner's run dir.
+
+## 2026-11-06 (g) [agent, lead] (seed-0 race won by the A40 twin; wave 1b deleted; state at session close)
+Lead session ("implementation-agent"). UTC. Times after midnight are 2026-11-07.
+
+**Race result (verified, lead's race watcher using `kubectl get pods -o custom-columns=NAME,NODE:.spec.nodeName,PHASE`):** the wave-1c pod `stacking-encoders-proxy-train-wave1c-dinov3-s0-a40-0-bj6bf` was scheduled on `bak-hpc1.csub.edu` (NVIDIA A40, driver 615.71.09 per its `nvidia-smi`) with startTime 2026-11-06T23:36:04Z, about 25 min after its submit (23:11:25). The wave-1b pod `-0-4tp4l` was still Pending with no node and no startTime at the 23:38:16 recheck (Pending 6 h 29 min, never started).
+
+**Deletion (verified, user: "just be sure to properly kill the other one"):** `kubectl delete job stacking-encoders-proxy-train-wave1b-dinov3-s0 -n aria-world` at about 23:38:56 UTC, graceful (no force), output `job.batch "stacking-encoders-proxy-train-wave1b-dinov3-s0" deleted`. At 23:39:20 `kubectl get jobs,pods` listed no wave-1b Job or pod; wave 1c Running 1/1; eval-dinov3-s1 2 pods Pending. Wave 1b never started, so it wrote nothing to `/mnt/proxy/runs/dinov3-s0` (inferred from "never scheduled"; the PVC was not checked).
+
+**Consequences:** seed 0 trains into `/mnt/proxy/runs/dinov3-s0-a40` on an A40. Seed 1 trained on an RTX 3090 (LOG (c)), so the two seed-check runs are on different GPU models, as the seed-noise rule already allows. The seed-0 eval must use `--run-dir $R/runs/dinov3-s0-a40` (ITEMS `dinov3-s0-a40@i/8`).
+
+**Facts checked by the lead after LOG (f) (verified):**
+- `kubectl get nodes -L nvidia.com/cuda.driver.major,nvidia.com/gpu.product,topology.kubernetes.io/region` (the list form works; `get node <name>` is forbidden) gave: bak-hpc1.csub.edu 615 NVIDIA-A40 us-west; k8s-usra-01.calit2.optiputer.net 615 NVIDIA-A40 us-west; nrp-01.csumb.edu 615 NVIDIA-RTX-A6000 us-west; rci-nautilus01.msu.montana.edu 595 NVIDIA-A40 us-mountain. So bak-hpc1 passes the driver > 569 term.
+- Public Prometheus, about 23:15 UTC: bak-hpc1 had CPU 19.837 of 20 requested by running pods and `nvidia_com_a40` 3 of 8; nrp-01.csumb had CPU 17.657 of 20 and `nvidia_com_rtxa6000` 6 of 8. Free GPUs sat on CPU-full nodes, so a 4-CPU pod couldn't fit until CPU freed up (it had by 23:36).
+- The scheduler's "83 Insufficient nvidia.com/a40" (LOG (f)) counts every node without a spare A40, including nodes with none. It is not the number of A40 nodes; Prometheus shows 3.
+
+**Correction to LOG (f) and PLAN "Amendment 2026-11-06 (b)" wording (from the lead's review agent):** `rollout.py` takes config and train seed from the config saved inside `model.pt` (`src/rollout.py` lines 290-291 and 733-735), not from `config.json`. The conclusion is unchanged: the run folder's name doesn't matter. Reviewer note: if both twins had started, the loser's partial folder (with a `ckpt.pt`) would need clearing before any run pointed at it. That didn't happen here.
+
+**State at session close (verified, 2026-11-07 ~01:32 UTC):**
+- Wave 1c training: Running on bak-hpc1. Pod log line `{"step": 9959, ...}` at 6,524 s on the training clock, about 0.655 s/step (seed 1 on a 3090: about 0.64). That leaves about 11,700 steps, roughly 2.1 h, so it should finish around 03:45 UTC on 2026-11-07 (speculative, assumes a constant pace). The watcher's 10-min mean GPU use was 93.15% at 01:31:42. The Job's deadline is 2026-11-08 11:11 UTC.
+- `stacking-encoders-proxy-eval-dinov3-s1`: both pods (`-0-wbkqq`, `-1-bm74w`) still Pending, 3 h 54 min after the 21:37:15 resubmit, with no GPU-check data yet. The scheduler's message at 23:00 matched the training pod's (every matching node short of a GPU; memory not the main block). Deadline 2026-11-10 21:37 UTC.
+- The watchers (eval Job, the eval 30-min GPU-check trigger, wave 1c) end with this session. Nothing is watching these Jobs after close.
+
+**Next:**
+1. Next session: one-shot `kubectl get pods -n aria-world` and check for orphaned watchers (`ps -eo pid,etime,command | grep watch_job`). Restart `watch_job.sh` for each live Job.
+2. When an eval pod has run about 30 min: check its 10-min GPU mean (`DCGM_FI_DEV_GPU_UTIL`), its working-set memory early vs late, and `/mnt/proxy/rollouts/eval-dinov3-s1/*.errors.jsonl`. If GPU ≥ 40% and memory is flat, `kubectl patch job stacking-encoders-proxy-eval-dinov3-s1 -n aria-world -p '{"spec":{"parallelism":7}}'` while seed-0 training runs, then 8 after it ends (8-GPU gate). If GPU < 40%, stop 10.
+3. When wave 1c finishes: copy its pod log to `results/logs/` within 24 h (TTL), confirm `runs/dinov3-s0-a40/model.pt`, then render `job-eval-dinov3-s0.yaml` from `job-eval-dinov3-s1.yaml` (run dir `dinov3-s0-a40`; rename all four `eval-dinov3-s1` occurrences; drop the useless NVIDIA-A40/NVIDIA-RTX-A6000 `gpu.product` entries per PLAN amendment (b)), and ask the user before submitting.
+4. When both evals finish: apply the locked seed-noise rule.
