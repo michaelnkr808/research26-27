@@ -1260,3 +1260,31 @@ No operating rule changed.
 - Difference noted: the handed summary said the comparison script waits on the user's OK; (k) does not say that (the comparison follows after all 16 shards), so the files say only "not written yet".
 **Next:** the implementation session updates these lines as shards finish.
 **Open questions:** whether the orphan pods survive the 6-hour rule; whether the L4 queue clears soon.
+
+## 2026-11-07 [agent, planning] (perturbed-frame test: demo file checked; "trained" means the two seed-noise models)
+**Goal:** check one real LIBERO demo file for the perturbed-frame test and record the user's answer on when the test may start.
+**Did:** a worker opened the downloaded `libero_goal/turn_on_the_stove_demo.hdf5` read only. Details in the experiment `LOG.md` and `PLAN.md` Feasibility 7b.
+**Found:** the file holds the simulator states and the demo's own scene XML, the stored images line up with the next stored state (as the PLAN had read from the script), and the stored camera is the same as LIBERO-Plus's tabletop camera up to rounding. Nothing contradicts the draft. Only this one file was opened. User: "yeah just the two, you can finish it while the queue sits": "trained" means the two seed-noise DINOv3 models, which are done, so the design can be finished and handed over after sign-off.
+**Next:** the user settles the remaining proposals and signs off; cluster work needs the user's own OK.
+**Open questions:** listed in the experiment PLAN.
+
+## 2026-11-07 [agent, planning] (perturbed-frame test: user accepts the remaining design picks)
+**Goal:** record the user's answer to the last six design choices for the perturbed-frame test.
+**Did:** user: "yes to all also". Recorded in the experiment PLAN and `LOG.md`: how drift is measured, how the encoder sizes are matched, the tolerance, the predictions, what happens if the smoke test fails (stop and ask), and that noise is added at the larger render size and then shrunk. Direction PLAN Next 3 notes sign-off is next.
+**Found:** two small points remain open: the shrink method and the mean-feature sizes.
+**Next:** the user signs off; cluster work needs the user's own OK.
+**Open questions:** listed in the experiment PLAN.
+
+## 2026-11-07 [agent, planning] (perturbed-frame test: correction to the demo-file entry)
+**Correction (verified):** the entry above says the demo's scene file is the same in all 50 demos. It is not: the cabinet, stove and wine rack stand about 2 cm differently from demo to demo, and that placement is not part of the stored states, so a re-render from the states alone may put them slightly off. New risk and open question 19 in the experiment PLAN; nothing decided. Also: the image-to-state pairing was shown through the joint and gripper numbers, and that the image shares an observation with them is assumed (script reading, not checked in the file). Detail and the other small corrections are in the experiment `LOG.md`.
+**Found (labels):** verified for the 50 distinct scene strings and the 3-line pattern; speculative for the effect on the picture.
+
+## 2026-11-07 [agent, planning] (perturbed-frame test: fixture placement decided)
+**Did:** the user chose option 1 for the fixture placement: "okay go with option 1". Each demo's fixture positions (cabinet, stove, wine rack in the file checked) get copied from its saved scene into the LIBERO-Plus env before the saved state is restored, for all five conditions, keeping LIBERO-Plus's own perturbation code. The smoke test checks they land right. Detail in the experiment `PLAN.md` and `LOG.md`.
+**Next:** sign-off; the resize method and mean-feature sizes are still open.
+
+## 2026-11-07 [agent, planning] (perturbed-frame test: second review findings applied; user decided the last two points)
+**Goal:** apply the second review's findings to the experiment PLAN and record the user's answers on the two points that were left to the user.
+**Did:** applied items 1-6 and 8-18 in the experiment `PLAN.md` and `LOG.md` (list there): a stale sampling paragraph marked superseded, the "fixtures have no joint" wording corrected (only the fixtures' root bodies have none; drawers and the stove button are in the stored states), stale proposal text updated, risk pointers added to the clean-control sections, quat handling made explicit, labels added, open-question strike-through fixed, direction PLAN Next 3 reworded. A later review round fixed more wording (experiment `LOG.md`). Nothing was run.
+**Found:** user decisions (2026-11-07): add an extra fixture check in the first smoke test (look at where the env puts the fixtures before we copy the demo's positions over them; stop and return if they are off), and report rule B both ways (point estimate and CI), fixed before any test-set result is seen. Corrections to older entries here (not edited, append-only): the entry "correction to the demo-file entry" misquotes its target: the "same in all 50 demos" wording is in the experiment `LOG.md`, not in the direction entry above it, whose wrong line is "Nothing contradicts the draft"; that entry also lacks a Next (Next: the user decides the open points, then sign-off), and the "fixture placement decided" entry lacks Goal and Found (Goal: record the user's choice of option 1; Found: only the smoke test can show whether the copied positions land right).
+**Next:** the user signs off. The resize method and the mean-feature sizes were decided too (user, 2026-11-07; experiment PLAN Q22 and Q23), so nothing else is open. The design stays DRAFT until sign-off.
