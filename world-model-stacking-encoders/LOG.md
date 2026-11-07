@@ -1157,3 +1157,10 @@ SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min G
 **Found:** user: "yeah sure i think we should wait for the proxy to get trained first though". So the test waits until the proxy is trained; the design can be finished meanwhile, nothing is handed to the implementation session or run on the cluster before then.
 **Next:** the user runs the one-file download to confirm the stored states; the remaining proposals (drift definition, PCA size, 0.01 tolerance, predictions) get settled before sign-off.
 **Open questions:** whether "trained" means all stage-4 training runs or training plus evaluation. Details in the experiment PLAN.
+
+## 2026-11-07 [agent, planning] (perturbed-frame test: demo file checked; "trained" means the two seed-noise models)
+**Goal:** check one real LIBERO demo file for the perturbed-frame test and record the user's answer on when the test may start.
+**Did:** a worker opened the downloaded `libero_goal/turn_on_the_stove_demo.hdf5` read only. Details in the experiment `LOG.md` and `PLAN.md` Feasibility 7b.
+**Found:** the file holds the simulator states and the demo's own scene XML, the stored images line up with the next stored state (as the PLAN had read from the script), and the stored camera is the same as LIBERO-Plus's tabletop camera up to rounding. Nothing contradicts the draft. Only this one file was opened. User: "yeah just the two, you can finish it while the queue sits": "trained" means the two seed-noise DINOv3 models, which are done, so the design can be finished and handed over after sign-off.
+**Next:** the user settles the remaining proposals and signs off; cluster work needs the user's own OK.
+**Open questions:** listed in the experiment PLAN.
