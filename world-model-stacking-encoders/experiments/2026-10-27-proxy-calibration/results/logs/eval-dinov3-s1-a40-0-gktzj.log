@@ -1,0 +1,104 @@
+=== index 0: dinov3-s1 shard 6/8 -> /mnt/proxy/rollouts/eval-dinov3-s1/dinov3-s1.6of8.jsonl
+Sat Nov  7 04:16:44 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.09              KMD Version: 615.71.09     CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A40                     On  |   00000000:06:00.0 Off |                    0 |
+|  0%   26C    P8             31W /  300W |       0MiB /  46068MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+12
+Sat Nov  7 04:16:44 UTC 2026
+debconf: delaying package configuration, since apt-utils is not installed
+articulated_objects
+new_objects
+scenes
+serving_region.xml
+stable_hope_objects
+stable_scanned_objects
+textures
+turbosquid_objects
+wall.xml
+wall_frames.stl
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+sim ok: numpy 1.26.4 mujoco 3.3.2 robosuite 1.4.0
+TIMING restore: untar 120 s, debs + assets unzip + checks 374 s (/mnt/proxy/env/env-9182f8131559.tar)
+fastwam ok, torch 2.7.1+cu128 cuda True
+/work/full-subset.json: OK
+[rollout      93s] checkpoint /mnt/proxy/runs/dinov3-s1: config dinov3 seed 1 commit 2bab64f6496dd22fefa64a6149539979c0840589; 3766 jobs in shard 6/8, order seed 0; torch threads 4, cuda graph True
+[rollout      93s] 3766 jobs, 0 already in /mnt/proxy/rollouts/eval-dinov3-s1/dinov3-s1.6of8.jsonl, 3766 to run on 4 envs
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+[rollout     153s] progress: 6 done, 0 errors, 3756 queued, 4 running; 359 episodes/h; mean batch 1.6; policy busy 48%; cgroup memory now/peak GB (35.43, 35.43)
+[rollout     213s] progress: 11 done, 0 errors, 3751 queued, 4 running; 330 episodes/h; mean batch 1.4; policy busy 46%; cgroup memory now/peak GB (35.06, 35.43)
+[rollout     273s] progress: 18 done, 0 errors, 3744 queued, 4 running; 360 episodes/h; mean batch 1.4; policy busy 44%; cgroup memory now/peak GB (34.68, 35.43)
+[rollout     333s] progress: 23 done, 0 errors, 3739 queued, 4 running; 345 episodes/h; mean batch 1.4; policy busy 42%; cgroup memory now/peak GB (35.22, 35.43)
+[rollout     393s] progress: 30 done, 0 errors, 3732 queued, 4 running; 360 episodes/h; mean batch 1.3; policy busy 42%; cgroup memory now/peak GB (35.1, 35.43)
+[rollout     453s] progress: 37 done, 0 errors, 3725 queued, 4 running; 370 episodes/h; mean batch 1.3; policy busy 42%; cgroup memory now/peak GB (35.34, 35.43)
+[rollout     514s] progress: 44 done, 0 errors, 3718 queued, 4 running; 376 episodes/h; mean batch 1.3; policy busy 43%; cgroup memory now/peak GB (35.37, 35.43)
+[rollout     574s] progress: 49 done, 0 errors, 3713 queued, 4 running; 367 episodes/h; mean batch 1.2; policy busy 43%; cgroup memory now/peak GB (35.33, 35.43)
+[rollout     634s] progress: 57 done, 0 errors, 3705 queued, 4 running; 379 episodes/h; mean batch 1.2; policy busy 43%; cgroup memory now/peak GB (35.18, 35.43)
+[rollout     694s] progress: 63 done, 0 errors, 3699 queued, 4 running; 377 episodes/h; mean batch 1.2; policy busy 42%; cgroup memory now/peak GB (35.36, 35.43)
+[rollout     754s] progress: 69 done, 0 errors, 3693 queued, 4 running; 376 episodes/h; mean batch 1.2; policy busy 42%; cgroup memory now/peak GB (35.23, 35.43)
+[rollout     814s] progress: 72 done, 0 errors, 3690 queued, 4 running; 359 episodes/h; mean batch 1.2; policy busy 40%; cgroup memory now/peak GB (35.0, 35.43)
+[rollout     874s] progress: 72 done, 0 errors, 3690 queued, 4 running; 332 episodes/h; mean batch 1.2; policy busy 37%; cgroup memory now/peak GB (35.0, 35.43)
+[rollout     934s] progress: 72 done, 0 errors, 3690 queued, 4 running; 308 episodes/h; mean batch 1.2; policy busy 35%; cgroup memory now/peak GB (35.0, 35.43)
+[rollout     994s] progress: 78 done, 0 errors, 3684 queued, 4 running; 312 episodes/h; mean batch 1.2; policy busy 34%; cgroup memory now/peak GB (34.91, 35.43)
+[rollout    1054s] progress: 80 done, 0 errors, 3682 queued, 4 running; 300 episodes/h; mean batch 1.2; policy busy 34%; cgroup memory now/peak GB (35.23, 35.43)
+[rollout    1114s] progress: 83 done, 0 errors, 3679 queued, 4 running; 292 episodes/h; mean batch 1.2; policy busy 33%; cgroup memory now/peak GB (34.73, 35.43)
+[rollout    1175s] progress: 88 done, 0 errors, 3674 queued, 4 running; 293 episodes/h; mean batch 1.2; policy busy 33%; cgroup memory now/peak GB (34.98, 35.43)

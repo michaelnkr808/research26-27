@@ -1,0 +1,162 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    nrp.ai/username: http://cilogon.org/serverE/users/436081
+  creationTimestamp: "2026-11-07T02:40:55Z"
+  generation: 1
+  labels:
+    batch.kubernetes.io/controller-uid: 3f598994-ba12-4945-8a66-9ec366b0a4b7
+    batch.kubernetes.io/job-name: stacking-encoders-proxy-eval-dinov3-s1-a40
+    controller-uid: 3f598994-ba12-4945-8a66-9ec366b0a4b7
+    job-name: stacking-encoders-proxy-eval-dinov3-s1-a40
+  name: stacking-encoders-proxy-eval-dinov3-s1-a40
+  namespace: aria-world
+  resourceVersion: "15441478769"
+  uid: 3f598994-ba12-4945-8a66-9ec366b0a4b7
+spec:
+  activeDeadlineSeconds: 345600
+  backoffLimit: 4
+  completionMode: Indexed
+  completions: 2
+  manualSelector: false
+  parallelism: 1
+  podReplacementPolicy: TerminatingOrFailed
+  selector:
+    matchLabels:
+      batch.kubernetes.io/controller-uid: 3f598994-ba12-4945-8a66-9ec366b0a4b7
+  suspend: false
+  template:
+    metadata:
+      labels:
+        batch.kubernetes.io/controller-uid: 3f598994-ba12-4945-8a66-9ec366b0a4b7
+        batch.kubernetes.io/job-name: stacking-encoders-proxy-eval-dinov3-s1-a40
+        controller-uid: 3f598994-ba12-4945-8a66-9ec366b0a4b7
+        job-name: stacking-encoders-proxy-eval-dinov3-s1-a40
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/cuda.driver.major
+                operator: Gt
+                values:
+                - "569"
+              - key: topology.kubernetes.io/region
+                operator: In
+                values:
+                - us-west
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                - k8s-chase-ci-07.calit2.optiputer.net
+                - ry-gpu-08.sdsc.optiputer.net
+      containers:
+      - args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; I=$JOB_COMPLETION_INDEX
+          IT=($ITEMS); RUN=${IT[$I]%%@*}; SH=${IT[$I]##*@}
+          OUT=$R/rollouts/eval-dinov3-s1/$RUN.${SH/\//of}.jsonl
+          mkdir -p $R/logs $R/rollouts/eval-dinov3-s1
+          exec > >(tee -a $R/logs/eval-dinov3-s1-$RUN-${SH/\//of}-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          echo "=== index $I: $RUN shard $SH -> $OUT"; nvidia-smi; nproc; date -u
+          . /src/env_bundle.sh restore    # prebuilt venv + debs from the env-build Job (LOG 2026-11-03 (d)); assets unzip
+          gunzip -c /subset/full-subset.json.gz > /work/full-subset.json
+          echo "9f4baa42a971bdfad148e19629c08ce74443aa4f2fe0b1512b512ec4649177b2  /work/full-subset.json" | sha256sum -c -
+          nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv -l 30 > /work/gpu.csv & SMI=$!
+          python /src/rollout.py run --run-dir $R/runs/$RUN --t5 $R/feats/t5 \
+            --vae-path $R/models/Wan2.2_VAE.safetensors --tasks $R/lp_tasks.json --subset /work/full-subset.json --clean 1 \
+            --envs 4 --cuda-graph --order-seed 0 --shard $SH --out $OUT 2>&1 | sed "/using task orders/d"
+          kill $SMI || true
+          echo "=== GPU utilization over the run (nvidia-smi, 30 s samples)"
+          awk -F, 'NR>1 {gsub(/ %/,"",$2); s+=$2; n++} END {if (n) printf "mean %.1f%% over %d samples\n", s/n, n}' /work/gpu.csv
+          wc -l $OUT; date -u; echo "=== done"
+        command:
+        - bash
+        - -c
+        env:
+        - name: SRC_GIT_COMMIT
+          value: 2664968a2ec6799b669a79175199b2904725353c
+        - name: ITEMS
+          value: dinov3-s1@6/8 dinov3-s1@7/8
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: HF_TOKEN
+              name: stacking-encoders-hf
+        - name: HF_HOME
+          value: /work/hf
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: PYTHONPATH
+          value: /src
+        - name: SIM_DIR
+          value: /work/sim
+        - name: MUJOCO_GL
+          value: egl
+        - name: PYOPENGL_PLATFORM
+          value: egl
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: compute,utility,graphics
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        imagePullPolicy: IfNotPresent
+        name: main
+        resources:
+          limits:
+            cpu: 4800m
+            ephemeral-storage: 58Gi
+            memory: 33Gi
+            nvidia.com/a40: "1"
+          requests:
+            cpu: "4"
+            ephemeral-storage: 50Gi
+            memory: 28Gi
+            nvidia.com/a40: "1"
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /work
+          name: work
+        - mountPath: /src
+          name: src
+          readOnly: true
+        - mountPath: /subset
+          name: subset
+          readOnly: true
+        - mountPath: /mnt/proxy
+          name: proxy
+        - mountPath: /dev/shm
+          name: dshm
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir:
+          sizeLimit: 58Gi
+        name: work
+      - configMap:
+          defaultMode: 420
+          name: stacking-encoders-proxy-src
+        name: src
+      - configMap:
+          defaultMode: 420
+          name: stacking-encoders-proxy-subset-full
+        name: subset
+      - name: proxy
+        persistentVolumeClaim:
+          claimName: stacking-encoders-proxy
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 4Gi
+        name: dshm
+  ttlSecondsAfterFinished: 86400
+status:
+  active: 1
+  ready: 1
+  startTime: "2026-11-07T02:40:55Z"
+  terminating: 0
+  uncountedTerminatedPods: {}
