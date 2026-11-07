@@ -192,3 +192,10 @@
 - Found that the A40 we'd added for training never counted: A40/A6000 cards go out under their own resource name. With the user's OK we raced an A40-named copy of the seed-0 training job. It got a machine in about 25 min, and the original was deleted cleanly before it started.
 - At close: seed 0 is training with its GPU busy, due about 2 h later. Seed 1's eval pods are still queued. The watchers end with the session, so next session: check pods, then do the GPU/memory/error check and scale up to 7 pods.
 - See: world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/LOG.md (2026-11-06 (d)–(g)), PLAN.md "Amendment 2026-11-06 (b)"
+
+## 2026-11-06: stacking-encoders planning lead: fusion idea planned, paper read for the mentor, perturbed-frame design drafted
+
+- The user asked whether the paper's way of combining encoder features could explain why DINOv3 + C-RADIOv4 hurts. Recorded as a conditional next experiment: test three fusion suspects (scale, double counting as targets, grid alignment) only if the proxy finishes, passes calibration, and shows no drop.
+- Read the paper for the mentor's points (workers, fact-checked against the PDF text): features are stacked along channels at matching grid locations; the paper uses no VLA (its model is a world action model); only channel concatenation was ever tried on pairs; encoders use the final layer only.
+- Drafted the perturbed-frame test design (camera, light, background, noise; probe trained on clean, tested on perturbed; rule P decides, B reported; matched-size control). The LIBERO-Plus source was read (user cloned it). Most choices decided; it waits until the proxy is trained, and sign-off waits on a demo-file check and a few small choices.
+- See: world-model-stacking-encoders/PLAN.md (Next 2-4), world-model-stacking-encoders/experiments/2026-11-06-perturbed-frames/PLAN.md, world-model-stacking-encoders/writing/hypotheses-draft.md ("Update 2026-11-06"), world-model-stacking-encoders/literature/notes/liu2026-what-visual-representations-wams.md ("Read for the mentor's 2026-11-06 points")
