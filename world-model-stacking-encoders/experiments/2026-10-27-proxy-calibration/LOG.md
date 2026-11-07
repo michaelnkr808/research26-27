@@ -610,3 +610,10 @@ Worker "eval-s0". UTC. Base main at 7aacf4a.
 **8-GPU gate at submit (verified by parallelism):** s1-main 2 + s1-a40 1 + s0 2 = 5 requested, 0 running (all Pending). Training no longer counts. Room to raise by 3.
 
 **Next:** (1) lead: the 30-min GPU, memory and errors check on the first running pod of each eval Job, including that pod's log line showing config `dinov3` and seed 0 for s0; then raise parallelism across the three eval Jobs with the total at 8 or fewer. (2) When both seeds finish, read the shard JSONLs (`rollouts/eval-dinov3-s1/` and `rollouts/eval-dinov3-s0/`) and apply the locked "Seed-noise rule (locked 2026-11-06)" in PLAN.md.
+
+**Review corrections (lead's reviewer, 2026-11-07):** doc fixes only; no cluster commands, manifest unedited (it is the record of what was submitted).
+- (a) Seed now verified: the train manifest PAIRS `dinov3:0` (`--config dinov3 --seed 0 --out runs/dinov3-s0-a40`), and the training log opens with "config dinov3 seed 0" and ends with "wrote /mnt/proxy/runs/dinov3-s0-a40". This replaces the "not re-read" caveat in check 2.
+- (b) `Policy.load` takes the config at `rollout.py` lines 291-292, not 290-291.
+- (c) The manifest header line 5 says "four eval-dinov3-s1 strings in args", but the args hold three and the fourth is a comment (comment-only; manifest left unedited).
+- (d) Seed 1's shards 6-7 run on A40s while seed 0's run on other GPUs; this adds slight numerical noise but does not break the pairing (speculative).
+- (e) No seed-noise comparison script exists yet (verified from `src/lp_eval.py`, reviewer's finding): `lp_eval.py paired` compares two configs at one seed, so applying the locked rule needs new analysis code. Glob `*of8.jsonl`, not `*.jsonl`, which would also catch `.errors.jsonl` files. Also recorded in PLAN Next 1.
