@@ -1,0 +1,119 @@
+# Full-benchmark rollout for the trained checkpoint `dinov3`, training seed 1 (runs/dinov3-s1, trained by the Job
+# stacking-encoders-proxy-train-wave1-dinov3, LOG 2026-11-06 (c)). Rendered 2026-11-06 by worker "rollout-s1b" from
+# jobs/job-rollout.template.yaml + the pilot rollout 2 manifest (jobs/rendered/job-pilot-rollout2.yaml); LOG 2026-11-06 (d).
+# User, 2026-11-06: "yes go ahead with the seed-1 rollout" (full benchmark per checkpoint, decided 2026-11-05; PLAN
+# "Amendment 2026-11-06").
+# What it runs: all 10,030 LIBERO-Plus episodes x eval seeds 41, 42, 43 = 30,090 rollouts, plus --clean 1 = one clean LIBERO
+# trial per task = 40 rollouts (eval seed 41, as the pilot), 30,130 jobs. Shuffled with --order-seed 0 (explicit; the
+# template passes none, LOG 2026-11-06 (b)), then split into 8 shards (jobs i, i+8, ...): 3,767 jobs in shards 0 and 1,
+# 3,766 in the others. The episode list is results/full-benchmark/full-subset.json (subset_id 91072e5da8499c99, sha256
+# 9f4baa42a971bdfad148e19629c08ce74443aa4f2fe0b1512b512ec4649177b2), shipped gzipped in the ConfigMap
+# stacking-encoders-proxy-subset-full (2.1 MB as JSON is over the 1 MiB ConfigMap limit; 71 KB gzipped), mounted at
+# /subset; the pod gunzips it to /work/full-subset.json and checks the sha256 before rollout.py starts.
+# parallelism 2 first (user-approved); the lead raises it to 8 (kubectl patch job ... spec.parallelism) only if the GPU
+# check shows >= 40% (RUN.md "Rollouts and the 40% GPU floor"). Shard files: /mnt/proxy/rollouts/eval-dinov3-s1/dinov3-s1.<i>of8.jsonl.
+# RESUBMITTED 2026-11-06 with MEMORY 28Gi request / 33Gi limit (the text below describes the first submit at 20Gi / 24Gi). User:
+# "yeah just hike up the memory to be safe". Reviewer: the pilot-2 drift was measured over about 70% of its jobs, so the scale-up
+# is about 16x, and a linear drift would reach about 24-29 GB (speculative); pod 0 alone drifted about 0.9 GB. 28Gi/33Gi = the
+# training Jobs; median use of about 15 GB stays above NRP's 20% of the request. Nothing else changed.
+# Sizing as pilot rollout 2: 4 CPU / 20Gi request, limits 4800m / 24Gi, 4 envs, --cuda-graph, same GPU list and host exclusions,
+# backoffLimit 4. Memory: pilot 2 working set (Prometheus, 2-min samples, main container) peaked 16.4 GB (pod 0) and 16.3 GB
+# (pod 1) against the 21.5 GB (20Gi) request, i.e. 76%, flat at 15.5-16.4 GB after startup with a drift of about +0.5 GB over 340
+# jobs; each pod now runs about 11x more jobs, so the drift is not ruled out as a slow leak (LOG (d) has the numbers). Kept at 20Gi:
+# the limit leaves 9 GB above the observed peak, and a retry resumes from the JSONL. The lead should compare the working set
+# at the GPU check.
+# Deadline 345600 s = 96 h from Job creation (queue included): a pod needs about 3,767 jobs / 449-484 per h = 7.8-8.4 h plus
+# about 0.2 h setup; with parallelism 2 for the whole job that is 4 waves x 8.6 h = 34 h of running, doubled for the
+# 2x-the-estimate rule = 69 h, plus up to 12 h of queue (pilot 2 queues were 1.7 h to over 12 h) = 81 h, rounded to 96 h.
+# If the lead raises parallelism to 8 the real time is queue + about 9 h. ttl 86400.
+# SRC_GIT_COMMIT = the commit the ConfigMap stacking-encoders-proxy-src was rebuilt from (rollout.py with --order-seed
+# and the resume guard; proxy_wam.py unchanged from 2bab64f).
+# Follows _standards/08: Job, real command that exits, no sleep, no tolerations, 1 GPU per pod, limits within 20%.
+# SPLIT 2026-11-07 (LOG 2026-11-07 (a)): A40 part, shards 6-7 of the seed-1 eval, requesting the A40 by its named resource nvidia.com/a40
+# (as job-train-wave1c-dinov3-s0-a40.yaml, which scheduled on bak-hpc1). The original Job stacking-encoders-proxy-eval-dinov3-s1 was deleted
+# while both pods were still Pending.
+# Why: the lead's Prometheus check (~02:25 UTC) found no free GPU on our list that fits 4 CPU / 28Gi on any open node; free A40s sit on
+# bak-hpc1 (CPU mostly taken by seed-0 training, due to end ~03:40 UTC), so this Job should be Pending before then to take that slot.
+# User, 2026-11-07: "go split the seed-1 eval and submit the a40 part and go raise eval parallelism after the GPU check".
+# Changes vs the original: name -a40; completions 2, parallelism 1; ITEMS shards 6-7 (index 0 -> 6/8); gpu.product term removed;
+# nvidia.com/gpu -> nvidia.com/a40 in requests and limits. Output folder and log names unchanged (rollouts/eval-dinov3-s1/).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-eval-dinov3-s1-a40
+  namespace: aria-world
+spec:
+  completionMode: Indexed
+  completions: 2
+  parallelism: 1
+  backoffLimit: 4
+  activeDeadlineSeconds: 345600
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net, ry-gpu-08.sdsc.optiputer.net]}  # GPU faults, 2026-11-03
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; I=$JOB_COMPLETION_INDEX
+          IT=($ITEMS); RUN=${IT[$I]%%@*}; SH=${IT[$I]##*@}
+          OUT=$R/rollouts/eval-dinov3-s1/$RUN.${SH/\//of}.jsonl
+          mkdir -p $R/logs $R/rollouts/eval-dinov3-s1
+          exec > >(tee -a $R/logs/eval-dinov3-s1-$RUN-${SH/\//of}-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          echo "=== index $I: $RUN shard $SH -> $OUT"; nvidia-smi; nproc; date -u
+          . /src/env_bundle.sh restore    # prebuilt venv + debs from the env-build Job (LOG 2026-11-03 (d)); assets unzip
+          gunzip -c /subset/full-subset.json.gz > /work/full-subset.json
+          echo "9f4baa42a971bdfad148e19629c08ce74443aa4f2fe0b1512b512ec4649177b2  /work/full-subset.json" | sha256sum -c -
+          nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv -l 30 > /work/gpu.csv & SMI=$!
+          python /src/rollout.py run --run-dir $R/runs/$RUN --t5 $R/feats/t5 \
+            --vae-path $R/models/Wan2.2_VAE.safetensors --tasks $R/lp_tasks.json --subset /work/full-subset.json --clean 1 \
+            --envs 4 --cuda-graph --order-seed 0 --shard $SH --out $OUT 2>&1 | sed "/using task orders/d"
+          kill $SMI || true
+          echo "=== GPU utilization over the run (nvidia-smi, 30 s samples)"
+          awk -F, 'NR>1 {gsub(/ %/,"",$2); s+=$2; n++} END {if (n) printf "mean %.1f%% over %d samples\n", s/n, n}' /work/gpu.csv
+          wc -l $OUT; date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: 2664968a2ec6799b669a79175199b2904725353c}
+        - {name: ITEMS, value: "dinov3-s1@6/8 dinov3-s1@7/8"}
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: /src}
+        - {name: SIM_DIR, value: /work/sim}
+        - {name: MUJOCO_GL, value: egl}
+        - {name: PYOPENGL_PLATFORM, value: egl}
+        - {name: NVIDIA_DRIVER_CAPABILITIES, value: "compute,utility,graphics"}
+        resources:                    # from measured use (pilot rollout Prometheus); limits <= 1.2x requests
+          requests: {cpu: "4", memory: 28Gi, nvidia.com/a40: "1", ephemeral-storage: 50Gi}
+          limits:   {cpu: "4800m", memory: 33Gi, nvidia.com/a40: "1", ephemeral-storage: 58Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: subset, mountPath: /subset, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 58Gi}   # pip, HF encoder cache, LIBERO-Plus + unzipped assets
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: subset
+        configMap: {name: stacking-encoders-proxy-subset-full}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 4Gi}
