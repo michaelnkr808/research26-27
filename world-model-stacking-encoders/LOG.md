@@ -1171,3 +1171,7 @@ SigLIP 2 try 4 (RTX 3090, k8s-chase-ci-07) watcher exit 4 at 23:15 UTC: 10-min G
 **Found:** two small points remain open: the shrink method and the mean-feature sizes.
 **Next:** the user signs off; cluster work needs the user's own OK.
 **Open questions:** listed in the experiment PLAN.
+
+## 2026-11-07 [agent, planning] (perturbed-frame test: correction to the demo-file entry)
+**Correction (verified):** the entry above says the demo's scene file is the same in all 50 demos. It is not: the cabinet, stove and wine rack stand about 2 cm differently from demo to demo, and that placement is not part of the stored states, so a re-render from the states alone may put them slightly off. New risk and open question 19 in the experiment PLAN; nothing decided. Also: the image-to-state pairing was shown through the joint and gripper numbers, and that the image shares an observation with them is assumed (script reading, not checked in the file). Detail and the other small corrections are in the experiment `LOG.md`.
+**Found (labels):** verified for the 50 distinct scene strings and the 3-line pattern; speculative for the effect on the picture.
