@@ -177,3 +177,11 @@
 - Stacking: new `data/README.md` (provenance), STANDARDS tool fields, finished-experiment READMEs, README trimmed to `_standards/04` shape, 2026-11-06 mentor meeting logged and its three points added to PLAN Next.
 - Open: the 1-of-3 idle-strike count dates from 2026-10-16 and the 2026-11-01 pilot may have added one (nobody has read the Violations page); no A40/A6000 pod has ever scheduled through `gpu.product`, though the current training list includes them; template lacks a `data/README.md` and owner/misuse slots; VAE cache size stays an estimate (user).
 - See: world-model-stacking-encoders/LOG.md (the three 2026-11-06 [agent, docs] entries), `_standards/08-compute-nautilus.md`, commits a8483c9..55588db
+
+## 2026-11-06: root docs-cleanup lead, follow-up (A40/A6000 mismatch confirmed in 08)
+
+- Explained why A40/A6000 never schedule from our Jobs: those nodes offer the cards only under their own resource names, not the generic `nvidia.com/gpu` that our Jobs request. The current training and eval Jobs still listed them (harmless, adds no capacity).
+- At the user's request, relayed this to the stacking implementation session. It ran a read-only Prometheus check (confirmed: generic GPU count 0 or absent on every A40/A6000 node), logged it as experiment LOG 2026-11-06 (f) with PLAN Amendment 2026-11-06 (b), and, with the user's OK, submitted an A40-named twin of the seed-0 training Job.
+- A worker updated `_standards/08` to state the mismatch as verified, pointing at that LOG entry; whether a by-name request schedules is still untested. User decisions: assume 1 of 3 idle strikes; the LIBERO bib entries are fine as arXiv versions.
+- Next: once the A40 twin runs (or clearly can't), update the "untested" line in `_standards/08`.
+- See: `_standards/08-compute-nautilus.md` (special resources bullet), world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/LOG.md (2026-11-06 (f))
