@@ -274,3 +274,23 @@ After the source read (Feasibility above). Answered from the source, untested (u
 
 ## Amendments
 <!-- ### YYYY-MM-DD: what changed, why, and whether any results had been seen yet -->
+
+### 2026-11-08: matched-dimension PCA scores stay unwhitened; analysis-code readings (no results of any kind seen)
+- **User decision, 2026-11-08** (lead session, AskUserQuestion; verbatim label "Keep natural sizes (Recommended)"): in the matched-dimension control, the PCA scores are not whitened or re-standardized. Recipe, per camera:
+  1. Standardize with clean-train statistics.
+  2. Fit the PCA on clean-train frames only.
+  3. Keep the top 1,024 unwhitened scores.
+  4. Apply the result unchanged to every condition.
+
+  Reason given to the user: the shrunk probe then acts as the full-size probe restricted to the top directions, so it isolates the size effect. Under rescaling, weak directions would count as much as strong ones. Rule P is unaffected, because it is applied to the full-size comparison.
+- **Lead's readings of decisions already made** (no new design; recorded so they are fixed before any result):
+  - A probe whose exact input has no stored tally alpha gets its alpha tuned on clean validation demos, with the tally's grid and procedure (`src/diagnostics.py`). This covers the single-camera probes (Q12) and the PCA-reduced pairs. Reusing the tally alpha is a sensitivity option only.
+  - Q12 is implemented as separate probes fit per camera.
+  - Rule B is reported in exactly the two Q21 readings: the point estimate, and the lower end of the 95% CI at or above 0.
+  - Drift (Q6) is computed on full-size global features only.
+  - Stored-vs-re-render drift rows are pipeline references outside this PLAN.
+- **Input contract for the render step** (from `src/pf_analysis.py`; it goes into the render config before the render Job):
+  - LIBERO-layout files in a `libero_goal` folder, with the original file stems and demo names;
+  - raw OpenGL orientation;
+  - frame j is the render of `states[j+1]`, so each demo has n-1 frames;
+  - extraction metadata identical to the clean cache.
