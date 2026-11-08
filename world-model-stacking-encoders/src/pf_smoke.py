@@ -345,7 +345,7 @@ def stage_camera(args, ctx, envs):
     name = f"{args.task_base}_view_0_0_100_0_0_initstate_0"
     env0, clean = envs.get(name), envs.get(args.task_base)
     n_env0 = len(env0.sim.get_state().flatten())
-    check("camera_zero_change_state_length", n_env0 == states.shape[1], env=n_env0, stored=int(states.shape[1]), name=name)
+    check("camera_zero_change_state_length", n_env0 == states.shape[1], env=n_env0, stored=int(states.shape[1]), env_name=name)
     env0.reset()
     pose = maybe_override_camera(env0, parsed, "zero_change_name")
     R.copy_fixtures(env0, parsed, fixtures)
