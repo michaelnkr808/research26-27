@@ -206,3 +206,18 @@
 - The user asked for NRP's real rule. The first worker and reviewer covered the public docs and nrp-site: 40% flags a pod, the limit is 4 pods outside the ranges at once, no kill documented (merged 266450e). The implementation session then found NRP's backend code (prp/k8s_portal): a warning email after about 3 h under 40%, an admin delete list, admin deletes recorded as strikes, and a three-strikes policy. A second worker plus two review rounds added that layer (merged eeb6a84).
 - Decisions: "Soften, cap at 4" was given on the incomplete first picture and superseded. The user got NRP's warning email for the L40 pod and said "yep kill it"; the implementation session stopped it and is resubmitting the 7 unfinished chunks L4-only (user's pick there).
 - See: _standards/08-compute-nautilus.md ([NRP code] section), world-model-stacking-encoders/LOG.md (2026-11-07 planning entries), world-model-stacking-encoders/STANDARDS.md (40% bullet)
+
+## 2026-11-07: stacking-encoders slides lead: mentor deck (11/11/26 update) reviewed, six slide figures made and merged
+
+- Walked the user through their own "Research Proposal" deck and its new 11/11/26 section (recap, dress-rehearsal trial runs, seed-noise check, perturbed-frame and combining-step follow-ups, compute bottlenecks, moving forward), checking every claim against the repo and giving plain, paste-ready lines. The user wrote the slides.
+- Six figures (training curve, compute cost, GPU use during testing, noise-check ruler, combining grids, encoder layers) were made by workers, each checked by a separate reviewer; the reviews caught a misleading 5-minute GPU sample and swapped paper scores from the lead's own brief. Merged to main; copies on the user's Desktop.
+- Decision (user): slide figures always get a copy in the repo (`writing/figures/`, scripts in `src/`), Desktop copy only for convenience.
+- Found: the proxy PLAN calls D+L the paper's best DINOv3 pair, but D+U is higher in Table 10; D+L is best of the four we tested (noted in LOG, locked PLAN not edited).
+- See: world-model-stacking-encoders/LOG.md (2026-11-07 [agent, slides]), world-model-stacking-encoders/writing/figures/
+
+## 2026-11-07: stacking-encoders planning lead: perturbed-frame design finished, signed off and handed off
+
+- Picked up after a /clear. Got status from the implementation session; evals of the two DINOv3 seed-noise models about half done, rest on L4s.
+- Perturbed-frame test design: applied the second review's fixes plus one more review round; the user decided the last four open points (extra fixture check, rule B reported both ways, resize method picked by a smoke-test comparison, look up averaged-feature sizes first) and signed off. Handed to the implementation session, which got the user's OK for phase 1 (smoke test).
+- README/PLAN status brought up to date twice (eval state, seed-noise script now exists).
+- See: world-model-stacking-encoders/experiments/2026-11-06-perturbed-frames/PLAN.md, world-model-stacking-encoders/LOG.md (2026-11-07 planning entries)
