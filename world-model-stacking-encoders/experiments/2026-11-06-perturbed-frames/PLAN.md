@@ -294,3 +294,13 @@ After the source read (Feasibility above). Answered from the source, untested (u
   - raw OpenGL orientation;
   - frame j is the render of `states[j+1]`, so each demo has n-1 frames;
   - extraction metadata identical to the clean cache.
+
+### 2026-11-08 (b): bowl appearance differs between stored and re-rendered frames; the probe check decides (user decision; no test-set result seen)
+- **Finding.** In the smoke test, the metal bowl (and, slightly, the plate rim) looks speckled in the stored HDF5 frames and smooth in our re-renders. Everything else matches the stored frames: layout, fixtures, robot pose, both cameras and orientation. Smoke test r3 and the diagnostic Job pf-diag are both on branch `pf-smoke`.
+  - verified (pf-diag): the speckle is also absent when rendering at native 128 with no shrink, so the Q15 render-at-256-then-shrink path is not the cause.
+  - verified (pf-diag): image k pairs with `states[k+1]` at image level; it had the lowest difference in all 15 moments checked.
+  - verified (pf-diag): MuJoCo 3.3.2 and robosuite 1.4.0 in the pod. The bowl's mesh and texture names, scale and reflectance in the demo's `model_file` are the same as the env's. The file contents of the dataset author's copies cannot be read.
+  - Cause (speculative): an older renderer or MuJoCo version, or a different bowl texture file, used when the dataset was made.
+- **User decision, 2026-11-08** (lead session, AskUserQuestion; verbatim label "Run the probe check (Recommended)"). Run the Q2 validation check. If the DINOv3 probe's val R² on re-rendered vs stored val frames differs by 0.01 or less, the bowl's appearance is accepted as a rendering difference and the design proceeds. If not, stop and return to the user.
+  - This replaces, for the bowl only, Q2's "differ visibly ... in scene content on inspection" stop with the R² gate. Orientation and scene layout must still match.
+  - Reason given to the user: every perturbation comparison is against the clean re-render, so the smooth bowl is present in all conditions. The probe being trained on stored frames and tested on re-renders is exactly what the 0.01 check bounds.
