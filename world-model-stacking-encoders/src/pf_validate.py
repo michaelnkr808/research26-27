@@ -15,6 +15,7 @@ clean cache's (checked in `probe` with pf_analysis.check_meta; any mismatch fail
 
 import argparse
 import json
+import os
 import time
 import traceback
 from pathlib import Path
@@ -32,6 +33,23 @@ SUITE = "libero_goal"
 TALLY_N_FRAMES = 63728                # tally README / JSON
 TALLY_SPLIT = {"train": 38464, "val": 12416, "test": 12848}
 TOL = 0.01
+
+
+EXPECTED_SHA = {"diagnostics.py": "ffb155b4cd8c", "extract_features.py": "03734ba84a86"}   # prefixes; same as the repo files and the proxy-src ConfigMap
+
+
+def provenance(src_dir, pf_dir):
+    """sha256 of the code the run depends on; the two files from the proxy-src ConfigMap must be the expected ones (gating)."""
+    prov = {"SRC_GIT_COMMIT": os.environ.get("SRC_GIT_COMMIT"), "src_dir": str(src_dir), "files": {}, "ok": True}
+    for name, exp in EXPECTED_SHA.items():
+        p = Path(src_dir) / name
+        h = sha256(p) if p.exists() else None
+        good = bool(h and h.startswith(exp))
+        prov["files"][name] = {"sha256": h, "expected_prefix": exp, "ok": good}
+        prov["ok"] &= good
+    for f in sorted(Path(pf_dir).glob("*.py")):
+        prov["files"][f.name] = {"sha256": sha256(f)}
+    return prov
 
 
 def raw_files(raw_dir):
@@ -54,8 +72,13 @@ def kept_demos(raw, clean_feat_path):
 def render(args):
     out_dir = Path(args.out) / SUITE
     out_dir.mkdir(parents=True, exist_ok=True)
-    rep = {"files": {}, "checks": {}, "failures": []}
+    rep = {"files": {}, "checks": {}, "failures": [], "provenance": provenance(args.src_dir, args.pf_dir)}
+    rep["checks"]["provenance_expected_files"] = {"pass": rep["provenance"]["ok"]}
     t0 = time.time()
+    if not rep["provenance"]["ok"]:
+        rep["failures"].append("provenance: /src files differ from the expected hashes")
+        Path(args.out).joinpath("render-report.json").write_text(json.dumps(rep, indent=1, default=str))
+        return 5
     for raw_path in raw_files(args.raw):
         stem = raw_path.stem
         base = stem[:-5] if stem.endswith("_demo") else stem
@@ -81,6 +104,9 @@ def render(args):
                         g, p = fr["data"][d], parsed[d]
                         states = g["states"][:]
                         n = len(states)
+                        if len(g["actions"]) != n:
+                            rep["failures"].append(f"{stem}/{d}: {len(g['actions'])} actions vs {n} states")
+                            raise RuntimeError("states/actions length")
                         if states.shape[1] != len(env.sim.get_state().flatten()):
                             rep["failures"].append(f"{stem}/{d}: state length {states.shape[1]} != env {len(env.sim.get_state().flatten())}")
                             raise RuntimeError("state length")
@@ -110,8 +136,9 @@ def render(args):
                             ob.create_dataset(c, data=imgs[c])
                         info.setdefault("frames", {})[d] = n - 1
                         print(f"[render] {stem} {d}: {n - 1} frames", flush=True)
-            except RuntimeError:
-                pass                                  # the failure text is already in rep["failures"]
+            except (RuntimeError, AssertionError) as e:
+                if not rep["failures"]:
+                    rep["failures"].append(f"{stem}: {type(e).__name__}: {e}")                                  # the failure text is already in rep["failures"]
             finally:
                 env.close()
         if rep["failures"]:
@@ -129,7 +156,12 @@ def render(args):
 
 def probe(args):
     import pf_analysis as PA
-    rep = {"checks": {}, "provenance": {}}
+    rep = {"checks": {}, "provenance": provenance(args.src_dir, args.pf_dir)}
+    rep["checks"]["provenance_expected_files"] = {"pass": rep["provenance"]["ok"]}
+    if not rep["provenance"]["ok"]:
+        rep["all_checks_passed"] = False
+        Path(args.out).joinpath("probe-report.json").write_text(json.dumps(rep, indent=1, default=str))
+        return 5
     alphas, r2m, sizes = PA.read_tally(args.tally_dir, SUITE, "global")
     alpha = alphas["dinov3|global"]
     rep["tally"] = {"alpha_dinov3_global": alpha, "files": [s[0] for s in sizes], "n_frames": sizes[0][1], "split_frames": sizes[0][2]}
@@ -217,7 +249,7 @@ def probe(args):
     va = sp == "val"
     mine = float(D.r2(y[va], xz[va] @ w + b).mean())
     theirs = float(tally_val_curve[str(alpha)] if str(alpha) in tally_val_curve else tally_val_curve[str(float(alpha))])
-    rep["checks"]["stored_val_r2_matches_tally_curve"] = {"pass": abs(mine - theirs) < 1e-3, "gating": False, "mine": mine, "tally": theirs,
+    rep["checks"]["stored_val_r2_matches_tally_curve"] = {"pass": abs(mine - theirs) < 1e-3, "tolerance": 1e-3, "mine": mine, "tally": theirs,
                                                           "alpha": alpha}
     # lag check on standardized features (pf_analysis.check_lag): re-render frame j closest to stored frame j
     lag_ok, lag_err = True, []
@@ -241,12 +273,45 @@ def probe(args):
                                          "agentview": {k: res["agentview"][k] for k in ("val_r2_stored", "val_r2_rerender", "abs_difference")},
                                          "wrist": {k: res["wrist"][k] for k in ("val_r2_stored", "val_r2_rerender", "abs_difference")},
                                          "checks": {k: v["pass"] for k, v in rep["checks"].items()}}), flush=True)
+    return 0 if rep["all_checks_passed"] else 1
+
+
+def samples(args, n_samples=12):
+    """PNGs of ~12 val moments, both cameras, stored next to re-rendered (upright). 4 moments per PNG: rows = moments,
+    columns = stored agentview | re-render agentview | stored wrist | re-render wrist."""
+    from PIL import Image
+    files = raw_files(args.raw)
+    picks = []
+    for i in range(n_samples):
+        stem = files[i % len(files)].stem
+        picks.append((stem, i // len(files)))
+    rows = []
+    for stem, rank in picks:
+        with h5py.File(Path(args.render_dir) / SUITE / (stem + ".hdf5"), "r") as fx, h5py.File(Path(args.raw) / (stem + ".hdf5"), "r") as fr:
+            demos = sorted(fx["data"].keys(), key=lambda k: int(k.split("_")[-1]))
+            d = demos[(rank * 3) % len(demos)]
+            n = fx["data"][d]["obs"][CAMS[0]].shape[0]
+            j = int(round((0.25 + 0.25 * (rank % 3)) * (n - 1)))
+            tiles = []
+            for c in CAMS:
+                tiles += [np.rot90(fr["data"][d]["obs"][c][j], 2), np.rot90(fx["data"][d]["obs"][c][j], 2)]
+            rows.append((stem, d, j, np.concatenate(tiles, axis=1)))
+    meta = []
+    for k in range(0, len(rows), 4):
+        chunk = rows[k:k + 4]
+        Image.fromarray(np.concatenate([r[3] for r in chunk], axis=0)).save(Path(args.out) / f"samples-{k // 4}.png", optimize=True)
+        meta.append({"png": f"samples-{k // 4}.png", "rows": [{"file": r[0], "demo": r[1], "frame_j": r[2]} for r in chunk]})
+    Path(args.out).joinpath("samples.json").write_text(json.dumps({"columns": "stored agentview | re-render agentview | stored wrist | re-render wrist (upright)", "pngs": meta}, indent=1))
+    print("[samples] wrote", len(meta), "PNGs", flush=True)
     return 0
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["render", "probe"])
+    ap.add_argument("cmd", choices=["render", "probe", "samples"])
+    ap.add_argument("--render-dir", default="/work/render")
+    ap.add_argument("--src-dir", default="/src")
+    ap.add_argument("--pf-dir", default="/pf")
     ap.add_argument("--raw", required=True, help="dir with the 10 libero_goal HDF5 files")
     ap.add_argument("--feats", default="/mnt/features/stacking-encoders/features", help="clean feature cache root")
     ap.add_argument("--rr-feats", default="/work/feats_rr", help="re-rendered feature root (probe)")
@@ -255,11 +320,13 @@ def main():
     args = ap.parse_args()
     Path(args.out).mkdir(parents=True, exist_ok=True)
     try:
-        return {"render": render, "probe": probe}[args.cmd](args)
+        return {"render": render, "probe": probe, "samples": samples}[args.cmd](args)
     except Exception:
         tb = traceback.format_exc()
         print(tb, flush=True)
         Path(args.out).joinpath(f"{args.cmd}-crash.txt").write_text(tb)
+        if args.cmd == "render" and not Path(args.out, "render-report.json").exists():
+            Path(args.out, "render-report.json").write_text(json.dumps({"failures": [tb[-1500:]], "checks": {"render_all_files": {"pass": False}}}, indent=1))
         return 4
 
 
