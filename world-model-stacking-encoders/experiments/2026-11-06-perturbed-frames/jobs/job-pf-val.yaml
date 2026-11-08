@@ -1,4 +1,6 @@
-# PREPARED, NOT SUBMITTED (the lead says when). Validation check, PLAN Q2 / Handoff step 2: is the DINOv3 probe's val R2 the same on the
+# SUBMITTED 2026-11-08 on the lead's go (user decision "Run the probe check (Recommended)", PLAN amendment 2026-11-08 (b)). Robustness fixes from a
+# fresh review: extraction environment and weights-revision check first (fail fast), samples and features saved to the PVC before the probe,
+# provenance and tally-reproduction gates, worst exit code at the end (Complete = everything passed). Validation check, PLAN Q2 / Handoff step 2: is the DINOv3 probe's val R2 the same on the
 # stored clean val frames and on clean val frames re-rendered through our pipeline (|difference| <= 0.01, combined; per camera reported)?
 # No test demo anywhere (the test demos' model_file, actions, features and frames are never read).
 # Approval, verbatim (this session, 2026-11-08 about 00:15 UTC): "Approve phase 1 (Recommended)", whose text was: "Counts as your go for both
@@ -58,54 +60,71 @@ spec:
         args:
         - |
           set -euo pipefail
-          R=/mnt/proxy; STAMP=$(date +%Y%m%d-%H%M%S); OUT=/work/out; mkdir -p $R/logs $OUT /work/data /work/render /work/feats_rr
+          R=/mnt/proxy; STAMP=$(date +%Y%m%d-%H%M%S); OUT=/work/out; P=$R/pf-val/$STAMP
+          mkdir -p $R/logs $OUT /work/data /work/render /work/feats_rr
           exec > >(tee -a $R/logs/pf-val-$STAMP.log) 2>&1
           echo "=== pf-val $STAMP"; nvidia-smi -L; nproc; date -u
           . /src/env_bundle.sh restore    # prebuilt venv + debs from the env-build Job; LIBERO-Plus assets unzip
+          # --- extraction environment first, and fail fast (set -e is still on): the tally's pins (transformers 5.18.0, numpy 2.2.6 ...)
+          # in a separate folder, an import test, the DINOv3 processor and weights, and the weights revision (ea8dc28).
+          pip install --no-cache-dir -q --target /work/extlib transformers==5.18.0 tokenizers==0.23.3 safetensors==0.8.0 huggingface-hub==2.2.0 einops==0.8.1 numpy==2.2.6
+          PYTHONPATH=/work/extlib:$PYTHONPATH python - <<'PY' 2>&1 | tee $OUT/setup-info.txt
+          import h5py, numpy, torch, transformers, huggingface_hub
+          assert transformers.__version__ == "5.18.0", transformers.__version__
+          assert numpy.__version__ == "2.2.6", numpy.__version__
+          from transformers import AutoImageProcessor, AutoModel
+          from huggingface_hub import HfApi
+          repo = "facebook/dinov3-vitl16-pretrain-lvd1689m"
+          sha = HfApi().model_info(repo).sha
+          assert sha.startswith("ea8dc28"), f"DINOv3 revision is {sha}, expected ea8dc28"
+          proc = AutoImageProcessor.from_pretrained(repo)
+          model = AutoModel.from_pretrained(repo, dtype=torch.float32)
+          print("setup ok: transformers", transformers.__version__, "numpy", numpy.__version__, "torch", torch.__version__, "h5py", h5py.__version__,
+                "huggingface_hub", huggingface_hub.__version__, "dinov3 sha", sha, "image_mean", proc.image_mean, "params", sum(p.numel() for p in model.parameters()))
+          PY
           python - <<'PY'
           from huggingface_hub import snapshot_download
           snapshot_download("yifengzhu-hf/LIBERO-datasets", repo_type="dataset", revision="f13aa24a3da8c43c7225569f28c562979fa0e35a",
                             allow_patterns=["libero_goal/*.hdf5"], local_dir="/work/data")
           PY
-          ls -la /work/data/libero_goal; sha256sum /work/data/libero_goal/*.hdf5; date -u
+          ls -la /work/data/libero_goal; sha256sum /work/data/libero_goal/*.hdf5 /src/diagnostics.py /src/extract_features.py; date -u
+          # --- from here on every stage's exit code is kept; the Job ends with the worst one, after the copies.
           set +e
+          RC1=0; RC2=0; RC3=0; RC4=0
           python /pf/pf_validate.py render --raw /work/data/libero_goal --out /work/render
           RC1=$?
           echo "=== render exit code $RC1"; date -u
-          RC2=99; RC3=99
           if [ $RC1 -eq 0 ]; then
-            pip install --no-cache-dir -q --target /work/extlib transformers==5.18.0 tokenizers==0.23.3 safetensors==0.8.0 huggingface-hub==2.2.0 einops==0.8.1
-            PYTHONPATH=/work/extlib:$PYTHONPATH python - <<'PY'
-          import transformers, huggingface_hub
-          from huggingface_hub import HfApi
-          print("transformers", transformers.__version__, "huggingface_hub", huggingface_hub.__version__)
-          sha = HfApi().model_info("facebook/dinov3-vitl16-pretrain-lvd1689m").sha
-          print("dinov3 model sha", sha, "expected prefix ea8dc28:", sha.startswith("ea8dc28"))
-          PY
-            sha256sum /src/extract_features.py
             PYTHONPATH=/work/extlib:$PYTHONPATH python /src/extract_features.py --encoder dinov3 --dtype float32 --batch-size 64 \
               --out /work/feats_rr --hdf5 /work/render/libero_goal/*.hdf5
             RC2=$?
             echo "=== extract exit code $RC2"; date -u
+            ls $HF_HOME/hub/models--facebook--dinov3-vitl16-pretrain-lvd1689m/snapshots 2>/dev/null
+            # save what exists before the probe runs: features, sample frames (stored next to re-rendered), the rendered frames if small
+            mkdir -p $P
+            python /pf/pf_validate.py samples --raw /work/data/libero_goal --render-dir /work/render --out $OUT
+            RC4=$?
+            cp -r /work/feats_rr $P/ && echo "copied feats_rr to $P"
+            cp $OUT/samples*.png $OUT/samples.json $OUT/setup-info.txt /work/render/render-report.json $P/ 2>/dev/null
+            if [ $(du -sm /work/render/libero_goal | cut -f1) -lt 5000 ]; then cp -r /work/render/libero_goal $P/rendered_libero_goal && echo "copied rendered HDF5s"; else echo "rendered HDF5s over 5 GB, not copied"; fi
             if [ $RC2 -eq 0 ]; then
               python /pf/pf_validate.py probe --raw /work/data/libero_goal --out $OUT
               RC3=$?
               echo "=== probe exit code $RC3"
             fi
           fi
-          set -e
-          cp /work/render/render-report.json $OUT/ || true
-          cp /work/render/render-crash.txt $OUT/ || true
-          echo "=== exit codes render $RC1 extract $RC2 probe $RC3"; ls -la $OUT; date -u
-          mkdir -p $R/pf-val/$STAMP
-          cp -r $OUT/. $R/pf-val/$STAMP/
-          echo "copied to $R/pf-val/$STAMP"
-          tar czf /work/pf-val.tgz -C $OUT .
+          cp /work/render/render-report.json /work/render/render-crash.txt $OUT/ 2>/dev/null
+          WORST=$(( RC1 > RC2 ? RC1 : RC2 )); WORST=$(( WORST > RC3 ? WORST : RC3 )); WORST=$(( WORST > RC4 ? WORST : RC4 ))
+          echo "=== exit codes render $RC1 extract $RC2 probe $RC3 samples $RC4 -> worst $WORST"; ls -la $OUT; date -u
+          mkdir -p $P; cp -r $OUT/. $P/
+          echo "copied to $P"
+          (cd $OUT && tar czf /work/pf-val.tgz *.json *.txt)   # reports only; the sample PNGs, features and rendered frames are on the PVC
           ls -la /work/pf-val.tgz
           echo "=== BEGIN PF_VAL_TGZ_B64"; base64 -w 76 /work/pf-val.tgz; echo "=== END PF_VAL_TGZ_B64"
-          echo "=== done"
+          echo "=== done; exiting with $WORST (0 only if render, extract, samples and probe all passed)"
+          exit $WORST
         env:
-        - {name: SRC_GIT_COMMIT, value: 8b23b9a3a52f97de0081b90d311491c177373f70}
+        - {name: SRC_GIT_COMMIT, value: 0ffb10ca980bf9fa6c23c63478bf2bdd9d34e969}
         - name: HF_TOKEN
           valueFrom:
             secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
