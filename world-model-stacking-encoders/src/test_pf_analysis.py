@@ -20,7 +20,13 @@ ALPHA_TALLY = {"dinov3": 0.1, "c-radiov4+dinov3": 1.0, "dinov3+siglip2": 0.1, "d
                "dinov3+vggt-omega": 1.0}
 
 
-def make_world(root, seed=0, flip=(), noise_scale=0.15, drop_last=True, n_files=5, n_demo=10, T=40):
+def meta_for(e):
+    return {"encoder": e, "hf_id": "hf/" + e, "resolution": 224, "rotate180": True, "dtype": "float32", "grid": 4,
+            "frame_stride": 1, "cams": list(D.CAMS), "n_demos": 10}
+
+
+def make_world(root, seed=0, flip=(), noise_scale=0.15, drop_last=True, n_files=5, n_demo=10, T=40, lag=False,
+               cond_meta_patch=None, nan_in=None):
     """Synthetic clean features, raw files, tally JSONs and five condition roots.
 
     Latent (u, v): D sees only u, every partner sees v (extra action information) plus a little u.
@@ -51,7 +57,7 @@ def make_world(root, seed=0, flip=(), noise_scale=0.15, drop_last=True, n_files=
                 (feats_dir / e / SUITE).mkdir(parents=True, exist_ok=True)
                 fe[e] = h5py.File(feats_dir / e / SUITE / (stem + ".h5"), "w")
             for e, f in fe.items():
-                f.attrs["meta"] = json.dumps({"encoder": e})
+                f.attrs["meta"] = json.dumps(meta_for(e))
             for i in range(n_demo):
                 lat = rng.normal(size=(T, 8)) + 0.3 * rng.normal(size=(1, 8))
                 act = lat[:, :4] @ A + lat[:, 4:] @ B + 0.1 * rng.normal(size=(T, 7))
@@ -72,11 +78,16 @@ def make_world(root, seed=0, flip=(), noise_scale=0.15, drop_last=True, n_files=
                         for cn in [P.REF] + P.TYPES:
                             out = []
                             for c, x in enumerate(cams):
-                                y = x[:Tc] + 0.05 * rng.normal(size=(Tc, x.shape[1])).astype(np.float32)
+                                src = x[:Tc]
+                                if lag and e == "dinov3":  # re-render frame j is stored frame j-1 (off by one)
+                                    src = x[np.maximum(np.arange(Tc) - 1, 0)]
+                                y = src + 0.05 * rng.normal(size=(Tc, x.shape[1])).astype(np.float32)
                                 if cn != P.REF:
                                     y = y + noise_scale * x.std(0) * rng.normal(size=y.shape).astype(np.float32)
                                     if (e, c) in flip:
                                         y = -y
+                                if nan_in == (cn, e, c):
+                                    y[0, 0] = np.nan
                                 out.append(y)
                             cond_feats[cn][(e, stem, f"demo_{i}")] = out
             for f in fe.values():
@@ -88,14 +99,44 @@ def make_world(root, seed=0, flip=(), noise_scale=0.15, drop_last=True, n_files=
             p = cond_roots[cn] / e / SUITE
             p.mkdir(parents=True, exist_ok=True)
             with h5py.File(p / (stem + ".h5"), "a") as f:
+                if "meta" not in f.attrs:
+                    m = meta_for(e)
+                    for k_, v_ in (cond_meta_patch or {}).items():
+                        if v_ is None:
+                            m.pop(k_)
+                        else:
+                            m[k_] = v_
+                    f.attrs["meta"] = json.dumps(m)
                 for cam, y in zip(D.CAMS, out):
                     f.create_dataset(f"{d}/{cam}/global", data=y)
                     f.create_dataset(f"{d}/{cam}/mean", data=y[:, :3])
+    # Tally JSONs: alphas as set in ALPHA_TALLY, n_frames / split_frames / r2_mean computed independently with
+    # diagnostics' own functions on the stored clean features (all frames of the test demos).
+    r2m = {}
+    for ft in ("global", "mean"):
+        fe_, ac_, _, sp_, _, _, _ = P.load_clean(feats_dir, raw_dir, SUITE, list(DIMS), ft)
+        tr_, te_ = sp_ != "test", sp_ == "test"
+        std = {e: D.standardize(np.concatenate([fe_[e][ft][c] for c in D.CAMS], 1), sp_ == "train") for e in DIMS}
+
+        def r2_of(x, alpha):
+            w_, b_ = D.ridge_fit(x[tr_], ac_[tr_], alpha)
+            return float(D.r2(ac_[te_], x[te_] @ w_ + b_).mean())
+        r2m[(ft, "dinov3")] = r2_of(std["dinov3"], 0.1 if ft == "global" else 1.0)
+        for b in ("c-radiov4", "siglip2", "sam3", "vggt-omega"):
+            key = "+".join(sorted(["dinov3", b]))
+            r2m[(ft, key)] = r2_of(np.concatenate([std["dinov3"], std[b]], 1), ALPHA_TALLY[key] if ft == "global" else 1.0)
+    counts = {s_: int((sp_ == s_).sum()) for s_ in ("train", "val", "test")}
     for b in ("c-radiov4", "siglip2", "sam3", "vggt-omega"):
         key = "+".join(sorted(["dinov3", b]))
-        probes = {"dinov3|global": {"alpha": 0.1}, f"{key}|global": {"alpha": ALPHA_TALLY[key]},
-                  "dinov3|mean": {"alpha": 1.0}, f"{key}|mean": {"alpha": 1.0}}
-        (root / "tally" / f"tally-libero_goal-dinov3-{b}.json").write_text(json.dumps({"probes": probes}))
+        probes = {"dinov3|global": {"alpha": 0.1, "r2_mean": r2m[("global", "dinov3")]},
+                  f"{key}|global": {"alpha": ALPHA_TALLY[key], "r2_mean": r2m[("global", key)]},
+                  "dinov3|mean": {"alpha": 1.0, "r2_mean": r2m[("mean", "dinov3")]},
+                  f"{key}|mean": {"alpha": 1.0, "r2_mean": r2m[("mean", key)]}}
+        (root / "tally" / f"tally-libero_goal-dinov3-{b}.json").write_text(json.dumps(
+            {"suite": SUITE, "n_frames": len(ac_), "split_frames": counts, "probes": probes}))
+    # A tally file of another suite with conflicting numbers must be ignored.
+    (root / "tally" / "tally-other_suite-dinov3-sam3.json").write_text(json.dumps(
+        {"suite": "libero_other", "n_frames": 1, "split_frames": {}, "probes": {"dinov3|global": {"alpha": 99.0, "r2_mean": 0.0}}}))
     return {"feats": feats_dir, "raw": raw_dir, "tally": root / "tally", "conds": cond_roots,
             "actions": true_actions, "stems": stems}
 
@@ -141,16 +182,17 @@ def test_rules_unit():
     # B: R's clause is CI based.
     g = {"R": arr(-0.05), "L": arr(0.08), "S": arr(0.07), "G": arr(0.06)}
     b = P.rule_b(g)
-    assert b["R_clause"] and b["fires_point_reading"] and b["fires_ci_reading_strict"] and b["fires_ci_reading_lenient"], b
+    assert b["R_clause"] and b["fires_point_reading"] and b["fires_ci_reading_strict"], b
     # R below 0 at the point but its CI covers 0 -> R clause fails.
     g = {"R": arr(-0.01, sd=0.05), "L": arr(0.03), "S": arr(0.02), "G": arr(0.01)}
     b = P.rule_b(g)
     assert not b["R_clause"] and not b["fires_point_reading"], b
-    # Another partner slightly below 0 with a CI that covers 0: the readings split three ways.
+    # Another partner slightly below 0 with a CI that covers 0: both readings fail (only two readings exist).
     g = {"R": arr(-0.05), "L": arr(0.03), "S": arr(-0.005, sd=0.05), "G": arr(0.01)}
     g["S"][1:] = -0.005 + 0.05 * rng.normal(size=nb)
     b = P.rule_b(g)
-    assert b["R_clause"] and not b["fires_point_reading"] and not b["fires_ci_reading_strict"] and b["fires_ci_reading_lenient"], b
+    assert b["R_clause"] and not b["fires_point_reading"] and not b["fires_ci_reading_strict"], b
+    assert "fires_ci_reading_lenient" not in b and "others_ci_lenient" not in b
     # Another partner at exactly 0 at the point (>= 0) but a CI reaching below 0.
     g = {"R": arr(-0.05), "L": arr(0.03), "S": arr(0.0, sd=0.05), "G": arr(0.01)}
     g["S"][0] = 0.0
@@ -159,8 +201,8 @@ def test_rules_unit():
     # Another partner clearly below 0: no reading fires.
     g = {"R": arr(-0.05), "L": arr(-0.2), "S": arr(0.02), "G": arr(0.01)}
     b = P.rule_b(g)
-    assert b["R_clause"] and not (b["fires_point_reading"] or b["fires_ci_reading_strict"] or b["fires_ci_reading_lenient"]), b
-    print("rule B edge cases (point / CI-strict / CI-lenient readings) ok")
+    assert b["R_clause"] and not (b["fires_point_reading"] or b["fires_ci_reading_strict"]), b
+    print("rule B edge cases (point and CI-strict readings) ok")
 
     o = P.ordering({"R": arr(0.3), "L": arr(0.1), "S": arr(0.2), "G": arr(0.0)})
     assert o["ours_by_e_point"] == ["R", "S", "L", "G"] and o["paper_order"] == ["L", "S", "G", "R"], o
@@ -343,7 +385,20 @@ def test_e2e_planted_and_null():
         assert np.isclose(got, want, atol=1e-4), (got, want)
         # Drift: re-render sits near the stored frame; perturbed types move features more.
         dr = res["drift"]["combined"]["dinov3"]
-        assert dr["rerender_vs_stored"]["point"] < 0.1 * dr["noise"]["point"], dr
+        pipe = res["drift_pipeline_reference"]["combined"]["dinov3"]
+        assert set(dr) == set(P.TYPES) and set(pipe) == {"stored_vs_rerender", "rerender_vs_stored"}, (dr, pipe)
+        assert pipe["rerender_vs_stored"]["point"] < 0.1 * dr["noise"]["point"], (dr, pipe)
+        assert "not in the PLAN" in res["drift_note"]
+        # PCA explained variance is recorded for the reduced encoders only; tuned probes carry their val curve.
+        pv = res["pca_explained_variance"]["matched"]["combined"]
+        assert set(pv) == {"c-radiov4", "vggt-omega"} and all(0 < v["explained_variance_ratio"] <= 1
+                                                              for e_ in pv.values() for v in e_.values())
+        assert res["pca_explained_variance"]["full"]["combined"] == {}
+        cur = res["configs"]["matched"]["combined"]["probes"]["D+R"]["val_r2_by_alpha"]
+        assert set(cur) == {str(a_) for a_ in D.ALPHAS}
+        assert "val_r2_by_alpha" not in full["probes"]["D+R"]
+        # The stored-clean test R2 of each combined full-size probe was checked against the tally's r2_mean.
+        assert abs(full["probes"]["D+R"]["stored_clean_full_test_r2"] - full["probes"]["D+R"]["tally_r2_mean"]) <= 1e-6
         assert dr["noise"]["ci95"][0] > 0.0
         # The flipped encoder drifts the most (negated features: about 4x the variance moves).
         dd = {e: res["drift"]["combined"][e]["camera"]["point"] for e in DIMS}
@@ -382,16 +437,104 @@ def test_e2e_planted_and_null():
         assert rv["configs"]["full"]["wrist"]["pooled_e"]["R"]["point"] < 0.1
         print("views: agentview-only damage shows in agentview, not in wrist ok")
 
-        # Frame counts: T = n (nothing dropped) also works.
-        wf = make_world(t / "f", seed=14, flip=[("c-radiov4", 0), ("c-radiov4", 1)], drop_last=False, n_files=3)
-        rf = run_world(wf, t / "f" / "out")
-        assert rf["n_test_frames"] == 6 * 40 and set(rf["frames_per_demo_dropped_last"]) == {0}
         # Secondary mean features through the same code; all sizes equal here, so no matched row is produced.
-        rm = P.run(wf["feats"], wf["raw"], SUITE, wf["conds"], wf["tally"], t / "f" / "out_mean", ftype="mean",
+        # Drift is skipped for the mean features (not defined in the PLAN).
+        rm = P.run(wn["feats"], wn["raw"], SUITE, wn["conds"], wn["tally"], t / "n" / "out_mean", ftype="mean",
                    n_boot=100, min_boot=100, quiet=True)
         assert "matched" not in rm["configs"] and rm["matched"]["reduced"] == [] and rm["ftype"] == "mean"
         assert rm["configs"]["full"]["combined"]["probes"]["D+R"]["alpha"] == 1.0
-        print("T = n case and mean features (no matched row when sizes agree) ok")
+        assert rm["drift"] == {} and "skipped" in rm["drift_note"]
+        assert set(rn["frames_per_demo_dropped_last"]) == {1}
+        print("mean features (no matched row when sizes agree, drift skipped) ok")
+
+
+def expect(fn, exc, text=None):
+    try:
+        fn()
+    except exc as e:
+        assert text is None or text in str(e), (text, str(e))
+        return
+    raise AssertionError(f"expected {exc.__name__}")
+
+
+def test_alignment_meta_finite_tally():
+    with tempfile.TemporaryDirectory() as t:
+        t = Path(t)
+        # T = n frames per demo is no longer accepted (Q14: exactly n-1).
+        w = make_world(t / "n", seed=21, drop_last=False, n_files=2)
+        expect(lambda: run_world(w, t / "o1"), ValueError, "n-1")
+        assert not (t / "o1").exists()
+        # Off by one: re-render frame j equals stored frame j-1.
+        w = make_world(t / "lag", seed=22, lag=True, n_files=2)
+        expect(lambda: run_world(w, t / "o2"), ValueError, "alignment")
+        # Aligned worlds pass the check (already exercised by every end-to-end run); unit check of the rule itself.
+        rng = np.random.default_rng(0)
+        st = rng.normal(size=(21, 6))
+        P.check_lag(st[:20] + 0.01 * rng.normal(size=(20, 6)), st, "ok")
+        expect(lambda: P.check_lag(st[np.maximum(np.arange(20) - 1, 0)], st, "lag-1"), ValueError)
+        expect(lambda: P.check_lag(st[1:21], st, "lag+1"), ValueError)
+        # Metadata: a mismatch on each required key, and a missing key, fail.
+        for k_, v_ in [("dtype", "bfloat16"), ("hf_id", "other"), ("resolution", 448), ("rotate180", False),
+                       ("grid", 2), ("frame_stride", 2), ("cams", ["x"]), ("encoder", "zzz")]:
+            w = make_world(t / ("m_" + k_), seed=23, n_files=2, cond_meta_patch={k_: v_})
+            expect(lambda: run_world(w, t / ("om_" + k_)), ValueError, f"'{k_}'")
+        w = make_world(t / "m_missing", seed=23, n_files=2, cond_meta_patch={"dtype": None})
+        expect(lambda: run_world(w, t / "om_missing"), ValueError, "missing")
+        # Non-finite values in a condition file, and in the clean cache.
+        w = make_world(t / "nan", seed=24, n_files=2, nan_in=("noise", "sam3", 1))
+        expect(lambda: run_world(w, t / "on"), ValueError, "non-finite")
+        w = make_world(t / "nanc", seed=24, n_files=2)
+        with h5py.File(w["feats"] / "siglip2" / SUITE / "task0.h5", "a") as f:
+            f["demo_0"][D.CAMS[0]]["global"][0, 0] = np.inf
+        expect(lambda: P.load_clean(w["feats"], w["raw"], SUITE, list(DIMS), "global"), ValueError, "non-finite")
+        # Tally cross-checks: n_frames, split_frames, stored-clean R2, and suite filtering.
+        w = make_world(t / "tl", seed=25, n_files=2)
+        res = run_world(w, t / "ok")
+        assert res["tally_alphas"]["dinov3|global"] == 0.1, "the other-suite file (alpha 99) must be ignored"
+        f0 = w["tally"] / "tally-libero_goal-dinov3-sam3.json"
+        j = json.loads(f0.read_text())
+        for field, val in [("n_frames", j["n_frames"] + 1), ("split_frames", {**j["split_frames"], "test": 1})]:
+            f0.write_text(json.dumps({**j, field: val}))
+            expect(lambda: run_world(w, t / ("ot_" + field)), ValueError, "tally has")
+        pk = "dinov3+sam3|global"
+        jj = json.loads(json.dumps(j))
+        jj["probes"][pk]["r2_mean"] += 1e-4
+        f0.write_text(json.dumps(jj))
+        expect(lambda: run_world(w, t / "ot_r2"), ValueError, "r2_mean")
+        jj["probes"][pk]["r2_mean"] = j["probes"][pk]["r2_mean"] + 1e-8  # inside the tolerance
+        f0.write_text(json.dumps(jj))
+        run_world(w, t / "ot_ok")
+        print("alignment (n-1 only, lag check), meta, finiteness and tally cross-checks ok")
+
+
+def test_misc_switches():
+    # --sizes: unknown encoder names are rejected.
+    expect(lambda: P.matched_plan({"dinov3": 8, "sam3": 8}, {"sam": 8}), ValueError, "unknown encoder")
+    # Rule P ties: the conservative next-largest is used and dict order is irrelevant.
+    rng = np.random.default_rng(7)
+    nb = 400
+    base = {"R": rd(0.5, 0.5 + 0.01 * rng.normal(size=nb)), "G": rd(0.0, rng.normal(size=nb) * 0.01)}
+    tight = rd(0.1, 0.1 + 0.001 * rng.normal(size=nb))
+    wide = rd(0.1, 0.1 + 0.2 * rng.normal(size=nb))  # same point estimate, much wider CI -> lower CI bound of the diff is lower
+    r1 = P.rule_p({"R": base["R"], "L": tight, "S": wide, "G": base["G"]})
+    r2_ = P.rule_p({"G": base["G"], "S": wide, "L": tight, "R": base["R"]})
+    assert r1["next_largest"] == r2_["next_largest"] == "S" and r1["diff_ci95"] == r2_["diff_ci95"], (r1, r2_)
+    # tune_alpha matches diagnostics.ridge_select's choice and returns the validation curve.
+    rng = np.random.default_rng(8)
+    n = 600
+    split = np.array(["train"] * 360 + ["val"] * 120 + ["test"] * 120)
+    x = rng.normal(size=(n, 20)).astype(np.float32)
+    y = (x[:, :3] @ rng.normal(size=(3, 7)) + rng.normal(size=(n, 7))).astype(np.float32)
+    a_, curve = P.tune_alpha(x, y, split)
+    ref = D.ridge_select(x, y, split)
+    assert a_ == ref[1] and np.allclose([curve[a] for a in D.ALPHAS], [ref[3][a] for a in D.ALPHAS], atol=1e-5)
+    # Whitening switch: one flag; default is unwhitened. Whitened scores have unit variance on the fitting data.
+    z = (rng.normal(size=(500, 1)) * 2 + 0.5 * rng.normal(size=(500, 10))).astype(np.float32)  # one strong shared factor
+    tf_u, tf_w = P.CamTransform(z, 4, whiten=False), P.CamTransform(z, 4, whiten=True)
+    assert P.PCA_WHITEN is False and np.array_equal(P.CamTransform(z, 4).pca[1], tf_u.pca[1])
+    assert np.allclose(tf_w(z).std(0), 1, atol=0.05)
+    assert not np.allclose(tf_u(z).std(0), 1, atol=0.2)
+    print("sizes check, rule P tie handling, tune_alpha == ridge_select, whitening switch ok")
 
 
 def test_input_errors():
@@ -443,6 +586,8 @@ def main():
     test_drift_known()
     test_transform_and_pca()
     test_e2e_planted_and_null()
+    test_alignment_meta_finite_tally()
+    test_misc_switches()
     test_input_errors()
     print("all ok")
 

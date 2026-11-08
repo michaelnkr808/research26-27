@@ -26,8 +26,9 @@ What this file does (all rules are the ones signed off in PLAN.md; see the secti
 
 Feature layout (same as diagnostics.py): <root>/<encoder>/<suite>/<file stem>.h5, with
 <demo_k>/<cam>/global|mean of shape (T, D). Each condition has its own root with the same layout and holds
-at least the test demos. A condition may hold T = n or T = n-1 frames per demo (PLAN Q14 drops each demo's
-last frame); every condition and encoder must agree, and actions[:T] are the labels.
+at least the test demos, and attrs["meta"] matching the clean cache. Every condition holds exactly T = n-1 frames
+per demo (PLAN Q14: image k pairs with state k+1, the last frame is dropped); actions[:T] are the labels. A lag
+check (re-render frame j closer to stored frame j than to j-1 or j+1) stops the run if the frames are off by one.
 
 Never overwrites: the output dir must not exist.
 """
@@ -63,10 +64,25 @@ MIN_BOOT = 1000
 # Loading
 # ---------------------------------------------------------------------------
 
+META_KEYS = ["encoder", "hf_id", "resolution", "rotate180", "dtype", "grid", "frame_stride", "cams"]
+PCA_WHITEN = False   # single switch: False keeps PCA scores unwhitened; True divides each score by its axis's std
+
+
+def assert_finite(x, label):
+    if not np.all(np.isfinite(x)):
+        raise ValueError(f"non-finite values in {label}")
+
+
 def load_clean(feats_root, raw_dir, suite, encoders, ftype):
     """Clean stored features through diagnostics.load (same split, same frame order as the tally)."""
     ns = types.SimpleNamespace(raw=str(raw_dir), feats=str(feats_root), suite=suite, encoders=list(encoders))
-    return D.load(ns, types=(ftype,))
+    out = D.load(ns, types=(ftype,))
+    feats, actions = out[0], out[1]
+    assert_finite(actions, "clean actions")
+    for e in feats:
+        for c in CAMS:
+            assert_finite(feats[e][ftype][c], f"clean features {e}/{c}/{ftype}")
+    return out
 
 
 def layout_test_demos(index, split):
@@ -75,20 +91,38 @@ def layout_test_demos(index, split):
     return [(stem, d, n, int(s)) for (stem, d, n), s in zip(index, starts) if split[s] == "test"]
 
 
-def cond_demo_lengths(root, enc, suite, ftype, demos):
-    """Frames per test demo in a condition root; must be n or n-1 (PLAN Q14)."""
+def check_meta(f, clean_meta, label):
+    """The condition file's attrs['meta'] must match the clean cache on every key in META_KEYS (missing = fail)."""
+    if "meta" not in f.attrs:
+        raise ValueError(f"{label}: no attrs['meta']")
+    m = json.loads(f.attrs["meta"])
+    for k in META_KEYS:
+        if k not in m or k not in clean_meta:
+            raise ValueError(f"{label}: meta key '{k}' missing (condition has it: {k in m}, clean cache has it: {k in clean_meta})")
+        if m[k] != clean_meta[k]:
+            raise ValueError(f"{label}: meta '{k}' is {m[k]!r}, the clean cache has {clean_meta[k]!r}")
+
+
+def _open_cond(handles, root, enc, suite, stem, clean_meta):
+    if stem not in handles:
+        import h5py
+        p = Path(root) / enc / suite / (stem + ".h5")
+        if not p.exists():
+            raise FileNotFoundError(f"missing condition feature file {p}")
+        handles[stem] = h5py.File(p, "r")
+        check_meta(handles[stem], clean_meta, str(p))
+    return handles[stem]
+
+
+def cond_demo_lengths(root, enc, suite, ftype, demos, clean_meta):
+    """Frames per test demo in a condition root; must be exactly n-1 (PLAN Q14: last frame dropped)."""
     out, handles = [], {}
     try:
         for stem, d, n, _ in demos:
-            if stem not in handles:
-                p = Path(root) / enc / suite / (stem + ".h5")
-                if not p.exists():
-                    raise FileNotFoundError(f"missing condition feature file {p}")
-                import h5py
-                handles[stem] = h5py.File(p, "r")
-            t = handles[stem][d][CAMS[0]][ftype].shape[0]
-            if t not in (n, n - 1):
-                raise ValueError(f"{root} {enc} {stem}/{d}: {t} frames, expected {n} or {n - 1}")
+            f = _open_cond(handles, root, enc, suite, stem, clean_meta)
+            t = f[d][CAMS[0]][ftype].shape[0]
+            if t != n - 1:
+                raise ValueError(f"{root} {enc} {stem}/{d}: {t} frames, expected exactly n-1 = {n - 1}")
             out.append(t)
     finally:
         for h in handles.values():
@@ -96,26 +130,37 @@ def cond_demo_lengths(root, enc, suite, ftype, demos):
     return out
 
 
-def load_condition(root, enc, suite, ftype, demos, lengths):
+def load_condition(root, enc, suite, ftype, demos, lengths, clean_meta):
     """{cam: (sum lengths, D)} test features of one encoder in one condition, demos in test order."""
-    import h5py
     out, handles = {c: [] for c in CAMS}, {}
     try:
         for (stem, d, n, _), t in zip(demos, lengths):
-            if stem not in handles:
-                p = Path(root) / enc / suite / (stem + ".h5")
-                if not p.exists():
-                    raise FileNotFoundError(f"missing condition feature file {p}")
-                handles[stem] = h5py.File(p, "r")
+            f = _open_cond(handles, root, enc, suite, stem, clean_meta)
             for c in CAMS:
-                x = handles[stem][d][c][ftype][:]
+                x = f[d][c][ftype][:]
                 if len(x) != t:
                     raise ValueError(f"{root} {enc} {stem}/{d}/{c}: {len(x)} frames, expected {t}")
                 out[c].append(x)
     finally:
         for h in handles.values():
             h.close()
-    return {c: np.concatenate(v).astype(np.float32) for c, v in out.items()}
+    res = {c: np.concatenate(v).astype(np.float32) for c, v in out.items()}
+    for c in CAMS:
+        assert_finite(res[c], f"{root} {enc}/{c}/{ftype}")
+    return res
+
+
+def check_lag(z_rr, z_st, label):
+    """Frame alignment for one demo and camera. z_rr: (T, d) re-render, z_st: (T+1, d) stored, both standardized.
+
+    The mean distance between re-render frame j and stored frame j must be smaller than at lag -1 (stored j-1)
+    and at lag +1 (stored j+1); otherwise the two are off by a frame.
+    """
+    t = len(z_rr)
+    dist = lambda a, b: float(np.linalg.norm(a.astype(np.float64) - b, axis=1).mean())
+    d0, dm, dp = dist(z_rr, z_st[:t]), dist(z_rr[1:], z_st[:t - 1]), dist(z_rr, z_st[1:t + 1])
+    if not (d0 < dm and d0 < dp):
+        raise ValueError(f"{label}: frame alignment check failed (mean distance lag 0 {d0:.4g}, lag -1 {dm:.4g}, lag +1 {dp:.4g})")
 
 
 # ---------------------------------------------------------------------------
@@ -123,7 +168,7 @@ def load_condition(root, enc, suite, ftype, demos, lengths):
 # ---------------------------------------------------------------------------
 
 def fit_pca(z, k):
-    """Top-k principal axes of z (rows = frames). Returns (mean, axes (d, k), explained-variance ratio of the kept axes)."""
+    """Top-k principal axes of z (rows = frames). Returns (mean, axes (d, k), kept eigenvalues, explained-variance ratio)."""
     n, d = z.shape
     pm = z.mean(0, dtype=np.float64)
     cov = np.zeros((d, d))
@@ -133,20 +178,22 @@ def fit_pca(z, k):
     cov /= max(n - 1, 1)
     w, v = np.linalg.eigh(cov)
     order = np.argsort(w)[::-1][:k]
-    return pm.astype(np.float32), v[:, order].astype(np.float32), float(w[order].sum() / max(w.sum(), 1e-12))
+    return pm.astype(np.float32), v[:, order].astype(np.float32), w[order], float(w[order].sum() / max(w.sum(), 1e-12))
 
 
 class CamTransform:
     """Per-camera map: standardize with clean-train statistics, optionally project on clean-train PCA axes."""
 
-    def __init__(self, x_train, reduce_to=None):
+    def __init__(self, x_train, reduce_to=None, whiten=PCA_WHITEN):
         self.mu = x_train.mean(0)
         self.sd = x_train.std(0) + 1e-6          # same formula as diagnostics.standardize
         self.pca = None
+        self.evr = None
         self.dim_in = x_train.shape[1]
         if reduce_to is not None and reduce_to < self.dim_in:
-            pm, axes, evr = fit_pca(self.standardize(x_train), reduce_to)
-            self.pca, self.evr = (pm, axes), evr
+            pm, axes, ev, self.evr = fit_pca(self.standardize(x_train), reduce_to)
+            scale = (1.0 / np.sqrt(np.maximum(ev, 1e-12))).astype(np.float32) if whiten else np.ones(len(ev), np.float32)
+            self.pca = (pm, axes * scale)
         self.dim_out = self.dim_in if self.pca is None else self.pca[1].shape[1]
 
     def standardize(self, x):
@@ -164,37 +211,49 @@ def matched_plan(dims, declared=None):
     """
     if declared is not None:
         for e, s in declared.items():
-            if e in dims and dims[e] != s:
+            if e not in dims:
+                raise ValueError(f"declared size for unknown encoder '{e}' (known: {sorted(dims)})")
+            if dims[e] != s:
                 raise ValueError(f"declared size {e}={s} but the feature files have {dims[e]}")
     target = min(dims.values())
     return target, sorted(e for e, s in dims.items() if s > target)
 
 
-def tally_alphas(results_dir, ftype):
-    """{probe key: alpha} from the tally JSONs; the same key in several files must agree."""
-    files = sorted(Path(results_dir).glob("tally-*.json"))
-    if not files:
-        raise FileNotFoundError(f"no tally-*.json in {results_dir}")
-    out = {}
-    for f in files:
-        for k, v in json.loads(f.read_text())["probes"].items():
+def read_tally(results_dir, suite, ftype):
+    """Tally JSONs of this suite: ({probe key: alpha}, {probe key: r2_mean}, [(file, n_frames, split_frames)])."""
+    alphas, r2m, sizes = {}, {}, []
+    for f in sorted(Path(results_dir).glob("tally-*.json")):
+        j = json.loads(f.read_text())
+        if j.get("suite") != suite:
+            continue
+        sizes.append((f.name, j.get("n_frames"), j.get("split_frames")))
+        for k, v in j["probes"].items():
             if k.endswith("|" + ftype):
-                if k in out and out[k] != v["alpha"]:
+                if k in alphas and alphas[k] != v["alpha"]:
                     raise ValueError(f"alpha for {k} differs between tally files")
-                out[k] = v["alpha"]
-    return out
+                alphas[k] = v["alpha"]
+                r2m[k] = v.get("r2_mean")
+    if not sizes:
+        raise FileNotFoundError(f"no tally-*.json for suite {suite} in {results_dir}")
+    return alphas, r2m, sizes
 
 
 def tune_alpha(x, y, split):
-    """Pick alpha on clean validation demos (train fit), exactly diagnostics.ridge_select without the test step."""
+    """Pick alpha on clean validation demos (train fit), as diagnostics.ridge_select does without the test step.
+
+    Returns (alpha, {alpha: val R2}). The train gram matrix is formed once; the solve matches ridge_fit.
+    """
     tr, va = split == "train", split == "val"
-    best = None
+    xt, yt = x[tr], y[tr]
+    gram, rhs = xt.T @ xt, xt.T @ (yt - yt.mean(0))
+    best, curve = None, {}
     for a in D.ALPHAS:
-        w, b = D.ridge_fit(x[tr], y[tr], a)
-        s = D.r2(y[va], x[va] @ w + b).mean()
+        w = np.linalg.solve(gram + a * len(xt) * np.eye(x.shape[1], dtype=gram.dtype), rhs)
+        s = float(D.r2(y[va], x[va] @ w + yt.mean(0)).mean())
+        curve[a] = s
         if best is None or s > best[0]:
             best = (s, a)
-    return best[1]
+    return best[1], curve
 
 
 # ---------------------------------------------------------------------------
@@ -237,10 +296,13 @@ def rule_p(e, target="R"):
     """Rule P (decides). e: {partner: pooled e draws (row 0 = point)}.
 
     Fires if e(R) is strictly the largest point estimate AND the lower end of the 95% CI of
-    e(R) - e(next-largest) is above 0. The next-largest is picked from the point estimates.
+    e(R) - e(next-largest) is above 0. The next-largest is picked from the point estimates; if several partners
+    tie exactly, the one giving the lowest CI lower bound is used (the conservative choice; name breaks a further
+    tie), so the result does not depend on dict order.
     """
     others = [b for b in e if b != target]
-    nxt = max(others, key=lambda b: e[b][0])
+    top = max(e[b][0] for b in others)
+    nxt = min((b for b in others if e[b][0] == top), key=lambda b: (D.ci((e[target] - e[b])[1:])[0], b))
     diff = e[target] - e[nxt]
     is_largest = bool(all(e[target][0] > e[b][0] for b in others))
     ci = D.ci(diff[1:])
@@ -253,12 +315,9 @@ def rule_p(e, target="R"):
 def rule_b(g, target="R"):
     """Rule B (reported only). R's clause: g(R) < 0 with the upper end of its 95% CI below 0.
 
-    The clause "the other three are not below 0" is reported three ways (Q21):
+    The clause "the other three are not below 0" is reported two ways (Q21, decided by the user):
       point_reading: each other point estimate >= 0 (as written);
-      ci_reading_strict: the lower end of each other 95% CI >= 0 (clearly not below 0);
-      ci_reading_lenient: the upper end of each other 95% CI >= 0 (not clearly below 0).
-    The user's "stricter CI-based reading" is taken to mean ci_reading_strict; the lenient one is added so no
-    reading of the wording is lost.
+      ci_reading_strict: the lower end of each other 95% CI >= 0 (the stricter CI-based reading).
     """
     others = [b for b in g if b != target]
     r_ci = D.ci(g[target][1:])
@@ -266,12 +325,10 @@ def rule_b(g, target="R"):
     oc = {b: D.ci(g[b][1:]) for b in others}
     point = all(g[b][0] >= 0 for b in others)
     strict = all(oc[b][0] >= 0 for b in others)
-    lenient = all(oc[b][1] >= 0 for b in others)
     return {"R_gain_point": float(g[target][0]), "R_gain_ci95": r_ci, "R_clause": r_clause,
             "others": {b: {"point": float(g[b][0]), "ci95": oc[b]} for b in others},
-            "others_point_reading": bool(point), "others_ci_strict": bool(strict), "others_ci_lenient": bool(lenient),
-            "fires_point_reading": bool(r_clause and point), "fires_ci_reading_strict": bool(r_clause and strict),
-            "fires_ci_reading_lenient": bool(r_clause and lenient)}
+            "others_point_reading": bool(point), "others_ci_strict": bool(strict),
+            "fires_point_reading": bool(r_clause and point), "fires_ci_reading_strict": bool(r_clause and strict)}
 
 
 def ordering(e):
@@ -322,7 +379,8 @@ def run(feats_root, raw_dir, suite, cond_roots, tally_dir, out_dir, *args, **kw)
 
 
 def _run(feats_root, raw_dir, suite, cond_roots, tally_dir, out_dir, ftype="global", n_boot=1000, seed=0,
-         sizes=None, other_alpha="tune", save_preds=True, min_boot=MIN_BOOT, quiet=False):
+         sizes=None, other_alpha="tune", save_preds=True, min_boot=MIN_BOOT, quiet=False,
+         pca_whiten=PCA_WHITEN, tally_tol=1e-6):
     t0 = time.time()
     if n_boot < min_boot:
         raise ValueError(f"n_boot={n_boot} < {min_boot}: the plan needs at least {MIN_BOOT} draws")
@@ -333,7 +391,7 @@ def _run(feats_root, raw_dir, suite, cond_roots, tally_dir, out_dir, ftype="glob
     if missing:
         raise KeyError(f"cond_roots missing {missing}")
     encoders = [DINO] + list(PARTNERS.values())
-    alphas = tally_alphas(tally_dir, ftype)
+    alphas, tally_r2, tally_sizes = read_tally(tally_dir, suite, ftype)
     pair_key = lambda b: f"{min(DINO, PARTNERS[b])}+{max(DINO, PARTNERS[b])}|{ftype}"
     for key in [f"{DINO}|{ftype}"] + [pair_key(b) for b in PARTNERS]:
         if key not in alphas:
@@ -341,9 +399,14 @@ def _run(feats_root, raw_dir, suite, cond_roots, tally_dir, out_dir, ftype="glob
     log = (lambda *a: None) if quiet else (lambda *a: print("[pf]", *a, flush=True))
 
     feats, actions, _, split, index, meta, files = load_clean(feats_root, raw_dir, suite, encoders, ftype)
-    train, trva = split == "train", split != "test"
+    train, trva, test_mask = split == "train", split != "test", split == "test"
+    split_frames = {s_: int((split == s_).sum()) for s_ in ("train", "val", "test")}
+    for fname, nf, sf in tally_sizes:
+        if nf != len(actions) or sf != split_frames:
+            raise ValueError(f"{fname}: tally has n_frames={nf}, split_frames={sf}; the clean load has "
+                             f"{len(actions)} and {split_frames}")
     demos = layout_test_demos(index, split)
-    lengths = cond_demo_lengths(cond_roots[REF], DINO, suite, ftype, demos)
+    lengths = cond_demo_lengths(cond_roots[REF], DINO, suite, ftype, demos, meta[DINO])
     test_sel = np.concatenate([s + np.arange(t) for (_, _, _, s), t in zip(demos, lengths)])
     groups = np.repeat(np.arange(len(demos)), lengths)
     k = len(demos)
@@ -357,9 +420,17 @@ def _run(feats_root, raw_dir, suite, cond_roots, tally_dir, out_dir, ftype="glob
         cond[c] = {}
         for e in encoders:
             if c != REF or e != DINO:
-                if cond_demo_lengths(cond_roots[c], e, suite, ftype, demos) != lengths:
+                if cond_demo_lengths(cond_roots[c], e, suite, ftype, demos, meta[e]) != lengths:
                     raise ValueError(f"condition {c} / {e}: frame counts differ from the clean re-render")
-            cond[c][e] = load_condition(cond_roots[c], e, suite, ftype, demos, lengths)
+            cond[c][e] = load_condition(cond_roots[c], e, suite, ftype, demos, lengths, meta[e])
+            if c == REF and e == DINO:
+                # Frame alignment (Q14), per test demo and camera, on clean-train-standardized DINOv3 features.
+                off = np.concatenate([[0], np.cumsum(lengths)])
+                for cam in CAMS:
+                    tf = CamTransform(feats[DINO][ftype][cam][train], whiten=pca_whiten)
+                    for i, (stem, d, n, s0) in enumerate(demos):
+                        check_lag(tf.standardize(cond[REF][DINO][cam][off[i]:off[i + 1]]),
+                                  tf.standardize(feats[DINO][ftype][cam][s0:s0 + n]), f"{stem}/{d}/{cam}")
     dims = {}
     for e in encoders:
         ds = {feats[e][ftype][c].shape[1] for c in CAMS}
@@ -372,10 +443,11 @@ def _run(feats_root, raw_dir, suite, cond_roots, tally_dir, out_dir, ftype="glob
     W = make_weights(k, n_boot, seed)
     results = {"suite": suite, "ftype": ftype, "files": files, "encoders": {e: meta[e] for e in encoders},
                "git_commit": D.git_commit(), "seed": seed, "n_boot": n_boot, "n_test_demos": k,
-               "n_test_frames": int(len(test_sel)), "frames_per_demo_dropped_last": [int(n - t) for (_, _, n, _), t in zip(demos, lengths)],
+               "n_test_frames": int(len(test_sel)), "frames_per_demo_dropped_last": [int(n - t) for (_, _, n, _), t in zip(demos, lengths)], "pca_whiten": pca_whiten,
+               "tally_check_tol": tally_tol, "pca_explained_variance": {},
                "tally_dir": str(tally_dir), "tally_alphas": alphas, "cond_roots": {c: str(v) for c, v in cond_roots.items()},
                "per_camera_sizes": dims, "matched": {"target": target, "reduced": reduced, "declared_sizes": sizes},
-               "other_alpha": other_alpha, "alphas_grid": D.ALPHAS, "configs": {}, "drift": {}}
+               "other_alpha": other_alpha, "alphas_grid": D.ALPHAS, "configs": {}, "drift": {}, "drift_pipeline_reference": {}}
     stats_out = {"test_demos": np.array([f"{s}/{d}" for s, d, _, _ in demos]), "frames_per_demo": np.array(lengths),
                  "boot_weights": W.astype(np.int16)}
     preds_out = {"y_test": y_test.astype(np.float32)}
@@ -388,10 +460,16 @@ def _run(feats_root, raw_dir, suite, cond_roots, tally_dir, out_dir, ftype="glob
 
     for config, red in configs.items():
         results["configs"][config] = {}
+        results["pca_explained_variance"][config] = {}
         for view, cams in VIEWS.items():
+            pca_log = results["pca_explained_variance"][config][view] = {}
+
             def inputs(enc, reduce_enc):
                 """Probe inputs for one encoder: clean all-frames matrix and each condition's test matrix."""
-                tfs = {c: CamTransform(feats[enc][ftype][c][train], target if reduce_enc else None) for c in cams}
+                tfs = {c: CamTransform(feats[enc][ftype][c][train], target if reduce_enc else None, pca_whiten) for c in cams}
+                for c, tf in tfs.items():
+                    if tf.pca is not None:
+                        pca_log.setdefault(enc, {})[c] = {"dim_in": tf.dim_in, "dim_out": tf.dim_out, "explained_variance_ratio": tf.evr}
                 allx = np.concatenate([tfs[c](feats[enc][ftype][c]) for c in cams], 1)
                 tests = {cn: np.concatenate([tfs[c](cond[cn][enc][c]) for c in cams], 1) for cn in conds}
                 return allx, tests, sum(tf.dim_out for tf in tfs.values()), tfs
@@ -413,12 +491,26 @@ def _run(feats_root, raw_dir, suite, cond_roots, tally_dir, out_dir, ftype="glob
                     tkey = pair_key(b)
                     del xb
                 same_as_tally = view == "combined" and not in_red
+                if config == "full" and view == "combined" and not same_as_tally:
+                    raise AssertionError("full combined probe must use the tally alpha")
                 if same_as_tally or other_alpha == "reuse":
                     alpha, src = alphas[tkey], ("tally" if same_as_tally else "tally-reused-on-changed-input")
                 else:
-                    alpha, src = tune_alpha(allx, actions, split), "tuned-on-clean-val"
+                    alpha, curve = tune_alpha(allx, actions, split)
+                    src = "tuned-on-clean-val"
                 w, bias = D.ridge_fit(allx[trva], actions[trva], alpha)
                 probe_info[name] = {"dim": int(dim), "alpha": alpha, "alpha_source": src}
+                if src == "tuned-on-clean-val":
+                    probe_info[name]["val_r2_by_alpha"] = {str(a_): v_ for a_, v_ in curve.items()}
+                if config == "full" and view == "combined":
+                    # The same fitted probe on all stored clean test frames must reproduce the tally's test R^2.
+                    got = float(D.r2(actions[test_mask], allx[test_mask] @ w + bias).mean())
+                    want = tally_r2.get(tkey)
+                    probe_info[name]["stored_clean_full_test_r2"] = got
+                    probe_info[name]["tally_r2_mean"] = want
+                    if want is None or abs(got - want) > tally_tol:
+                        raise ValueError(f"stored-clean test R2 of {name} is {got!r}, the tally's r2_mean is {want!r} "
+                                         f"(tolerance {tally_tol})")
                 for cn in conds:
                     yhat = tests[cn] @ w + bias
                     st[cn][name] = D.demo_stats(y_test, yhat, groups)
@@ -444,25 +536,33 @@ def _run(feats_root, raw_dir, suite, cond_roots, tally_dir, out_dir, ftype="glob
                    "ordering": ordering(q["pooled_e"])}
             results["configs"][config][view] = res
 
-    # Drift, single encoder, full-size standardized features (no PCA), clean re-render as the reference.
-    for view, cams in VIEWS.items():
-        results["drift"][view] = {}
-        for e in encoders:
-            tfs = {c: CamTransform(feats[e][ftype][c][train]) for c in cams}
-            z = {cn: np.concatenate([tfs[c].standardize(cond[cn][e][c]) for c in cams], 1) for cn in conds}
-            row = {}
-            for cn in TYPES + [STORED]:
-                num, den = drift_parts(z[REF], z[cn], groups, k)
-                stats_out[f"drift/{view}/{e}/{cn}/num"], stats_out[f"drift/{view}/{e}/{cn}/den"] = num, den
-                row[cn] = stat(drift_draws(num, den, W))
-            # Pipeline reference: how far the clean re-render sits from the stored clean frame (reference = stored).
-            num, den = drift_parts(z[STORED], z[REF], groups, k)
-            stats_out[f"drift/{view}/{e}/rerender_vs_stored/num"], stats_out[f"drift/{view}/{e}/rerender_vs_stored/den"] = num, den
-            row["rerender_vs_stored"] = stat(drift_draws(num, den, W))
-            results["drift"][view][e] = row
-    results["drift_note"] = ("drift_c(E) = mean ||f(x')-f(x)||^2 / mean ||f(x)-mean(f)||^2 over test frames, x = clean re-render, "
-                             "mean(f) = mean over the test frames, clean-train-standardized features; entries for the stored "
-                             "condition use the stored frame as x'; rerender_vs_stored uses the stored frame as x.")
+    # Drift (PLAN: global features only), single encoder, full-size standardized features (no PCA), clean re-render
+    # as the reference. Not defined in the PLAN for the mean features, so it is skipped under ftype=mean.
+    if ftype != "global":
+        results["drift_note"] = "drift is defined in the PLAN for global features only; skipped for ftype=" + ftype
+    else:
+        for view, cams in VIEWS.items():
+            results["drift"][view], results["drift_pipeline_reference"][view] = {}, {}
+            for e in encoders:
+                tfs = {c: CamTransform(feats[e][ftype][c][train]) for c in cams}
+                z = {cn: np.concatenate([tfs[c].standardize(cond[cn][e][c]) for c in cams], 1) for cn in conds}
+                row, ref = {}, {}
+                for cn in TYPES:
+                    num, den = drift_parts(z[REF], z[cn], groups, k)
+                    stats_out[f"drift/{view}/{e}/{cn}/num"], stats_out[f"drift/{view}/{e}/{cn}/den"] = num, den
+                    row[cn] = stat(drift_draws(num, den, W))
+                # Pipeline references, outside the PLAN: the stored clean frame as x' (x = re-render), and the
+                # re-render as x' (x = stored frame). Both show how far the re-render sits from the stored frame.
+                num, den = drift_parts(z[REF], z[STORED], groups, k)
+                stats_out[f"drift_ref/{view}/{e}/stored_vs_rerender/num"], stats_out[f"drift_ref/{view}/{e}/stored_vs_rerender/den"] = num, den
+                ref["stored_vs_rerender"] = stat(drift_draws(num, den, W))
+                num, den = drift_parts(z[STORED], z[REF], groups, k)
+                stats_out[f"drift_ref/{view}/{e}/rerender_vs_stored/num"], stats_out[f"drift_ref/{view}/{e}/rerender_vs_stored/den"] = num, den
+                ref["rerender_vs_stored"] = stat(drift_draws(num, den, W))
+                results["drift"][view][e], results["drift_pipeline_reference"][view][e] = row, ref
+        results["drift_note"] = ("drift_c(E) = mean ||f(x')-f(x)||^2 / mean ||f(x)-mean(f)||^2 over test frames, x = clean re-render, "
+                                 "mean(f) = mean over the test frames, clean-train-standardized features. "
+                                 "drift_pipeline_reference holds extra rows that are not in the PLAN (pipeline checks only).")
 
     results["seconds"] = time.time() - t0
     np.savez_compressed(out_dir / "stats.npz", **stats_out)
@@ -489,11 +589,13 @@ def main():
     p.add_argument("--other-alpha", default="tune", choices=["tune", "reuse"],
                    help="alpha for probes whose input is not identical to a tally probe (matched control, single-camera views)")
     p.add_argument("--no-save-preds", action="store_true")
+    p.add_argument("--pca-whiten", action="store_true", help="divide PCA scores by their axis std (default: unwhitened)")
+    p.add_argument("--tally-tol", type=float, default=1e-6, help="tolerance for the stored-clean R2 vs tally r2_mean check")
     a = p.parse_args()
     roots = dict(s.split("=", 1) for s in a.cond)
     sizes = {k: int(v) for k, v in (s.split("=") for s in a.sizes.split(","))} if a.sizes else None
     run(a.feats, a.raw, a.suite, roots, a.tally_results, a.out, a.ftype, a.n_boot, a.seed, sizes, a.other_alpha,
-        not a.no_save_preds)
+        not a.no_save_preds, pca_whiten=a.pca_whiten, tally_tol=a.tally_tol)
 
 
 if __name__ == "__main__":
