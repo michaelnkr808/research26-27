@@ -2,7 +2,7 @@
 
 Date: 2026-11-08 (corrected the same day after an independent review). Scope: a novelty search for a proposed label-free score, modelled on the edge fidelity (EF) score of Guo et al. 2026 (guo2026metric, entry 3 of 2026-11-07-measures.md). For a frozen encoder, take consecutive frames of robot demos and ask whether the places where the feature map changes line up with where the scene moves (pixel change, optical flow, gripper or object motion), with no action labels. Long-term use: predict which encoders, or pairs, help a world action model before training. Nothing here is cited yet (_standards/02).
 
-How entries were found and checked: web search (queries listed at the bottom), then each paper's arXiv API record (export.arxiv.org) was fetched on 2026-11-08 and its exact title confirmed. Read status uses these labels. "verified (independent reviewer, arXiv HTML, 2026-11-08)" means a separate reviewer read the full arXiv HTML text and confirmed the claims; I rechecked quotes in the reviewer's text extracts. "from the abstract" means the arXiv abstract or a search summary of it, not read further. "not read" means only the arXiv record was opened. Overlap labels are my judgement. Absence claims ("no paper does X") mean only that these searches found none (speculative). Two of the lead's guesses were corrected: arXiv 2507.19507 is an unrelated physics thesis (Baldassarre et al. is 2507.19468), and TAP-Vid was seen only in search results, not opened, so it has no entry. DynaFLIP (arXiv 2605.30350, title confirmed on its arXiv record) is already covered in 2026-11-07-fusion.md and has no entry here.
+How entries were found and checked: web search (queries listed at the bottom), then each paper's arXiv API record (export.arxiv.org) was fetched on 2026-11-08 and its exact title confirmed. Read status uses these labels. "verified (separate reviewer, raw arXiv HTML text, targeted sections; full read only for CoRe-WAM; 2026-11-08)" means a separate reviewer checked these claims against the raw arXiv HTML text (targeted sections; full read only for CoRe-WAM); I rechecked quotes in the reviewer's text extracts. "from the abstract" means the arXiv abstract or a search summary of it, not read further. "not read" means only the arXiv record was opened. Overlap labels are my judgement. Absence claims ("no paper does X") mean only that these searches found none (speculative). Two of the lead's guesses were corrected: arXiv 2507.19507 is an unrelated physics thesis (Baldassarre et al. is 2507.19468), and TAP-Vid was seen only in search results, not opened, so it has no entry. DynaFLIP (arXiv 2605.30350, title confirmed on its arXiv record) is already covered in 2026-11-07-fusion.md and has no entry here.
 
 ## Verdict
 
@@ -10,13 +10,13 @@ Corrected after an independent review (the first version said (b) was "not found
 
 (a) Has anyone defined this score? Not the exact spatial score (does feature change happen where the scene moves, measured without labels on frozen encoders): not found (speculative; absence of evidence). The nearest neighbours are Tsagkas et al. 2025 (a label-free frame-to-frame cosine statistic of frozen features, but how much change, not where) and 4D-WAM (Yang 2026; feature changes between frames aligned with Trace Anything's motion, as a training loss and one diagnostic on a WAM, not an encoder score). Further out: Deep Feature Flow (2016) and Motion-Focused Contrastive Learning (2021) use flow with features inside training; FlowFeat (2025) trains a decoder toward flow; point-tracking probes (Aydemir 2024) score frozen features over time but need labels.
 
-(b) Has anyone used a motion or dynamics-related property of frozen features to predict robot or world-model performance before training? Partly (verified by the independent reviewer). Tsagkas et al. correlate a label-free temporal statistic (average cosine similarity of frozen features between consecutive demo frames) negatively with policy success across 14 encoders on MetaWorld, with caveats: the trend holds within subgroups only, and one subgroup showed no trend. And Yeom et al. 2026 found that an inverse-dynamics probe of frozen features of consecutive LIBERO frames did not rank policies by success, so a dynamics readout is not automatically a good predictor. Static predictors also exist (Dong et al. 2026, Burns et al. 2023).
+(b) Has anyone used a motion or dynamics-related property of frozen features to predict robot or world-model performance before training? Partly (verified by the independent reviewer). Tsagkas et al. correlate a label-free temporal statistic (average cosine similarity of frozen features between consecutive demo frames) negatively with policy success among the 14 PVRs on MetaWorld, within subgroups (the Fig. 4 caption omits the non-temporal ResNet subgroup, where no trend emerged). A caution from Yeom et al. 2026: in a small target-swap study (encoders used as auxiliary future-latent targets for pi0.5, mostly ID-fine-tuned, mostly one seed), probe R2 did not monotonically rank the resulting policies. Static predictors also exist (Dong et al. 2026, Burns et al. 2023).
 
 (c) Has anyone used a per-encoder or pair-level score to choose combinations? Partly. KAGES (Liu and Jiang 2026) picks encoder subsets without training a classifier, by kernel alignment with labels, with a pairwise term in its set score, on image classification and not for robots or motion. The OSBORN paper in the 2026-11-07 list is similar for ensembles of transfer models. Nothing found did this for robot world models with a motion property (speculative).
 
 Closest works. For the intended use (scoring encoders before training): Tsagkas et al. 2025. For the mechanism (feature change compared with motion): CoRe-WAM (Zhou 2026) together with 4D-WAM (Yang 2026); neither is an encoder score.
 
-What stays new (speculative): a spatial score, meaning whether the feature change happens where the motion is, ideally measured along flow so that moving content is not confused with changing features (the confound CoRe-WAM points out), plus the pair angle. A label-free temporal statistic has already been correlated with policy success (Tsagkas), and a dynamics probe of frozen features did not rank policies (Yeom), so the claim that matters is that a spatial score adds something beyond Tsagkas's statistic and the static proxies of Dong and Burns.
+What stays new (speculative): a spatial score, meaning whether the feature change happens where the motion is, ideally measured along flow so that moving content is not confused with changing features (the confound CoRe-WAM points out), plus the pair angle. A label-free temporal statistic has already been correlated with policy success (Tsagkas), and a small target-swap study (Yeom) found probe R2 did not monotonically rank the resulting policies, so the claim that matters is that a spatial score adds something beyond Tsagkas's statistic and the static proxies of Dong and Burns.
 
 ## Entries
 
@@ -29,8 +29,8 @@ Field "Overlap with our idea": same (it is the idea) / partial / adjacent (neigh
 - Link checked: 2026-11-08 title matches
 - Relevance: High
 - Overlap with our idea: partial (a label-free temporal statistic of frozen features vs policy success; but it measures how much features change, not where, and uses no flow or pairs)
-- Why it might matter: Closest work for the intended use (scoring encoders before training). Sec IV-B defines a label-free "average sequential cosine similarity" of frozen-PVR features between consecutive demo frames. Fig. 4 correlates it negatively with policy success across 14 PVRs on MetaWorld. Caveats: the trend holds within subgroups (for example ResNets), and the non-temporal ResNet subgroup is left out of the plot "as no trend emerged". It measures how much features change overall, not where, and uses no flow, no motion ground truth and no pairs. So a label-free temporal feature statistic has already been correlated with policy success; what it does not do is check that the change happens where the scene moves.
-- Read status: verified (independent reviewer, arXiv HTML, 2026-11-08); quotes rechecked by me in the reviewer's text extract
+- Why it might matter: Closest work for the intended use (scoring encoders before training). Sec IV-B defines a label-free "average sequential cosine similarity" of frozen-PVR features between consecutive demo frames. Fig. 4 correlates it negatively with policy success across 14 PVRs on MetaWorld. The trend is among the 14 PVRs, within subgroups (the Fig. 4 caption omits the non-temporal ResNet subgroup, where no trend emerged). It measures how much features change overall, not where, and uses no flow, no motion ground truth and no pairs. So a label-free temporal feature statistic has already been correlated with policy success; what it does not do is check that the change happens where the scene moves.
+- Read status: verified (separate reviewer, raw arXiv HTML text, targeted sections; full read only for CoRe-WAM; 2026-11-08); quotes rechecked by me in the reviewer's text extract
 
 ### 2. CoRe-WAM: Correspondence-Aligned Temporal Residuals for World Action Models
 - Authors: Zhou et al. (2026)
@@ -40,7 +40,7 @@ Field "Overlap with our idea": same (it is the idea) / partial / adjacent (neigh
 - Relevance: High
 - Overlap with our idea: partial (closest in spirit, but a model component, not a score)
 - Why it might matter: A world action model that takes the difference between current and past frame features, after matching each place to where it moved (a frozen Trace Anything model supplies the matching). Its argument is that a same-grid-cell difference mixes feature change with a different object moving into that cell. The paper says its difference "measures feature change after this association, not displacement itself", and reports no score of how well feature change tracks motion, no pre-training predictor and no encoder selection. It shows that feature change over time is already a design question in WAMs, and warns that a naive same-cell difference is confounded by motion; our score would need to handle that (compare along flow, not per fixed cell).
-- Read status: verified (independent reviewer, arXiv HTML, 2026-11-08); the CoRe-WAM text said "measures feature change after this association, not displacement itself"
+- Read status: verified (separate reviewer, raw arXiv HTML text, targeted sections; full read only for CoRe-WAM; 2026-11-08); the CoRe-WAM text said "measures feature change after this association, not displacement itself"
 
 ### 3. 4D-WAM: Infusing Spatiotemporal Awareness into World Action Models through Trajectory Fields
 - Authors: Yang et al. (2026)
@@ -50,7 +50,7 @@ Field "Overlap with our idea": same (it is the idea) / partial / adjacent (neigh
 - Relevance: High
 - Overlap with our idea: partial (closest on mechanism; a training loss and one diagnostic, not an encoder score)
 - Why it might matter: Sec 3.2 computes token-wise consecutive-frame feature changes and aligns them with Trace Anything's motion by cosine similarity, as a training loss for a WAM. Sec 3.1 and Fig. 2(c) measure the same kind of similarity between frame-to-frame feature differences of a pretrained WAM (Lingbot-VA) and of Trace Anything, as a diagnostic. This is the nearest mechanism to our score (feature change compared with a motion signal), but it is applied to a WAM's own representation and used as a training loss, not an encoder score computed on frozen encoders before training, and it does not compare pairs.
-- Read status: verified (independent reviewer, arXiv HTML, 2026-11-08); Sec 3.1 and 3.2 text rechecked by me in the reviewer's text extract
+- Read status: verified (separate reviewer, raw arXiv HTML text, targeted sections; full read only for CoRe-WAM; 2026-11-08); Sec 3.1 and 3.2 text rechecked by me in the reviewer's text extract
 
 ### 4. What Makes Video World Model Latents Action-Relevant: Prediction over Reconstruction
 - Authors: Yeom et al. (2026)
@@ -59,8 +59,8 @@ Field "Overlap with our idea": same (it is the idea) / partial / adjacent (neigh
 - Link checked: 2026-11-08 title matches
 - Relevance: High
 - Overlap with our idea: adjacent (an action-labelled dynamics probe of features of consecutive frames, and a caution)
-- Why it might matter: Runs an inverse-dynamics probe (it needs action labels) on features of consecutive LIBERO frames and compares it with closed-loop policy success. Sec 4.6 says "Probe R2 also does not monotonically rank the policies, so action readout and closed-loop success should be evaluated separately." So a dynamics readout of frozen features did not rank policies, a direct caution for our premise. Its limitations section says all three benchmarks are simulated. An appendix table also notes that average temporal cosine does not monotonically predict the action readout on its own trained trunk, which is a caution for Tsagkas-style statistics too (my reading of the appendix text).
-- Read status: verified (independent reviewer, arXiv HTML, 2026-11-08); quote rechecked by me in the reviewer's text extract
+- Why it might matter: Sec 4.6 is a small target-swap study: "we fine-tune pi0.5 on LIBERO with an auxiliary target from a frozen encoder", where the target is "used only during training" (Fig. 6), so the encoders are not the policy's visual input. Most targets are ID-fine-tuned checkpoints ("These couplings also differ in loss and weight, so their results are not a controlled comparison of target encoders across groups"), and the Limitations section says "few targets, two couplings, and mostly one policy seed" and that all three benchmarks are simulated. The paper also uses an inverse-dynamics probe (it needs action labels) on features of consecutive LIBERO frames. Sec 4.6: "Probe R2 also does not monotonically rank the policies, so action readout and closed-loop success should be evaluated separately." Keep this as a caution for our premise, but a weak one: it is not a test of frozen encoders as the policy's input. Separately, App C Table 9 says "Temporal cosine decreases monotonically with lambda; action R2 does not"; the outcome there is the action-probe R2, not policy success, and the paper limits its scope: "Cosine is a within-DIFF diagnostic" and frozen pretrained checkpoints' "cosine values would therefore not isolate the same intervention". Speculative: that this is a caution for Tsagkas-style statistics.
+- Read status: verified (separate reviewer, raw arXiv HTML text, targeted sections; full read only for CoRe-WAM; 2026-11-08); quote rechecked by me in the reviewer's text extract
 
 ### 5. Reconstruction or Semantics? What Makes a Latent Space Useful for Robotic World Models
 - Authors: Nilaksh et al. (2026)
@@ -69,8 +69,8 @@ Field "Overlap with our idea": same (it is the idea) / partial / adjacent (neigh
 - Link checked: 2026-11-08 title matches
 - Relevance: Medium
 - Overlap with our idea: adjacent (probe of frozen latents, with action labels, for six encoders)
-- Why it might matter: Compares six reconstruction and semantic encoders as latent spaces for action-conditioned world models on Bridge V2, under a fixed protocol. Sec 3 uses an inverse-dynamics probe on frozen latents as "an initial diagnostic" of whether an encoder makes action-relevant change explicit. It needs action labels, is a diagnostic rather than a validated predictor, and has no flow or pairs. It shows encoder choice for world models is being compared on features, and is a candidate benchmark for our score.
-- Read status: verified (independent reviewer, arXiv HTML, 2026-11-08); quote rechecked by me in the reviewer's text extract
+- Why it might matter: Compares six reconstruction and semantic encoders as latent spaces for action-conditioned world models on Bridge V2, under a fixed protocol. Sec 2.2 uses an inverse-dynamics probe on frozen latents as "an initial diagnostic" of whether an encoder makes action-relevant change explicit. It needs action labels, is a diagnostic rather than a validated predictor, the probe uses no flow, and there are no pairs (the paper uses RAFT flow to grade rollout motion quality in an appendix). It shows encoder choice for world models is being compared on features, and is a candidate benchmark for our score.
+- Read status: verified (separate reviewer, raw arXiv HTML text, targeted sections; full read only for CoRe-WAM; 2026-11-08); quote rechecked by me in the reviewer's text extract
 
 ### 6. Interpreting Physics in Video World Models
 - Authors: Joseph et al. (2026)
@@ -100,7 +100,7 @@ Field "Overlap with our idea": same (it is the idea) / partial / adjacent (neigh
 - Relevance: Low
 - Overlap with our idea: adjacent for (a)
 - Why it might matter: A training method (an image encoder plus a motion encoder over RGB differences), not a frozen-encoder score. Not closer than CoRe-WAM.
-- Read status: verified (independent reviewer, arXiv HTML, 2026-11-08)
+- Read status: verified (separate reviewer, raw arXiv HTML text, targeted sections; full read only for CoRe-WAM; 2026-11-08)
 
 ### 9. RoboAct-CLIP: Video-Driven Pre-training of Atomic Action Understanding for Robotics
 - Authors: Zhang et al. (2025)
@@ -110,7 +110,7 @@ Field "Overlap with our idea": same (it is the idea) / partial / adjacent (neigh
 - Relevance: Low
 - Overlap with our idea: adjacent for (a)
 - Why it might matter: Differences CLIP frame embeddings inside a trained transformer for policy pretraining. Not a score of frozen encoders. Not closer than CoRe-WAM.
-- Read status: verified (independent reviewer, arXiv HTML, 2026-11-08)
+- Read status: verified (separate reviewer, raw arXiv HTML text, targeted sections; full read only for CoRe-WAM; 2026-11-08)
 
 ### 10. Capturing Visual Environment Structure Correlates with Control Performance
 - Authors: Dong et al. (2026)
@@ -120,7 +120,7 @@ Field "Overlap with our idea": same (it is the idea) / partial / adjacent (neigh
 - Relevance: High
 - Overlap with our idea: adjacent for (b); no overlap for (a) and (c)
 - Why it might matter: Probes nine frozen encoders by regressing simulator state (object pose, shape, material, lighting, joint angles, end-effector pose) from single images, then compares probe accuracy with diffusion-policy success on MetaWorld, RoboCasa and SimplerEnv, reporting MMRV and Pearson r (App A.8 adds VC-1 and LIV). The state vector is static, the prediction is from one image, and each encoder is scored alone. It needs simulator state labels; it was checked against real-robot success on a 5-encoder subset on an xArm6 (Sec 5, "a strong correlation"), and in App A.9 with estimated real-world states. It is a close pre-training predictor of robot performance, but it uses labels, no time, and no pairs. Our score would differ by being label-free, temporal and (if extended) pair-level.
-- Read status: verified (independent reviewer, arXiv HTML, 2026-11-08)
+- Read status: verified (separate reviewer, raw arXiv HTML text, targeted sections; full read only for CoRe-WAM; 2026-11-08)
 
 ### 11. What Makes Pre-Trained Visual Representations Successful for Robust Manipulation?
 - Authors: Burns et al. (2023)
@@ -130,7 +130,7 @@ Field "Overlap with our idea": same (it is the idea) / partial / adjacent (neigh
 - Relevance: High
 - Overlap with our idea: adjacent for (b)
 - Why it might matter: Finds that emergent segmentation (Jaccard of the CLS attention map on PASCAL VOC, ViT models only) predicts out-of-distribution manipulation success better than ImageNet accuracy, in-distribution success or shape bias, with no training needed. All four of its metrics are static-image or policy-success metrics; none uses video, motion or flow, and it does not combine encoders. It is the template for "cheap frozen-feature property predicts robot success", which is the framing our score would be tested in. It is a property of the encoder alone, and covers only ViTs.
-- Read status: verified (independent reviewer, arXiv HTML, 2026-11-08)
+- Read status: verified (separate reviewer, raw arXiv HTML text, targeted sections; full read only for CoRe-WAM; 2026-11-08)
 
 ### 12. When More Foundation Models Means Less: Diagnosing and Addressing Multi-View Fusion Failure
 - Authors: Liu and Jiang (2026)
@@ -140,7 +140,7 @@ Field "Overlap with our idea": same (it is the idea) / partial / adjacent (neigh
 - Relevance: High
 - Overlap with our idea: adjacent for (c); closest on selecting encoders
 - Why it might matter: Proposes KAGES, which greedily picks a subset of frozen encoders (from a pool of 10, including CLIP, SigLIP, DINOv2, MAE, SAM) by kernel alignment (a CKA-style score) between the summed encoder kernels and the label kernel, with no downstream training. It is training-free but uses labels, runs on image classification and retrieval, and mentions neither robotics nor time. It also tests frozen-LLM fusion (Sec 4.3), and its set score has pairwise between-encoder kernel terms in the denominator (Sec 3.3), so it has a pair component. It is the nearest thing to (c), and its argument that fusing more encoders can hurt matches our harmful pair. Ours would differ by using a motion property, not label alignment, and by targeting robot world models.
-- Read status: verified (independent reviewer, arXiv HTML, 2026-11-08)
+- Read status: verified (separate reviewer, raw arXiv HTML text, targeted sections; full read only for CoRe-WAM; 2026-11-08)
 
 ### 13. FlowFeat: Pixel-Dense Embedding of Motion Profiles
 - Authors: Araslanov et al. (2025)
@@ -149,8 +149,8 @@ Field "Overlap with our idea": same (it is the idea) / partial / adjacent (neigh
 - Link checked: 2026-11-08 title matches
 - Relevance: Medium
 - Overlap with our idea: adjacent for (a)
-- Why it might matter: Trains a lightweight DPT decoder on top of a frozen encoder so its dense features carry motion information; SEA-RAFT optical flow is the training target ("teacher" in this paper means the EMA copy of the decoder). A linear operator is fit per frame pair, by ridge regression, on the decoder's output. It is not fit on frozen encoder features: Sec 3 says "Naïvely approximating optical flow with a single linear layer unsurprisingly fails", and Sec 4.4(a) calls it "futile". At test time it takes one image. It evaluates on DAVIS video object segmentation, COCO-Stuff and NYUv2 depth. So flow is a training signal here, not a measuring stick for a frozen encoder, and it gives no support for a linear-map-to-flow score; I am dropping that variant.
-- Read status: verified (independent reviewer, arXiv HTML, 2026-11-08)
+- Why it might matter: Trains a lightweight DPT decoder on top of a frozen encoder so its dense features carry motion information; SEA-RAFT optical flow is the training target ("teacher" in this paper means the EMA copy of the decoder). A linear operator is fit per frame pair, by ridge regression, on the trained decoder's features, not on frozen encoder features. Separately, the paper says one fixed linear layer fails: Sec 3, "Naïvely approximating optical flow with a single linear layer unsurprisingly fails"; Sec 4.4(a), "single linear layer (instead of a distribution) is futile". At test time it takes one image. It evaluates on DAVIS video object segmentation, COCO-Stuff and NYUv2 depth. So flow is a training signal here, not a measuring stick for a frozen encoder, and it gives no support for a linear-map-to-flow score; I am dropping that variant.
+- Read status: verified (separate reviewer, raw arXiv HTML text, targeted sections; full read only for CoRe-WAM; 2026-11-08)
 
 ### 14. Motion-Focused Contrastive Learning of Video Representations
 - Authors: Li et al. (2021)
@@ -160,7 +160,7 @@ Field "Overlap with our idea": same (it is the idea) / partial / adjacent (neigh
 - Relevance: Medium
 - Overlap with our idea: adjacent for (a)
 - Why it might matter: A training method for video encoders. Optical flow picks the clips to sample, and a loss aligns the feature map's gradient maps with optical flow so the backbone attends to high-motion places. This is the closest older thing to "feature-map change lines up with flow", but it is a loss used while training one encoder, not a score for comparing frozen encoders, and it has no robot or pair component. Useful as a source for how to define the alignment.
-- Read status: Abstract only (arXiv abstract paraphrase and a search summary of the method)
+- Read status: from the abstract (arXiv abstract paraphrase and a search summary of the method)
 
 ### 15. Deep Feature Flow for Video Recognition
 - Authors: Zhu et al. (2016)
@@ -180,7 +180,7 @@ Field "Overlap with our idea": same (it is the idea) / partial / adjacent (neigh
 - Relevance: Medium
 - Overlap with our idea: adjacent for (a)
 - Why it might matter: Probes layers of V-JEPA 2 and VideoMAE-v2 for camera motion, intuitive physics and anomaly detection. Camera motion is readable at about 60 to 70 percent of the network depth, and temporal features form smooth curves. These are video models, the probes are trained with labels, and nothing here compares feature change with flow or predicts robot performance. It is a hint that the middle layers carry motion, relevant to our layer choice (Q6).
-- Read status: Abstract only
+- Read status: from the abstract
 
 ### 17. Can Visual Foundation Models Achieve Long-term Point Tracking?
 - Authors: Aydemir et al. (2024)
@@ -220,7 +220,7 @@ Field "Overlap with our idea": same (it is the idea) / partial / adjacent (neigh
 - Relevance: Medium
 - Overlap with our idea: adjacent for (a) and (b)
 - Why it might matter: Argues that reconstruction quality is a poor guide to which representation helps a world action model, comparing Video-VAE latents (a pretrained encoder) with DINOv3 features and its own action-shaped bottleneck. Its Sec 4.4 and App E check, with action labels and after the fact, whether frame-to-frame representation change groups by commanded end-effector direction (t-SNE and 10-nearest-neighbour agreement), for Video-VAE variations as well as its own. That is adjacent to (a): representation change compared with a motion signal, but labelled, after training, and not a pre-training score. It cites Yeom et al. and Nilaksh et al. as probing studies. It also shows a WAM on DINOv3 features is a live design.
-- Read status: verified (independent reviewer, arXiv HTML, 2026-11-08)
+- Read status: verified (separate reviewer, raw arXiv HTML text, targeted sections; full read only for CoRe-WAM; 2026-11-08)
 
 ### 21. For Pre-Trained Vision Models in Motor Control, Not All Policy Learning Methods are Created Equal
 - Authors: Hu et al. (2023)
