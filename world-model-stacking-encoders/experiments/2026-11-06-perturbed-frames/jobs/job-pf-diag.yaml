@@ -1,0 +1,101 @@
+# Step A diagnosis: why does the stored bowl look speckled and the smoke-test re-render look smooth? Same 3 train/val demos and 6 frames
+# each as the smoke test (never a test demo). Renders at native 128 x 128 (no shrink) and at 256 -> area, compares both with the stored
+# frames (overall, per camera, bowl crop), makes bowl-crop PNGs, runs the off-by-one check (states[k], [k+1], [k+2] vs stored image k),
+# and records MuJoCo's version and the bowl's mesh / material / texture files as the env loads them and as the demo's model_file has them.
+# Approval, verbatim (this session, 2026-11-08 about 05:40 UTC): the user picked "Find the cause, then check (Recommended)", whose text was:
+# "The validation-check job you approved also renders the same frames at the original small size, with no shrinking. If the sparkle comes
+# back, the cause is the shrink step you already approved, and the probe-score check decides whether it matters. If it doesn't come back,
+# the job stops and I come back to you." Split into two Jobs by the lead (this is Job A); both fall under the phase-1 approval ("Approve
+# phase 1 (Recommended)": "Counts as your go for both short cluster jobs: the smoke test, then the validation check if the smoke test
+# passes") plus this decision. 1 GPU, pattern of the smoke test r3: 2 CPU / 12Gi (user, 2026-11-08), the broad card list, 12 h deadline.
+# NEW code through a NEW ConfigMap, stacking-encoders-pf-diag-src (src/pf_render.py, src/pf_smoke.py for its helpers, src/pf_diag.py):
+#   kubectl create configmap stacking-encoders-pf-diag-src -n aria-world --request-timeout=30s --from-file=pf_render.py=<repo>/world-model-stacking-encoders/src/pf_render.py --from-file=pf_smoke.py=<repo>/world-model-stacking-encoders/src/pf_smoke.py --from-file=pf_diag.py=<repo>/world-model-stacking-encoders/src/pf_diag.py
+# No existing ConfigMap is modified; proxy-src is mounted read-only (env_bundle.sh restore, diagnostics.py).
+# Outputs: PVC stacking-encoders-proxy, /mnt/proxy/pf-diag/<stamp>/ (report.json, bowl-crops.png, overview-agentview.png) and a base64
+# tarball of the same at the end of the pod log between the markers PF_DIAG_TGZ_B64 (kept small: the smoke-test log was cut at about 866 KB).
+# Follows _standards/08: Job, real command that exits, no sleep, no tolerations, 1 GPU, limits within 20% of requests, backoffLimit 0, ttl 86400.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-pf-diag
+  namespace: aria-world
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 43200
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090, NVIDIA-RTX-A5000, NVIDIA-L40, NVIDIA-L40S, NVIDIA-A10, NVIDIA-L4]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net, ry-gpu-08.sdsc.optiputer.net]}  # GPU faults, 2026-11-03
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; STAMP=$(date +%Y%m%d-%H%M%S); OUT=/work/out; mkdir -p $R/logs $OUT /work/data
+          exec > >(tee -a $R/logs/pf-diag-$STAMP.log) 2>&1
+          echo "=== pf-diag $STAMP"; nvidia-smi -L; nproc; date -u
+          . /src/env_bundle.sh restore    # prebuilt venv + debs from the env-build Job; LIBERO-Plus assets unzip
+          python - <<'PY'
+          from huggingface_hub import snapshot_download
+          snapshot_download("yifengzhu-hf/LIBERO-datasets", repo_type="dataset", revision="f13aa24a3da8c43c7225569f28c562979fa0e35a",
+                            allow_patterns=["libero_goal/turn_on_the_stove_demo.hdf5"], local_dir="/work/data")
+          PY
+          ls -la /work/data/libero_goal; date -u
+          set +e
+          python /pf/pf_diag.py --raw /work/data/libero_goal/turn_on_the_stove_demo.hdf5 --out $OUT
+          RC=$?
+          set -e
+          echo "=== pf_diag.py exit code $RC"; ls -la $OUT; date -u
+          test -f $OUT/report.json
+          mkdir -p $R/pf-diag/$STAMP
+          cp -r $OUT/. $R/pf-diag/$STAMP/
+          echo "copied to $R/pf-diag/$STAMP"
+          tar czf /work/pf-diag.tgz -C $OUT .
+          ls -la /work/pf-diag.tgz
+          echo "=== BEGIN PF_DIAG_TGZ_B64"; base64 -w 76 /work/pf-diag.tgz; echo "=== END PF_DIAG_TGZ_B64"
+          echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: 4149202bfb87cf87115f335cd90accc601c8c1fe}
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: "/pf:/src"}
+        - {name: SIM_DIR, value: /work/sim}
+        - {name: MUJOCO_GL, value: egl}
+        - {name: PYOPENGL_PLATFORM, value: egl}
+        - {name: NVIDIA_DRIVER_CAPABILITIES, value: "compute,utility,graphics"}
+        resources:                    # as the smoke test r3 (user, 2026-11-08): 2 CPU / 12Gi request, limits <= 1.2x requests
+          requests: {cpu: "2", memory: 12Gi, nvidia.com/gpu: "1", ephemeral-storage: 50Gi}
+          limits:   {cpu: "2400m", memory: 14Gi, nvidia.com/gpu: "1", ephemeral-storage: 58Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: pf, mountPath: /pf, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 58Gi}
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: pf
+        configMap: {name: stacking-encoders-pf-diag-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 4Gi}
