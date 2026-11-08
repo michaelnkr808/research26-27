@@ -181,3 +181,10 @@ Merged main into `pf-smoke` (c3deaab; has `src/pf_analysis.py`, PLAN amendment 8
 - A CAM_KEYS to LIBERO key mapping in one place (pf_validate.py has `CAM_OF`).
 - Assert `initstate_0` in every camera and noise episode name.
 - Record the uniform draw behind `pick_names` (seed and index) instead of "first in list".
+
+## 2026-11-08 [agent, implementation worker] validation Job expired Pending; resubmitted with a 48 h limit and a 4 h cap on the work
+**What happened (verified, kubectl):** `stacking-encoders-pf-val` (submitted earlier today, 12 h limit) stayed Pending the whole time and ended Failed (DeadlineExceeded) at 18:05 UTC; it never ran and has no outputs. activeDeadlineSeconds counts from Job creation, queue included. Scheduler message at 08:21 (relayed by the lead): Insufficient nvidia.com/gpu, cpu and memory on the allowed nodes.
+**User OK, verbatim (AskUserQuestion, 2026-11-08):** "Resubmit, 48 h wait (Recommended)"; option text: "Same check, same card types. The Job's limit becomes 48 hours so the queue can't kill it. A separate 4-hour cap on the work itself means a hang can't leave a GPU sitting idle."
+**Did:** deleted the failed Job (Failed, no pod), changed `jobs/job-pf-val.yaml` only in two ways: `activeDeadlineSeconds: 172800`, and a 4 h cap inside the container (a shell function `cap` that runs every command except the sourced environment restore under `timeout` with what is left of 14400 s counted from the script start; exit 124 on expiry, so a timeout is a failed stage, never a pass; the copies of reports and logs to `/mnt/proxy/pf-val/<stamp>/` still run and the Job still exits with the worst code). No waiting loops anywhere in the command (the word the NRP report scans for does not appear in the file). Same ConfigMap `stacking-encoders-pf-val-src` (source unchanged, not recreated), same cards, 2 CPU / 12Gi, same checks. The cap logic was not run (the cluster is the only place it can run; it is plain bash).
+**Test-set use (`_standards/07`):** none.
+**Next:** the lead watches the Job; on finish I collect results, view the PNGs, commit and report (the gate result goes to the lead first).
