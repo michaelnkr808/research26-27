@@ -214,3 +214,10 @@
 - Decision (user): slide figures always get a copy in the repo (`writing/figures/`, scripts in `src/`), Desktop copy only for convenience.
 - Found: the proxy PLAN calls D+L the paper's best DINOv3 pair, but D+U is higher in Table 10; D+L is best of the four we tested (noted in LOG, locked PLAN not edited).
 - See: world-model-stacking-encoders/LOG.md (2026-11-07 [agent, slides]), world-model-stacking-encoders/writing/figures/
+
+## 2026-11-07: stacking-encoders planning lead: perturbed-frame design finished, signed off and handed off
+
+- Picked up after a /clear. Got status from the implementation session; evals of the two DINOv3 seed-noise models about half done, rest on L4s.
+- Perturbed-frame test design: applied the second review's fixes plus one more review round; the user decided the last four open points (extra fixture check, rule B reported both ways, resize method picked by a smoke-test comparison, look up averaged-feature sizes first) and signed off. Handed to the implementation session, which got the user's OK for phase 1 (smoke test).
+- README/PLAN status brought up to date twice (eval state, seed-noise script now exists).
+- See: world-model-stacking-encoders/experiments/2026-11-06-perturbed-frames/PLAN.md, world-model-stacking-encoders/LOG.md (2026-11-07 planning entries)
