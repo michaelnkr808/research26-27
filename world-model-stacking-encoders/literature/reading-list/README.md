@@ -15,7 +15,7 @@ Touches key (used in every list): Q1 why a pair of encoders can hurt; Q2 measuri
 Ordered by what to read first. The theme file and rank are in brackets.
 
 1. C-RADIOv4 (Tech Report), Ranzinger et al. 2026, https://arxiv.org/abs/2601.17237 [fusion 1]. The encoder in the harmful pair; its page names DINOv3 among its teachers. (Q1) Read by the user, 2026-11-07.
-2. Metric-Guided Feature Fusion of Visual Foundation Models for Segmentation Tasks, Guo et al. 2026, CVPR 2026 Findings per the arXiv comment, https://arxiv.org/abs/2605.16864 [measures 3]. Says naive fusion of foundation models (DINOv3, SAM2) rarely helps and picks what to fuse with label-free metrics. Closest problem statement to ours, for segmentation. (Q1, Q2, Q3)
+2. Metric-Guided Feature Fusion of Visual Foundation Models for Segmentation Tasks, Guo et al. 2026, CVPR 2026 Findings per the arXiv comment, https://arxiv.org/abs/2605.16864 [measures 3]. Says naive fusion of foundation models (DINOv3, SAM2) rarely helps and picks what to fuse with label-free metrics. Closest problem statement to ours, for segmentation. (Q1, Q2, Q3) Read by the user, 2026-11-07.
 3. Conditional probing: measuring usable information beyond a baseline, Hewitt et al. 2021, EMNLP 2021 per the arXiv comment, https://arxiv.org/abs/2109.09234 [measures 1]. What a representation adds beyond a baseline: our gain(B|A) idea, in language models. (Q2)
 4. Building a Winning Team: Selecting Source Model Ensembles using a Submodular Transferability Estimation Approach, Vimal K B et al. 2023, ICCV 2023, https://arxiv.org/abs/2309.02429 [measures 2]. Follow-up to agostinelli2022 that scores how well models in a group work together. (Q3)
 5. Capturing Visual Environment Structure Correlates with Control Performance, Dong et al. 2026, ICLR 2026, https://arxiv.org/abs/2602.04880 [measures 5]. A cheap probe of frozen encoders that predicts robot policy performance; the abstract does not mention combining encoders. (Q3)
@@ -29,5 +29,6 @@ Also worth a skim if not read yet: Fast-WAM, https://arxiv.org/abs/2603.16666 [w
 
 ## Read so far
 - C-RADIOv4 (Tech Report), Ranzinger et al. 2026, arXiv 2601.17237: read in full by the user, 2026-11-07. Bib key `ranzinger2026cradiov4`. The user's notes are kept by the user outside the repo.
+- Metric-Guided Feature Fusion of Visual Foundation Models for Segmentation Tasks, Guo et al. 2026, arXiv 2605.16864: read by the user, 2026-11-07. Bib key `guo2026metric`. The user's notes are kept by the user outside the repo.
 
 When the user reads another paper from here, the literature session marks it here and adds its entry to `../references.bib`. The user keeps their own notes (user's choice, 2026-11-07), so no file in `../notes/`.
