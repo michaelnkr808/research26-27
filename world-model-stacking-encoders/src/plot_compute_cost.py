@@ -3,7 +3,7 @@
 #
 # Slide figures for "Main Bottlenecks: Compute".
 #  1) 2026-11-07-compute-cost.png: GPU time to train one model vs ESTIMATED GPU time to test one model.
-#  2) 2026-11-07-gpu-busy-during-testing.png: GPU busy % samples during testing (separate PNG so each
+#  2) 2026-11-07-gpu-use-during-testing.png: whole-run average GPU use during testing (separate PNG so each
 #     stays readable at half-slide width).
 #
 # Training time definition: the "[proxy NNNNs] wrote /mnt/proxy/runs/..." line, i.e. seconds on the
@@ -27,7 +27,7 @@ DIR = os.path.join(HERE, "..")
 LOGS = os.path.join(DIR, "experiments", "2026-10-27-proxy-calibration", "results", "logs")
 FIG = os.path.join(DIR, "writing", "figures")
 OUT1 = os.path.join(FIG, "2026-11-07-compute-cost.png")
-OUT2 = os.path.join(FIG, "2026-11-07-gpu-busy-during-testing.png")
+OUT2 = os.path.join(FIG, "2026-11-07-gpu-use-during-testing.png")
 TRAIN_LOGS = ["train-wave1-dinov3-s1-sh9hj.log", "train-wave1c-dinov3-s0-a40-bj6bf.log"]
 N_CHUNKS = 8
 MIN_GPU_USE = 40
@@ -69,20 +69,22 @@ print(f"{len(chunks)} finished chunks; mean chunk time {mean_chunk:.0f} s = {mea
 print(f"ESTIMATE: test one model = {N_CHUNKS} x mean chunk = {test_h:.1f} GPU-hours "
       f"({test_h/train_h:.1f}x the training time)")
 
-# ---- GPU utilisation samples
-gpu = {}
-for p in sorted(glob.glob(os.path.join(LOGS, "eval-dinov3-*-nvsmi-all5.csv"))):
-    vals = []
-    for line in open(p):
-        parts = line.strip().split(",")
-        if len(parts) == 2:
-            try:
-                vals.append(int(parts[1]))
-            except ValueError:
-                pass
-    gpu[os.path.basename(p)] = vals
-    print(f"gpu {os.path.basename(p)}: {len(vals)} samples, mean {statistics.mean(vals):.1f}%, "
-          f"median {statistics.median(vals):.1f}%")
+# ---- whole-run GPU use per finished L4 chunk ("mean X% over N samples" line in each eval log)
+l4 = []
+for c in chunks:
+    val = None
+    for line in open(os.path.join(LOGS, c[0])):
+        m = re.search(r"mean ([\d.]+)% over (\d+) samples", line)
+        if m:
+            val = (float(m.group(1)), int(m.group(2)))
+    print(f"gpu use {c[0]}: whole-run mean {val[0]}% over {val[1]} samples")
+    l4.append(val[0])
+# Fast-GPU values are NOT in raw files; copied from the experiment LOG.md
+# (world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/LOG.md):
+A40_USE = 19.95  # LOG 2026-11-07 (d): cluster monitor 10-min average ~30 min into the A40 run
+L40_USE = 22.8   # LOG 2026-11-07 (k): cluster monitor (DCGM) mean over the ~4 h L40 run
+print(f"A40 (first 30 min): {A40_USE}% (hardcoded from LOG 2026-11-07 (d))")
+print(f"L40 (~4-hour average): {L40_USE}% (hardcoded from LOG 2026-11-07 (k))")
 
 BLUE, ORANGE, INK, GREY = "#1f5fa8", "#d9480f", "#1a1a1a", "#555555"
 plt.rcParams.update({"font.size": 17, "font.family": "sans-serif"})
@@ -91,12 +93,12 @@ plt.rcParams.update({"font.size": 17, "font.family": "sans-serif"})
 fig, ax = plt.subplots(figsize=(8.5, 7.2), dpi=200)
 ax.bar([0, 1], [train_h, test_h], width=0.6, color=[BLUE, ORANGE])
 ax.set_xticks([0, 1])
-ax.set_xticklabels(["Train one\nmodel", "Test one model on\nthe full benchmark"], fontsize=17, color=INK)
+ax.set_xticklabels(["Train one model\n(our small copy)", "Test one model on\nthe full benchmark"], fontsize=17, color=INK)
 ax.set_ylabel("GPU-hours (one GPU running for one hour)", fontsize=16, color=INK)
 ax.set_ylim(0, test_h * 1.18)
-ax.text(0, train_h + test_h * 0.02, f"~{train_h:.0f} hours", ha="center", va="bottom",
+ax.text(0, train_h + test_h * 0.02, f"~{train_h:.0f} GPU-hours", ha="center", va="bottom",
         fontsize=21, fontweight="bold", color=BLUE)
-ax.text(1, test_h + test_h * 0.02, f"~{round(test_h / 5) * 5:.0f} GPU-hours\n(estimate)", ha="center",
+ax.text(1, test_h + test_h * 0.02, f"~{test_h:.0f} GPU-hours\n(estimate)", ha="center",
         va="bottom", fontsize=21, fontweight="bold", color=ORANGE)
 ax.set_title("Testing costs far more than training", fontsize=24, fontweight="bold", color=INK, loc="left", pad=14)
 for s in ("top", "right"):
@@ -107,39 +109,51 @@ ax.tick_params(axis="y", labelsize=15)
 fig.text(0.01, 0.01,
          "Estimate: testing is split into 8 chunks, each run on its own GPU.\n"
          f"8 chunks x average finished chunk ({len(chunks)} finished, about {mean_chunk / 3600:.1f} h each).\n"
+         "Training ran on an RTX 3090 and an A40; testing on L4s.\n"
          "Data from our own logs, 2026-11-07.",
          fontsize=14, color=GREY, ha="left", va="bottom", linespacing=1.3)
-fig.tight_layout(rect=(0, 0.14, 1, 1))
+fig.tight_layout(rect=(0, 0.17, 1, 1))
 fig.savefig(OUT1, dpi=200, facecolor="white")
 plt.close(fig)
 print("wrote", OUT1)
 
 # ---- figure 2
-fig, ax = plt.subplots(figsize=(8.5, 7.2), dpi=200)
-rng = np.random.default_rng(0)
-for i, v in enumerate(gpu.values()):
-    x = i + rng.uniform(-0.22, 0.22, len(v))
-    ax.scatter(x, v, s=14, color=BLUE, alpha=0.45, linewidths=0)
-    ax.hlines(statistics.median(v), i - 0.3, i + 0.3, color=INK, lw=3, zorder=5)
-ax.axhline(MIN_GPU_USE, color=ORANGE, lw=3, ls="--", zorder=4)
-ax.text(len(gpu) - 0.5, MIN_GPU_USE + 2, "Cluster's minimum GPU use (40%)", ha="right", va="bottom",
-        fontsize=16, fontweight="bold", color=ORANGE,
-        bbox=dict(facecolor="white", edgecolor="none", pad=2, alpha=0.9), zorder=6)
-ax.set_ylim(0, 105)
-ax.set_xlim(-0.6, len(gpu) - 0.4)
-ax.set_xticks(range(len(gpu)))
-ax.set_xticklabels([f"Test\nmachine {i + 1}" for i in range(len(gpu))], fontsize=16, color=INK)
-ax.set_ylabel("GPU busy (%)", fontsize=18, color=INK)
-ax.set_title("The GPU sits partly idle during testing", fontsize=24, fontweight="bold", color=INK, loc="left", pad=14)
-for s in ("top", "right"):
-    ax.spines[s].set_visible(False)
+fig, ax = plt.subplots(figsize=(10, 7.2), dpi=200)
+vals = l4 + [A40_USE, L40_USE]
+n = len(vals)
+cols = [BLUE] * len(l4) + [ORANGE, ORANGE]
+ax.bar(range(n), vals, width=0.7, color=cols)
+for i, v in enumerate(vals):
+    ax.text(i, v - 2, f"{v:.0f}%", ha="center", va="top", fontsize=15, fontweight="bold", color="white")
+ax.axhline(MIN_GPU_USE, color=INK, lw=2.5, ls="--", zorder=1)
+ax.annotate("Cluster's minimum average GPU use (40%)", xy=(3.5, MIN_GPU_USE), xytext=(-0.4, 78),
+            ha="left", va="bottom", fontsize=15, fontweight="bold", color=INK,
+            arrowprops=dict(arrowstyle="-|>", color=INK, lw=1.5))
+ax.annotate("Too idle: stopped.\nThe L40 run triggered the\ncluster's idle-GPU warning email",
+            xy=(7.5, 26), xytext=(6.4, 58), ha="center", va="bottom",
+            fontsize=14, fontweight="bold", color=ORANGE,
+            arrowprops=dict(arrowstyle="-|>", color=ORANGE, lw=2))
+ax.set_ylim(0, 100)
+ax.set_xlim(-0.6, 8.6)
+ax.set_xlim(-0.6, n - 0.4)
+ax.set_xticks(range(n))
+ax.set_xticklabels([f"L4 GPU {i + 1}" for i in range(len(l4))] + ["A40 (first 30 min)", "L40 (~4-hour average)"],
+                   fontsize=13, color=INK, rotation=0)
+for lab in ax.get_xticklabels():
+    lab.set_rotation(45)
+    lab.set_ha("right")
+ax.set_ylabel("GPU busy, average (%)", fontsize=17, color=INK)
+ax.set_title("Testing uses about half a GPU,\nand much less on fast GPUs", fontsize=22, fontweight="bold",
+             color=INK, loc="left", pad=14)
+for s_ in ("top", "right"):
+    ax.spines[s_].set_visible(False)
 ax.grid(axis="y", color="#e5e5e5", lw=1)
 ax.set_axisbelow(True)
 ax.tick_params(axis="y", labelsize=15)
 fig.text(0.01, 0.01,
-         "Each dot is one reading (every ~2 seconds); black bar = typical (median) reading.\n"
-         "About 5 minutes sampled per test machine. Data from our own logs, 2026-11-07.",
-         fontsize=14, color=GREY, ha="left", va="bottom", linespacing=1.3)
+         "L4: each test chunk's own whole-run average. A40/L40: cluster monitor readings recorded in our log.\n"
+         "The simulator runs on the CPU, so a faster GPU just waits more.",
+         fontsize=13, color=GREY, ha="left", va="bottom", linespacing=1.3)
 fig.tight_layout(rect=(0, 0.1, 1, 1))
 fig.savefig(OUT2, dpi=200, facecolor="white")
 print("wrote", OUT2)
