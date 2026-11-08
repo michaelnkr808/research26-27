@@ -1,0 +1,191 @@
+{
+ "checks": {
+  "provenance_expected_files": {
+   "pass": true
+  },
+  "tally_frame_counts_train_val": {
+   "pass": true,
+   "train": 38464,
+   "val": 12416,
+   "tally": {
+    "train": 38464,
+    "val": 12416,
+    "test": 12848
+   }
+  },
+  "meta_equals_clean_cache": {
+   "pass": true,
+   "keys": [
+    "encoder",
+    "hf_id",
+    "resolution",
+    "rotate180",
+    "dtype",
+    "grid",
+    "frame_stride",
+    "cams"
+   ],
+   "meta": {
+    "encoder": "dinov3",
+    "hf_id": "facebook/dinov3-vitl16-pretrain-lvd1689m",
+    "resolution": 224,
+    "rotate180": true,
+    "dtype": "float32",
+    "grid": 4,
+    "frame_stride": 1,
+    "cams": [
+     "agentview_rgb",
+     "eye_in_hand_rgb"
+    ]
+   }
+  },
+  "stored_val_r2_matches_tally_curve": {
+   "pass": true,
+   "tolerance": 0.001,
+   "mine": 0.6538305426250967,
+   "tally": 0.6538305228198683,
+   "alpha": 0.1
+  },
+  "lag_check_all_val_demos": {
+   "pass": true,
+   "n_demo_cams": 200,
+   "errors": []
+  },
+  "validation_gate_combined_within_0.01": {
+   "pass": false,
+   "abs_difference": 0.05087713566674601,
+   "tolerance": 0.01
+  }
+ },
+ "provenance": {
+  "SRC_GIT_COMMIT": "0ffb10ca980bf9fa6c23c63478bf2bdd9d34e969",
+  "src_dir": "/src",
+  "files": {
+   "diagnostics.py": {
+    "sha256": "ffb155b4cd8cb00813b9a4c9213c6553f1ea2d0e4a27ca96d272e8acec16d88b",
+    "expected_prefix": "ffb155b4cd8c",
+    "ok": true
+   },
+   "extract_features.py": {
+    "sha256": "03734ba84a8696e0d9f605ec89c11b50f033af9ea41cb4ef841c3c30742bd6a1",
+    "expected_prefix": "03734ba84a86",
+    "ok": true
+   },
+   "pf_analysis.py": {
+    "sha256": "ded57f53169ff1579aa4ea2ccdd5b27cb874aee5354afbe2d1432cf01065c0c5"
+   },
+   "pf_render.py": {
+    "sha256": "e004e6be812f879e9d3995b24d1ceb0e30818ad4aea701a094322cdc568d10d0"
+   },
+   "pf_smoke.py": {
+    "sha256": "fde7bc7de33b1dc86997cc15220e25a73c8dfb34e1133c1604983bb50bdb0261"
+   },
+   "pf_validate.py": {
+    "sha256": "95d2adb9373564f90f747458df5c0dda17454d79635e549ff6b0ea645a812279"
+   }
+  },
+  "ok": true
+ },
+ "tally": {
+  "alpha_dinov3_global": 0.1,
+  "files": [
+   "tally-libero_goal-dinov3-c-radiov4.json",
+   "tally-libero_goal-dinov3-sam3.json",
+   "tally-libero_goal-dinov3-siglip2.json",
+   "tally-libero_goal-dinov3-vggt-omega.json"
+  ],
+  "n_frames": 63728,
+  "split_frames": {
+   "train": 38464,
+   "val": 12416,
+   "test": 12848
+  }
+ },
+ "val_r2": {
+  "combined": {
+   "alpha": 0.1,
+   "alpha_source": "tally alpha for dinov3|global",
+   "val_r2_stored": 0.6561556494914705,
+   "val_r2_rerender": 0.6052785138247245,
+   "difference_rerender_minus_stored": -0.05087713566674601,
+   "abs_difference": 0.05087713566674601,
+   "per_dim_stored": [
+    0.6886928559037049,
+    0.709017330781579,
+    0.6704840271845947,
+    0.5996318369533923,
+    0.4007702348787239,
+    0.7081168425366182,
+    0.816376418201681
+   ],
+   "per_dim_rerender": [
+    0.6513587596022594,
+    0.6272488043207878,
+    0.5741961723725536,
+    0.5949373666655342,
+    0.30255846176631995,
+    0.684187022094406,
+    0.8024630099512109
+   ]
+  },
+  "agentview": {
+   "alpha": 0.01,
+   "alpha_source": "tuned on clean val, tally grid (PLAN amendment 2026-11-08)",
+   "val_r2_stored": 0.5428944204730787,
+   "val_r2_rerender": 0.4141972015339723,
+   "difference_rerender_minus_stored": -0.12869721893910635,
+   "abs_difference": 0.12869721893910635,
+   "per_dim_stored": [
+    0.5916449644896231,
+    0.6164889705196088,
+    0.4842214088295822,
+    0.5090789183805611,
+    0.31526348596645426,
+    0.6453677677693314,
+    0.6381954273563898
+   ],
+   "per_dim_rerender": [
+    0.512427628782316,
+    0.5787069911626941,
+    0.23108329758774393,
+    0.4914592438134131,
+    -0.03986054815893758,
+    0.5340742791846611,
+    0.5914895183659155
+   ]
+  },
+  "wrist": {
+   "alpha": 0.01,
+   "alpha_source": "tuned on clean val, tally grid (PLAN amendment 2026-11-08)",
+   "val_r2_stored": 0.6264840654828115,
+   "val_r2_rerender": 0.574600884097765,
+   "difference_rerender_minus_stored": -0.05188318138504655,
+   "abs_difference": 0.05188318138504655,
+   "per_dim_stored": [
+    0.6449218411927882,
+    0.665721748509623,
+    0.6460987421264077,
+    0.57488917046766,
+    0.3763591536945209,
+    0.6659360319840295,
+    0.8114617704046515
+   ],
+   "per_dim_rerender": [
+    0.5640232692733184,
+    0.5852654681695414,
+    0.5784679544547,
+    0.5469661444242893,
+    0.32326609136146023,
+    0.6383257461127656,
+    0.7858915148882805
+   ]
+  }
+ },
+ "gate_per_camera_within_0.01 (reported, not the gate)": {
+  "combined": false,
+  "agentview": false,
+  "wrist": false
+ },
+ "n_val_frames_each": 12316,
+ "all_checks_passed": false
+}

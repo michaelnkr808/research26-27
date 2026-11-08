@@ -1,0 +1,404 @@
+{
+ "files": {
+  "open_the_middle_drawer_of_the_cabinet_demo": {
+   "n_demos_raw": 50,
+   "n_demos_kept": 50,
+   "base": "open_the_middle_drawer_of_the_cabinet",
+   "val_demos": [
+    "demo_30",
+    "demo_31",
+    "demo_32",
+    "demo_33",
+    "demo_34",
+    "demo_35",
+    "demo_36",
+    "demo_37",
+    "demo_38",
+    "demo_39"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_train_val_compared": 40,
+   "camera_override_used_in": [],
+   "frames": {
+    "demo_30": 135,
+    "demo_31": 195,
+    "demo_32": 166,
+    "demo_33": 138,
+    "demo_34": 145,
+    "demo_35": 142,
+    "demo_36": 125,
+    "demo_37": 132,
+    "demo_38": 127,
+    "demo_39": 122
+   }
+  },
+  "open_the_top_drawer_and_put_the_bowl_inside_demo": {
+   "n_demos_raw": 50,
+   "n_demos_kept": 50,
+   "base": "open_the_top_drawer_and_put_the_bowl_inside",
+   "val_demos": [
+    "demo_30",
+    "demo_31",
+    "demo_32",
+    "demo_33",
+    "demo_34",
+    "demo_35",
+    "demo_36",
+    "demo_37",
+    "demo_38",
+    "demo_39"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_train_val_compared": 40,
+   "camera_override_used_in": [],
+   "frames": {
+    "demo_30": 198,
+    "demo_31": 205,
+    "demo_32": 198,
+    "demo_33": 202,
+    "demo_34": 197,
+    "demo_35": 185,
+    "demo_36": 226,
+    "demo_37": 220,
+    "demo_38": 182,
+    "demo_39": 183
+   }
+  },
+  "push_the_plate_to_the_front_of_the_stove_demo": {
+   "n_demos_raw": 50,
+   "n_demos_kept": 50,
+   "base": "push_the_plate_to_the_front_of_the_stove",
+   "val_demos": [
+    "demo_30",
+    "demo_31",
+    "demo_32",
+    "demo_33",
+    "demo_34",
+    "demo_35",
+    "demo_36",
+    "demo_37",
+    "demo_38",
+    "demo_39"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_train_val_compared": 40,
+   "camera_override_used_in": [],
+   "frames": {
+    "demo_30": 141,
+    "demo_31": 134,
+    "demo_32": 114,
+    "demo_33": 125,
+    "demo_34": 153,
+    "demo_35": 168,
+    "demo_36": 144,
+    "demo_37": 202,
+    "demo_38": 133,
+    "demo_39": 145
+   }
+  },
+  "put_the_bowl_on_the_plate_demo": {
+   "n_demos_raw": 50,
+   "n_demos_kept": 50,
+   "base": "put_the_bowl_on_the_plate",
+   "val_demos": [
+    "demo_30",
+    "demo_31",
+    "demo_32",
+    "demo_33",
+    "demo_34",
+    "demo_35",
+    "demo_36",
+    "demo_37",
+    "demo_38",
+    "demo_39"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_train_val_compared": 40,
+   "camera_override_used_in": [],
+   "frames": {
+    "demo_30": 102,
+    "demo_31": 96,
+    "demo_32": 91,
+    "demo_33": 85,
+    "demo_34": 91,
+    "demo_35": 93,
+    "demo_36": 78,
+    "demo_37": 95,
+    "demo_38": 105,
+    "demo_39": 82
+   }
+  },
+  "put_the_bowl_on_the_stove_demo": {
+   "n_demos_raw": 50,
+   "n_demos_kept": 50,
+   "base": "put_the_bowl_on_the_stove",
+   "val_demos": [
+    "demo_30",
+    "demo_31",
+    "demo_32",
+    "demo_33",
+    "demo_34",
+    "demo_35",
+    "demo_36",
+    "demo_37",
+    "demo_38",
+    "demo_39"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_train_val_compared": 40,
+   "camera_override_used_in": [],
+   "frames": {
+    "demo_30": 107,
+    "demo_31": 113,
+    "demo_32": 89,
+    "demo_33": 102,
+    "demo_34": 97,
+    "demo_35": 91,
+    "demo_36": 98,
+    "demo_37": 90,
+    "demo_38": 102,
+    "demo_39": 98
+   }
+  },
+  "put_the_bowl_on_top_of_the_cabinet_demo": {
+   "n_demos_raw": 50,
+   "n_demos_kept": 50,
+   "base": "put_the_bowl_on_top_of_the_cabinet",
+   "val_demos": [
+    "demo_30",
+    "demo_31",
+    "demo_32",
+    "demo_33",
+    "demo_34",
+    "demo_35",
+    "demo_36",
+    "demo_37",
+    "demo_38",
+    "demo_39"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_train_val_compared": 40,
+   "camera_override_used_in": [],
+   "frames": {
+    "demo_30": 102,
+    "demo_31": 101,
+    "demo_32": 99,
+    "demo_33": 111,
+    "demo_34": 141,
+    "demo_35": 95,
+    "demo_36": 96,
+    "demo_37": 98,
+    "demo_38": 86,
+    "demo_39": 97
+   }
+  },
+  "put_the_cream_cheese_in_the_bowl_demo": {
+   "n_demos_raw": 50,
+   "n_demos_kept": 50,
+   "base": "put_the_cream_cheese_in_the_bowl",
+   "val_demos": [
+    "demo_30",
+    "demo_31",
+    "demo_32",
+    "demo_33",
+    "demo_34",
+    "demo_35",
+    "demo_36",
+    "demo_37",
+    "demo_38",
+    "demo_39"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_train_val_compared": 40,
+   "camera_override_used_in": [],
+   "frames": {
+    "demo_30": 94,
+    "demo_31": 94,
+    "demo_32": 84,
+    "demo_33": 110,
+    "demo_34": 106,
+    "demo_35": 95,
+    "demo_36": 93,
+    "demo_37": 95,
+    "demo_38": 102,
+    "demo_39": 130
+   }
+  },
+  "put_the_wine_bottle_on_the_rack_demo": {
+   "n_demos_raw": 50,
+   "n_demos_kept": 50,
+   "base": "put_the_wine_bottle_on_the_rack",
+   "val_demos": [
+    "demo_30",
+    "demo_31",
+    "demo_32",
+    "demo_33",
+    "demo_34",
+    "demo_35",
+    "demo_36",
+    "demo_37",
+    "demo_38",
+    "demo_39"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_train_val_compared": 40,
+   "camera_override_used_in": [],
+   "frames": {
+    "demo_30": 154,
+    "demo_31": 191,
+    "demo_32": 172,
+    "demo_33": 178,
+    "demo_34": 150,
+    "demo_35": 157,
+    "demo_36": 152,
+    "demo_37": 161,
+    "demo_38": 166,
+    "demo_39": 163
+   }
+  },
+  "put_the_wine_bottle_on_top_of_the_cabinet_demo": {
+   "n_demos_raw": 50,
+   "n_demos_kept": 50,
+   "base": "put_the_wine_bottle_on_top_of_the_cabinet",
+   "val_demos": [
+    "demo_30",
+    "demo_31",
+    "demo_32",
+    "demo_33",
+    "demo_34",
+    "demo_35",
+    "demo_36",
+    "demo_37",
+    "demo_38",
+    "demo_39"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_train_val_compared": 40,
+   "camera_override_used_in": [],
+   "frames": {
+    "demo_30": 99,
+    "demo_31": 92,
+    "demo_32": 96,
+    "demo_33": 105,
+    "demo_34": 121,
+    "demo_35": 100,
+    "demo_36": 104,
+    "demo_37": 91,
+    "demo_38": 104,
+    "demo_39": 101
+   }
+  },
+  "turn_on_the_stove_demo": {
+   "n_demos_raw": 50,
+   "n_demos_kept": 50,
+   "base": "turn_on_the_stove",
+   "val_demos": [
+    "demo_30",
+    "demo_31",
+    "demo_32",
+    "demo_33",
+    "demo_34",
+    "demo_35",
+    "demo_36",
+    "demo_37",
+    "demo_38",
+    "demo_39"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_train_val_compared": 40,
+   "camera_override_used_in": [],
+   "frames": {
+    "demo_30": 94,
+    "demo_31": 80,
+    "demo_32": 84,
+    "demo_33": 78,
+    "demo_34": 74,
+    "demo_35": 85,
+    "demo_36": 83,
+    "demo_37": 84,
+    "demo_38": 89,
+    "demo_39": 92
+   }
+  }
+ },
+ "checks": {
+  "provenance_expected_files": {
+   "pass": true
+  },
+  "render_all_files": {
+   "pass": true,
+   "n_files": 10
+  }
+ },
+ "failures": [],
+ "provenance": {
+  "SRC_GIT_COMMIT": "0ffb10ca980bf9fa6c23c63478bf2bdd9d34e969",
+  "src_dir": "/src",
+  "files": {
+   "diagnostics.py": {
+    "sha256": "ffb155b4cd8cb00813b9a4c9213c6553f1ea2d0e4a27ca96d272e8acec16d88b",
+    "expected_prefix": "ffb155b4cd8c",
+    "ok": true
+   },
+   "extract_features.py": {
+    "sha256": "03734ba84a8696e0d9f605ec89c11b50f033af9ea41cb4ef841c3c30742bd6a1",
+    "expected_prefix": "03734ba84a86",
+    "ok": true
+   },
+   "pf_analysis.py": {
+    "sha256": "ded57f53169ff1579aa4ea2ccdd5b27cb874aee5354afbe2d1432cf01065c0c5"
+   },
+   "pf_render.py": {
+    "sha256": "e004e6be812f879e9d3995b24d1ceb0e30818ad4aea701a094322cdc568d10d0"
+   },
+   "pf_smoke.py": {
+    "sha256": "fde7bc7de33b1dc86997cc15220e25a73c8dfb34e1133c1604983bb50bdb0261"
+   },
+   "pf_validate.py": {
+    "sha256": "95d2adb9373564f90f747458df5c0dda17454d79635e549ff6b0ea645a812279"
+   }
+  },
+  "ok": true
+ },
+ "seconds": 255.1
+}
