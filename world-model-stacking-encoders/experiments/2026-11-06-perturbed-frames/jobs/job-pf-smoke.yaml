@@ -4,6 +4,9 @@
 # was: "Counts as your go for both short cluster jobs: the smoke test, then the validation check if the smoke test passes. The
 # analysis-code worker starts now." On GPU room the user picked "Shrink seed 1 to two (Recommended)" (the lead did that: Job
 # stacking-encoders-proxy-eval-dinov3-s1-l4 is at parallelism 2), so this one smoke-test Job on 1 GPU keeps the total at 8 or fewer.
+# RESUBMITTED 2026-11-08 about 01:25 UTC after the first Job sat Pending 47 min (no node fit 4 CPU / 20Gi). User decision, verbatim:
+# "Resubmit smaller (Recommended)", option text: "Delete the waiting job and resubmit it unchanged except for 2 CPUs and 12 GB, so more
+# machines qualify. The code and checks stay identical." Only the CPU and memory lines changed; ConfigMap and code unchanged.
 #
 # Environment: the proxy eval Jobs' (jobs/rendered/job-eval-dinov3-s0-l4.yaml in the proxy-calibration experiment): same image,
 # `. /src/env_bundle.sh restore` (prebuilt venv + LIBERO-Plus @ 4976dc3 + assets unzip, from the existing ConfigMap
@@ -87,9 +90,9 @@ spec:
         - {name: MUJOCO_GL, value: egl}
         - {name: PYOPENGL_PLATFORM, value: egl}
         - {name: NVIDIA_DRIVER_CAPABILITIES, value: "compute,utility,graphics"}
-        resources:                    # the eval Jobs' sizing (one env here instead of four): 20Gi/24Gi, 4 CPU, 50Gi scratch; limits <= 1.2x requests
-          requests: {cpu: "4", memory: 20Gi, nvidia.com/gpu: "1", ephemeral-storage: 50Gi}
-          limits:   {cpu: "4800m", memory: 24Gi, nvidia.com/gpu: "1", ephemeral-storage: 58Gi}
+        resources:                    # resized by the user 2026-11-08 to 2 CPU, 12Gi request (14Gi limit); scratch as the eval Jobs; limits <= 1.2x requests
+          requests: {cpu: "2", memory: 12Gi, nvidia.com/gpu: "1", ephemeral-storage: 50Gi}
+          limits:   {cpu: "2400m", memory: 14Gi, nvidia.com/gpu: "1", ephemeral-storage: 58Gi}
         volumeMounts:
         - {name: work, mountPath: /work}
         - {name: src, mountPath: /src, readOnly: true}
