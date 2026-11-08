@@ -47,3 +47,4 @@ Signed off by the user 2026-10-21 (input side) and 2026-10-27 (target side). Sou
 - `experiments/2026-10-27-proxy-calibration/`: the multi-seed proxy replication (decision 003): proxy-policy training, rollouts on LIBERO-Plus, paired analysis. Running; see its `README.md` and `LOG.md`.
 - `data/pvc-features-cephfs.yaml`: CephFS PVC `stacking-encoders-features` (100Gi, RWX). Holds the D, S, G features (17.6G) under `stacking-encoders/features/`. L and R stay on `michael-persistent`.
 - `literature/liu2026what-table{1,10}-*.csv`: paper tables, checked against the arXiv HTML 2026-10-18
+- `literature/reading-list/`: candidate papers for the user to read (50 leads in three themes, plus a top 10 in its `README.md`), 2026-11-07. Leads only, not citations. Owned by the literature-review session; other sessions read it but don't edit it.

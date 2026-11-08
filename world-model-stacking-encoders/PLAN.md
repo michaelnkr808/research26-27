@@ -23,6 +23,7 @@ Each experiment folder has its own `PLAN.md` (the design, written before running
 - Retrospective check of our diagnostics against the paper's 16 composition results (reviewer, 2026-10-28; suggestive only).
 
 ## Recently done
+- 2026-11-07: literature search, 50 candidate papers in three themes plus a top 10, all links and notes checked by reviewers; leads only, nothing read yet (`literature/reading-list/`, LOG 2026-11-07 [agent, literature]).
 - 2026-11-06: which VLA liu2026what uses: none, its model is a world action model; VLAs appear only as Table 3 baselines and in titles (LOG 2026-11-06 [agent, planning] liu2026what read; `literature/notes/liu2026-what-visual-representations-wams.md`, "Read for the mentor's 2026-11-06 points").
 - 2026-11-06: how liu2026what combines encoders: channel-wise concatenation at matching VAE-latent grid locations is supported; alignment method and per-source normalization not stated (same LOG entry and paper note section).
 - 2026-10-27: target-side interference test; C-RADIOv4 is not the largest interferer, H-E fails (`experiments/2026-10-21-target-diagnostics/`, LOG 2026-10-27).
