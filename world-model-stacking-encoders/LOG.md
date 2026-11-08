@@ -1357,3 +1357,32 @@ No operating rule changed.
   - speculative: redundancy alone predicts no gain rather than a drop below DINOv3 alone. Double counting as prediction targets is a candidate mechanism, untested. The direct test, C-RADIOv4 as input only vs as target only, is parked in `PLAN.md`.
 **Next:** the user is reading Guo et al. 2026 (top-10 item 2, arXiv 2605.16864). When the user finishes it, the literature session adds its bib entry and marks it read.
 **Open questions:** whether C-RADIOv4's teacher balancing works in practice (the paper does not measure it). The planning session may want the Sec. 2.5 quote for suspect 2; it is about C-RADIOv4's summary-token loss, not the spatial features our proxy uses, so at most indirect support (and arguably closer to suspect 1, one source dominating a summed loss). `writing/hypotheses-draft.md` is planning's file and is not edited here.
+
+## 2026-11-07 [agent, literature] (Guo et al. 2026 read by the user: bib entry, reading list marked; user's idea to try its metrics on our encoders)
+**Goal:** record that the user read Guo et al. 2026 (arXiv 2605.16864); add its bib entry; mark it read; record the user's idea.
+**Did:**
+- Added `guo2026metric` to `literature/references.bib` (title, authors in feed order, date, category and version from the arXiv API record, checked 2026-11-07; latest version shown v1; arXiv comment quoted exactly: "Accepted to the CVPR 2026 Findings Track"; proceedings page not opened).
+- Reading list: `literature/reading-list/README.md` "Read so far" lists Guo et al., top-10 item 2 is marked read, and `2026-11-07-measures.md` entry 3 "Read status" and the header sentence are updated.
+- No note file. The user keeps their own paper notes outside the repo, so there is no file in `literature/notes/`; same departure from `_standards/02` "Where things live" as the C-RADIOv4 entry above.
+**Found:**
+- (a) The user's takeaway, quoted: "okay this is a huge paper ngl we have to try their method on ours, essentially they have some metric to quantify the ideal features for their "structure aware" or "edge aware" and then they select those features then fuse them based on more metrics in their case complementary structural coherence (SC) and Edge fidelity (EF). The only issue I see with this is segmentation tasks are easier to break down than WAM tasks"
+- (b) verified (a lead's fetch agent read arXiv HTML v1 on 2026-11-07; independent review pending).
+  - The metrics are label-free (Sec. 3.2).
+  - SC = sqrt(SFC x SCS) (Eqs. 1-3) uses only the feature map. SFC is patch variance consistency on a K x K grid, K = 16. SCS is a PCA + k-means silhouette.
+  - EF = alpha x EC x NC x FC x SP (Eqs. 4-8) compares feature-map gradients with Sobel edges of the input image resized to feature resolution.
+  - Selection is per encoder, by contrast: the higher-SC encoder becomes the master, and the injection stride is the argmax of the auxiliary encoder's EF (Sec. 3.3). No pair-level complementarity score is defined.
+  - Fusion (Eq. 9) replaces the master's features with the auxiliary's at a single stride of a four-level pyramid. It is not channel concatenation. Training is one stage: DINOv3 master fine-tuned, SAM2 auxiliary frozen (Sec. 3.3, Table 6).
+  - Models: SAM, SAM2, DINOv2, DINOv3 (base scale). Main fused pair: DINOv3-B + SAM2-B. Mask2Former head. Segmentation on COCO, Cityscapes and others.
+  - Injecting at the wrong stride does worse than the base model in Table 10, and the EF-chosen stride matches the oracle in 3 of 4 settings (Table 6).
+  - The metric validation rests on few points: SC vs a label-based SC gives rho 0.726 (Table 7a, sample not described), EF vs gain gives rho 0.80 over 4 strides (Table 7b). Table 7's values don't match Table 5.
+  - No RADIO-family model is fused with one of its teachers, and redundancy between models isn't discussed.
+  - Generalization beyond segmentation is one untested sentence (Sec. 3.3). Limitations are in Sec. 6.
+  - Code: https://github.com/gyc-code/metric-guided-fusion (stated in the abstract; repo not opened).
+- (c) The lead's reply to the user:
+  - speculative: the metric half could be computed on our cached frozen features on CPU with their public code. The fusion half (one-stride replacement, fine-tuned master, multi-scale decoder) doesn't map onto our WAM (frozen encoders, one grid, channel concatenation, features also prediction targets).
+  - speculative: their scores are per encoder, so they can't see overlap between two encoders (the user's C-RADIOv4 point).
+  - verified, from files: a task-aligned score already failed us once. gain(C-RADIOv4 | DINOv3) was at or near the top (`experiments/2026-10-19-feasibility-tally/README.md`: "It places R at or near the top"; R has the largest gain(B|D) in both feature types, its CI overlapping SigLIP 2's), yet D+R is the paper's harmful pair.
+  - speculative: SFC's 16 x 16 cell grid is bigger than the 14 x 14 per-camera grid our proxy uses (the proxy's latent grid is 14 x 28 for the two-camera frame, `src/proxy_wam.py` line 64, i.e. 14 x 14 per camera), so the metric would need adapting.
+  - speculative: the user's concern is well founded. SC and EF target regions and boundaries, which is what segmentation needs; a world action model needs object and gripper positions and motion, which an edge score doesn't measure directly.
+**Next:** the idea is the user's proposal, not a PLAN item. Experiment design belongs to the user and the planning session; on request, the literature session can write a short proposal for the planning session.
+**Open questions:** whether SC/EF separate C-RADIOv4 from the other three partners on our cached features (four pairs: suggestive only); how to adapt SFC and EF to small grids.
