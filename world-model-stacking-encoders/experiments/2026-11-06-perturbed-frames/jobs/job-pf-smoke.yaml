@@ -7,6 +7,9 @@
 # RESUBMITTED 2026-11-08 about 01:25 UTC after the first Job sat Pending 47 min (no node fit 4 CPU / 20Gi). User decision, verbatim:
 # "Resubmit smaller (Recommended)", option text: "Delete the waiting job and resubmit it unchanged except for 2 CPUs and 12 GB, so more
 # machines qualify. The code and checks stay identical." Only the CPU and memory lines changed; ConfigMap and code unchanged.
+# RERUN (-r2) 2026-11-08: the first Job (stacking-encoders-pf-smoke, 2 CPU / 12Gi) ran the q23, scenes, demos and clean stages and then hit a
+# code bug (check() got `name=` twice) in the camera stage. Fixed in commit dcf1292; the new code is in a NEW ConfigMap
+# stacking-encoders-pf-smoke-src-r2 and this Job has a new name, so nothing existing was modified or deleted. Checks unchanged.
 #
 # Environment: the proxy eval Jobs' (jobs/rendered/job-eval-dinov3-s0-l4.yaml in the proxy-calibration experiment): same image,
 # `. /src/env_bundle.sh restore` (prebuilt venv + LIBERO-Plus @ 4976dc3 + assets unzip, from the existing ConfigMap
@@ -28,7 +31,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: stacking-encoders-pf-smoke
+  name: stacking-encoders-pf-smoke-r2
   namespace: aria-world
 spec:
   backoffLimit: 0
@@ -79,7 +82,7 @@ spec:
           echo "=== BEGIN PF_SMOKE_TGZ_B64"; base64 -w 76 /work/pf-smoke.tgz; echo "=== END PF_SMOKE_TGZ_B64"
           echo "=== done"
         env:
-        - {name: SRC_GIT_COMMIT, value: 9f1a03e281f8aad4db89aa014e26cbb5390c3570}
+        - {name: SRC_GIT_COMMIT, value: dcf1292458c7c3d4959f1af8db39fc0a1f3cce17}
         - name: HF_TOKEN
           valueFrom:
             secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
@@ -107,7 +110,7 @@ spec:
       - name: src
         configMap: {name: stacking-encoders-proxy-src}
       - name: pf
-        configMap: {name: stacking-encoders-pf-smoke-src}
+        configMap: {name: stacking-encoders-pf-smoke-src-r2}
       - name: proxy
         persistentVolumeClaim: {claimName: stacking-encoders-proxy}
       - name: features
