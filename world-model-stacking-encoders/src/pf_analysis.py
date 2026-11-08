@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import time
 import types
 from pathlib import Path
@@ -303,13 +304,26 @@ def drift_draws(num, den, W):
 # Driver
 # ---------------------------------------------------------------------------
 
-def run(feats_root, raw_dir, suite, cond_roots, tally_dir, out_dir, ftype="global", n_boot=1000, seed=0,
-        sizes=None, other_alpha="tune", save_preds=True, min_boot=MIN_BOOT, quiet=False):
-    """Run the whole analysis and write results.json, stats.npz (and preds.npz) under out_dir (must not exist)."""
-    t0 = time.time()
+def run(feats_root, raw_dir, suite, cond_roots, tally_dir, out_dir, *args, **kw):
+    """Run the whole analysis and write results.json, stats.npz (and preds.npz) under out_dir (must not exist).
+
+    The dir is claimed up front; if the run fails the (partial) dir is removed so a corrected retry can reuse the path.
+    Arguments after out_dir are those of _run.
+    """
     out_dir = Path(out_dir)
     if out_dir.exists():
         raise FileExistsError(f"{out_dir} exists; refusing to overwrite")
+    out_dir.mkdir(parents=True, exist_ok=False)
+    try:
+        return _run(feats_root, raw_dir, suite, cond_roots, tally_dir, out_dir, *args, **kw)
+    except BaseException:
+        shutil.rmtree(out_dir, ignore_errors=True)
+        raise
+
+
+def _run(feats_root, raw_dir, suite, cond_roots, tally_dir, out_dir, ftype="global", n_boot=1000, seed=0,
+         sizes=None, other_alpha="tune", save_preds=True, min_boot=MIN_BOOT, quiet=False):
+    t0 = time.time()
     if n_boot < min_boot:
         raise ValueError(f"n_boot={n_boot} < {min_boot}: the plan needs at least {MIN_BOOT} draws")
     if other_alpha not in ("tune", "reuse"):
@@ -324,7 +338,6 @@ def run(feats_root, raw_dir, suite, cond_roots, tally_dir, out_dir, ftype="globa
     for key in [f"{DINO}|{ftype}"] + [pair_key(b) for b in PARTNERS]:
         if key not in alphas:
             raise KeyError(f"tally alpha for {key} not found in {tally_dir}")
-    out_dir.mkdir(parents=True, exist_ok=False)  # claim the dir before the heavy work
     log = (lambda *a: None) if quiet else (lambda *a: print("[pf]", *a, flush=True))
 
     feats, actions, _, split, index, meta, files = load_clean(feats_root, raw_dir, suite, encoders, ftype)

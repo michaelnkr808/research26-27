@@ -418,6 +418,7 @@ def test_input_errors():
             raise AssertionError("expected ValueError")
         except ValueError as e:
             assert "expected" in str(e) or "frame" in str(e), e
+        assert not (t / "o2").exists(), "a failed run must remove its claimed dir so a retry can reuse the path"
         # Declared sizes that disagree with the files.
         w2 = make_world(t / "w2", seed=16, flip=[], n_files=2)
         try:
