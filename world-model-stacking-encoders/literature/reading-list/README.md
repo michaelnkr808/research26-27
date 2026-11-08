@@ -2,7 +2,7 @@
 
 **Owner:** the literature-review session (`literature-agent`, started 2026-11-07, user's request). Only that session edits files in this folder. Other sessions (implementation, planning, slides) may read it but don't edit it. If another session wants a change here, it goes through the user to the literature session. Paper notes (`../notes/`) and `../references.bib` stay shared, as before.
 
-**What this is:** leads for the user to read, not citations. Every paper here was found by a search on 2026-11-07 (not from memory), its link was opened and the title confirmed, and its "why it might matter" note comes from the abstract only. Each theme list was then checked by a separate reviewer against every arXiv page and abstract, and the fixes were applied (direction `LOG.md` 2026-11-07 [agent, literature]). Nobody has read these papers in full. Don't cite anything from this folder until the user has read it and it has a note in `../notes/` and an entry in `../references.bib` (`_standards/02`).
+**What this is:** leads for the user to read, not citations. Every paper here was found by a search on 2026-11-07 (not from memory), its link was opened and the title confirmed, and its "why it might matter" note comes from the abstract only. Each theme list was then checked by a separate reviewer against every arXiv page and abstract, and the fixes were applied (direction `LOG.md` 2026-11-07 [agent, literature]). Nobody has read these papers in full. Don't cite anything from this folder until the user has read it and it has an entry in `../references.bib` (`_standards/02`). The user keeps their own paper notes outside the repo, so no note in `../notes/` is required (user's choice, 2026-11-07).
 
 ## Files
 - `2026-11-07-fusion.md` (18 papers): models that combine several vision encoders, multi-teacher distillation (RADIO family), and why adding an input or a loss can make a jointly trained model worse.
@@ -14,7 +14,7 @@ Touches key (used in every list): Q1 why a pair of encoders can hurt; Q2 measuri
 ## Top 10 (lead's pick, 2026-11-07, from abstracts only)
 Ordered by what to read first. The theme file and rank are in brackets.
 
-1. C-RADIOv4 (Tech Report), Ranzinger et al. 2026, https://arxiv.org/abs/2601.17237 [fusion 1]. The encoder in the harmful pair; its page names DINOv3 among its teachers. (Q1)
+1. C-RADIOv4 (Tech Report), Ranzinger et al. 2026, https://arxiv.org/abs/2601.17237 [fusion 1]. The encoder in the harmful pair; its page names DINOv3 among its teachers. (Q1) Read by the user, 2026-11-07.
 2. Metric-Guided Feature Fusion of Visual Foundation Models for Segmentation Tasks, Guo et al. 2026, CVPR 2026 Findings per the arXiv comment, https://arxiv.org/abs/2605.16864 [measures 3]. Says naive fusion of foundation models (DINOv3, SAM2) rarely helps and picks what to fuse with label-free metrics. Closest problem statement to ours, for segmentation. (Q1, Q2, Q3)
 3. Conditional probing: measuring usable information beyond a baseline, Hewitt et al. 2021, EMNLP 2021 per the arXiv comment, https://arxiv.org/abs/2109.09234 [measures 1]. What a representation adds beyond a baseline: our gain(B|A) idea, in language models. (Q2)
 4. Building a Winning Team: Selecting Source Model Ensembles using a Submodular Transferability Estimation Approach, Vimal K B et al. 2023, ICCV 2023, https://arxiv.org/abs/2309.02429 [measures 2]. Follow-up to agostinelli2022 that scores how well models in a group work together. (Q3)
@@ -28,4 +28,6 @@ Ordered by what to read first. The theme file and rank are in brackets.
 Also worth a skim if not read yet: Fast-WAM, https://arxiv.org/abs/2603.16666 [wam-context 5], because our proxy model is built on its code.
 
 ## Read so far
-None yet. When the user reads a paper from here, the literature session marks it here and writes its note in `../notes/`.
+- C-RADIOv4 (Tech Report), Ranzinger et al. 2026, arXiv 2601.17237: read in full by the user, 2026-11-07. Bib key `ranzinger2026cradiov4`. The user's notes are kept by the user outside the repo.
+
+When the user reads another paper from here, the literature session marks it here and adds its entry to `../references.bib`. The user keeps their own notes (user's choice, 2026-11-07), so no file in `../notes/`.

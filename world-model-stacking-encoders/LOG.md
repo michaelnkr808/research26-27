@@ -1339,3 +1339,20 @@ No operating rule changed.
 - Not verified: anything beyond abstracts. Nobody has read these papers in full; no entry goes into `references.bib`.
 **Next:** the user reads from the top 10 in `literature/reading-list/README.md`. For each paper read, the literature session writes a note in `literature/notes/`, adds it to `references.bib`, and marks it read in the reading-list README.
 **Open questions:** whether Guo et al. 2026 or Dong et al. 2026 already cover combining encoders (check when read); whether Hewitt et al.'s conditional probing changes how we name or compute gain(B|A).
+
+## 2026-11-07 [agent, literature] (C-RADIOv4 read by the user: bib entry added, reading list marked; user keeps own notes)
+**Goal:** record that the user read the C-RADIOv4 tech report (Ranzinger et al. 2026, arXiv 2601.17237); add its bib entry; mark it read.
+**Did:**
+- Added `ranzinger2026cradiov4` to `literature/references.bib` (title, authors, date from the arXiv API record, checked 2026-11-07; latest version shown v1; arXiv preprint, not peer reviewed).
+- Reading list: `literature/reading-list/README.md` "Read so far" now lists C-RADIOv4, top-10 item 1 is marked read, and `2026-11-07-fusion.md` entry 1 "Read status" is updated.
+- The user keeps their own paper notes outside the repo, so there is no file in `literature/notes/`. This departs from `_standards/02` "Where things live" (one note per paper in `literature/notes/`) at the user's request ("i am already taking notes so u dont need to track notes its fine"). The reading-list README wording was changed to match: a paper may be cited once the user has read it and it has an entry in `references.bib`.
+**Found:**
+- (a) The user's takeaway: C-RADIOv4 is a student distilled from teacher models including DINOv3, so concatenating DINOv3 + C-RADIOv4 may give redundant features.
+- (b) verified (agent read of arXiv HTML v1; independent review pending), a lead's fetch agent read the full paper on 2026-11-07. Teachers: SigLIP2-g-384, DINOv3-7B, SAM3 (Sec. 2.1). Table 3 (Sec. 2.5) also lists DINOv3-H+ as a "key teacher", which Sec. 2.1 does not name, so the paper is inconsistent. Sec. 2.5: "Left unmitigated, DINOv3 would dominate the loss term, biasing the student toward matching it, at the expense of matching SigLIP2." The fix is an angular-dispersion-normalized summary loss (Eq. 7). Dense features use PHI-S normalization (Sec. 2.3). Not stated in the paper: per-teacher loss weights, any measurement of teacher balance after the fix, any per-teacher fidelity or similarity number.
+- (c) The lead's reply to the user:
+  - verified: liu2026what gives the same explanation (Sec. 4.4; see `literature/notes/liu2026-what-visual-representations-wams.md`).
+  - The idea is already fusion-step suspect 2 and H-C (`writing/hypotheses-draft.md`).
+  - verified, from files: in the feasibility tally, CKA put C-RADIOv4 about as close to DINOv3 as SigLIP 2 (0.583 vs 0.576, global agentview; `writing/hypotheses-draft.md` line 11, `experiments/2026-10-19-feasibility-tally/README.md` tally table). SigLIP 2 is the best of the four partners tested (SigLIP 2, SAM 3, VGGT-Omega, C-RADIOv4) per the Table 10 CSV (D+L 85.83; D+U, which we did not test, is higher at 86.12). gain(C-RADIOv4 | DINOv3) was at or near the top (tally README: "places R at or near the top").
+  - speculative: redundancy alone predicts no gain rather than a drop below DINOv3 alone. Double counting as prediction targets is a candidate mechanism, untested. The direct test, C-RADIOv4 as input only vs as target only, is parked in `PLAN.md`.
+**Next:** the user is reading Guo et al. 2026 (top-10 item 2, arXiv 2605.16864). When the user finishes it, the literature session adds its bib entry and marks it read.
+**Open questions:** whether C-RADIOv4's teacher balancing works in practice (the paper does not measure it). The planning session may want the Sec. 2.5 quote as evidence for suspect 2 in `writing/hypotheses-draft.md`; that is planning's file and is not edited here.
