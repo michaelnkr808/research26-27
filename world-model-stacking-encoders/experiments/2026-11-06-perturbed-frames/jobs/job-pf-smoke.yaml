@@ -10,6 +10,9 @@
 # RERUN (-r2) 2026-11-08: the first Job (stacking-encoders-pf-smoke, 2 CPU / 12Gi) ran the q23, scenes, demos and clean stages and then hit a
 # code bug (check() got `name=` twice) in the camera stage. Fixed in commit dcf1292; the new code is in a NEW ConfigMap
 # stacking-encoders-pf-smoke-src-r2 and this Job has a new name, so nothing existing was modified or deleted. Checks unchanged.
+# RERUN (-r3) 2026-11-08: r2 hit DeadlineExceeded (3 h) at about 04:24 UTC without ever running. User decision (about 04:30 UTC),
+# verbatim: "Resubmit, longer wait (Recommended)", option text: "Same job and same cards, but it can wait up to 12 hours instead of
+# 3." Only the Job name and activeDeadlineSeconds (43200) changed vs r2; same ConfigMap stacking-encoders-pf-smoke-src-r2 (code dcf1292).
 #
 # Environment: the proxy eval Jobs' (jobs/rendered/job-eval-dinov3-s0-l4.yaml in the proxy-calibration experiment): same image,
 # `. /src/env_bundle.sh restore` (prebuilt venv + LIBERO-Plus @ 4976dc3 + assets unzip, from the existing ConfigMap
@@ -27,15 +30,15 @@
 # Outputs: PVC stacking-encoders-proxy, /mnt/proxy/pf-smoke/<stamp>/ (report.json, PNGs), plus a base64 tarball of the same at the end
 # of the pod log (between the markers PF_SMOKE_TGZ_B64), so nothing has to be read from the volume by touching other pods.
 # Follows _standards/08: Job, real command that exits, no sleep, no tolerations, 1 GPU, limits within 20% of requests,
-# backoffLimit 0 (a failed check is a result, not something to retry), ttl 86400, deadline 3 h from creation (queue included).
+# backoffLimit 0 (a failed check is a result, not something to retry), ttl 86400, deadline 12 h from creation (queue included).
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: stacking-encoders-pf-smoke-r2
+  name: stacking-encoders-pf-smoke-r3
   namespace: aria-world
 spec:
   backoffLimit: 0
-  activeDeadlineSeconds: 10800
+  activeDeadlineSeconds: 43200
   ttlSecondsAfterFinished: 86400
   template:
     spec:
