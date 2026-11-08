@@ -1398,3 +1398,14 @@ No operating rule changed.
 - speculative: that extraction may run on the Mac (DINOv3 and C-RADIOv4 ran locally before, proxy-calibration PLAN smoke test; SAM 3 needs transformers 5.18, `STANDARDS.md` Tools).
 **Next:** the user takes the proposal up in the planning session. The literature session waits for the next paper the user reads (top 10: Hewitt et al. 2021 is next).
 **Open questions:** none new.
+
+## 2026-11-08 [agent, planning] (motion-score prior-art search)
+**Goal:** Find out whether a "motion fidelity" score (does a frozen encoder's feature change between robot-demo frames line up with where the scene moves, label-free, modelled on Guo et al.'s edge fidelity) already exists, whether anything like it predicts robot or world-model performance before training, and whether any per-encoder or pair score has been used to pick encoder combinations.
+
+**Did:** 16 web searches plus arXiv API lookups. Confirmed the title of every listed paper on its arXiv record. Read method and evaluation sections (through the fetch tool, which gives a small-model summary, so provisional) for the closest few. Wrote `literature/reading-list/2026-11-08-motion-score-prior-art.md` (18 entries, verdict at the top, search terms at the bottom).
+
+**Found:** (a) No paper found defines this score. Neighbours: Deep Feature Flow, Motion-Focused Contrastive Learning and FlowFeat use flow with features as a training ingredient; point-tracking probes score frozen features over time but need labels. (b) No pre-training predictor of robot performance from motion found. Closest: Dong et al. 2026 (state-probe accuracy on simulator labels, static single images) and Burns et al. 2023 (emergent segmentation, static). (c) KAGES (Liu 2026) picks encoder subsets by label kernel alignment on image classification; nothing for robots or motion. Closest single work: CoRe-WAM (Zhou 2026), a world action model that differences current and past features after matching content, with a warning that same-cell differences mix feature change with moving content; it defines no score. Still new (speculative): a label-free temporal score, computed along flow, checked against WAM outcomes, extended to pairs. Dong et al. mean the bar is showing it adds something beyond cheap existing proxies. Two lead corrections: arXiv 2507.19507 is not Baldassarre (it is 2507.19468); TAP-Vid was not opened. All absence claims are speculative (limited searches).
+
+**Next:** The user reads the verdict and decides whether to plan an experiment. A reviewer should open CoRe-WAM and Dong et al. directly, since my reads of them came through a summarising tool.
+
+**Open questions:** Does a score computed along flow avoid the confound CoRe-WAM describes? Would forward citations of Guo et al. and CoRe-WAM hold a closer match (not searched)? RoboAct-CLIP and the temporal-differences paper (2606.15956) were only title-checked.
