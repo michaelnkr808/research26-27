@@ -1,0 +1,67 @@
+drwxr-xr-x 4 root root        51 Nov  8 05:11 ..
+-rw-r--r-- 1 root root 447509922 Nov  8 05:11 turn_on_the_stove_demo.hdf5
+Sun Nov  8 05:11:52 UTC 2026
+[check] raw_file_is_the_inspected_one: PASS
+=== stage q23
+[check] q23_all_five_feature_files_read: PASS
+[check] q23_both_cameras_same_size: PASS
+[q23] {"mean_dim_per_camera": {"dinov3": 1024, "sam3": 1024, "vggt-omega": 2048, "siglip2": 1024, "c-radiov4": 1152}, "smallest": 1024, "differ": true}
+=== stage scenes
+[scenes] light_1: tabletop_light_sync_modified_411.xml: 4 changed attrs, 0 added, 0 removed elements
+[scenes] light_11: tabletop_light_sync_modified_420.xml: 8 changed attrs, 0 added, 0 removed elements
+[scenes] background_table_1: tabletop_table_FabricString001_DISP_4K.xml: 1 changed attrs, 0 added, 0 removed elements
+[scenes] background_tb_13: tabletop_table_Cobblestone01_DISP_6K.xml: 1 changed attrs, 0 added, 0 removed elements
+[check] scenes_read: PASS
+=== stage demos
+[check] demos_none_is_test: PASS
+[check] demos_fixture_list_found: PASS
+=== stage clean
+[check] clean_state_length_demo_0: PASS
+[check] q20_env_fixtures_vs_demo_demo_0: PASS
+[check] fixtures_after_restore_clean_demo_0_k0: PASS
+[check] fixtures_after_restore_clean_demo_0_k78: PASS
+[check] clean_state_length_demo_29: PASS
+[check] q20_env_fixtures_vs_demo_demo_29: PASS
+[check] fixtures_after_restore_clean_demo_29_k0: PASS
+[check] fixtures_after_restore_clean_demo_29_k94: PASS
+[check] clean_state_length_demo_30: PASS
+[check] q20_env_fixtures_vs_demo_demo_30: PASS
+[check] fixtures_after_restore_clean_demo_30_k0: PASS
+[check] fixtures_after_restore_clean_demo_30_k93: PASS
+[resize] {"mae_all": {"area": 1.7464469687806234, "bicubic": 1.9992958274152544}, "mae_agentview": {"area": 1.921616170141432, "bicubic": 2.21961690319909}, "mae_wrist": {"area": 1.571277767419815, "bicubic": 1.778974751631419}, "chosen": "area", "n_frames_per_camera": 18, "rule": "lower mean abs pixel difference vs the stored 128 frames (0-255, all frames, both cameras); tie -> area"}
+[check] orientation_matches_stored: PASS
+[check] restored_arm_joints_equal_stored: PASS
+=== stage camera
+[check] camera_zero_change_state_length: PASS
+[check] fixtures_after_restore_zero_change_camera: PASS
+[check] camera_zero_change_frame_matches_clean: PASS
+=== stage perturb
+[check] perturb_state_length_clean: PASS
+[check] fixtures_after_restore_clean: PASS
+[check] perturb_state_length_camera: PASS
+[check] fixtures_after_restore_camera: PASS
+[check] perturb_state_length_light: PASS
+[check] fixtures_after_restore_light: PASS
+[check] perturb_state_length_background: PASS
+[check] fixtures_after_restore_background: PASS
+[check] perturb_state_length_background_wall: PASS
+[check] fixtures_after_restore_background_wall: PASS
+[check] perturb_state_length_noise: PASS
+/work/sim/LIBERO-plus/libero/libero/envs/env_wrapper.py:52: DeprecationWarning: The binary mode of fromstring is deprecated, as it behaves surprisingly on unicode inputs. Use frombuffer instead
+  x = cv2.imdecode(np.fromstring(x.make_blob(), np.uint8),
+[check] fixtures_after_restore_noise: PASS
+[check] perturbed_agentview_differs_from_clean: PASS
+[done] report written; all gating checks passed: True ; stopped_at: None
+=== pf_smoke.py exit code 0
+total 704
+drwxr-xr-x 2 root root    167 Nov  8 05:12 .
+drwxrwxrwx 8 root root    102 Nov  8 05:11 ..
+-rw-r--r-- 1 root root 152882 Nov  8 05:12 clean-demo_0-k47.png
+-rw-r--r-- 1 root root 154783 Nov  8 05:12 clean-demo_29-k56.png
+-rw-r--r-- 1 root root 156680 Nov  8 05:12 clean-demo_30-k56.png
+-rw-r--r-- 1 root root 203838 Nov  8 05:12 perturbed-demo_0-k47.png
+-rw-r--r-- 1 root root  43516 Nov  8 05:12 report.json
+Sun Nov  8 05:12:46 UTC 2026
+copied to /mnt/proxy/pf-smoke/20261108-050312
+-rw-r--r-- 1 root root 662371 Nov  8 05:12 /work/pf-smoke.tgz
+=== BEGIN PF_SMOKE_TGZ_B64
