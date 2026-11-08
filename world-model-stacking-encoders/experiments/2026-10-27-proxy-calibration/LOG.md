@@ -843,3 +843,21 @@ Lead session. UTC. Covers 2026-11-07 about 23:47 to 2026-11-08 about 04:30.
 - Progress at 03:50 (log lines, 0 errors everywhere): seed 0 shard 5 2390 done; seed 1 shard 3 2456; seed 1 shard 4 1862; seed 1 shard 5 2117 (of 3762 LIBERO-Plus+clean jobs each). Pending since 22:13: s0-l4 indices 0-2 (seed 0 shards 0, 4, 6). Still 7 of 16 shards done.
 
 **Next:** when the jobless pods finish (watcher exit 0), save their logs and check their files. Then raise s0-l4 parallelism to 4 once the smoke test is done (total stays at 8 or fewer; standing approval).
+
+## 2026-11-08 (n) [agent, lead] (four more shards done, 11 of 16; parallelism raised; seed 0 shard 0 resumed; perturbed-frame validation Job expired while still Pending; NRP web services offline)
+
+- verified (pod logs, committed in `results/logs/`, all 3766 records and 0 errors; "GPU" is the pod's own nvidia-smi sample mean printed at the end):
+  - seed 1 shard 3 (`-s1-main-3-pf7v7`, jobless pod): finished 06:39 UTC, 407 episodes/h, policy busy 50%, GPU 50.9% over 1114 samples.
+  - seed 0 shard 5 (`-s0-5-q8fkj`, jobless pod): 07:04 UTC, 389 episodes/h, 48%, GPU 49.0% over 1163 samples.
+  - seed 1 shard 5 (`-s1-l4-2-4zghh`): 07:54 UTC, 396 episodes/h, 49%, GPU 49.4% over 1146 samples.
+  - seed 1 shard 4 (`-s1-l4-1-v9sfr`): 08:55 UTC, 388 episodes/h, 49%, GPU 48.2% over 1165 samples.
+- verified: both jobless pods ended Succeeded and were not removed, so LOG (m)'s bare-pod question is closed for them. No violation notice is known; the NRP portal was not checked (see the maintenance note below).
+- Parallelism (standing approval "go raise eval parallelism after the GPU check", total 8 or fewer): after the jobless pods finished, the lead patched s0-l4 to 4 and s1-l4 to 3 (4 + 3 + 1 for the validation Job = 8). verified at 18:10 UTC: `kubectl get jobs` shows parallelism 4 and 3. The rendered YAMLs in `jobs/rendered/` still say 3 and 3; only parallelism differs from the live spec.
+- verified: the L4s freed between 06:39 and 08:55 went to other users' pods. Scheduler message for s0-l4 index 0 at 08:21: "0/536 nodes are available: 1 Insufficient memory, 2 Insufficient nvidia.com/gpu, ... 283 node(s) didn't match Pod's node affinity/selector".
+- verified: s0-l4 index 0 (seed 0 shard 0) started 17:10:54 UTC on nautilus-it-gpu06. The resume skipped 1358 finished records (2408 jobs at start = 3 done + 2401 queued + 4 running; 3766 - 2408 = 1358) and the run has 0 errors. At 2398 s it had 189 new records, 2215 queued, about 300 episodes/h and policy busy 40%. Earlier shards at the same point ran at 447-468 episodes/h with 55-58% busy. `kubectl top` at about 18:10: 3245m CPU, 15269Mi working set. The log's cgroup "now" of 34.9 GB includes page cache, so this is not near an OOM.
+  - Reading (speculative): slower episodes in the rest of this shard, or CPU contention on gpu06. The GPU stand-in (policy busy) sits near NRP's 40% line early in the run. At 300 episodes/h it finishes about 7.4 h after 17:50, so around 01:00 UTC Nov 9.
+- verified: the perturbed-frames validation Job `stacking-encoders-pf-val` (branch pf-smoke) ended Failed with reason DeadlineExceeded at 18:05 UTC. It was Pending the whole time, and `activeDeadlineSeconds: 43200` counts from Job creation (about 06:05). It never ran, so there is no output. Scheduler message at 08:21: "12 Insufficient cpu, 228 untolerated taint(s), 23 unschedulable, 25 Insufficient nvidia.com/gpu, 260 didn't match Pod's node affinity/selector, 5 Insufficient memory". A resubmit is a new cluster Job and needs the user's OK.
+- verified: the prometheus.nrp-nautilus.io query endpoint now returns "NRP web services are offline for maintenance until Monday, November 9." Reading (speculative): this is the likely cause of the empty Prometheus since about 00:55 (LOG (m)). kubectl still works.
+- Status: 11 of 16 shards done (seed 0 shards 1, 2, 3, 5; seed 1 shards 0, 1, 3, 4, 5, 6, 7). Running: seed 0 shard 0. Pending: seed 0 shards 4, 6, 7 (s0-l4 indices 1-3) and seed 1 shard 2 (s1-l4 index 0).
+
+**Next:** the user decides whether and how to resubmit the validation Job. Save each remaining shard's log within its 24 h TTL. When all 16 are done, run `lp_eval.py seednoise` and bring the verdict to the user.
