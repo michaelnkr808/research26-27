@@ -33,7 +33,7 @@ Signed off by the user 2026-10-21 (input side) and 2026-10-27 (target side). Sou
 - `STANDARDS.md`: topic rules (scope, domain sources, baselines, metrics and pitfalls, tools and environment, compute budget and Nautilus rules are filled; only the figure/table convention is blank)
 - `LOG.md`: research log for the direction (short session summaries; before 2026-11-04 it holds the full detail too). Each experiment folder has `PLAN.md`, `LOG.md`, `README.md`.
 - `decisions/`: decision records (001: proxy-policy ground truth; 002 (accepted 2026-10-19): feasibility tally before training; 003 (accepted 2026-10-27): go straight to the multi-seed proxy policy)
-- `literature/`: paper notes and references.bib (LIBERO, LIBERO-Plus and liu2026what; the agostinelli2022 note, the closest prior work per the mentor, is in `literature/notes/`, not in the bib)
+- `literature/`: paper notes and references.bib (LIBERO, LIBERO-Plus, liu2026what and C-RADIOv4 [`ranzinger2026cradiov4`]; the agostinelli2022 note, the closest prior work per the mentor, is in `literature/notes/`, not in the bib)
 - `writing/figures/`: slide figures for the mentor deck (2026-11-07), each with its script in `src/` (`plot_training_curve.py`, `plot_compute_cost.py`, `plot_slide_diagrams.py`); LOG 2026-11-07 [agent, slides]
 - `writing/hypotheses-draft.md`: definitions, candidate hypotheses, the feasibility experiment, a novelty statement draft, and Thursday prep
 - `experiments/2026-10-16-fastwam-step-bench/`: 1-GPU Fast-WAM training-step benchmark. A6000: ~1.3 samples/s/GPU, unreviewed, not a finding.
