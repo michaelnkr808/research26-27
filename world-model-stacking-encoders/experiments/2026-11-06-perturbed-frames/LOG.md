@@ -129,3 +129,10 @@ Step-by-step record of running this experiment (Jobs, errors, reruns, exact numb
 **Found:** nothing new. The design is handed to the implementation session.
 **Test-set use (`_standards/07`):** none.
 **Next:** the implementation session runs Handoff step 1 and confirms with the user before submitting any cluster Job.
+
+## 2026-11-08 [agent, implementation worker] smoke test built and submitted; pod still Pending after 45 min (no results yet)
+**Goal:** PLAN Handoff steps 1 and 2 (first smoke test) on Nautilus, except the later 0.01 val-R2 check.
+**Did:** wrote `src/pf_render.py` and `src/pf_smoke.py` (commit 9f1a03e; verified: committed; the pure helpers were tested locally on tiny synthetic inputs, the simulator parts were NOT run anywhere), created the new ConfigMap `stacking-encoders-pf-smoke-src` from them (existing ConfigMaps untouched), wrote `jobs/job-pf-smoke.yaml` (server dry-run passed) and applied it at 00:29 UTC (Job `stacking-encoders-pf-smoke`, 1 GPU, 7 card types, deadline 3 h, ttl 86400).
+**Found:** nothing about the pipeline yet. The pod stayed Pending for 45 min. Scheduler message (verified, kubectl describe): "0/536 nodes are available: 18 Insufficient cpu, 226-227 node(s) had untolerated taint(s), 23 node(s) were unschedulable, 24 Insufficient nvidia.com/gpu, 261-262 node(s) didn't match Pod's node affinity/selector, 7 Insufficient memory."
+**Test-set use (`_standards/07`):** none. No test demo was opened or rendered (nothing ran).
+**Next:** the lead decides whether to keep waiting (the Job's 3 h deadline keeps running) or change the request or card list. When it runs, results come back in the pod log between the PF_SMOKE_TGZ_B64 markers and in /mnt/proxy/pf-smoke/<stamp>/.
