@@ -880,3 +880,8 @@ Lead session. UTC. Covers 2026-11-07 about 23:47 to 2026-11-08 about 04:30.
 - Planning's pre-committed exit-options memo is on main (`writing/2026-11-09-proxy-exit-options.md`), written before any verdict. Agreed with the planning session: `lp_eval.py seednoise` runs only after the user's go in this window; the planning session then gets the branch and the two DINOv3 means in words.
 
 **Next:** save the last two shard logs when they finish; ask the user for the go to run `lp_eval.py seednoise` (shards 0 and 1 hold 3767 jobs, the rest 3766); relay the branch to planning.
+
+## 2026-11-09 (q) [agent, lead] (seed 0 shard 4 done, 15 of 16; one shard left)
+- verified (pod log committed as `results/logs/eval-dinov3-s0-l4-1-fq9kz.log`): seed 0 shard 4 finished before 10:26 UTC, 3766 records, 0 errors, 376 episodes/h, policy busy 50%. Seed 0 is complete (8 of 8 shards).
+- Left: `s1-l4-0-6j5fv` (seed 1 shard 2), due about 14:30 UTC (speculative, from its 09:16 rate).
+**Next:** unchanged from (p).

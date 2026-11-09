@@ -355,3 +355,7 @@ Merged main into `pf-smoke` (c3deaab; has `src/pf_analysis.py`, PLAN amendment 8
 **GPU checks (verified, in-pod nvidia-smi):** `pfa-ext-siglip2-cradio` on an RTX 3090 (suncave-15): SigLIP 2 finished all ten files at about 112 images/s, meta check ok, copied; C-RADIOv4 started 09:58; GPU 100% at 10:01. `pfa-ext-sam3-1` on the L4 (gpu05): 100% at 09:16; first file (11,288 images) took 2,615.6 s, 4.3 images/s, slower than the 5.5 images/s 2080 Ti rate used in the estimate. Shard 1 holds 34,568 images, so about 8,040 s at that rate, under its 10,800 s stage cap; shards 2 and 3 hold about 33,000 images each (arithmetic from the render log counts), also under the cap at the L4 rate (speculative: they may land on other cards).
 **Test-set use:** none.
 **Next:** on each Job's exit 0, save its log and reports; when all five extractions are done, submit `pfa-dev`; bring the gate result to the user.
+
+## 2026-11-09 [agent, lead] phase A: VGGT-Omega running (GPU check ok)
+**Verified (10:27 UTC):** `pfa-ext-vggt` started 10:11:56 on an RTX 2080 Ti (k8s-haosu-10); revision check passed (`1041e80...`); extraction started 10:16; GPU 100% at 10:27 (in-pod nvidia-smi). `pfa-ext-siglip2-cradio` (C-RADIOv4 stage) and `pfa-ext-sam3-1` still Running; `sam3-2`, `sam3-3` and the pilot Pending (the pilot's L4 slot is held by a terminating eval pod, scheduler message). One eval shard left. Live GPU pods: 1 eval + 3 ours.
+**Next:** unchanged.
