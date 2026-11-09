@@ -31,17 +31,22 @@ An agent pauses and asks before:
 - Large compute jobs, beyond the budget set in the direction's `STANDARDS.md`
 - Deleting data, overwriting results, rewriting git history, or force-pushing
 - Changing the research question, scope, or evaluation protocol
-- Anything that leaves the machine: pushing to a remote, publishing, emailing, uploading
+- Anything that leaves the machine: pushing to a remote, publishing, emailing, uploading. One exception: pushing a task branch to open a pull request (see Git below). Pushing to `main` directly is never done.
 
 ## Working with subagents and parallel agents
 - **Give subagents a scoped task** with a clear deliverable and pointers to the relevant standards files.
 - **Treat subagent output as unverified** until the orchestrating agent or the human checks it, especially citations and numbers.
 - **Use a separate branch or worktree** for parallel agents touching the same direction, so their work doesn't collide.
+- **Several sessions share this repo.** Each session lands its work on `main` through its own pull request (see Git). A session never merges another session's branch and never pushes to `main` directly.
 
 ## Git
 - **Commit often, in small units.** Use one commit per logical change, and commit before every experiment run.
 - **Commit messages:** `<direction>: <what changed>`, for example `contrastive-pretraining: add linear-probe eval`.
-- **Branch for risky or exploratory work:** `exp/<short-name>`. Merge into `main` once the work is understood.
+- **Branch for every task.** Workers and parallel agents work on a branch or worktree, never on `main`. Name it `<direction>-<short-name>`, or `exp/<short-name>` for risky or exploratory work.
+- **`main` moves only by pull request** for any change that feeds a research conclusion: experiment code, analysis scripts, outcome rules and thresholds, decision records (`decisions/`), pre-committed memos in `writing/`, review reports in `reviews/`, and anything that changes `README.md` key findings. The PR is the paper trail: its description carries the task as it was given, a fresh read-only reviewer posts its findings as a PR comment, fixes land as new commits on the same branch, and the `LOG.md` entry for the work names the PR number.
+- **Direct merges to `main` are allowed only for** `LOG.md` entries, `PLAN.md` and `README.md` status lines, reading-list leads, and wording or typo fixes that change no fact. When in doubt, open a PR.
+- **Merging a PR needs the user's OK in chat**, given in the session that opened it. GitHub cannot record an approval from the same account, so the reviewer's PR comment plus the user's OK in chat is the approval. Merge with a merge commit (no squash, no rebase) so the branch history survives, then delete the branch.
+- **The repo is public.** A pushed branch is visible at once, so a branch must already satisfy the "Never commit" rule below before it is pushed.
 - **Never commit** secrets, API keys, `.env` files, raw datasets, checkpoints, or large binaries (see `.gitignore`).
 
 ## For the human
