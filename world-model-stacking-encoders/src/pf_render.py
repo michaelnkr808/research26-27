@@ -511,13 +511,13 @@ def compare_provenance(ref, new):
 
 def compare_frames(ref_path, new_path, demos=None):
     """Byte-for-byte comparison of the uint8 128 x 128 render outputs of two HDF5 files (LIBERO layout, data/<demo>/obs/<cam>).
-    demos: names to compare, default every demo present in both. Returns {"identical": bool, "demos": {demo: {cam: {...}}}}.
+    demos: names to compare, default every demo present in either file (one present on one side only is reported missing). Returns {"identical": bool, "demos": {demo: {cam: {...}}}}.
     Any difference in any value, a demo missing in either file, or a shape difference makes identical False."""
     import h5py
     res = {"identical": True, "demos": {}, "missing": []}
     with h5py.File(ref_path, "r") as a, h5py.File(new_path, "r") as b:
         da, db = a["data"], b["data"]
-        names = list(demos) if demos is not None else sorted(set(da.keys()) & set(db.keys()), key=demo_index)
+        names = list(demos) if demos is not None else sorted(set(da.keys()) | set(db.keys()), key=demo_index)
         if not names:
             res["identical"] = False
             res["missing"].append("no demos to compare")

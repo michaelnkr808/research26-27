@@ -481,6 +481,13 @@ def test_provenance_and_frames():
         assert not r["identical"] and r["demos"]["demo_30"]["agentview_rgb"]["n_different"] == 1 and r["demos"]["demo_30"]["eye_in_hand_rgb"]["identical"]
         assert not R.compare_frames(Path(t) / "ref.h5", Path(t) / "wrist.h5")["identical"]
         assert not R.compare_frames(Path(t) / "ref.h5", Path(t) / "shape.h5")["identical"]
+        with h5py.File(Path(t) / "one_demo.h5", "w") as f:             # a demo present in the reference only (and the other way round)
+            o = f.create_group("data").create_group("demo_30").create_group("obs")
+            o.create_dataset("agentview_rgb", data=a)
+            o.create_dataset("eye_in_hand_rgb", data=w)
+        r1 = R.compare_frames(Path(t) / "ref.h5", Path(t) / "one_demo.h5")
+        r2 = R.compare_frames(Path(t) / "one_demo.h5", Path(t) / "ref.h5")
+        assert not r1["identical"] and r1["missing"] == ["demo_31"] and not r2["identical"] and r2["missing"] == ["demo_31"]
         assert not R.compare_frames(Path(t) / "ref.h5", Path(t) / "same.h5", ["demo_99"])["identical"]
     print("consistency comparison: identical passes; one changed value in one pixel fails; library, LIBERO-Plus, bundle difference stops; "
           "driver/GPU difference only recorded; empty or incomplete reference stops")

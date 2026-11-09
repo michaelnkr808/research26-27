@@ -509,7 +509,7 @@ def run_consistency(raw_dir, ref_root, out_root, cfg, env_info, *, render=render
 
 def compare_dirs(ref_dir, new_dir, ref_report=None, new_report=None, suite=SUITE):
     """Render-free comparison of two render outputs: environment records (software difference listed under `stop`, hardware under
-    `recorded`) and the pixels of every demo present in both files, per task file."""
+    `recorded`) and the pixels of every demo present in either file (a demo in one file only counts as a difference), per task file."""
     rr = Path(ref_report or Path(ref_dir) / "render-report.json")
     nr = Path(new_report or Path(new_dir) / "render-report.json")
     ref_env = json.loads(rr.read_text()).get("environment") or {} if rr.exists() else {}
