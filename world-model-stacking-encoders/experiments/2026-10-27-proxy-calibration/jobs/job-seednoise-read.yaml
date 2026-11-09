@@ -5,7 +5,8 @@
 # Needs the ConfigMap stacking-encoders-proxy-lpeval (lp_eval.py + test_lp_eval.py from the repo); see jobs/SEEDNOISE.md for the command.
 # The old ConfigMap stacking-encoders-proxy-src holds an lp_eval.py without the seednoise command, so it is not used here.
 # User go: 2026-11-09 in chat, "run the seednoise". Follows _standards/08: Job, real command that exits, no wait loops, no taint overrides,
-# limits <= 1.2x requests, deadline, ttl, us-west, CPU-only via anti-affinity on NVIDIA PCI present.
+# backoffLimit 0 is deliberate: a minutes-long read-only Job whose log is the only output (08 prefers > 0 for node reboots; a
+# rerun is cheap and the lead can resubmit). limits <= 1.2x requests, deadline, ttl, us-west, CPU-only via anti-affinity on NVIDIA PCI present.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -39,8 +40,8 @@ spec:
           B=/mnt/proxy/rollouts/eval-dinov3-s0
           mkdir -p /work
           # 1
-          date -u; sha256sum /lp/lp_eval.py /lp/test_lp_eval.py; nproc
-          note 1 $?
+          date -u; sha256sum /lp/lp_eval.py /lp/test_lp_eval.py; rc=$?; nproc
+          note 1 $rc
           # 2
           echo "=== unit tests"
           timeout 600 python /lp/test_lp_eval.py
@@ -52,15 +53,25 @@ spec:
           note 3 $?
           # 4
           echo "=== record files"
+          S4=0
           ls -l $A $B
+          rc=$?; if [ $rc -gt $S4 ]; then S4=$rc; fi
           for f in $A/*of8.jsonl $B/*of8.jsonl; do
-            echo "SHA256 $(sha256sum "$f" | cut -d' ' -f1) $f"
-            echo "LINES $(wc -l < "$f") $f"
+            H=$(sha256sum "$f" | cut -d' ' -f1)
+            rc=$?; if [ $rc -gt $S4 ]; then S4=$rc; fi
+            echo "SHA256 $H $f"
+            L=$(wc -l < "$f")
+            rc=$?; if [ $rc -gt $S4 ]; then S4=$rc; fi
+            echo "LINES $L $f"
           done
           for f in $A/*.errors.jsonl $B/*.errors.jsonl; do
-            if [ -e "$f" ]; then echo "ERRORS_FILE $f lines $(wc -l < "$f")"; fi
+            if [ -e "$f" ]; then
+              L=$(wc -l < "$f")
+              rc=$?; if [ $rc -gt $S4 ]; then S4=$rc; fi
+              echo "ERRORS_FILE $f lines $L"
+            fi
           done
-          note 4 0
+          note 4 $S4
           # 5
           echo "=== seednoise"
           timeout 1800 python /lp/lp_eval.py seednoise --a-dir $A --b-dir $B --subset /work/full-subset.json --json-out /work/seednoise.json
@@ -70,19 +81,21 @@ spec:
           echo
           echo "=== END SEEDNOISE_JSON"
           # 6
+          S6=0
           for f in $A/*of8.jsonl $B/*of8.jsonl; do
             n=$(basename "$f")
             echo "BEGIN_GZ_B64 $n"
-            timeout 900 sh -c 'gzip -9 -n -c "$1" | base64' _ "$f"
+            timeout 900 bash -c 'set -o pipefail; gzip -9 -n -c "$1" | base64' _ "$f"
+            rc=$?; if [ $rc -gt $S6 ]; then S6=$rc; fi
             echo "END_GZ_B64 $n"
           done
-          note 6 0
+          note 6 $S6
           # 7
           echo "=== done worst $WORST"
           exit $WORST
         resources:
-          requests: {cpu: "1", memory: 2Gi}
-          limits:   {cpu: "1200m", memory: 2400Mi}
+          requests: {cpu: "1", memory: 1Gi}      # work uses a few hundred MB; keeps NRP's 20% memory floor
+          limits:   {cpu: "1200m", memory: 1200Mi}
         volumeMounts:
         - {name: work, mountPath: /work}
         - {name: lp, mountPath: /lp, readOnly: true}

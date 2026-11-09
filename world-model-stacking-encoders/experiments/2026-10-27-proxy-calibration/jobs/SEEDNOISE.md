@@ -18,7 +18,7 @@ The log's first lines print the sha256 of both files; compare with `shasum -a 25
 
 ## Recovering the files from the log
 
-Save the pod log (`kubectl logs <pod> -n aria-world --request-timeout=60s > seednoise.log`), then:
+Save the pod log (`kubectl logs <pod> -n aria-world --request-timeout=60s > seednoise.log`), then run this from the repo root:
 
 ```
 python3 - <<'EOF'
@@ -26,7 +26,9 @@ import re, base64, gzip, hashlib, os
 log = open("seednoise.log").read()
 out = "world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/results/full-benchmark/rollouts"
 os.makedirs(out, exist_ok=True)
-for name, b64 in re.findall(r"BEGIN_GZ_B64 (\S+)\n(.*?)\nEND_GZ_B64 \1", log, re.S):
+blocks = re.findall(r"BEGIN_GZ_B64 (\S+)\n(.*?)\nEND_GZ_B64 \1", log, re.S)
+assert len(blocks) == 16, f"expected 16 BEGIN/END blocks, found {len(blocks)}"
+for name, b64 in blocks:
     data = gzip.decompress(base64.b64decode(b64))
     open(os.path.join(out, name), "wb").write(data)
     print(name, len(data.splitlines()), hashlib.sha256(data).hexdigest())
@@ -41,4 +43,4 @@ Where things go (under `results/full-benchmark/` of this experiment):
 
 ## Caveat
 
-Read-only: the PVC is mounted `readOnly: true` and nothing is written to it; scratch output goes to an `emptyDir` at `/work` that disappears with the pod. The pod log is the only record, so save it within the 24 h TTL. Kubernetes log size limits could truncate the base64 output of 16 files; check every file's line count and sha256 after recovery, and re-read any shard that fails (a smaller read-Job) rather than trusting it.
+Read-only: the PVC is mounted `readOnly: true` and nothing is written to it; scratch output goes to an `emptyDir` at `/work` that disappears with the pod. The pod log is the only record, so save it within the 24 h TTL. The base64 dump is about 4.3 MB in total (reviewer measured about 270 KB per shard), within kubelet's 10 MiB default log cap with about 2x margin, but check every file's line count and sha256 after recovery, and re-read any shard that fails (a smaller read-Job) rather than trusting it.
