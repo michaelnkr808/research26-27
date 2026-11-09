@@ -228,3 +228,10 @@
 - Decision (user): pursue the robot version, a score for whether an encoder's features change where the scene moves, and check prior work first. A worker searched; a separate reviewer checked it against the papers in two rounds and overturned the first verdict: a simpler "how much do features change" score already exists and tracks robot success; the "where" version was not found.
 - Decision (user): the prior-art file lives in `writing/` (the reading-list folder belongs to the literature session). Added as a candidate (PLAN Next 4); the user decides when to design it.
 - See: world-model-stacking-encoders/writing/2026-11-08-motion-score-prior-art.md, world-model-stacking-encoders/LOG.md (2026-11-08 planning entries)
+
+## 2026-11-09: stacking-encoders implementation lead: perturbed-frames check failed, diagnosed, plan amended; evals at 12 of 16
+
+- Proxy evals: 12 of 16 DINOv3 shards done, all with 0 errors. Three seed-0 shards are running and seed 1 shard 2 is waiting for an L4. Logs are saved and the LOG is current through (o).
+- Perturbed frames: the validation check failed. Our MuJoCo 3.3.2 re-renders lack the fine grain of the original LIBERO images, and the stored-trained probe can't tolerate the difference in any of the ten tasks (Mac diagnosis, two reviews).
+- Decision (user): retrain the probes on our own re-renders. The plan amendment had two review rounds, the user decided 8 points (0.025 sanity margin, two-step run, scene-file check and others), and it's merged. The cluster go-ahead comes later.
+- See: world-model-stacking-encoders/experiments/2026-11-06-perturbed-frames/PLAN.md (Amendment 2026-11-09), .../results/pf-val-diagnosis/README.md, world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/LOG.md (n)-(o)

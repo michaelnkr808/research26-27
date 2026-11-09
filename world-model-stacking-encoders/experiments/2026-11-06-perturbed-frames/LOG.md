@@ -243,3 +243,17 @@ Merged main into `pf-smoke` (c3deaab; has `src/pf_analysis.py`, PLAN amendment 8
 **Did:** recorded the user's 2026-11-09 answers (verbatim labels) in a "Decided by the user, 2026-11-09" block of Amendment 2026-11-09 and marked items 1 to 8 decided; item 9 (go-ahead) stays open. Fixed the Job count (9 Jobs as listed, about 10 with one split, 11 to 13 with SAM 3 in 2 to 3 shards in both phases). Moved SigLIP 2 and C-RADIOv4 test extraction into the phase B render pod (render about 40 to 50 min, speculative, vs about 1.5 GPU-h of extraction); recorded as a risk that the pod needs a transformers pin per encoder (untested) and that GPU memory fit on an L4 is expected but not measured. Item 8 is now the inputs-only `model_file` comparison with `differing_bodies` (`pf_render.py:61-77`), with the reason (jointed bodies come from the state and may differ between the LIBERO-Plus XML and the dataset author's). Section 7's stored-test lag check is dropped per item 7. README status updated.
 **Test-set use (`_standards/07`):** none.
 **Next:** code changes, then a review, then the user's separate "go" for cluster Jobs.
+
+## 2026-11-09 [agent, lead] session close (implementation lead): pf-val, diagnosis, decision, amendment merged
+
+**Did (lead):**
+- Watched pf-val. It expired Pending (12 h deadline from creation) and was resubmitted on the user's "Resubmit, 48 h wait (Recommended)". It then ran 18:17-19:08 UTC Nov 8 and failed only the 0.01 gate.
+- The user approved a 5 h overall cap for any rerun ("Add 5 h overall cap (Recommended)"). It was not applied, because the run had finished first.
+- The user chose "Find the cause first (Recommended)" and then "Check all ten tasks (Recommended)". The user downloaded the original libero_goal HDF5s (HF `yifengzhu-hf/LIBERO-datasets` @ f13aa24a; the stove file's sha256 matches the Job copy).
+- The lead copied the re-rendered HDF5s and features off the PVC through the running eval pod, in 16 MB dd chunks. All 19 files match the pod-side sha256.
+- Two independent reviews of the diagnosis. The first round's paste-test conclusion was overstated, and the lead had relayed it to the user before review. The lead corrected it in chat and the worker fixed the README.
+- The user decided "Retrain readers on ours (Recommended)". The amendment had two independent review rounds; the user's eight decisions are recorded in it.
+- Merged to main: pf-smoke plus the diagnosis (bde59a7), and the amendment (3600cff). Their worktrees were removed.
+- Lead miss, recorded: the lead offered only Mac compute for the diagnosis. The stored DINOv3 features already sat on the `stacking-encoders-features` volume, and a CPU-only copy pod was never offered. The user later said they would rather work on the cluster with the saved features.
+
+**Next:** a worker implements the amendment's code changes (section 7 of Amendment 2026-11-09). Check the transformers-pin risk for the three-encoder phase-B pod first. Then an independent review. Then the user's separate "go" before any ConfigMap or Job is prepared. Prefer reusing saved cluster features where the amendment allows.
