@@ -1,7 +1,7 @@
 # 48 GB VARIANT of job-train-retrain-dinov3-l16.yaml (added 2026-11-09 on the lead's instruction). NOT SUBMITTED. Used only if the
 # 16-layer Job failed with CUDA out of memory on a 24 GB card (3090, 4090, A5000; the pod log's nvidia-smi line names the card):
 # the lead resubmits it once with this manifest, GPU list restricted to NVIDIA-L40 and NVIDIA-L40S (strings as in the wave-1b
-# list), new Job name, same run dirs (the failed run left only config.json; the guard allows that). Only an OOM or builder
+# list), new Job name, same run dirs (the failed run may have written a ckpt.pt at step 1000: see RESUME below). Only an OOM or builder
 # assertion on a 48 GB card triggers the 20-epoch fallback. Everything else is identical; the original header follows.
 # NOT SUBMITTED (written 2026-11-09, Mac only; no kubectl run, no dry run). Submit only on the user's go, brought by the lead
 # (PLAN "Amendment 2026-11-09 (c)" section 7 item 3 is still OPEN; the user chose "Phase B first, then the 13": nothing
