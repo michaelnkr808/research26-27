@@ -10,7 +10,7 @@ Most of the work here is done by AI agents (Claude Code and subagents). These ru
 
 **End of session:**
 1. Append an entry to `LOG.md` (template in `04`). Mark the entry `[agent]` and include what was verified and what wasn't. If the session worked on an experiment, the detail goes in that experiment's `LOG.md` and a short summary in the direction's.
-2. Update `PLAN.md` if any item started, finished, changed, or was dropped, **in the same commit** as the LOG entry (drift guard). A finished item becomes one line under "Recently done"; a dropped one keeps its reason in the LOG or a decision record.
+2. Update `PLAN.md` if any item started, finished, changed, or was dropped, **in the same commit** as the LOG entry (drift guard). For work that landed by PR, the PLAN status move goes in the same direct-merge commit as the LOG entry; PLAN design or outcome-rule changes were already in the PR. A finished item becomes one line under "Recently done"; a dropped one keeps its reason in the LOG or a decision record.
 3. Update the `README.md` status and key findings if they changed. If an experiment produced results, write them in its `README.md`.
 4. Commit the work (see "Git" below).
 5. Leave a concrete **Next** step, so the next session, human or agent, can start without re-deriving context.
@@ -31,20 +31,20 @@ An agent pauses and asks before:
 - Large compute jobs, beyond the budget set in the direction's `STANDARDS.md`
 - Deleting data, overwriting results, rewriting git history, or force-pushing
 - Changing the research question, scope, or evaluation protocol
-- Anything that leaves the machine: pushing to a remote, publishing, emailing, uploading. One exception: pushing a task branch to open a pull request (see Git below). Pushing to `main` directly is never done.
+- Anything that leaves the machine: pushing to a remote, publishing, emailing, uploading. One exception: pushing a task branch to open a pull request, and later fixes on that branch (see Git below). Pushing `main` to the remote right after a merge is part of merging (see Git); nobody commits on `main` itself.
 
 ## Working with subagents and parallel agents
 - **Give subagents a scoped task** with a clear deliverable and pointers to the relevant standards files.
 - **Treat subagent output as unverified** until the orchestrating agent or the human checks it, especially citations and numbers.
 - **Use a separate branch or worktree** for parallel agents touching the same direction, so their work doesn't collide.
-- **Several sessions share this repo.** Each session lands its work on `main` through its own pull request (see Git). A session never merges another session's branch and never pushes to `main` directly.
+- **Several sessions share this repo.** Each session lands its work on `main` through its own pull request (see Git). A session never merges another session's branch and never commits on `main` itself; `main` changes only by merge, PR or direct (see Git).
 
 ## Git
 - **Commit often, in small units.** Use one commit per logical change, and commit before every experiment run.
 - **Commit messages:** `<direction>: <what changed>`, for example `contrastive-pretraining: add linear-probe eval`.
-- **Branch for every task.** Workers and parallel agents work on a branch or worktree, never on `main`. Name it `<direction>-<short-name>`, or `exp/<short-name>` for risky or exploratory work.
-- **`main` moves only by pull request** for any change that feeds a research conclusion: experiment code, analysis scripts, outcome rules and thresholds, decision records (`decisions/`), pre-committed memos in `writing/`, review reports in `reviews/`, and anything that changes `README.md` key findings. The PR is the paper trail: its description carries the task as it was given, a fresh read-only reviewer posts its findings as a PR comment, fixes land as new commits on the same branch, and the `LOG.md` entry for the work names the PR number.
-- **Direct merges to `main` are allowed only for** `LOG.md` entries, `PLAN.md` and `README.md` status lines, reading-list leads, and wording or typo fixes that change no fact. When in doubt, open a PR.
+- **Branch for every task.** Workers and parallel agents work on a branch or worktree, never on `main`. Name it `<direction>-<short-name>`, `standards-<short-name>` for root-level changes, or `exp/<short-name>` for risky or exploratory work.
+- **`main` moves only by pull request** for any change that feeds a research conclusion: experiment code, analysis scripts, outcome rules and thresholds, decision records (`decisions/`), pre-committed memos in `writing/`, review reports in `reviews/`, experiment `PLAN.md` amendments, edits to `_standards/` or a direction `STANDARDS.md`, and anything that changes `README.md` key findings. The PR is the paper trail: its description carries the task as it was given, a fresh read-only reviewer posts its findings as a PR comment, fixes land as new commits on the same branch, and the `LOG.md` entry for the work names the PR number. That LOG entry is not committed on the task branch: it merges directly (next bullet) once the PR number exists, so PRs do not collide on `LOG.md`.
+- **Direct merges to `main` (a merge without a PR) are allowed only for** `LOG.md` entries, `PLAN.md` Now/Next/Parked/Recently-done moves, `README.md` status lines, reading-list leads, and wording or typo fixes that change no fact. When in doubt, open a PR. After any merge to local `main`, PR or direct, the session that merged fast-forward pushes `main` to the remote in the same step, so GitHub `main` never falls behind.
 - **Merging a PR needs the user's OK in chat**, given in the session that opened it. GitHub cannot record an approval from the same account, so the reviewer's PR comment plus the user's OK in chat is the approval. Merge with a merge commit (no squash, no rebase) so the branch history survives, then delete the branch.
 - **The repo is public.** A pushed branch is visible at once, so a branch must already satisfy the "Never commit" rule below before it is pushed.
 - **Never commit** secrets, API keys, `.env` files, raw datasets, checkpoints, or large binaries (see `.gitignore`).
