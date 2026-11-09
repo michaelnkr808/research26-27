@@ -861,3 +861,13 @@ Lead session. UTC. Covers 2026-11-07 about 23:47 to 2026-11-08 about 04:30.
 - Status: 11 of 16 shards done (seed 0 shards 1, 2, 3, 5; seed 1 shards 0, 1, 3, 4, 5, 6, 7). Running: seed 0 shard 0. Pending: seed 0 shards 4, 6, 7 (s0-l4 indices 1-3) and seed 1 shard 2 (s1-l4 index 0).
 
 **Next:** the user decides whether and how to resubmit the validation Job. Save each remaining shard's log within its 24 h TTL. When all 16 are done, run `lp_eval.py seednoise` and bring the verdict to the user.
+
+## 2026-11-09 (o) [agent, lead] (seed 0 shard 0 done, 12 of 16; seed 0 shards 4, 6, 7 started; correction to (n))
+
+- verified (pod log, committed as `results/logs/eval-dinov3-s0-l4-0-kj8sm.log`): seed 0 shard 0 finished at 23:52 UTC Nov 8 with 0 errors. This session ran 2408 records at 369 episodes/h, policy busy 46%, GPU 46.8% over 787 samples. The file has 3767 records.
+- verified: the file has 3767 distinct (benchmark, suite, episode_id, eval_seed) keys, the eval script's own `job_key`, and no duplicates (read-only exec, Python count). Shards 0 and 1 hold 3767 jobs and the other shards 3766 (pod log: "3767 jobs in shard 0/8"; the committed logs show 3767 for s0 shards 0 and 1 and s1 shards 0 and 1).
+- **Correction to (n):** the resume skipped 1359 finished records, not 1358. The pod log reads "3767 jobs, 1359 already in ..., 2408 to run". The (n) arithmetic wrongly assumed 3766 jobs per shard.
+- verified: s0-l4 indices 1, 2 and 3 (seed 0 shards 4, 6 and 7) started at 00:13, 00:23 and 00:36 UTC Nov 9, on gpu05, gpu06 and gpu06. About 15 minutes in, they ran at 484, 376 and 387 episodes/h, with policy busy 64%, 48% and 52%. s1-l4 index 0 (seed 1 shard 2) is still Pending.
+- Status: 12 of 16 shards done. About 11,000 episodes are left on the three running shards, plus 3766 for seed 1 shard 2. Estimate (speculative, from the current rates): the three running shards finish about 09:00-10:30 UTC Nov 9.
+
+**Next:** save the remaining shard logs. When all 16 are done, run `lp_eval.py seednoise` with the exact counts (shards 0 and 1 hold 3767 jobs) and bring the verdict to the user.
