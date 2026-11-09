@@ -162,6 +162,36 @@ def file_sha256(path):
     return h.hexdigest()
 
 
+def root_sources(root, encoders, suite, stems):
+    """{encoder: sorted source_file values} of a feature root: the rendered HDF5 each file was extracted from (meta only)."""
+    import h5py
+    out = {}
+    for e in encoders:
+        srcs = []
+        for stem in stems:
+            p = Path(root) / e / suite / (stem + ".h5")
+            if not p.exists():
+                raise FileNotFoundError(f"missing feature file {p}")
+            with h5py.File(p, "r") as f:
+                m = _read_meta(f, str(p))
+            if "source_file" not in m:
+                raise ValueError(f"{p}: meta has no 'source_file' (needed to tell which render a root came from)")
+            srcs.append(m["source_file"])
+        out[e] = sorted(srcs)
+    return out
+
+
+def check_roots_distinct(named_sources):
+    """named_sources: {root name: {encoder: [source files]}}. No two roots may share a source-file set for an encoder."""
+    names = list(named_sources)
+    for i, a in enumerate(names):
+        for b in names[i + 1:]:
+            for e in named_sources[a]:
+                if named_sources[a][e] == named_sources[b][e]:
+                    raise ValueError(f"roots '{a}' and '{b}' have the same source files for {e} "
+                                     f"({named_sources[a][e][:2]}...): a swapped or duplicated feature root")
+
+
 def load_reference_meta(path=REF_META_PATH, encoders=None):
     """{encoder: meta} of the tally cache from the smoke report (q23.details.<encoder>.meta); every META_KEYS key must exist."""
     if not Path(path).is_file():
@@ -756,7 +786,8 @@ def _dev(trval_root, raw_dir, suite, out_dir, ftype, sizes, stored_root, tally_d
               "n_frames": tr.counts, "n_demos": len(tr.index), "expected_frames": expected_frames,
               "encoders": {e: tr.meta[e] for e in encoders}, "alphas_grid": D.ALPHAS, "gate": gate,
               "lag_check": lag, "cross_value": cross, "ref_meta_path": str(ref_meta_path),
-              "ref_meta_sha256": file_sha256(ref_meta_path), "feature_sha256": tr.sha256, "per_camera_sizes": dims,
+              "ref_meta_sha256": file_sha256(ref_meta_path), "feature_sha256": tr.sha256,
+              "source_files": {"trval": root_sources(trval_root, encoders, suite, [Path(f).stem for f in tr.files])}, "per_camera_sizes": dims,
               "matched": {"target": target, "reduced": reduced, "declared_sizes": sizes}, "configs": {}, "notes": notes}
     if not reduced:
         report["matched"]["note"] = "all encoders already have the smallest size; the matched row would equal the full row and is skipped"
@@ -871,6 +902,11 @@ def _run(trval_root, raw_dir, suite, cond_roots, dev_report, out_dir, ftype="glo
     if not g_curve[g_alpha] >= gate_threshold():
         raise GateError(f"recomputed gate score {g_curve[g_alpha]} is below the threshold {gate_threshold()}")
     feats, meta, split = tr.feats, tr.check_meta, tr.split
+    stems = [Path(f).stem for f in tr.files]
+    sources = {"trval": root_sources(trval_root, encoders, suite, stems)}
+    for c in [REF] + TYPES:
+        sources[c] = root_sources(cond_roots[c], encoders, suite, stems)
+    check_roots_distinct(sources)       # before any test label or test feature is read
     trva = np.ones(len(split), bool)                       # every row loaded is train or val
     lag = None if stored_root is None else lag_check_stored(tr, stored_root, suite, ftype, pca_whiten)
     demos, y_test = load_test_layout(raw_dir, expected_frames)      # first read of test labels
@@ -894,7 +930,7 @@ def _run(trval_root, raw_dir, suite, cond_roots, dev_report, out_dir, ftype="glo
 
     W = make_weights(k, n_boot, seed)
     results = {"suite": suite, "ftype": ftype, "files": tr.files, "encoders": {e: tr.meta[e] for e in encoders},
-               "feature_sha256": tr.sha256, "ref_meta_sha256": file_sha256(ref_meta_path),
+               "feature_sha256": tr.sha256, "ref_meta_sha256": file_sha256(ref_meta_path), "source_files": sources,
                "git_commit": D.git_commit(), "seed": seed, "n_boot": n_boot, "n_test_demos": k,
                "n_test_frames": int(len(y_test)), "n_trainval_frames": tr.counts,
                "frames_per_demo_dropped_last": [int(n - t) for (_, _, n, _), t in zip(demos, lengths)],

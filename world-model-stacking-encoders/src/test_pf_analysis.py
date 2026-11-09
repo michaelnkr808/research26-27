@@ -23,9 +23,12 @@ DIMS = {"dinov3": 8, "siglip2": 8, "sam3": 8, "c-radiov4": 14, "vggt-omega": 12}
 PASS_REF = -1.0   # a GATE_REF that makes the gate pass on any synthetic world (threshold -1.025)
 
 
-def meta_for(e):
-    return {"encoder": e, "hf_id": "hf/" + e, "resolution": 224, "rotate180": True, "dtype": "float32", "grid": 4,
-            "frame_stride": 1, "cams": list(D.CAMS), "n_demos": 10}
+def meta_for(e, src=None):
+    m = {"encoder": e, "hf_id": "hf/" + e, "resolution": 224, "rotate180": True, "dtype": "float32", "grid": 4,
+         "frame_stride": 1, "cams": list(D.CAMS), "n_demos": 10}
+    if src is not None:
+        m["source_file"] = src      # the rendered HDF5 the features came from (not in META_KEYS)
+    return m
 
 
 def make_world(root, seed=0, flip=(), noise_scale=0.15, drop_last=True, cond_drop_last=True, n_files=2, n_demo=50,
@@ -62,7 +65,7 @@ def make_world(root, seed=0, flip=(), noise_scale=0.15, drop_last=True, cond_dro
             for e in DIMS:
                 (feats_dir / e / SUITE).mkdir(parents=True, exist_ok=True)
                 fe[e] = h5py.File(feats_dir / e / SUITE / (stem + ".h5"), "w")
-                m = meta_for(e)
+                m = meta_for(e, f"/render/trval/{stem}.hdf5")
                 if trval_meta_patch and fi >= 1:
                     m.update(trval_meta_patch)
                 fe[e].attrs["meta"] = json.dumps(m)
@@ -117,7 +120,7 @@ def make_world(root, seed=0, flip=(), noise_scale=0.15, drop_last=True, cond_dro
             p.mkdir(parents=True, exist_ok=True)
             with h5py.File(p / (stem + ".h5"), "a") as f:
                 if "meta" not in f.attrs:
-                    m = meta_for(e)
+                    m = meta_for(e, f"/render/{cn}/{stem}.hdf5")
                     for k_, v_ in (cond_meta_patch or {}).items():
                         if v_ is None:
                             m.pop(k_)
@@ -890,13 +893,50 @@ def test_review_fixes():
                 ref2["q23"]["details"][e]["meta"]["git_commit"] = "tally-cache-commit"
             (t / "ref2.json").write_text(json.dumps(ref2))
             rep2 = run_dev(w, t / "d_ref2", ref_meta_path=t / "ref2.json")
-            assert all("git_commit" not in m for m in rep2["encoders"].values()) and rep2["encoders"]["sam3"] == meta_for("sam3")
+            assert all("git_commit" not in m for m in rep2["encoders"].values()) and rep2["encoders"]["sam3"]["source_file"].startswith("/render/trval/")
             # (d) a partner re-extracted in place after dev is refused (hashes of every train/val feature file).
             assert set(good["feature_sha256"]) == {f"{e}/task{i}.h5" for e in DIMS for i in range(2)}
             with h5py.File(w["feats"] / "siglip2" / SUITE / "task1.h5", "a") as f:
                 f["demo_3"][D.CAMS[0]]["global"][0, 0] += 1e-3
             expect(lambda: run_final(w, t / "f10", ok), P.GateError, "siglip2/task1.h5")
             assert not (t / "f10").exists()
+    # Provenance of the feature roots: per root and encoder the source files are recorded; a swapped or duplicated
+    # root is refused before any test label is read.
+    with tempfile.TemporaryDirectory() as t:
+        t = Path(t)
+        w = make_world(t / "w", seed=42, n_files=2)
+        with gate_ref(PASS_REF):
+            rep = run_dev(w, t / "d")
+            ok = t / "d" / "dev-report.json"
+            assert rep["source_files"]["trval"]["dinov3"] == ["/render/trval/task0.hdf5", "/render/trval/task1.hdf5"]
+            res = run_final(w, t / "f_ok", ok)
+            assert res["source_files"]["light"]["sam3"] == ["/render/light/task0.hdf5", "/render/light/task1.hdf5"]
+            old = P.load_test_layout
+            def boom(*a, **k):
+                raise AssertionError("test labels read")
+            P.load_test_layout = boom
+            try:
+                swapped = dict(w["conds"], camera=w["conds"]["light"])
+                expect(lambda: P.run(w["feats"], w["raw"], SUITE, swapped, ok, t / "f1", n_boot=100, min_boot=100, quiet=True,
+                                     expected_frames=w["expected"], ref_meta_path=w["ref_meta"]), ValueError, "'camera' and 'light'")
+                assert not (t / "f1").exists()
+                # A clean test root whose files claim the phase-A render.
+                for e in DIMS:
+                    for stem in w["stems"]:
+                        with h5py.File(w["conds"][P.REF] / e / SUITE / (stem + ".h5"), "a") as f:
+                            m = json.loads(f.attrs["meta"]); m["source_file"] = f"/render/trval/{stem}.hdf5"
+                            f.attrs["meta"] = json.dumps(m)
+                expect(lambda: run_final(w, t / "f2", ok), ValueError, "'trval' and 'clean_rerender'")
+            finally:
+                P.load_test_layout = old
+        # A root without source_file in its metas cannot be told apart: refused.
+        w2 = make_world(t / "w2", seed=43, n_files=1)
+        for e in DIMS:
+            with h5py.File(w2["conds"]["noise"] / e / SUITE / "task0.h5", "a") as f:
+                m = json.loads(f.attrs["meta"]); del m["source_file"]; f.attrs["meta"] = json.dumps(m)
+        with gate_ref(PASS_REF):
+            run_dev(w2, t / "d2")
+            expect(lambda: run_final(w2, t / "f3", t / "d2" / "dev-report.json"), ValueError, "source_file")
     print("review fixes: real tally JSONs, tally failure recorded, lag required, tally-cache metas, stale report, gate before labels ok")
 
 
