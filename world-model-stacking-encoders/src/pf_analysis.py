@@ -26,7 +26,7 @@ Two entries (subcommands), gate-first:
   3. R2_c(X), drop_c(X) = R2_rerender(X) - R2_c(X), e_c(B) = drop_c(D+B) - drop_c(D),
      gain_c(B|D) = R2_c(D+B) - R2_c(D); pooled e(B), g(B) = equal-weight mean over the four types.
   4. One demo-level paired bootstrap (the same draws for every probe, condition and view), seed recorded.
-  5. Rule P (decides), rule B (reported only, three readings of its last clause), the ordering by e(B).
+  5. Rule P (decides), rule B (reported only, two readings of its last clause), the ordering by e(B).
   6. Feature drift per encoder ["Secondary measure: feature drift"].
   7. Matched-dimension control: PCA on re-rendered clean-train frames only (unwhitened), applied unchanged to
      every condition; only encoders larger than the smallest are reduced (global: C-RADIOv4 and VGGT-Omega to
@@ -669,7 +669,7 @@ def ordering(e):
     return {"ours_by_e_point": ours, "ours_e": {b: float(e[b][0]) for b in ours},
             "paper_order": [b for b in PAPER_ORDER if b in e],
             "paper_delta": {b: PAPER_DELTA[b] for b in PAPER_ORDER if b in e},
-            "note": "ordering only; 4 partners, no significance claim"}
+            "note": "ordering only; 4 partners, no significance claim. Ours is listed by e(B) descending (largest drop relative to DINOv3 first); the paper's by delta descending (best first). A perfect match is therefore the reversed list."}
 
 
 # ---------------------------------------------------------------------------
