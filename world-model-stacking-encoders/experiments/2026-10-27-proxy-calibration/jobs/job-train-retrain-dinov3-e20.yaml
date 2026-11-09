@@ -1,0 +1,98 @@
+# NOT SUBMITTED, AND USED ONLY UNDER THE FALLBACK RULE (written 2026-11-09, Mac only; no kubectl run, no dry run).
+# IMPLEMENTS: PLAN "Sign-off note 2026-11-09 for Amendment 2026-11-09 (c)", option A1 = the same model trained twice as long:
+# dinov3, 20 epochs (43,392 steps), default size (8 layers, hidden 384, 3 heads, batch 128). It is the user's pre-approved
+# fallback, 2026-11-09, verbatim: "yeah sure then just go with the deeper 16 layer model, with the doubel epochs as the fallbak".
+# Level target (user): "Yes: mean success at least 27 points (Recommended)". Thresholds unchanged (T 2.7, floor 2.7).
+# FALLBACK RULE (the only condition for using this file): the 16-layer Job (jobs/job-train-retrain-dinov3-l16.yaml) failed before
+# completing its first epoch (about 2,170 steps) because of CUDA out of memory or an assertion/exception while building the
+# 16-layer model. A 16-layer run that trains to the end but scores badly is NOT a reason to use this file (that would be a second
+# retrain, which the amendment forbids). Evidence that counts: jobs/RETRAIN.md. If the 16-layer Job has not failed that way, do
+# not submit this file. The failed 16-layer run directories are left alone; this Job writes new ones.
+# Identical to the 16-layer manifest except: name; the epochs flag in place of the layers flag (default layers); out dirs
+# /mnt/proxy/runs/dinov3-e20-s0 and -s1; log names; header. Same guard (aborts with exit 3 if the out dir already holds ckpt.pt
+# or model.pt; RESUME=1 bypasses only the ckpt.pt check), same GPU list, requests/limits, image, ConfigMap, PVC, data paths,
+# same backoffLimit 0, same SRC_GIT_COMMIT FILL_AT_SUBMIT guard.
+# Resources: CPU 4 / 4800m, memory 28Gi / 33Gi (1.18x) as wave 1c (working set 22 GiB at 500 steps, LOG 2026-11-02 (c); the
+# replay buffer does not depend on the epoch count; full-run peak was not recorded). GPU memory is the known-good 8-layer
+# size (trained on a 24 GB RTX 3090 and a 46 GB A40, LOG 2026-11-06 (c), 2026-11-07 (b)).
+# Time: about 8 h per run (speculative: 43,392 steps x 0.64 to 0.65 s/step, measured at the default size over 21,696 steps,
+# = 7.7 to 7.9 h, plus about 0.2 h setup). activeDeadlineSeconds 129600 (36 h from Job creation, queue included) = 2 x 8 h (16 h)
+# + 20 h for the queue (round 1 queued 3 h to 9 h+, LOG 2026-11-06 (a), (c)); the same arithmetic as the 16-layer manifest. The
+# learning rate schedule is a fresh warmup and cosine over the 43,392 steps (proxy_wam.py lr_at), not an extension of the old run.
+# Below the 48 h stop line (RUN.md stop 5). ttl 24 h: save pod logs within 24 h. No in-pod GPU sampler (the wave-1c manifest had none).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-train-retrain-dinov3-e20
+  namespace: aria-world
+spec:
+  completionMode: Indexed
+  completions: 2
+  parallelism: 2
+  backoffLimit: 0
+  activeDeadlineSeconds: 129600
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090, NVIDIA-RTX-A5000, NVIDIA-L40, NVIDIA-L40S]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net, ry-gpu-08.sdsc.optiputer.net]}  # GPU faults, 2026-11-03
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; I=$JOB_COMPLETION_INDEX
+          P=($PAIRS); C=${P[$I]%%:*}; S=${P[$I]##*:}
+          OUT=$R/runs/$C-e20-s$S
+          mkdir -p $R/logs $R/runs
+          exec > >(tee -a $R/logs/train-retrain-e20-$C-s$S-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          echo "=== RETRAIN A1 FALLBACK (20 epochs) index $I: config $C seed $S out $OUT"; date -u
+          echo "SRC_GIT_COMMIT=$SRC_GIT_COMMIT RESUME=$RESUME"
+          [ "$SRC_GIT_COMMIT" != FILL_AT_SUBMIT ] || { echo "ABORT: SRC_GIT_COMMIT not filled at submit"; exit 2; }
+          if [ -e $OUT/model.pt ]; then echo "ABORT: $OUT/model.pt exists (a finished run); refusing to overwrite"; exit 3; fi
+          if [ -e $OUT/ckpt.pt ] && [ "$RESUME" != 1 ]; then echo "ABORT: $OUT/ckpt.pt exists; proxy_wam.py would resume an old run (set RESUME=1 only to resume this run on purpose)"; exit 3; fi
+          nvidia-smi; nproc
+          bash /src/setup_env.sh > /work/pip-env.log 2>&1 || { tail -50 /work/pip-env.log; exit 1; }
+          cp /work/pip-env.log $R/logs/pip-env-retrain-e20-$C-s$S.log
+          FLAGS="--feats $R/feats --suites libero_spatial,libero_object,libero_goal,libero_10 --t5 $R/feats/t5 --config $C --seed $S --epochs 20 --out $OUT"
+          echo "FLAGS: python /src/proxy_wam.py $FLAGS"
+          python /src/proxy_wam.py $FLAGS
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}
+        - {name: RESUME, value: "0"}
+        - {name: PAIRS, value: "dinov3:0 dinov3:1"}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: /src}
+        - {name: OMP_NUM_THREADS, value: "3"}
+        - {name: MALLOC_ARENA_MAX, value: "2"}
+        resources:                    # as the wave-1c manifest; limits <= 1.2x requests
+          requests: {cpu: "4", memory: 28Gi, nvidia.com/gpu: "1", ephemeral-storage: 20Gi}
+          limits:   {cpu: "4800m", memory: 33Gi, nvidia.com/gpu: "1", ephemeral-storage: 24Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 24Gi}
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 2Gi}

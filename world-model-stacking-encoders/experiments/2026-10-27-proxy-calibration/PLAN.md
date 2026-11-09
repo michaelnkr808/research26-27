@@ -363,6 +363,32 @@ All arithmetic and speculative unless marked; eval figures are the options memo'
 #### 7. For the user to decide (all STILL OPEN)
 
 1. **Which option, if any:** A1 (20 epochs), A2 (40 epochs), B1 (16 layers), B2 (wider), C, or none. STILL OPEN. (The lead's reading is in section 2; no pick is made here.)
+   [decided 2026-11-09: B1 (`--layers 16`, 10 epochs) first, A1 (`--epochs 20`) as the pre-approved fallback; see "Sign-off note 2026-11-09" at the end of this file.]
 2. **The level target:** L0 none, L1 with X, or L2 clean-LIBERO as context; and the value of X. STILL OPEN.
+   [decided 2026-11-09: L1 with X = 27; see "Sign-off note 2026-11-09" at the end of this file.]
 3. **Go for the re-check:** whether to submit the retraining Jobs (the evals follow), and the spend of about 150 to 170 GPU-h in section 6. STILL OPEN.
 4. **That the original DINOv3 pair becomes a recorded pilot-scale result and the 13 runs use the new recipe.** STILL OPEN.
+   [decided 2026-11-09, as the lead's reading, to be confirmed at the go: choosing an option implies this item. The original pair (10 epochs, 384 wide, 8 layers) becomes a recorded pilot-scale result and the 13 runs use the new recipe. See "Sign-off note 2026-11-09" at the end of this file.]
+
+#### Sign-off note 2026-11-09 for Amendment 2026-11-09 (c)
+
+Written 2026-11-09 by an implementation worker for the implementation lead, from the lead's brief. A dated record; no existing line above is edited (the bracketed "[decided 2026-11-09 ...]" lines inside section 7 are new lines). Labels: verified = read in a repo file this session; recalled = from memory; speculative = reasoning. The decisions below were made by the user in the implementation lead's window on 2026-11-09 and relayed by the lead; the worker did not see that chat.
+
+**The user's decisions, verbatim (source: implementation lead's window, 2026-11-09):**
+- Level target (AskUserQuestion), chosen label: "Yes: mean success at least 27 points (Recommended)". Option text: "Then the 2.7-point harm threshold is at most a tenth of the model's own score. If missed, you decide the next step; no silent second retrain."
+- Option (chat), verbatim: "yeah sure then just go with the deeper 16 layer model, with the doubel epochs as the fallbak" (typos as typed).
+- Earlier the same day (AskUserQuestion), chosen label: "Phase B first, then the 13 (Recommended)". Reading: nothing proxy-side is submitted while the perturbed-frames phase B GPU Jobs run, and the lead brings the manifests to the user before submitting.
+
+**What is now fixed (pre-registered on 2026-11-09, before any retrained model exists):**
+1. Option B1: `dinov3`, `--layers 16`, everything else at the defaults (10 epochs, batch 128, hidden 384, heads 3, head dim 128), training seeds 0 and 1, new run directories `/mnt/proxy/runs/dinov3-l16-s0` and `-s1`.
+2. Fallback A1: `dinov3`, `--epochs 20`, default size, same seeds, new run directories `/mnt/proxy/runs/dinov3-e20-s0` and `-s1`. Pre-approved by the user ("with the doubel epochs as the fallbak"). It is used only under the fallback rule below.
+3. Level target L1 with X = 27: both retrained models must reach a mean LIBERO-Plus success of at least 27 points. Missing it is a decision for the user, not a second retrain (section 3, item 4, and the "If the level target is not met" options).
+4. Thresholds unchanged: seed-noise T = 2.7 points and floor 2.7 points; D+R harm threshold -2.7; calibration (a) +2.7 and (b) -1.35. The re-check rule of section 3 applies to whichever recipe ends up trained.
+
+**Fallback rule (fixed now).** The fallback A1 is used only if the B1 Job fails before completing its first epoch (about 2,170 steps of the 21,696) for an environment reason: CUDA out of memory (it does not fit in GPU memory), or an assertion or exception raised while building the model with `--layers 16`. A B1 run that trains to the end but scores badly, including one that misses X = 27, is NOT a reason to switch: that would be a second retrain, which the amendment forbids. Both seeds use the same recipe, so a trigger in either index sends both seeds to A1. Failures that are not about the recipe (deadline expiry in the queue, a node or GPU fault, host-memory kill, a ConfigMap or PVC problem) are not triggers: the lead resubmits the same B1 manifest after a diagnosis, or brings the question to the user. This reading of "environment reason" is the worker's and is for the lead to confirm. The exact log evidence is in `jobs/RETRAIN.md`.
+
+**48 GB step before the fallback (added 2026-11-09 on the lead's instruction, pre-registered before any retrained model exists).** The B1 GPU list includes 24 GB cards (RTX 3090, 4090, A5000), and an out-of-memory failure there says the card was too small, not that the recipe does not fit. So: if the 16-layer Job fails with CUDA out of memory on a 24 GB card (the pod log's nvidia-smi line names the card), the lead resubmits the 16-layer Job once with its GPU list restricted to the 48 GB cards (NVIDIA-L40, NVIDIA-L40S) and a new Job name (`jobs/job-train-retrain-dinov3-l16-48gb.yaml`). Only an out-of-memory failure or a builder assertion on a 48 GB card triggers the 20-epoch fallback. The first-epoch condition above still applies. Cost: a possibly longer queue on the two card types.
+
+**Resume rule for that retry (added 2026-11-09 after review).** `proxy_wam.py` writes `ckpt.pt` every 1000 steps (line 539), so a failed 16-layer run, or its healthy partner killed by the Job failure, may already hold one inside the first-epoch window. If either 16-layer run dir holds `ckpt.pt`, the lead renders the 48 GB manifest with `RESUME=1` (same seed and batch plan, the schedule continues) and records the resume in the LOG. Deleting a partial run dir needs the user's OK.
+
+**What stays open:** item 3 of section 7, the go for the re-check Jobs (whether and when to submit, and the spend of about 150 to 170 GPU-h in section 6). By the user's "Phase B first, then the 13" choice nothing proxy-side is submitted while phase B runs. The manifests `jobs/job-train-retrain-dinov3-l16.yaml` and `jobs/job-train-retrain-dinov3-e20.yaml` exist but are NOT submitted; the lead brings them to the user before any submit. Item 4 (original pair becomes a recorded pilot-scale result, the 13 runs use the new recipe) follows from choosing an option; that reading is the lead's and is to be confirmed at the go.
