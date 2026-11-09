@@ -2,6 +2,8 @@
 
 Written 2026-10-19 by an agent after mentor feedback. Nothing here is a finding. The user picks the hypothesis; this file lays out options.
 
+**Status 2026-11-09:** the 2026-10-21 draft question and the "Outcome rule (proposed)" under the feasibility experiment are superseded by `decisions/003` (the tally met its rethink rule; hypothesis choice deferred, 003 line 9). H-B "Recommended primary" was written before the tally, and its premise (gain flags D+R) failed. A direction-level hypothesis is still not chosen.
+
 ## Update 2026-10-21: tally outcome and reframe (agent; see LOG 2026-10-21 (i))
 - The feasibility tally (4 pairs) met the pre-set "rethink" rule. Neither CKA nor gain(B|D) singles out D+R, and gain(B|D) ranks R highest (README key findings, signed off).
 - verified (paper, Sec. 3.3 / App. B.2): the WAM uses encoder features as **inputs and as prediction targets**. Current features go in clean. Future features are noised and predicted, concatenated channel-wise. No per-encoder normalization or loss weight is stated. All our diagnostics so far tested encoders as inputs only.
@@ -9,7 +11,7 @@ Written 2026-10-19 by an agent after mentor feedback. Nothing here is a finding.
 - **Proposed new candidate, H-E (target-side interference):** a partner hurts when it makes the prediction target worse. Either its future features are hard to predict, or, under raw concatenation, it takes a large share of the summed loss and crowds out D's own future prediction.
   - Pre-registered cheap test (T0 loss share, T1 predictability, T2 reduced-rank interference, raw vs equalized): LOG 2026-10-21 (i).
   - H-C ("redundancy hurts", via CKA) is weakened: L is nearly as similar to D as R (0.576 vs 0.583) and is the paper's best partner.
-- **Draft question for Thursday:** when frozen encoder features are stacked as both inputs and prediction targets of a WAM, why do some combinations hurt, and can a cheap diagnostic on frozen features predict which ones will?
+- **Draft question for Thursday** [superseded 2026-10-27 by decisions/003]: when frozen encoder features are stacked as both inputs and prediction targets of a WAM, why do some combinations hurt, and can a cheap diagnostic on frozen features predict which ones will?
 
 ## Mentor feedback (Slack, 2026-10-19, paraphrased; mentor hadn't read the paper yet)
 1. Similarity metrics are a fine starting point. But **low similarity is not the same as complementarity**: different encodings don't necessarily add task-useful information. Define what "complementary" means and whether it helps.
@@ -50,10 +52,12 @@ User's goals (stated 2026-10-19): **wants to publish.** Hypothesis still to be c
   - n = 7 pairs gives no statistical power. This is a tally and a sanity check, not a test.
   - The labels come from one trained checkpoint per combo (evaluation seeds only).
   - Their numbers are on perturbed LIBERO-Plus after joint video–action training; our features come from clean libero_goal frames.
-- **Outcome rule (proposed):** if neither metric gets D+R's sign or the rough ordering, rethink before building the proxy policy (decision 001). If one does, the proxy-policy multi-seed study becomes the paper's main experiment.
+- **Outcome rule (proposed)** [superseded 2026-10-27 by decisions/003]: if neither metric gets D+R's sign or the rough ordering, rethink before building the proxy policy (decision 001). If one does, the proxy-policy multi-seed study becomes the paper's main experiment.
 
 ## Novelty statement (draft; needs the related-work check in `literature/notes/agostinelli2022-transferability-ensembles.md`)
 > Prior transferability work (e.g. agostinelli2022) selects ensembles of fine-tuned models whose *outputs are averaged*, using label-space metrics that are additive across members. We study *feature-level* stacking of frozen vision foundation encoders inside a world action model. There, combining encoders can hurt, the encoders share no label space, and the useful quantity is *conditional* and asymmetric (what B adds to A for predicting actions or future features). We test whether a cheap conditional measure predicts closed-loop gains where symmetric similarity does not.
+
+Note 2026-11-09: gain(B|A) is a linear special case of conditional probing (Hewitt et al. 2021, arXiv 2109.09234; the user read it 2026-11-08, direction LOG entry on the literature session's branch, not yet on main; recalled from the planning lead, verify when merged), so the measure itself is probably not claimable as new (speculative until the literature entry merges). The novelty statement needs a rewrite the user has not decided.
 
 What "WAM introduces" (mentor's question), candidate answers to check:
 - (a) Feature fusion into one model, not output averaging.

@@ -12,8 +12,8 @@
 - Key venues, journals, or conferences: CoRL, RSS, ICRA (robot learning); NeurIPS, ICLR, ICML; CVPR, ICCV (transferability and model selection). arXiv preprints are common; flag them as not peer reviewed (`02`).
 - Canonical references or textbooks:
   - liu2026what: the motivating paper; its tables are transcribed and checked in `literature/`.
-  - agostinelli2022transferability: closest prior work on choosing model combinations without training.
-  - For CKA: Kornblith et al. 2019 (recalled, not yet in references.bib; add before citing).
+  - agostinelli2022transferability: closest prior work on choosing model combinations without training (note in literature/notes/; not in references.bib until read, LOG 2026-11-06 [agent, docs] (references.bib cut ...)).
+  - For CKA: Kornblith et al. 2019 (recalled, not yet in references.bib; add before citing; still not added as of 2026-11-09; CKA is used throughout, so add before any write-up).
 - Trusted datasets or benchmarks: LIBERO (4 suites; HDF5 demos), LIBERO-Plus (perturbation categories; the paper's evaluation). Feasibility work uses libero_goal only (decision 002).
 - Sources to treat with caution:
   - liu2026what's composition numbers: one trained checkpoint per combo; the 3 seeds are evaluation seeds.
