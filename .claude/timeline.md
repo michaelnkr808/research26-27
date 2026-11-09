@@ -221,3 +221,10 @@
 - Perturbed-frame test design: applied the second review's fixes plus one more review round; the user decided the last four open points (extra fixture check, rule B reported both ways, resize method picked by a smoke-test comparison, look up averaged-feature sizes first) and signed off. Handed to the implementation session, which got the user's OK for phase 1 (smoke test).
 - README/PLAN status brought up to date twice (eval state, seed-noise script now exists).
 - See: world-model-stacking-encoders/experiments/2026-11-06-perturbed-frames/PLAN.md, world-model-stacking-encoders/LOG.md (2026-11-07 planning entries)
+
+## 2026-11-08: stacking-encoders planning lead: motion-alignment idea, prior-art search
+
+- Held while the implementation session runs the evals, then took up the user's idea (passed over by the literature session) of trying Guo et al.'s label-free encoder scores on our encoders.
+- Decision (user): pursue the robot version, a score for whether an encoder's features change where the scene moves, and check prior work first. A worker searched; a separate reviewer checked it against the papers in two rounds and overturned the first verdict: a simpler "how much do features change" score already exists and tracks robot success; the "where" version was not found.
+- Decision (user): the prior-art file lives in `writing/` (the reading-list folder belongs to the literature session). Added as a candidate (PLAN Next 4); the user decides when to design it.
+- See: world-model-stacking-encoders/writing/2026-11-08-motion-score-prior-art.md, world-model-stacking-encoders/LOG.md (2026-11-08 planning entries)
