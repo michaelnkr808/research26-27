@@ -2,11 +2,74 @@
 
 Written 2026-11-08 by an implementation worker. Labels: **verified** = run in this session (script and output are in this folder), **recalled** = from memory or a file not re-read now, **speculative** = a guess or an interpretation. No fix is chosen or applied here; the options at the end are for the lead and the user.
 
-## In plain words
+## In plain words (revised after the all-ten-task round)
 
-The re-rendered frames look the same as the stored ones to the eye, and colour, brightness and position match almost exactly. What differs is fine surface texture. The stored frames show a grainy speckle on shiny or patterned things (the metal bowl, the plate's rim, the stove burner, the dark robot mount), and our renderer draws those surfaces smoothly. The DINOv3 probe was trained on the grainy version, so the smooth version looks slightly "off-distribution" to it and it predicts the action a bit worse. The loss is not one object and not one demo: it is spread over many small texture differences and over every demo we could look at. A probe with stronger regularization is less hurt by it.
+The re-rendered frames look the same as the stored ones to the eye. Colour, brightness, position and timing match almost exactly in all ten tasks. What differs is fine surface texture: the stored frames show a grainy speckle on shiny or patterned things (the metal bowl, the plate's rim, the stove burner, the dark robot mount), and our renderer draws them smoothly. That is true in every task. The loss in probe accuracy is also real in every task and almost every demo (90 of 100 val demos get worse), with the same size of change across tasks, so it is not one odd task.
 
-**Scope limit that matters.** Only one of the ten tasks (`turn_on_the_stove`) could be analysed. The stored frames of the other nine tasks, and the stored (clean) DINOv3 feature files, are not on the Mac and not on any pod I was allowed to read (the stored features are on the CephFS volume `stacking-encoders-features`, which the eval pod does not mount; the stored HDF5s are downloaded into each Job's local disk and discarded). The one stored file on the Mac (`turn_on_the_stove_demo.hdf5`, sha256 `387fc107...aac73d5`) is byte-identical to the Job's copy (the Job's pod log prints the same sha256; verified). So everything below at pixel and probe level is for that one task, 10 val demos, 843 frames per camera. Whether the other nine tasks behave the same is **not tested**. The Job's own all-task numbers are quoted from its report and are not reproduced here.
+What the first round got wrong was the second half of the story. On the stove task alone, pasting the stored texture spots back into the re-render recovered most of the loss. On the real all-task probe it recovers only about a quarter (agentview) and a seventh (wrist), and the same paste on the stove task itself recovers almost nothing. So the speckle is a real and universal difference, but the all-task loss is mostly spread over many small differences that this test cannot pin on particular spots. The probe is also brittle: the gap shrinks only when the probe is made much weaker overall.
+
+## All ten tasks (second round, Mac only; stored features recomputed here)
+
+Written after the user's OK (AskUserQuestion, 2026-11-08, verbatim): "Check all ten tasks (Recommended)". No cluster access in this round. Inputs: the ten stored HDF5 files from Hugging Face `yifengzhu-hf/LIBERO-datasets` at revision `f13aa24a3da8c43c7225569f28c562979fa0e35a` (downloaded by the user; local sha256 in `stored-originals.sha256`; the stove file matches the Job's copy, the other nine have no Job-side hash to compare with); the Job's re-rendered HDF5 and DINOv3 features for all ten tasks (every local copy matches the PVC sha256 list, checked by the lead). Only train and val demos were read: `D.demo_split` is applied to demo names before any pixel array is read, and the scripts assert no test demo. Compute on the Mac: stored-feature extraction for 40 train+val demos per task, both cameras, about 2.2 h of MPS time (one restart: I killed the extractor by mistake with a too-broad `pkill`; it resumed from its saved per-task files), plus about 20 min for the paste test.
+
+### A. The probe reproduces the Job exactly (verified, `probe-all.json`)
+The all-task ridge probe (stored train frames of all ten tasks, 38,464 frames; standardized with train statistics; same split) fitted with my Mac-computed stored features gives, on the 12,316 val frames: combined (alpha 0.1) stored 0.6562, re-rendered 0.6053; agentview-only (alpha 0.01) 0.5429 and 0.4142; wrist-only (alpha 0.01) 0.6265 and 0.5746. These equal the Job's `probe-report.json` to four decimals (max difference printed as 0.0000). Stored val R2 on all 12,416 val frames is 0.653830 against the tally curve value 0.653831. So the Mac stored features behave as the cluster's, and everything below is on the real probe.
+
+### B. The gap is in every task, both cameras, almost every demo (verified, alpha 0.1, combined)
+- Overall gap -0.0509, 95 % demo-level bootstrap interval [-0.0592, -0.0439] (100 val demos).
+- Each task's own part of that gap (the parts add to the total; a per-task R2 is not used because some action dimensions are constant inside a task and blow it up): all ten are negative and every task's 95 % interval excludes zero. Parts, in task order of `probe-all.json`: middle drawer -0.0034, top drawer+bowl -0.0094, push plate -0.0078, bowl on plate -0.0060, bowl on stove -0.0031, bowl on cabinet -0.0061, cream cheese in bowl -0.0033, wine bottle on rack -0.0045, wine bottle on cabinet -0.0053, turn on stove -0.0020. Relative increase of the squared error: from +6 % (middle drawer) and +8 % (wine bottle on rack) to +28 % (push plate) and +29 % (bowl on plate). The top-drawer task has 22 % of the excess error with 16 % of the frames; bowl-on-plate, push-plate and bowl-on-cabinet are also above their share of frames; wine bottle on rack, cream cheese and turn-on-stove are below.
+- 90 of 100 val demos are worse; per task 8 to 10 of 10. The largest single demo holds 4.2 % of the excess.
+- By tenth of the demo, the part of the gap per tenth is between -0.0028 and -0.0098; the two largest are the 6th and 7th tenths (-0.0098, -0.0080) and the 10th (-0.0056); the last-but-one tenth is smallest. No clear early/late pattern (the stove-only round saw more in the late tenths; here it is flatter).
+- The 10 % of frames whose predictions move most hold 34 % of the excess (10 % would be even): mildly concentrated.
+- Per camera, single-camera probes (alpha 0.1): agentview 0.532 stored, 0.463 re-rendered (-0.069); wrist 0.620 and 0.579 (-0.041). At the Job's alpha 0.01: -0.129 and -0.052. Per-task parts for each camera are in `probe-all.json` (all negative). The agentview part is largest for the wine-bottle-on-rack task (-0.0145) and the top-drawer task; the wrist part is largest for bowl-on-cabinet (-0.0089).
+- Standardized feature cosine, stored vs re-render (the probe's view): agentview 0.77 on average (tasks 0.72 to 0.81), wrist 0.85 (0.77 to 0.91); raw cosines are all above 0.9 (see JSON for the per-task numbers of each).
+- Oracle check: subtracting the mean feature shift (estimated on the same val frames) lifts the all-task re-render R2 from 0.6053 to 0.6310, so the gap goes from -0.051 to -0.025 (half; the stove-only probe recovered 70 %).
+
+### C. Is the all-task probe as brittle as the stove-only one? (verified, `alpha_sweep`)
+| alpha | combined stored | re-rendered | gap |
+|---|---|---|---|
+| 0.01 | 0.650 | 0.568 | -0.083 |
+| 0.1 (tally alpha, best on stored val) | 0.656 | 0.605 | -0.051 |
+| 1 | 0.610 | 0.578 | -0.032 |
+| 10 | 0.475 | 0.463 | -0.013 |
+| 100 | 0.253 | 0.249 | -0.004 |
+
+The gap shrinks with a stronger penalty, but the probe itself gets much worse (stored R2 0.61 at alpha 1, 0.475 at alpha 10), so the shrinking gap is mostly a weaker probe. At the best-on-stored-val alpha (0.1) the gap is -0.051; at alpha 1 it is -0.032 (stove-only probe: -0.104 and -0.038). Both single cameras show the same shape. So the all-task probe is less sensitive than the stove-only one at the same alpha, but no alpha in the grid brings the gap near 0.01 without ruining the probe (alpha 10 gives -0.013 at R2 0.475). This answers the earlier option 2 (stronger penalty): it does not rescue the gate.
+
+### D. Pixel level per task and camera (verified, `pixels-all.json`, `heatmaps-all.png`, `sidebyside-all-<task>.png`)
+- Colour and brightness: the mean RGB shift is within 0.35 out of 255 in every task and camera (agentview -0.09 to -0.16 red, -0.24 to -0.30 green, -0.16 to -0.22 blue). Brightness differs by at most 0.3.
+- Mean absolute difference: agentview 1.79 to 1.93 in all ten tasks (almost identical, the scene layout is the same), wrist 1.34 to 2.62 (largest for bowl on cabinet 2.62, bowl on stove 2.58, bowl on plate 2.57, all tasks where the bowl is carried close to the wrist camera; smallest for push plate 1.34).
+- Fine-detail energy of the re-render over the stored: agentview 0.71 to 0.74 in every task, wrist 0.71 to 0.91.
+- Where: in every task the strongest agentview region is the bowl (upright y 64-78, x 53-73, mean difference about 10 to 17), then a horizontal line at the table's back edge (y 43), the plate rim, and the robot base; in the wrist view the differences sit on the bowl, plate rim and the dark patterned objects when they are in view (side-by-side crops, e.g. `sidebyside-all-put_the_bowl_on_top_of_the_cabinet.png`: the large wrist-view bowl is textured in both renders but with a different pattern, and the plate's red rim stripes differ).
+- Across the ten tasks (n = 10, weak evidence), the per-task relative error increase has Spearman correlation 0.18 (agentview) and 0.49 (wrist) with the task's mean pixel difference and 0.14 and 0.76 with the fine-detail ratio, the opposite sign to "less detail means more loss" for the wrist. I read this as: no clean relation between how different the pixels are and how much probe accuracy is lost.
+
+### E. Static-mask paste test per task on the all-task probe (verified, `mask-all.json`; every 3rd val frame, 4,108 frames pooled)
+Per task and camera, the top 3 % of pixel positions by mean difference (dilated, about 5 to 9 % of the pixels) get the stored pixels pasted into the re-render; one camera at a time; control: the same number of random positions. Pooled R2 on the subset: stored 0.6554, re-rendered 0.6057 (gap -0.050), agentview paste 0.6185 (+0.013, about a quarter of the gap), wrist paste 0.6124 (+0.007, about a seventh), random positions 0.6081 (+0.002). Per task, the agentview paste gains are small and mixed (+0.034 bowl on plate, +0.030 top drawer, +0.029 wine bottle on cabinet, +0.012 wine bottle on rack, about 0 to -0.02 elsewhere); the three tasks whose action dimensions are constant inside the task have unusable per-task R2 in this file (values of order 1e12), so only the pooled numbers and the seven readable tasks count. **On the stove task itself** the agentview paste gains +0.003 with the all-task probe, against +0.076 with the stove-only probe in the first round. So the first-round finding (the repair comes from a few texture spots) depends on which probe is used and does not carry over.
+
+### F. Does the fine-texture story from the stove task hold for all ten tasks?
+- The pixel part holds in all ten (verified): the same fine-detail loss (about 26 to 29 % less in agentview), the same bowl-led locations, no colour or position shift.
+- The loss part holds in all ten (verified): every task is worse and nearly every demo.
+- The "these texture spots carry the loss" part does not hold for the real probe (verified): pasting them back repairs a quarter (agentview) and a seventh (wrist), random pasting repairs almost nothing, so the spots matter but are not the main part. What carries the rest is not located by these tests (speculative: many small differences everywhere, including edges and the robot, that add up; the oracle offset test says about half of the loss behaves like a steady offset in feature space).
+- So the leading cause is revised: a universal fine-texture and edge-rendering difference between the stored frames and our renders, acting on a probe that cannot tolerate it, with the texture spots a partial and not the dominant part (label: the first half verified, the mechanism speculative).
+
+### G. Revised causes and options (none chosen; costs rough)
+Causes, best supported first:
+1. Universal fine-detail rendering difference (speckled textures, softer edges; the re-render has 26 to 29 % less agentview fine-detail energy in every task), source unknown (older renderer or different texture handling when the data was made; MuJoCo version of the stored data is not recorded). Evidence: sections D and E.
+2. A probe tuned on stored frames that is brittle to that difference (section C; oracle offset, B).
+3. The 256-to-128 shrink: still untested for the probe score (needs a render).
+Options (more detail and costs in section 7 below; changes from the first round):
+- Option 2 (stronger penalty) is now measured and does not help enough (section C).
+- Option 6 (feature offset correction): all-task oracle recovers about half (-0.051 to -0.025), not enough for 0.01 alone.
+- Option 7 (extend to all tasks) is done by this round: the gap is not a stove-only effect.
+- Options 1 (change the gate), 3 (probes trained on re-rendered train frames; cost: one render Job for 30 train demos per task plus five-encoder extraction), 4 (find the renderer setting; since the difference is universal and in fine detail, a small Job rendering a few frames under other settings or versions is the direct test), 5 (probes from same-renderer Fast-WAM frames) stand as written.
+
+Scripts: `src/pf_val_diag_all_features.py`, `pf_val_diag_all_pixels.py`, `pf_val_diag_all_probe.py`, `pf_val_diag_all_mask.py`. Not committed (large): stored features in the scratchpad `pfvaldiag/stored_all_tasks/` (npz, gitignored in any case).
+
+---
+
+# Round 1 (stove task only; superseded where it conflicts with the section above)
+
+**Scope of everything below this line: the stove task alone** (10 val demos, 843 frames per camera). In round 1 the other nine tasks were not available (the stored frames and stored feature files were not on the Mac or on a readable pod). The stove stored file (`387fc107...aac73d5`) is byte-identical to the Job's copy (verified, the Job's pod log prints the same sha256).
 
 ## 1. What the Job reported (verified, from `../pf-val/20261108-181737/probe-report.json` and `pod-log.txt`)
 
