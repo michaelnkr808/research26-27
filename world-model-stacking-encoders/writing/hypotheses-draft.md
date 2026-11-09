@@ -57,7 +57,7 @@ User's goals (stated 2026-10-19): **wants to publish.** Hypothesis still to be c
 ## Novelty statement (draft; needs the related-work check in `literature/notes/agostinelli2022-transferability-ensembles.md`)
 > Prior transferability work (e.g. agostinelli2022) selects ensembles of fine-tuned models whose *outputs are averaged*, using label-space metrics that are additive across members. We study *feature-level* stacking of frozen vision foundation encoders inside a world action model. There, combining encoders can hurt, the encoders share no label space, and the useful quantity is *conditional* and asymmetric (what B adds to A for predicting actions or future features). We test whether a cheap conditional measure predicts closed-loop gains where symmetric similarity does not.
 
-Note 2026-11-09: gain(B|A) is a linear special case of conditional probing (Hewitt et al. 2021, arXiv 2109.09234; the user read it 2026-11-08, direction LOG entry on the literature session's branch, not yet on main; recalled from the planning lead, verify when merged), so the measure itself cannot be claimed. The novelty statement needs a rewrite the user has not decided.
+Note 2026-11-09: gain(B|A) is a linear special case of conditional probing (Hewitt et al. 2021, arXiv 2109.09234; the user read it 2026-11-08, direction LOG entry on the literature session's branch, not yet on main; recalled from the planning lead, verify when merged), so the measure itself is probably not claimable as new (speculative until the literature entry merges). The novelty statement needs a rewrite the user has not decided.
 
 What "WAM introduces" (mentor's question), candidate answers to check:
 - (a) Feature fusion into one model, not output averaging.
