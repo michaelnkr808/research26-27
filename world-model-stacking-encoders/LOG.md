@@ -1463,4 +1463,4 @@ No operating rule changed.
 - Literature: leads only, no robot paper found that scores encoder pairs before training; narrowing suggested (section 3).
 Reviews were read-only; findings reported by subagents, spot-checked by the lead. Nothing here is a result.
 **Next:** the user decides which findings become plan changes; decisions/004 is in progress elsewhere.
-**Open questions:** (1) required baselines (3) objective-overlap label and (4) random ranking have never been run; (2) the detection-power argument for 3 seeds is missing; (3) whether to email the authors of the source paper (parked, PLAN:23).
+**Open questions:** (1) required baselines (3) objective-overlap label and (4) random ranking have never been run; (2) the detection-power argument for 3 seeds is missing; (3) whether to email the authors of the source paper (parked, PLAN:24).
