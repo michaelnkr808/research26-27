@@ -949,3 +949,5 @@ Docs and two Job manifests, Mac only. No kubectl, no download, no submit, no dry
 Test-set use: none.
 
 **Next:** (1) The lead reviews the manifests and brings them to the user. Nothing is submitted while perturbed-frames phase B GPU Jobs run. (2) At the go: RETRAIN.md pre-flight, render with the commit sha into `jobs/rendered/`, server dry run, submit the 16-layer Job only. (3) The 15-minute check; on the fallback trigger only, the 20-epoch Job. (4) Then the two eval Jobs (RETRAIN.md, last section) and a second seed-noise read.
+
+**Addendum (same day, lead's instruction, new commit):** added the 48 GB step: an OOM of the 16-layer Job on a 24 GB card means one resubmit with `jobs/job-train-retrain-dinov3-l16-48gb.yaml` (GPU list L40 and L40S only, new Job name); only an OOM or builder assertion on a 48 GB card triggers the 20-epoch fallback (PLAN sign-off note, RETRAIN.md item 4). backoffLimit stays 0 (Codex P2 finding recorded in RETRAIN.md with the reason). Re-ran the done check on all three manifests: all pass.
