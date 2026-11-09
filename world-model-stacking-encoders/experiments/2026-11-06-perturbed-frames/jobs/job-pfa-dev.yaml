@@ -1,0 +1,116 @@
+# PHASE A, job 5 of 6 (pfa-dev), CPU only. NOT SUBMITTED. Submit only after jobs 1 to 4 (render, ext-siglip2-cradio, ext-vggt, ext-sam3-1..3) all finished with exit 0.
+# pf_analysis.py dev: train/val only, alpha tuned on re-rendered val for every probe, gate A (val R2 of the train-only DINOv3 fit >= 0.6562 - 0.025), the lag check
+# against the stored DINOv3 cache (CephFS features volume, read-only), clean val gains for the four pairs, the tally's val gains beside them (report only).
+# Exit code: pf_analysis's own (1 if gate A fails, after the report is written); the Job copies the report first. Global features only (the default); a mean-feature
+# run is a second invocation with --ftype mean and about twice the memory (not included, PHASE-A.md).
+# Memory (SPECULATIVE, arithmetic, not measured): float32 global features of the 5 encoders for 50,480 train+val rows x 2 cameras x 7,424 = 3.0 GB; standardized copies,
+# a pair concatenation (at most 6,656 columns = 1.3 GB), the train subset copy and the ridge normal matrices bring the peak to roughly 8 to 12 GB. Request 14Gi, limit 16Gi
+# (1.14x), inside NRP's 20 to 150 percent band if the peak is between 2.8 and 21 GB. Time unknown (8 alphas x many probes, d up to 6,656, 4 cores); cap 8 h.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-pfa-dev
+  namespace: aria-world
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 172800        # 48 h from creation, queue included (pf-val precedent); the work itself is capped stage by stage inside
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}   # CPU-only: keep off GPU nodes (_standards/08)
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch@sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2   # pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime, pinned by digest (read from the running eval pods by the lead)
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          case "${SRC_GIT_COMMIT:-}" in FILL*|"") echo "ABORT: SRC_GIT_COMMIT not filled in (render the manifest with sed at submit time, see PHASE-A.md)"; exit 11;; esac
+          R=/mnt/proxy; PH=$R/pf-main/phase-a; STAMP=$(date +%Y%m%d-%H%M%S); OUT=/work/out; JOB=pfa-dev
+          export PH OUT
+          # per-stage caps: every long-running command (installs, downloads, hashing and copies on CephFS, render, extraction, analysis) runs under `timeout <seconds>`
+          # (exit 124 on expiry = a failed stage); only the sourced environment restore and small file operations (mkdir, ls, cp of small reports) do not
+          cap() { _s=$1; shift; timeout -k 60 "$_s" "$@"; }
+          WORST=0; LAST=0
+          stage() { _n=$1; shift; "$@"; LAST=$?; echo "=== $_n exit code $LAST"; date -u; if [ $LAST -gt $WORST ]; then WORST=$LAST; fi; return 0; }
+          mkdir -p $R/logs $PH $OUT /work/hf
+          exec > >(tee -a $R/logs/$JOB-$STAMP.log) 2>&1
+          echo "=== $JOB $STAMP src $SRC_GIT_COMMIT";  nproc; date -u; df -h /mnt/proxy | tail -1
+          FREE_GB=$(df -BG --output=avail /mnt/proxy | tail -1 | tr -dc 0-9)
+          if [ "$FREE_GB" -lt 100 ]; then echo "ABORT: only ${FREE_GB}G free on the proxy PVC, need >= 100G (expected use about 30G)"; exit 12; fi
+          # --- inputs: the render's marker and every phase-A feature file (fail fast)
+          [ -f $PH/render/RENDER_COMPLETE ] || { echo "ABORT: render not published"; exit 20; }
+          N=0
+          for e in dinov3 siglip2 c-radiov4 vggt-omega sam3; do
+            for f in $PH/render/libero_goal/*.hdf5; do
+              s=$(basename $f .hdf5)
+              [ -f $PH/feats/$e/libero_goal/$s.h5 ] || { echo "ABORT: missing $PH/feats/$e/libero_goal/$s.h5 (submit the dev Job only when jobs 1 to 4 all finished with exit 0)"; exit 20; }
+              N=$((N + 1))
+            done
+            ls $PH/feats/$e/libero_goal/ | grep -q partial && { echo "ABORT: .partial file in $PH/feats/$e/libero_goal"; exit 20; }
+          done
+          echo "all $N phase-A feature files present"
+          [ -d /mnt/features/stacking-encoders/features/dinov3/libero_goal ] || { echo "ABORT: stored DINOv3 cache not mounted"; exit 20; }
+          [ -f /pf/smoke-report.json ] && ls /pf/tally-*.json
+          cap 1800 pip install --no-cache-dir -q --target /work/extlib h5py==3.16.0 numpy==2.2.6 huggingface-hub==2.2.0
+          cap 1800 env PYTHONPATH=/work/extlib python - <<'PY'
+          from huggingface_hub import snapshot_download
+          snapshot_download("yifengzhu-hf/LIBERO-datasets", repo_type="dataset", revision="f13aa24a3da8c43c7225569f28c562979fa0e35a",
+                            allow_patterns=["libero_goal/*.hdf5"], local_dir="/work/data")
+          PY
+          ls -la /work/data/libero_goal; date -u
+          set +e
+          # the raw files must be the ones the render used: the config's hashes
+          stage raw-sha256 cap 900 bash -c "awk '/^  [a-z_]+_demo:/ {gsub(\":\",\"\",\$1); print \$2\"  /work/data/libero_goal/\"\$1\".hdf5\"}' /pf/phase-a.yaml | sha256sum -c -"
+          if [ $LAST -eq 0 ]; then
+            # development entry: train and val only (the loader raises on any test access), gate A, lag check against the stored DINOv3 cache (train and val demos only)
+            stage dev cap 28800 env PYTHONPATH=/work/extlib:/pf:/src python /pf/pf_analysis.py dev --trval-feats $PH/feats --raw /work/data/libero_goal --suite libero_goal --out /work/dev-out --stored-feats /mnt/features/stacking-encoders/features --ref-meta /pf/smoke-report.json --tally-results /pf
+            mkdir -p $PH/dev && cp -r /work/dev-out $PH/dev/$STAMP && echo "copied dev output to $PH/dev/$STAMP" || { echo "DEV COPY FAILED"; if [ $WORST -eq 0 ]; then WORST=15; fi; }
+            cp /work/dev-out/*.json $OUT/ 2>/dev/null
+          fi
+          echo "=== exit codes: worst $WORST"; date -u
+          REP=$PH/reports/$JOB-$STAMP
+          mkdir -p $REP && cp -r $OUT/. $REP/ && echo "copied reports to $REP" || { echo "REPORT COPY FAILED"; if [ $WORST -eq 0 ]; then WORST=15; fi; }
+          (cd $OUT && tar czf /work/$JOB.tgz .)
+          ls -la /work/$JOB.tgz
+          if [ $(du -k /work/$JOB.tgz | cut -f1) -lt 2048 ]; then echo "=== BEGIN PFA_TGZ_B64"; base64 -w 76 /work/$JOB.tgz; echo "=== END PFA_TGZ_B64"; fi
+          echo "=== done; exiting with $WORST (0 only if every stage passed)"
+          exit $WORST
+        env:
+        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}   # sed at submit time (PHASE-A.md); the script aborts if it is still FILL_AT_SUBMIT
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: "/pf:/src"}
+        - {name: OMP_NUM_THREADS, value: "4"}
+        - {name: OPENBLAS_NUM_THREADS, value: "4"}
+        - {name: MKL_NUM_THREADS, value: "4"}
+        resources:
+          requests: {cpu: "4", memory: 14Gi, ephemeral-storage: 20Gi}
+          limits:   {cpu: "4800m", memory: 16Gi, ephemeral-storage: 24Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: pf, mountPath: /pf, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: features, mountPath: /mnt/features, readOnly: true}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 24Gi}
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: pf
+        configMap: {name: stacking-encoders-pf-main-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: features
+        persistentVolumeClaim: {claimName: stacking-encoders-features, readOnly: true}

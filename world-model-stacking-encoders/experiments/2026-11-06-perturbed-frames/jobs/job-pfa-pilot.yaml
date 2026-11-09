@@ -1,0 +1,111 @@
+# PHASE A, job 6 of 6 (pfa-pilot), OPTIONAL: the user decides later whether it runs. NOT SUBMITTED.
+# pf_rerender.py render --pilot --split val --max-demos 1 for camera, light, background and noise: one val demo per task (10 demos) per condition, each in its own root,
+# the report marked pilot / not_for_training, seconds per frame per condition and per noise code recorded. Draws for val demos come from the code (draw_episode from the
+# config seed 0); a pilot needs no --expect-draws and no test demo. L4 only. Outputs: /mnt/proxy/pf-main/pilot/<stamp>/ (not for training; never read by pf_analysis).
+# GPU use is low in this Job (render, restore, download) but it should run well under an hour; estimate (speculative): restore 3.4 min + sha256 of the bundle + download
+# + 4 conditions x a few minutes, about 0.4 GPU-h. Pods younger than 30 minutes are not checked by the portal; the 3 h warning averages over hours.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-pfa-pilot
+  namespace: aria-world
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 172800        # 48 h from creation, queue included (pf-val precedent); the work itself is capped stage by stage inside
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-L4]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net, ry-gpu-08.sdsc.optiputer.net]}  # GPU faults, 2026-11-03
+      containers:
+      - name: main
+        image: pytorch/pytorch@sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2   # pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime, pinned by digest (read from the running eval pods by the lead)
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          case "${SRC_GIT_COMMIT:-}" in FILL*|"") echo "ABORT: SRC_GIT_COMMIT not filled in (render the manifest with sed at submit time, see PHASE-A.md)"; exit 11;; esac
+          R=/mnt/proxy; PH=$R/pf-main/phase-a; STAMP=$(date +%Y%m%d-%H%M%S); OUT=/work/out; JOB=pfa-pilot
+          export PH OUT
+          # per-stage caps: every long-running command (installs, downloads, hashing and copies on CephFS, render, extraction, analysis) runs under `timeout <seconds>`
+          # (exit 124 on expiry = a failed stage); only the sourced environment restore and small file operations (mkdir, ls, cp of small reports) do not
+          cap() { _s=$1; shift; timeout -k 60 "$_s" "$@"; }
+          WORST=0; LAST=0
+          stage() { _n=$1; shift; "$@"; LAST=$?; echo "=== $_n exit code $LAST"; date -u; if [ $LAST -gt $WORST ]; then WORST=$LAST; fi; return 0; }
+          mkdir -p $R/logs $PH $OUT /work/hf
+          exec > >(tee -a $R/logs/$JOB-$STAMP.log) 2>&1
+          echo "=== $JOB $STAMP src $SRC_GIT_COMMIT"; nvidia-smi -L; nproc; date -u; df -h /mnt/proxy | tail -1
+          FREE_GB=$(df -BG --output=avail /mnt/proxy | tail -1 | tr -dc 0-9)
+          if [ "$FREE_GB" -lt 100 ]; then echo "ABORT: only ${FREE_GB}G free on the proxy PVC, need >= 100G (expected use about 30G)"; exit 12; fi
+          # --- environment bundle identity (Amendment 2026-11-09 (b)): the key is recomputed exactly as env_bundle.sh does it, the tar's sha256 is taken here
+          BKEY=$(cat /src/setup_env.sh /src/setup_sim.sh /src/env_bundle.sh | sha256sum | cut -c1-12)
+          [ -f $R/env/env-$BKEY.tar ] || { echo "ABORT: no env bundle $R/env/env-$BKEY.tar for the scripts in /src"; exit 13; }
+          ENV_BUNDLE_SHA256=$(cap 1800 sha256sum $R/env/env-$BKEY.tar | cut -d' ' -f1)
+          [ ${#ENV_BUNDLE_SHA256} -eq 64 ] || { echo "ABORT: bad bundle sha256 '$ENV_BUNDLE_SHA256'"; exit 13; }
+          export ENV_BUNDLE_SHA256
+          echo "env bundle key $BKEY tar sha256 $ENV_BUNDLE_SHA256 image $IMAGE_DIGEST"
+          . /src/env_bundle.sh restore    # prebuilt venv + debs; LIBERO-Plus assets unzip. (Sourcing it turns `set -e` on again.)
+          cap 1800 python - <<'PY'
+          from huggingface_hub import snapshot_download
+          snapshot_download("yifengzhu-hf/LIBERO-datasets", repo_type="dataset", revision="f13aa24a3da8c43c7225569f28c562979fa0e35a",
+                            allow_patterns=["libero_goal/*.hdf5"], local_dir="/work/data")
+          PY
+          ls -la /work/data/libero_goal; date -u
+          set +e
+          PIL=$R/pf-main/pilot/$STAMP
+          for c in camera light background noise; do
+            stage pilot-$c cap 1200 python /pf/pf_rerender.py render --raw /work/data/libero_goal --config /pf/phase-a.yaml --out /work/pilot/$c --split val --condition $c --max-demos 1 --pilot --env-scripts-dir /src
+            cp /work/pilot/$c/render-report.json $OUT/pilot-$c-render-report.json 2>/dev/null
+          done
+          mkdir -p $PIL && cp -r /work/pilot/. $PIL/ && echo "copied pilot renders to $PIL (not for training)" || { echo "PILOT COPY FAILED"; if [ $WORST -eq 0 ]; then WORST=15; fi; }
+          echo "=== exit codes: worst $WORST"; date -u
+          REP=$PH/reports/$JOB-$STAMP
+          mkdir -p $REP && cp -r $OUT/. $REP/ && echo "copied reports to $REP" || { echo "REPORT COPY FAILED"; if [ $WORST -eq 0 ]; then WORST=15; fi; }
+          (cd $OUT && tar czf /work/$JOB.tgz .)
+          ls -la /work/$JOB.tgz
+          if [ $(du -k /work/$JOB.tgz | cut -f1) -lt 2048 ]; then echo "=== BEGIN PFA_TGZ_B64"; base64 -w 76 /work/$JOB.tgz; echo "=== END PFA_TGZ_B64"; fi
+          echo "=== done; exiting with $WORST (0 only if every stage passed)"
+          exit $WORST
+        env:
+        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}   # sed at submit time (PHASE-A.md); the script aborts if it is still FILL_AT_SUBMIT
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: "/pf:/src"}
+        - {name: IMAGE_DIGEST, value: pytorch/pytorch@sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2}
+        - {name: SIM_DIR, value: /work/sim}
+        - {name: MUJOCO_GL, value: egl}
+        - {name: PYOPENGL_PLATFORM, value: egl}
+        - {name: NVIDIA_DRIVER_CAPABILITIES, value: "compute,utility,graphics"}
+        resources:
+          requests: {cpu: "2", memory: 12Gi, nvidia.com/gpu: "1", ephemeral-storage: 40Gi}
+          limits:   {cpu: "2400m", memory: 14Gi, nvidia.com/gpu: "1", ephemeral-storage: 46Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: pf, mountPath: /pf, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 46Gi}
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: pf
+        configMap: {name: stacking-encoders-pf-main-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 4Gi}

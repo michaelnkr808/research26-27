@@ -1,0 +1,200 @@
+# PHASE A, job 1 of 6 (pfa-render). NOT SUBMITTED; written 2026-11-09 by pf-jobs-a; the user gives a separate go (jobs/PHASE-A.md).
+# Render train+val demos (clean, trainval root), report-only compare of its val demos with the pf-val render, publish the render and its report to the PVC
+# (phase B's consistency reference, Amendment 2026-11-09 (b)), then DINOv3 on the render in the same pod. L4 only (user decision 2026-11-09).
+# Follows _standards/08: Job, real command that exits, no waiting loops, nothing that tolerates a taint, 1 GPU, limits within 20% of requests, backoffLimit 0.
+# Resources as pf-val (the same stages). Outputs: /mnt/proxy/pf-main/phase-a/{render,feats/dinov3,reports,logs}. Estimate (speculative): about 1.4 GPU-h.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-pfa-render
+  namespace: aria-world
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 172800        # 48 h from creation, queue included (pf-val precedent); the work itself is capped stage by stage inside
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-L4]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net, ry-gpu-08.sdsc.optiputer.net]}  # GPU faults, 2026-11-03
+      containers:
+      - name: main
+        image: pytorch/pytorch@sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2   # pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime, pinned by digest (read from the running eval pods by the lead)
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          case "${SRC_GIT_COMMIT:-}" in FILL*|"") echo "ABORT: SRC_GIT_COMMIT not filled in (render the manifest with sed at submit time, see PHASE-A.md)"; exit 11;; esac
+          R=/mnt/proxy; PH=$R/pf-main/phase-a; STAMP=$(date +%Y%m%d-%H%M%S); OUT=/work/out; JOB=pfa-render
+          export PH OUT
+          # per-stage caps: every long-running command (installs, downloads, hashing and copies on CephFS, render, extraction, analysis) runs under `timeout <seconds>`
+          # (exit 124 on expiry = a failed stage); only the sourced environment restore and small file operations (mkdir, ls, cp of small reports) do not
+          cap() { _s=$1; shift; timeout -k 60 "$_s" "$@"; }
+          WORST=0; LAST=0
+          stage() { _n=$1; shift; "$@"; LAST=$?; echo "=== $_n exit code $LAST"; date -u; if [ $LAST -gt $WORST ]; then WORST=$LAST; fi; return 0; }
+          mkdir -p $R/logs $PH $OUT /work/hf
+          exec > >(tee -a $R/logs/$JOB-$STAMP.log) 2>&1
+          echo "=== $JOB $STAMP src $SRC_GIT_COMMIT"; nvidia-smi -L; nproc; date -u; df -h /mnt/proxy | tail -1
+          FREE_GB=$(df -BG --output=avail /mnt/proxy | tail -1 | tr -dc 0-9)
+          if [ "$FREE_GB" -lt 100 ]; then echo "ABORT: only ${FREE_GB}G free on the proxy PVC, need >= 100G (expected use about 30G)"; exit 12; fi
+          [ ! -e $PH/render ] && [ ! -e $PH/render.part ] && [ ! -e $PH/feats/dinov3 ] || { echo "ABORT: $PH/render, render.part or feats/dinov3 already exists (never overwritten; see PHASE-A.md for cleanup)"; exit 14; }
+          EXT=$(sha256sum /src/extract_features.py | cut -c1-12)
+          [ "$EXT" = "03734ba84a86" ] || { echo "ABORT: /src/extract_features.py sha256 prefix is $EXT, expected 03734ba84a86 (the tally/pf-val extractor)"; exit 21; }
+          # --- environment bundle identity (Amendment 2026-11-09 (b)): the key is recomputed exactly as env_bundle.sh does it, the tar's sha256 is taken here
+          BKEY=$(cat /src/setup_env.sh /src/setup_sim.sh /src/env_bundle.sh | sha256sum | cut -c1-12)
+          [ -f $R/env/env-$BKEY.tar ] || { echo "ABORT: no env bundle $R/env/env-$BKEY.tar for the scripts in /src"; exit 13; }
+          ENV_BUNDLE_SHA256=$(cap 1800 sha256sum $R/env/env-$BKEY.tar | cut -d' ' -f1)
+          [ ${#ENV_BUNDLE_SHA256} -eq 64 ] || { echo "ABORT: bad bundle sha256 '$ENV_BUNDLE_SHA256'"; exit 13; }
+          export ENV_BUNDLE_SHA256
+          echo "env bundle key $BKEY tar sha256 $ENV_BUNDLE_SHA256 image $IMAGE_DIGEST"
+          . /src/env_bundle.sh restore    # prebuilt venv + debs; LIBERO-Plus assets unzip. (Sourcing it turns `set -e` on again.)
+          # --- extraction environment first, fail fast (as pf-val): the tally's pins in a separate folder, an import test, the DINOv3 processor, weights and revision
+          cap 900 pip install --no-cache-dir -q --target /work/extlib transformers==5.18.0 tokenizers==0.23.3 safetensors==0.8.0 huggingface-hub==2.2.0 einops==0.8.1 numpy==2.2.6
+          cap 900 env PYTHONPATH=/work/extlib:$PYTHONPATH python - <<'PY' 2>&1 | tee $OUT/setup-info.txt
+          import h5py, numpy, torch, transformers, huggingface_hub
+          assert transformers.__version__ == "5.18.0", transformers.__version__
+          assert numpy.__version__ == "2.2.6", numpy.__version__
+          from transformers import AutoImageProcessor, AutoModel
+          from huggingface_hub import HfApi
+          repo = "facebook/dinov3-vitl16-pretrain-lvd1689m"
+          sha = HfApi().model_info(repo).sha
+          assert sha.startswith("ea8dc28"), f"DINOv3 revision is {sha}, expected ea8dc28"
+          proc = AutoImageProcessor.from_pretrained(repo)
+          model = AutoModel.from_pretrained(repo, dtype=torch.float32)
+          print("setup ok: transformers", transformers.__version__, "numpy", numpy.__version__, "torch", torch.__version__, "h5py", h5py.__version__,
+                "huggingface_hub", huggingface_hub.__version__, "dinov3 sha", sha, "image_mean", proc.image_mean, "params", sum(p.numel() for p in model.parameters()))
+          PY
+          cap 1800 python - <<'PY'
+          from huggingface_hub import snapshot_download
+          snapshot_download("yifengzhu-hf/LIBERO-datasets", repo_type="dataset", revision="f13aa24a3da8c43c7225569f28c562979fa0e35a",
+                            allow_patterns=["libero_goal/*.hdf5"], local_dir="/work/data")
+          PY
+          ls -la /work/data/libero_goal; sha256sum /work/data/libero_goal/*.hdf5 /src/diagnostics.py /src/extract_features.py; date -u
+          # --- from here on every stage's exit code is kept; the Job ends with the worst one, after the copies.
+          set +e
+          # overall budget for the CPU-only stages (render + compare + publish): together at most 9000 s (2.5 h) with the GPU idle; bcap <stage cap> <cmd> uses min(stage cap, what is left)
+          T1=$(date +%s)
+          bcap() { _s=$1; shift; _left=$(( 9000 - ($(date +%s) - T1) )); if [ $_left -le 0 ]; then echo "=== 9000 s budget used up before: $*"; return 124; fi; if [ $_left -lt $_s ]; then _s=$_left; fi; timeout -k 60 "$_s" "$@"; }
+          mkdir -p /work/render /work/feats /work/pfa-trainval
+          # 1. render: train and val demos, clean, one HDF5 per task (40 demos) in one root (phase A); refuses at startup if IMAGE_DIGEST, the bundle key,
+          #    the LIBERO-Plus fingerprint or the mujoco/robosuite versions are missing. Estimate (speculative): 50,480 states at pf-val's 48 states/s = about 18 min.
+          stage render bcap 7200 python /pf/pf_rerender.py render --raw /work/data/libero_goal --config /pf/phase-a.yaml --out /work/render --split trainval --condition clean --env-scripts-dir /src
+          RC_R=$LAST
+          PUB=1
+          EXT_OK=1
+          cp /work/render/render-report.json /work/render/*.txt $OUT/ 2>/dev/null
+          # 2. report-only comparison of the val demos with the pf-val render (never a non-zero exit for a difference; the pixels decide)
+          PFV=/mnt/proxy/pf-val/20261108-181737
+          if [ $RC_R -eq 0 ] && [ -d $PFV/rendered_libero_goal ] && [ -f $PFV/render-report.json ]; then
+            mkdir -p /work/pfval-ref && ln -sfn $PFV/rendered_libero_goal /work/pfval-ref/libero_goal && ln -sf $PFV/render-report.json /work/pfval-ref/render-report.json
+            stage compare-pf-val bcap 1800 python /pf/pf_rerender.py compare --report-only --demos val --ref-dir /work/pfval-ref --new-dir /work/render --out $OUT/compare-vs-pf-val.json
+          else
+            echo "=== compare-pf-val SKIPPED (render failed, or $PFV/rendered_libero_goal / its render-report.json is not on the PVC)"
+          fi
+          # 3. publish the render to the PVC (phase B's --consistency-ref): hashes, copy through render.part, verify, rename, marker
+          publish_render() {
+            set -e
+            (cd /work/render/libero_goal && sha256sum *.hdf5) > $OUT/render-sha256.txt
+            mkdir -p $PH/render.part
+            cp -r /work/render/. $PH/render.part/
+            cp $OUT/render-sha256.txt $PH/render.part/
+            (cd $PH/render.part/libero_goal && sha256sum -c $OUT/render-sha256.txt)
+            mv $PH/render.part $PH/render
+            touch $PH/render/RENDER_COMPLETE
+          }
+          export -f publish_render
+          if [ $RC_R -eq 0 ]; then
+            stage publish-render bcap 3600 bash -c publish_render
+            PUB=$LAST
+            du -sh /work/render/libero_goal
+          fi
+          # 4. DINOv3 on the trainval render, only if the render is published: the staging path /work/pfa-trainval/libero_goal/<stem>.hdf5 is the same in all four phase-A extraction Jobs
+          copy_feats() {  # copy_feats <encoder>: local /work/feats/<enc>/libero_goal/*.h5 -> PVC, one file at a time through .partial; never overwrites
+            set -e
+            _d=$PH/feats/$1/libero_goal; mkdir -p $_d
+            for _f in /work/feats/$1/libero_goal/*.h5; do
+              _b=$(basename $_f)
+              if [ -e $_d/$_b ]; then echo "REFUSE: $_d/$_b already exists"; exit 1; fi
+              cp $_f $_d/$_b.partial
+              mv $_d/$_b.partial $_d/$_b
+            done
+            ls -la $_d
+          }
+          export -f copy_feats
+          if [ $RC_R -eq 0 ] && [ $PUB -eq 0 ]; then
+            mv /work/render/libero_goal /work/pfa-trainval/libero_goal
+            stage extract-dinov3 cap 3600 env PYTHONPATH=/work/extlib:$PYTHONPATH python /src/extract_features.py --encoder dinov3 --dtype float32 --batch-size 64 --out /work/feats --hdf5 /work/pfa-trainval/libero_goal/*.hdf5
+            EXT_OK=$LAST
+          fi
+          if [ $EXT_OK -eq 0 ]; then
+            stage meta-dinov3 cap 900 env PYTHONPATH=/work/extlib:$PYTHONPATH python - dinov3 10 <<'PY'
+          import glob, json, sys
+          sys.path[:0] = ["/pf", "/src"]
+          import h5py
+          import pf_analysis as A
+          enc = sys.argv[1]; expect = int(sys.argv[2])
+          ref = A.load_reference_meta("/pf/smoke-report.json", [enc])[enc]
+          files = sorted(glob.glob(f"/work/feats/{enc}/libero_goal/*.h5"))
+          assert len(files) == expect, (len(files), expect)
+          for p in files:
+              with h5py.File(p, "r") as f:
+                  A.check_meta(f, ref, p)
+                  m = json.loads(f.attrs["meta"])
+                  stem = p.rsplit("/", 1)[1][:-3]
+                  assert m["source_file"] == f"/work/pfa-trainval/libero_goal/{stem}.hdf5", m["source_file"]
+                  assert m["n_demos"] == 40, m["n_demos"]
+                  assert sum(1 for k in f.keys() if k.startswith("demo_")) == 40
+          print("meta ok:", enc, len(files), "files; checked keys", A.META_KEYS)
+          PY
+            if [ $LAST -eq 0 ]; then stage copy-dinov3 cap 3600 bash -c 'copy_feats "$@"' _ dinov3; fi
+          fi
+          echo "=== exit codes: worst $WORST"; date -u
+          REP=$PH/reports/$JOB-$STAMP
+          mkdir -p $REP && cp -r $OUT/. $REP/ && echo "copied reports to $REP" || { echo "REPORT COPY FAILED"; if [ $WORST -eq 0 ]; then WORST=15; fi; }
+          (cd $OUT && tar czf /work/$JOB.tgz .)
+          ls -la /work/$JOB.tgz
+          if [ $(du -k /work/$JOB.tgz | cut -f1) -lt 2048 ]; then echo "=== BEGIN PFA_TGZ_B64"; base64 -w 76 /work/$JOB.tgz; echo "=== END PFA_TGZ_B64"; fi
+          echo "=== done; exiting with $WORST (0 only if every stage passed)"
+          exit $WORST
+        env:
+        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}   # sed at submit time (PHASE-A.md); the script aborts if it is still FILL_AT_SUBMIT
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: "/pf:/src"}
+        - {name: IMAGE_DIGEST, value: pytorch/pytorch@sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2}
+        - {name: SIM_DIR, value: /work/sim}
+        - {name: MUJOCO_GL, value: egl}
+        - {name: PYOPENGL_PLATFORM, value: egl}
+        - {name: NVIDIA_DRIVER_CAPABILITIES, value: "compute,utility,graphics"}
+        resources:
+          requests: {cpu: "2", memory: 12Gi, nvidia.com/gpu: "1", ephemeral-storage: 50Gi}
+          limits:   {cpu: "2400m", memory: 14Gi, nvidia.com/gpu: "1", ephemeral-storage: 58Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: pf, mountPath: /pf, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 58Gi}
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: pf
+        configMap: {name: stacking-encoders-pf-main-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 4Gi}
