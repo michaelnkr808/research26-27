@@ -19,6 +19,7 @@ import contextlib
 import hashlib
 import io
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -157,6 +158,7 @@ class Stub:
         ew = SimpleNamespace(motion_blur=blur, gaussian_blur=blur, zoom_blur=blur, fog=blur, glass_blur=blur)
 
         def noise(img, code, seed):
+            assert img.shape == (256, 256, 3), f"noise must be applied to the 256 x 256 render before the shrink, got {img.shape}"
             self.log["noise"].append((code, seed))
             return self.orig_noise(img, code, seed, ew=ew)
         R.make_env, R.apply_noise = make, noise
@@ -458,6 +460,19 @@ def test_provenance_and_frames():
     c = R.compare_provenance(ref, base)
     assert any("Pillow" in s and "not recorded in the reference" in s for s in c["stop"])
     assert R.compare_provenance({}, base)["stop"], "an empty reference (the pf-val report has none) must not pass silently"
+    # strict mode: null on both sides is not "equal"; non-strict only lists it
+    for key in ("image_digest", "bundle_key", "libero_source_fingerprint"):
+        nul = env_info(**{key: None})
+        assert not R.compare_provenance(nul, nul)["stop"] and R.compare_provenance(nul, nul)["unverified"]
+        assert R.compare_provenance(nul, nul, strict=True)["stop"], key
+        assert R.compare_provenance(base, nul, strict=True)["stop"] and R.compare_provenance(nul, base, strict=True)["stop"]
+    for lib in ("mujoco", "robosuite"):
+        nul = env_info(**{"lib_" + lib: None})
+        assert R.compare_provenance(nul, nul, strict=True)["stop"], lib
+    assert not R.compare_provenance(base, env_info(), strict=True)["stop"]
+    # shrink's error is a RuntimeError subclass again (pf_validate.render catches RuntimeError)
+    e = expect(R.RenderCheckError, R.shrink, np.zeros((128, 128, 3), np.uint8), "area")
+    assert isinstance(e, RuntimeError)
     with tempfile.TemporaryDirectory() as t:
         def write(p, arr_a, arr_w):
             with h5py.File(p, "w") as f:
@@ -681,7 +696,10 @@ def test_consistency_end_to_end():
         clp = t / "cl.json"
         clp.write_text(json.dumps(cl))
         with Stub():
-            PR.render_run(raw, t / "phaseA", "val", "clean", CFG, None, env_info())             # phase A's val render = the reference
+            ra = PR.render_run(raw, t / "phaseA", "trainval", "clean", CFG, None, env_info())   # phase A: train+val, one root = the reference
+        assert ra["files"]["task_a_demo"]["demos"] == [f"demo_{i}" for i in range(40)]
+        with h5py.File(t / "phaseA/libero_goal/task_a_demo.hdf5", "r") as f:
+            assert sorted(f["data"].keys(), key=R.demo_index) == [f"demo_{i}" for i in range(40)]
         orig_env = PR.collect_environment, PR.load_classification
         cur = {"env": env_info()}
         PR.collect_environment = lambda scripts_dir=None: cur["env"]
@@ -725,6 +743,80 @@ def test_consistency_end_to_end():
             with Spy(raw) as spy, Stub() as stub:
                 rc = PR.main(test_argv + ["--out", str(t / "B3"), "--consistency-ref", str(t / "phaseA")])
             assert rc == PR.RC_CONSISTENCY and stub.log["make"] == [] and not (set(spy.log) & {f"demo_{i}" for i in range(40, 50)})
+            # an error inside the check (Q20 fails in the val re-render) also exits 5, before any test read
+            cur["env"] = env_info()
+            with Spy(raw) as spy, Stub(bad_z=True) as stub:
+                rc = PR.main(test_argv + ["--out", str(t / "B5"), "--consistency-ref", str(t / "phaseA")])
+            assert rc == PR.RC_CONSISTENCY and not (set(spy.log) & {f"demo_{i}" for i in range(40, 50)}), (rc, spy.log)
+            assert len(stub.log["make"]) == 1, "only the first val env of the check was built; no test env"
+            with Stub() as stub:
+                rc = PR.main(["check-consistency", "--raw", str(raw), "--config", str(cfgp), "--consistency-ref", str(t / "missing_ref"),
+                              "--out", str(t / "c5")])
+            assert rc == PR.RC_CONSISTENCY and stub.log["make"] == []
+            # a reference without a camera key: error inside the pixel comparison, still exit 5
+            shutil.copytree(t / "phaseA", t / "phaseA_nokey")
+            with h5py.File(t / "phaseA_nokey/libero_goal/task_b_demo.hdf5", "a") as f:
+                del f["data"]["demo_30"]["obs"]["eye_in_hand_rgb"]
+            with Stub():
+                rc = PR.main(["check-consistency", "--raw", str(raw), "--config", str(cfgp), "--consistency-ref", str(t / "phaseA_nokey"),
+                              "--out", str(t / "c6")])
+            assert rc == PR.RC_CONSISTENCY
+            # strict: a null bundle key on both sides is not "same"
+            cur["env"] = env_info(bundle_key=None)
+            with Stub():
+                PR.render_run(raw, t / "phaseA_nullbundle", "trainval", "clean", CFG, None, cur["env"], max_demos=31)
+            with Stub() as stub:
+                rc = PR.main(["check-consistency", "--raw", str(raw), "--config", str(cfgp), "--consistency-ref", str(t / "phaseA_nullbundle"),
+                              "--out", str(t / "c7")])
+            assert rc == PR.RC_CONSISTENCY and stub.log["make"] == []
+            cur["env"] = env_info()
+            # perturbed test render: needs --expect-draws; a draws file that differs is refused before the check and before any test read
+            rc = PR.main(["draws", "--raw", str(raw), "--config", str(cfgp), "--classification", str(clp), "--out", str(t / "draws_ok.json")])
+            assert rc == PR.RC_OK
+            dok = json.loads((t / "draws_ok.json").read_text())
+            bad = json.loads(json.dumps(dok))
+            k0 = "task_b_demo/demo_42/camera"
+            other = [n["name"] for n in cl["libero_goal"] if n["name"].startswith("task_b_view_") and n["name"] != bad["draws"][k0]["name"]][0]
+            bad["draws"][k0]["name"] = other
+            (t / "draws_bad.json").write_text(json.dumps(bad))
+            pert = ["render", "--split", "test", "--condition", "camera", "--raw", str(raw), "--config", str(cfgp), "--classification", str(clp)]
+            with Stub() as stub:
+                rc = PR.main(pert + ["--out", str(t / "P0"), "--consistency-ref", str(t / "phaseA")])
+                assert rc == PR.RC_USAGE and stub.log["make"] == []
+            with Spy(raw) as spy, Stub() as stub:
+                rc = PR.main(pert + ["--out", str(t / "P1"), "--consistency-ref", str(t / "phaseA"), "--expect-draws", str(t / "draws_bad.json")])
+            assert rc == PR.RC_CHECK and stub.log["make"] == [] and not (set(spy.log) & {f"demo_{i}" for i in range(40, 50)})
+            with Stub() as stub:
+                rc = PR.main(pert + ["--out", str(t / "P2"), "--consistency-ref", str(t / "phaseA"), "--expect-draws", str(t / "draws_ok.json")])
+            assert rc == PR.RC_OK
+            rp2 = json.loads((t / "P2/render-report.json").read_text())
+            assert rp2["files"]["task_b_demo"]["per_demo"]["demo_42"]["episode"]["name"] == dok["draws"][k0]["name"]
+            assert rp2["pilot"] is False and rp2["not_for_training"] is False
+            # pilots on val: every perturbed condition, small, own root, marked, timed; clean pilot, no --max-demos, test split refused
+            for cond in ("camera", "light", "background", "noise"):
+                with Stub() as stub:
+                    rc = PR.main(["render", "--split", "val", "--condition", cond, "--pilot", "--max-demos", "1", "--raw", str(raw),
+                                  "--config", str(cfgp), "--classification", str(clp), "--out", str(t / ("pilot_" + cond))])
+                assert rc == PR.RC_OK, cond
+                pr = json.loads((t / ("pilot_" + cond) / "render-report.json").read_text())
+                assert pr["pilot"] is True and pr["not_for_training"] is True and pr["split"] == "val"
+                assert pr["timing"]["frames"] > 0 and pr["timing"]["seconds_per_frame"] is not None
+                if cond == "noise":
+                    assert pr["timing"]["noise_by_code"] and all(v["noise_seconds_per_frame"] is not None for v in pr["timing"]["noise_by_code"].values())
+                assert pr["files"]["task_a_demo"]["demos"] == ["demo_30"] and pr["files"]["task_a_demo"]["test_demo_reads"]["arrays"] == []
+            with Stub():
+                for argv in (["--split", "val", "--condition", "camera", "--pilot"],                       # no --max-demos
+                             ["--split", "val", "--condition", "clean", "--pilot", "--max-demos", "1"],
+                             ["--split", "test", "--condition", "camera", "--pilot", "--max-demos", "1"]):
+                    rc = PR.main(["render", *argv, "--raw", str(raw), "--config", str(cfgp), "--classification", str(clp), "--out", str(t / "pilot_bad")])
+                    assert rc in (PR.RC_CHECK, PR.RC_USAGE), (argv, rc)
+                # a pilot refuses a root that holds main-run output, and a main run refuses a pilot root
+                rc = PR.main(["render", "--split", "val", "--condition", "camera", "--pilot", "--max-demos", "1", "--raw", str(raw),
+                              "--config", str(cfgp), "--classification", str(clp), "--out", str(t / "phaseA")])
+                assert rc == PR.RC_CHECK
+                rc = PR.main(["render", "--split", "val", "--condition", "clean", "--raw", str(raw), "--config", str(cfgp),
+                              "--out", str(t / "pilot_camera")])
+                assert rc == PR.RC_CHECK
             cur["env"] = env_info()
             with Stub() as stub:
                 rc = PR.main(test_argv + ["--out", str(t / "B4"), "--consistency-ref", str(t / "phaseA")])
@@ -737,7 +829,7 @@ def test_consistency_end_to_end():
             rc = PR.main(["compare", "--ref-dir", str(t / "phaseA"), "--new-dir", str(t / "phaseA"), "--out", str(t / "cmp1.json"), "--report-only"])
             assert rc == PR.RC_OK and json.loads((t / "cmp1.json").read_text())["identical"]
             with Stub(shift=1):
-                PR.render_run(raw, t / "phaseA2", "val", "clean", CFG, None, env_info())
+                PR.render_run(raw, t / "phaseA2", "trainval", "clean", CFG, None, env_info())
             rc = PR.main(["compare", "--ref-dir", str(t / "phaseA"), "--new-dir", str(t / "phaseA2"), "--out", str(t / "cmp2.json"), "--report-only"])
             assert rc == PR.RC_OK and not json.loads((t / "cmp2.json").read_text())["identical"]
             rc = PR.main(["compare", "--ref-dir", str(t / "phaseA"), "--new-dir", str(t / "phaseA2"), "--out", str(t / "cmp3.json")])

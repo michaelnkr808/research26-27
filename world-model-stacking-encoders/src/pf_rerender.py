@@ -3,7 +3,10 @@
 Generalises pf_validate.render() (which stays as the record of the pf-val Job) to every split and every condition:
 
   render             --split train|val|test  --condition clean|camera|light|background|noise  --raw <libero_goal dir>
-                     --out <root>  --config <yaml|json>  [--max-demos N]
+                     --out <root>  --config <yaml|json>  [--max-demos N] [--pilot] [--consistency-ref R] [--expect-draws F]
+                     --split trainval renders train and val demos into one file per task in one root (phase A). --pilot: a perturbed
+                     condition on val demos only, needs --max-demos, own root, report marked not_for_training, seconds per frame recorded.
+                     A perturbed test render needs --expect-draws (the committed draws file) and refuses on any difference.
                      Writes <root>/libero_goal/<stem>.hdf5 in the render input contract (LIBERO layout, original stems and demo names,
                      raw OpenGL orientation, frame j = render of states[j+1] so n-1 frames per demo, each demo's last frame dropped,
                      render 256 then area shrink to 128), and <root>/render-report.json.
@@ -266,6 +269,7 @@ def render_demo(ctx, stem, base, d, arrays, parsed, fixtures, base_env, drawn):
     if len(actions) != n:
         raise R.RenderCheckError(f"{stem}/{d}: {len(actions)} actions vs {n} states")
     own = None
+    t_start = time.time()
     label = f"{stem}/{d}/{cond}"
     info = {"frames": n - 1}
     try:
@@ -285,20 +289,27 @@ def render_demo(ctx, stem, base, d, arrays, parsed, fixtures, base_env, drawn):
         if states.ndim != 2 or states.shape[1] != env_len:
             raise R.RenderCheckError(f"{label}: stored state shape {states.shape} vs env state length {env_len}")
         info["camera"] = prepare(env, parsed, fixtures, label, override_camera=(cond != "camera"))
+        info["seconds_env_and_prepare"] = round(time.time() - t_start, 3)
         out = {c: np.zeros((n - 1, R.OUT_SIZE, R.OUT_SIZE, 3), np.uint8) for c in CAMS}
+        t_frames, t_noise = time.time(), 0.0
         for j in range(n - 1):
             obs = R.restore(env, states[j + 1])
             if j == 0:
                 ctx["on_first_render"]()
             ims = R.images(obs)
             if cond == "noise":
-                ims[R.AGENT] = R.apply_noise(ims[R.AGENT], code, R.noise_seed(cfg["seed_noise"], stem, d, j))
+                tn = time.time()
+                ims[R.AGENT] = R.apply_noise(ims[R.AGENT], code, R.noise_seed(cfg["seed_noise"], stem, d, j))   # on the 256 x 256 image (Q15)
+                t_noise += time.time() - tn
             for k, im in ims.items():
                 out[R.HDF5_KEY[k]][j] = R.shrink(im, cfg["resize"])
             if j % 10 == 0 or j == n - 2:
                 okf, detf = R.check_fixtures_after(env, parsed, fixtures)
                 if not okf:
                     raise R.RenderCheckError(f"{label} j={j}: fixtures after restore differ: {json.dumps(detf, default=str)[:400]}")
+        info["seconds_frames"] = round(time.time() - t_frames, 3)
+        if cond == "noise":
+            info["seconds_noise"] = round(t_noise, 3)
         return out, info
     finally:
         if own is not None:
@@ -316,12 +327,58 @@ def output_complete(final, entry):
         return False
 
 
+def timing_summary(files):
+    """Seconds per frame for the condition (frame loop; env build and prepare apart) and, for noise, per noise code. From the per-demo
+    records of a report's `files`."""
+    fr = sec = secenv = 0.0
+    by_code = {}
+    for f in files.values():
+        for d, i in f.get("per_demo", {}).items():
+            if "seconds_frames" not in i:
+                continue
+            fr += i["frames"]
+            sec += i["seconds_frames"]
+            secenv += i.get("seconds_env_and_prepare", 0.0)
+            if "noise_code" in i:
+                c = by_code.setdefault(str(i["noise_code"]), {"frames": 0, "noise_seconds": 0.0})
+                c["frames"] += i["frames"]
+                c["noise_seconds"] += i.get("seconds_noise", 0.0)
+    for c in by_code.values():
+        c["noise_seconds_per_frame"] = c["noise_seconds"] / c["frames"] if c["frames"] else None
+    return {"frames": int(fr), "frame_loop_seconds": round(sec, 2), "seconds_per_frame": (sec / fr) if fr else None,
+            "env_build_and_prepare_seconds_total": round(secenv, 2), "noise_by_code": by_code}
+
+
+def check_expected_draws(expected, computed, seed):
+    """Refuse (RenderCheckError) unless every computed draw (name and index) equals the committed one and the seed is the same.
+    expected: the file the `draws` subcommand writes; computed: {"stem/demo/type": draw}."""
+    diffs = []
+    if expected.get("seed_draw") != seed:
+        diffs.append(f"seed_draw: committed {expected.get('seed_draw')!r} vs config {seed!r}")
+    ed = expected.get("draws") or {}
+    for k, v in computed.items():
+        e = ed.get(k)
+        if e is None:
+            diffs.append(f"{k}: not in the committed draws")
+        elif (e.get("name"), e.get("index")) != (v["name"], v["index"]):
+            diffs.append(f"{k}: committed {e.get('name')}#{e.get('index')} vs computed {v['name']}#{v['index']}")
+    if diffs:
+        raise R.RenderCheckError(f"draws differ from the committed file ({len(diffs)}): {diffs[:5]}")
+
+
 def render_run(raw_dir, out_root, split, condition, cfg, classification, env_info, *, max_demos=None, only_demos=None,
-               report_name="render-report.json"):
-    """Render every raw file of the directory for one split and one condition; write the report after each file; raise on the first
-    failure (after recording it in the report). Returns the report."""
-    if condition != "clean" and split != "test":
-        raise R.RenderCheckError("perturbed conditions are rendered for the test split only (PLAN)")
+               report_name="render-report.json", pilot=False, expected_draws=None):
+    """Render every raw file of the directory for one split (train, val, trainval = train and val demos into one file per task, or
+    test) and one condition; write the report after each file; raise on the first failure (after recording it in the report).
+    pilot: a perturbed condition on val demos to try the paths and time them (needs max_demos, its own root, report marked
+    not_for_training). expected_draws: the committed draws file; the computed draws must equal it. Returns the report."""
+    if split not in ("train", "val", "trainval", "test"):
+        raise R.RenderCheckError(f"unknown split {split}")
+    if pilot:
+        if split != "val" or max_demos is None or condition == "clean":
+            raise R.RenderCheckError("--pilot needs --split val, --max-demos and a perturbed condition")
+    elif condition != "clean" and split != "test":
+        raise R.RenderCheckError("perturbed conditions are rendered for the test split only (PLAN); use --pilot for a val pilot")
     if condition != "clean" and condition not in R.PTYPES:
         raise R.RenderCheckError(f"unknown condition {condition}")
     if condition != "clean" and classification is None:
@@ -336,11 +393,17 @@ def render_run(raw_dir, out_root, split, condition, cfg, classification, env_inf
         files = [f for f in files if f.stem in only_demos]
     chash = code_hashes()
     rep = {"schema": 1, "split": split, "condition": condition, "max_demos": max_demos, "only_demos": only_demos,
+           "pilot": bool(pilot), "not_for_training": bool(pilot),
            "config": cfg, "config_sha256": digest(cfg), "code_sha256": chash, "environment": env_info, "files": {}, "failures": [],
            "draws": {}, "started_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
     rep["resume_notes"] = []
+    if pilot and not rpath.exists() and any(out_dir.glob("*.hdf5*")):
+        raise R.RenderCheckError(f"pilot: {out_dir} already holds outputs without a pilot report")
     if rpath.exists():                                  # resume: same run only, same software only
         prev = json.loads(rpath.read_text())
+        if bool(prev.get("pilot")) != bool(pilot):
+            raise R.RenderCheckError(f"{out_root} holds a {'pilot' if prev.get('pilot') else 'main-run'} render; refusing to mix it with "
+                                     f"a {'pilot' if pilot else 'main-run'} render")
         if (prev.get("split"), prev.get("condition")) != (split, condition):
             raise R.RenderCheckError(f"{out_root} holds a {prev.get('split')}/{prev.get('condition')} run, not {split}/{condition}")
         cmp = R.compare_provenance(prev.get("environment") or {}, env_info)
@@ -393,8 +456,10 @@ def render_run(raw_dir, out_root, split, condition, cfg, classification, env_inf
                 drawn = {}
                 if condition != "clean":
                     drawn = {d: R.draw_episode(classification, base, stem, d, condition, cfg["seed_draw"]) for d in demos}
+                    if expected_draws is not None:
+                        check_expected_draws(expected_draws, {f"{stem}/{d}/{condition}": v for d, v in drawn.items()}, cfg["seed_draw"])
                     rep["draws"].update({f"{stem}/{d}/{condition}": v for d, v in drawn.items()})
-                settings = digest({"split": split, "condition": condition, "demos": demos, "cfg": cfg, "code": chash, "max_demos": max_demos,
+                settings = digest({"split": split, "condition": condition, "demos": demos, "cfg": cfg, "code": chash, "max_demos": max_demos, "pilot": bool(pilot),
                                    "drawn": {d: v["name"] for d, v in drawn.items()}, "only": only_demos})
                 final = out_dir / (stem + ".hdf5")
                 old = rep["files"].get(stem)
@@ -446,6 +511,7 @@ def render_run(raw_dir, out_root, split, condition, cfg, classification, env_inf
         raise
     finally:
         rep["seconds"] = round(time.time() - t0, 1)
+        rep["timing"] = timing_summary(rep["files"])
         write_json(rpath, rep)
     return rep
 
@@ -483,7 +549,7 @@ def run_consistency(raw_dir, ref_root, out_root, cfg, env_info, *, render=render
     path = out_root / "consistency-report.json"
     try:
         ref_env = load_ref_environment(ref_root)
-        rep["provenance_comparison"] = cmp = R.compare_provenance(ref_env, env_info)
+        rep["provenance_comparison"] = cmp = R.compare_provenance(ref_env, env_info, strict=True)
         if cmp["stop"]:
             raise ConsistencyFailure("software environment differs from the reference run: " + "; ".join(cmp["stop"]))
         stems = [f.stem for f in raw_files(raw_dir, cfg["n_files"])]
@@ -547,20 +613,32 @@ def cmd_render(args):
     out.mkdir(parents=True, exist_ok=True)
     classification = load_classification(args.classification) if args.condition != "clean" else None
     env_info = collect_environment(args.env_scripts_dir)
+    expected = None
     if args.split == "test":
         if not args.consistency_ref:
-            print("a test-split render needs --consistency-ref (the phase A val render); no frame was drawn", flush=True)
+            print("a test-split render needs --consistency-ref (the phase A trainval render); no frame was drawn", flush=True)
             return RC_USAGE
+        if args.condition != "clean":
+            if not args.expect_draws:
+                print("a perturbed test render needs --expect-draws (the committed draws file); no frame was drawn", flush=True)
+                return RC_USAGE
+            expected = json.loads(Path(args.expect_draws).read_text())
+            try:                       # names only: nothing of any demo is read
+                check_expected_draws(expected, list_draws(args.raw, cfg, classification, (args.condition,))["draws"], cfg["seed_draw"])
+            except R.RenderCheckError as e:
+                print(f"[draws] refused: {e}", flush=True)
+                return RC_CHECK
         try:
             run_consistency(args.raw, args.consistency_ref, out / "consistency", cfg, env_info)
-        except ConsistencyFailure as e:
-            print(f"[consistency] FAILED, no test frame drawn: {e}", flush=True)
+        except Exception as e:          # any error in the check, not only a pixel or software difference, stops here (exit 5)
+            print(f"[consistency] FAILED, no test frame drawn: {type(e).__name__}: {e}", flush=True)
             return RC_CONSISTENCY
-    elif args.consistency_ref:
-        print("--consistency-ref only applies to a test-split render", flush=True)
+    elif args.consistency_ref or args.expect_draws:
+        print("--consistency-ref and --expect-draws only apply to a test-split render", flush=True)
         return RC_USAGE
     try:
-        render_run(args.raw, out, args.split, args.condition, cfg, classification, env_info, max_demos=args.max_demos)
+        render_run(args.raw, out, args.split, args.condition, cfg, classification, env_info, max_demos=args.max_demos, pilot=args.pilot,
+                   expected_draws=expected)
     except R.RenderCheckError as e:
         print(f"[render] check failed, stopping: {e}", flush=True)
         return RC_CHECK
@@ -573,8 +651,8 @@ def cmd_check(args):
     env_info = collect_environment(args.env_scripts_dir)
     try:
         run_consistency(args.raw, args.consistency_ref, args.out, cfg, env_info)
-    except ConsistencyFailure as e:
-        print(f"[consistency] FAILED: {e}", flush=True)
+    except Exception as e:
+        print(f"[consistency] FAILED: {type(e).__name__}: {e}", flush=True)
         return RC_CONSISTENCY
     print("[consistency] every value identical", flush=True)
     return RC_OK
@@ -614,10 +692,13 @@ def build_parser():
             p.add_argument("--out", required=True)
     r = sub.add_parser("render")
     common(r)
-    r.add_argument("--split", required=True, choices=["train", "val", "test"])
+    r.add_argument("--split", required=True, choices=["train", "val", "trainval", "test"],
+                   help="trainval = train and val demos in one file per task, one root (phase A)")
     r.add_argument("--condition", required=True, choices=["clean", "camera", "light", "background", "noise"])
     r.add_argument("--max-demos", type=int, default=None, help="render only the first N demos of the split in each file (pilot)")
-    r.add_argument("--consistency-ref", default=None, help="test split: the phase A val render (a render output root) to compare with first")
+    r.add_argument("--consistency-ref", default=None, help="test split: the phase A trainval render (a render output root) to compare with first")
+    r.add_argument("--expect-draws", default=None, help="test split, perturbed condition: the committed draws file (`draws` subcommand output)")
+    r.add_argument("--pilot", action="store_true", help="perturbed condition on val demos to try the paths and time them; needs --max-demos")
     c = sub.add_parser("check-consistency")
     common(c)
     c.add_argument("--consistency-ref", required=True)

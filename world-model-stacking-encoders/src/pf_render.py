@@ -120,7 +120,7 @@ def shrink(img, method):
     """256 x 256 x 3 uint8 -> 128 x 128 x 3 uint8. 'area' = mean of each 2 x 2 block (what area averaging is for an exact
     factor of 2), rounded; 'bicubic' = PIL BICUBIC (Pillow antialiases when it shrinks)."""
     if not (img.shape == (RENDER, RENDER, 3) and img.dtype == np.uint8):
-        raise ValueError(f"expected a {RENDER} x {RENDER} x 3 uint8 image, got {img.shape} {img.dtype}")
+        raise RenderCheckError(f"expected a {RENDER} x {RENDER} x 3 uint8 image, got {img.shape} {img.dtype}")
     if method == "area":
         s = OUT_SIZE
         return np.rint(img.reshape(s, 2, s, 2, 3).astype(np.float32).mean(axis=(1, 3))).astype(np.uint8)
@@ -398,7 +398,7 @@ class RawFile:
     the call raises SplitAccessError before h5py is touched. Every access is logged in `access_log`. Listing names is free."""
 
     def __init__(self, path, run_split, opener=None):
-        if run_split not in ("train", "val", "test"):
+        if run_split not in ("train", "val", "trainval", "test"):
             raise ValueError(run_split)
         if opener is None:
             import h5py
@@ -415,6 +415,8 @@ class RawFile:
             raise
 
     def names(self, split):
+        if split == "trainval":
+            return [d for d in self.all_names if self.split[d] in ("train", "val")]
         return [d for d in self.all_names if self.split[d] == split]
 
     def model_file(self, name):
@@ -428,7 +430,7 @@ class RawFile:
     def demo_arrays(self, name):
         if name not in self.split:
             raise SplitAccessError(f"unknown demo {name}")
-        if self.split[name] != self.run_split:
+        if self.split[name] != self.run_split and not (self.run_split == "trainval" and self.split[name] in ("train", "val")):
             raise SplitAccessError(f"{name} is a {self.split[name]} demo; a {self.run_split} run may not read its states or actions")
         self.access_log.append(("arrays", name))
         g = self._data[name]
@@ -484,12 +486,18 @@ def _flat(d, pre=""):
     return r
 
 
-def compare_provenance(ref, new):
+STRICT_REQUIRED = ("libraries.mujoco", "libraries.robosuite", "image_digest", "bundle_key", "libero_source_fingerprint")
+
+
+def compare_provenance(ref, new, strict=False):
     """Compare two environment records ({"software": {...}, "hardware": {...}}, as pf_rerender.collect_environment writes them).
     Software (libraries, LIBERO-Plus commit and source fingerprint, environment bundle, image digest, MUJOCO_GL): any difference,
     or a field the reference did not record, goes into `stop`. Hardware (GPU name, driver, GL strings): differences go into
-    `recorded` only; the pixel comparison decides. Returns {"stop": [...], "recorded": [...], "same": [...]}."""
-    out = {"stop": [], "recorded": [], "same": []}
+    `recorded` only; the pixel comparison decides. In strict mode (check-consistency and the test render) a null or missing value on
+    either side for STRICT_REQUIRED (mujoco and robosuite versions, image digest, bundle key, LIBERO-Plus source fingerprint) also
+    stops, because "equal" would otherwise mean "both unknown"; otherwise they are only listed in `unverified`.
+    Returns {"stop": [...], "recorded": [...], "same": [...], "unverified": [...]}."""
+    out = {"stop": [], "recorded": [], "same": [], "unverified": []}
     fr, fn = _flat(ref.get("software") or {}), _flat(new.get("software") or {})
     for k in sorted(set(fr) | set(fn)):
         if k not in fr:
@@ -500,6 +508,10 @@ def compare_provenance(ref, new):
             out["stop"].append(f"software {k}: reference {fr[k]!r} vs now {fn[k]!r}")
         else:
             out["same"].append(k)
+    for k in STRICT_REQUIRED:
+        for side, d in (("reference", fr), ("now", fn)):
+            if d.get(k) is None:
+                (out["stop"] if strict else out["unverified"]).append(f"software {k}: null or missing {side}, cannot verify")
     hr, hn = _flat(ref.get("hardware") or {}), _flat(new.get("hardware") or {})
     for k in sorted(set(hr) | set(hn)):
         if hr.get(k) != hn.get(k):
