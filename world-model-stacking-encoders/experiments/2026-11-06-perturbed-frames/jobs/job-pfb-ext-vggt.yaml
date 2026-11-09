@@ -1,0 +1,185 @@
+# PHASE B, job 3 of 9 (pfb-ext-vggt). NOT SUBMITTED; written 2026-11-09 by the implementation worker pfb-jobs; the user gives the separate phase-B go (jobs/PHASE-B.md).
+# Submit only after job-pfb-render has published all five conditions (the script checks the RENDER_COMPLETE markers and aborts with exit 20 otherwise).
+# VGGT-Omega on all five test conditions (clean, camera, light, background, noise), one extraction per condition (127,480 images in all).
+# Each condition is staged at its OWN local path /work/pfb-test-<c>/libero_goal/<stem>.hdf5 (PHASE-A.md staging-path rule), features go to /mnt/proxy/pf-main/phase-b/feats/<c>/vggt-omega/libero_goal/ (never overwritten).
+# Pins, flags and caps from experiments/2026-10-19-feasibility-tally/extract-job.yaml via job-pfa-ext-vggt.yaml (transformers 5.18.0, fp16, batch 16, 512 px). Estimate (speculative): 127,480 images at 12.1 per second (phase A rate on an RTX 2080 Ti) = 2.9 h, about 3.1 GPU-h with start-up; each condition's extraction capped at 5400 s (2.6x the phase-A rate's 2,107 s), copies and checks capped separately. Resources as pfa-ext-vggt (measured in the tally Job).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-pfb-ext-vggt
+  namespace: aria-world
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 172800        # 48 h from creation, queue included (phase A precedent); the work itself is capped stage by stage inside
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-GeForce-RTX-2080-Ti, NVIDIA-TITAN-RTX, Quadro-RTX-6000, Quadro-RTX-8000, NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090, NVIDIA-RTX-A4000, NVIDIA-RTX-A5000, NVIDIA-A10, NVIDIA-L4, NVIDIA-L40, NVIDIA-L40S, NVIDIA-RTX-4000-Ada-Generation, NVIDIA-RTX-5000-Ada-Generation]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net, ry-gpu-08.sdsc.optiputer.net]}  # GPU faults, 2026-11-03
+      containers:
+      - name: main
+        image: pytorch/pytorch@sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2   # pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime, pinned by digest (phase A)
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          case "${SRC_GIT_COMMIT:-}" in FILL*|"") echo "ABORT: SRC_GIT_COMMIT not filled in (render the manifest with sed at submit time, see PHASE-B.md)"; exit 11;; esac
+          R=/mnt/proxy; PB=$R/pf-main/phase-b; STAMP=$(date +%Y%m%d-%H%M%S); OUT=/work/out; JOB=pfb-ext-vggt
+          CONDS="clean camera light background noise"     # the conditions this Job extracts (each staged at its own path /work/pfb-test-<c>/libero_goal)
+          ENC=vggt-omega
+          export PB OUT ENC
+          # per-stage caps: every long-running command (installs, downloads, hashing and copies on CephFS, extraction) runs under `timeout <seconds>`
+          # (exit 124 on expiry = a failed stage); only small file operations (mkdir, ls, cp of small reports) do not
+          cap() { _s=$1; shift; timeout -k 60 "$_s" "$@"; }
+          WORST=0; LAST=0
+          stage() { _n=$1; shift; "$@"; LAST=$?; echo "=== $_n exit code $LAST"; date -u; if [ $LAST -gt $WORST ]; then WORST=$LAST; fi; return 0; }
+          mkdir -p $R/logs $PB $OUT /work/hf
+          exec > >(tee -a $R/logs/$JOB-$STAMP.log) 2>&1
+          echo "=== $JOB $STAMP src $SRC_GIT_COMMIT conditions $CONDS"; nvidia-smi -L; nproc; date -u; df -h /mnt/proxy | tail -1
+          FREE_GB=$(df -BG --output=avail /mnt/proxy | tail -1 | tr -dc 0-9)
+          if [ "$FREE_GB" -lt 100 ]; then echo "ABORT: only ${FREE_GB}G free on the proxy PVC, need >= 100G (expected use about 60G in all of phase B)"; exit 12; fi
+          # --- inputs: the published test renders of this Job's conditions (fail fast if one is not there or not intact)
+          feats_done() { [ -d "$1" ] && [ "$(ls $1/*.h5 2>/dev/null | wc -l)" -eq 10 ] && ! ls $1 | grep -q partial; }   # feats_done <dir>: 10 feature files, no .partial
+          TODO=""     # the conditions still to extract: one whose 10 feature files are already on the PVC (complete) is skipped, so a retry after a failure at condition k redoes only the rest
+          for c in $CONDS; do
+            [ -f $PB/render/$c/RENDER_COMPLETE ] || { echo "ABORT: $PB/render/$c/RENDER_COMPLETE missing: submit this Job only after job-pfb-render has published condition $c"; exit 20; }
+            [ -f $PB/render/$c/render-sha256.txt ] || { echo "ABORT: no $PB/render/$c/render-sha256.txt"; exit 20; }
+            [ $(ls $PB/render/$c/libero_goal/*.hdf5 | wc -l) -eq 10 ] || { echo "ABORT: $PB/render/$c/libero_goal does not hold 10 files"; exit 20; }
+            if [ -e $PB/feats/$c/$ENC ]; then
+              if feats_done $PB/feats/$c/$ENC/libero_goal; then echo "SKIP: $PB/feats/$c/$ENC is complete (10 files, no .partial)"; continue; else echo "ABORT: $PB/feats/$c/$ENC exists but is incomplete (never overwritten)"; exit 22; fi
+            fi
+            TODO="$TODO $c"
+          done
+          [ -n "$TODO" ] || { echo "nothing to do: every condition is already extracted"; exit 0; }
+          echo "conditions to extract:$TODO"
+          EXT=$(sha256sum /src/extract_features.py | cut -c1-12)
+          [ "$EXT" = "03734ba84a86" ] || { echo "ABORT: /src/extract_features.py sha256 prefix is $EXT, expected 03734ba84a86 (the tally/pf-val extractor)"; exit 21; }
+          cap 1800 pip install --no-cache-dir -q torch==2.7.1 torchvision==0.22.1 \
+            transformers==5.18.0 tokenizers==0.23.3 safetensors==0.8.0 huggingface-hub==2.2.0 \
+            einops==0.8.1 h5py==3.16.0 numpy==2.2.6 pillow==13.0.0
+          cap 1800 pip install --no-cache-dir -q --no-deps \
+            https://github.com/facebookresearch/vggt-omega/archive/48b23c8ce72c9a8fcf987f0d7f43d8e4870759f6.tar.gz
+          cap 300 python - <<'PY' 2>&1 | tee $OUT/revisions.txt
+          from huggingface_hub import HfApi
+          for r, want in [("facebook/VGGT-Omega", "1041e80")]:
+              sha = HfApi().model_info(r).sha
+              print("revision", r, sha, "required prefix", want)
+              assert want is None or sha.startswith(want), f"{r} is at {sha}, expected {want}"
+          PY
+          # the whole copy from CephFS and the hash check run under one cap (a CephFS stall must not leave the GPU idle for hours); failure aborts the Job (set -e)
+          stage_in() {
+            set -e
+            for c in $TODO; do
+              mkdir -p /work/pfb-test-$c/libero_goal
+              for s in $(ls $PB/render/$c/libero_goal/ | sed s/.hdf5$//); do
+                grep "  $s.hdf5\$" $PB/render/$c/render-sha256.txt >> /work/sha-$c.txt
+                cp $PB/render/$c/libero_goal/$s.hdf5 /work/pfb-test-$c/libero_goal/$s.hdf5
+              done
+              [ $(wc -l < /work/sha-$c.txt) -eq 10 ] || { echo "ABORT: hash lines of $c do not match the file count"; exit 20; }
+              (cd /work/pfb-test-$c/libero_goal && sha256sum -c /work/sha-$c.txt)
+              ls -la /work/pfb-test-$c/libero_goal
+            done
+          }
+          export -f stage_in
+          export CONDS TODO
+          cap 3600 bash -c stage_in
+          date -u
+          python -c "import transformers, numpy; print('transformers', transformers.__version__, 'numpy', numpy.__version__)"
+          # the meta check of every condition: extraction meta against the smoke-report reference (A.check_meta), source file = the condition's own staging path,
+          # ten files of ten test demos (demo_40 to demo_49), and 12,748 frames per camera in the condition (A.EXPECTED_FRAMES["test"])
+          cat > /work/meta_check.py <<'PY'
+          import glob, json, sys
+          sys.path[:0] = ["/pf", "/src"]
+          import h5py
+          import pf_analysis as A
+          enc, cond, root = sys.argv[1], sys.argv[2], sys.argv[3]
+          ref = A.load_reference_meta("/pf/smoke-report.json", [enc])[enc]
+          files = sorted(glob.glob(f"{root}/{enc}/libero_goal/*.h5"))
+          assert len(files) == 10, (len(files), 10)
+          tot = {c: 0 for c in A.CAMS}
+          for p in files:
+              with h5py.File(p, "r") as f:
+                  A.check_meta(f, ref, p)
+                  m = json.loads(f.attrs["meta"])
+                  stem = p.rsplit("/", 1)[1][:-3]
+                  assert m["source_file"] == f"/work/pfb-test-{cond}/libero_goal/{stem}.hdf5", m["source_file"]
+                  demos = sorted(k for k in f.keys() if k.startswith("demo_"))
+                  assert demos == [f"demo_{i}" for i in range(40, 50)], demos
+                  assert m["n_demos"] == 10, m["n_demos"]
+                  for d in demos:
+                      for c in A.CAMS:
+                          tot[c] += f[d][c]["global"].shape[0]
+          assert all(v == A.EXPECTED_FRAMES["test"] for v in tot.values()), (tot, A.EXPECTED_FRAMES["test"])
+          print("meta ok:", enc, cond, len(files), "files; checked keys", A.META_KEYS, "frames per camera", tot)
+          PY
+          set +e
+          mkdir -p /work/feats
+          copy_feats() {   # copy_feats <encoder> <condition>: local /work/feats/<c>/<enc>/libero_goal/*.h5 -> PVC, one file at a time through .partial, compared byte for byte; never overwrites
+            set -e
+            _d=$PB/feats/$2/$1/libero_goal; mkdir -p $_d
+            for _f in /work/feats/$2/$1/libero_goal/*.h5; do
+              _b=$(basename $_f)
+              if [ -e $_d/$_b ]; then echo "REFUSE: $_d/$_b already exists"; exit 1; fi
+              cp $_f $_d/$_b.partial
+              cmp -s $_f $_d/$_b.partial || { echo "COPY MISMATCH: $_b"; exit 1; }
+              mv $_d/$_b.partial $_d/$_b
+            done
+            ls -la $_d
+          }
+          export -f copy_feats
+          for c in $TODO; do
+            stage extract-$ENC-$c cap 5400 python /src/extract_features.py --encoder $ENC --dtype float16 --batch-size 16 --out /work/feats/$c --hdf5 /work/pfb-test-$c/libero_goal/*.hdf5
+            if [ $LAST -eq 0 ]; then
+              stage meta-$ENC-$c cap 900 python /work/meta_check.py $ENC $c /work/feats/$c
+              if [ $LAST -eq 0 ]; then
+                stage copy-$ENC-$c cap 3600 bash -c 'copy_feats "$@"' _ $ENC $c
+                if [ $LAST -eq 0 ]; then rm -rf /work/feats/$c/$ENC; fi
+              fi
+            fi
+          done
+          echo "=== exit codes: worst $WORST"; date -u
+          REP=$PB/reports/$JOB-$STAMP
+          mkdir -p $REP && cp -r $OUT/. $REP/ && echo "copied reports to $REP" || { echo "REPORT COPY FAILED"; if [ $WORST -eq 0 ]; then WORST=15; fi; }
+          (cd $OUT && tar czf /work/$JOB.tgz .)
+          ls -la /work/$JOB.tgz
+          if [ $(du -k /work/$JOB.tgz | cut -f1) -lt 2048 ]; then echo "=== BEGIN PFB_TGZ_B64"; base64 -w 76 /work/$JOB.tgz; echo "=== END PFB_TGZ_B64"; fi
+          echo "=== done; exiting with $WORST (0 only if every stage passed)"
+          exit $WORST
+        env:
+        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}   # sed at submit time (PHASE-B.md); the script aborts if it is still FILL_AT_SUBMIT
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: "/pf:/src"}
+        resources:
+          requests: {cpu: "1", memory: 4Gi, nvidia.com/gpu: "1", ephemeral-storage: 24Gi}
+          limits:   {cpu: "1200m", memory: 4800Mi, nvidia.com/gpu: "1", ephemeral-storage: 28Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: pf, mountPath: /pf, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 28Gi}
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: pf
+        configMap: {name: stacking-encoders-pf-main-src-b}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 4Gi}

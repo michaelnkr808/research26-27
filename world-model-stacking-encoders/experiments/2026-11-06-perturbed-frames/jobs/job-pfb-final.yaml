@@ -1,0 +1,156 @@
+# PHASE B, job 9 of 9 (pfb-final), CPU only. NOT SUBMITTED; written 2026-11-09 by the implementation worker pfb-jobs; the user gives the separate phase-B go (jobs/PHASE-B.md).
+# FIRST READ OF TEST LABELS (the test demos' actions, load_test_layout). Submit only after job-pfb-render, job-pfb-ext-vggt and the five job-pfb-ext-sam3-* all finished with exit 0
+# (the script checks that all 250 phase-B feature files exist, none is .partial).
+# pf_analysis.py final: needs a passing dev report (the phase-A one: gate A passed, lag check passed, same train/val root /mnt/proxy/pf-main/phase-a/feats), refits every probe on the re-rendered
+# train and val features (alphas tuned on re-rendered val), applies them to the five test conditions, bootstrap over the 100 test demos. Condition roots are <root>/<encoder>/libero_goal/<stem>.h5
+# with the REF condition named clean_rerender. `final` needs NO --stored-feats (stored features are not read; the lag check was done in the dev run; passing none records "skipped" in the results).
+# Two invocations: --ftype global (primary) and --ftype mean (secondary). `final --ftype mean` works with the global dev report: check_dev_report does not look at ftype, the gate curve is recomputed from the
+# global features (loaded with the mean ones), and the per-probe alpha comparison with the dev report is skipped for another ftype (results "alphas_match_dev" says so). Verified on the synthetic world of test_pf_analysis.
+# Memory: the dev Job's 14Gi was arithmetic and its actual use was not recorded; this Job also holds the five test conditions (12,748 frames x 2 cameras x 7,424 dims x 5 conditions x 4 B = 3.8 GB) beside the
+# train+val features (3.0 GB, plus 2.5 GB more for the mean features in the mean run), so the arithmetic peak is about 11 GB (global) and 14 GB (mean): request 20Gi, limit 24Gi (1.2x), usage 55 to 70 percent of the request (speculative).
+# Estimate: the dev analysis took 2,552 s; the final run adds the condition predictions and 1000 bootstrap draws, so about 1 h per invocation (speculative); capped at 6 h each.
+# Follows _standards/08: Job, real command that exits, no waiting loops, nothing that tolerates a taint, no GPU (anti-affinity to GPU nodes), limits within 20% of requests, backoffLimit 0.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-pfb-final
+  namespace: aria-world
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 172800        # 48 h from creation, queue included (phase A precedent); the work itself is capped stage by stage inside
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}   # CPU-only: keep off GPU nodes (_standards/08)
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch@sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2   # pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime, pinned by digest (phase A)
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          case "${SRC_GIT_COMMIT:-}" in FILL*|"") echo "ABORT: SRC_GIT_COMMIT not filled in (render the manifest with sed at submit time, see PHASE-B.md)"; exit 11;; esac
+          R=/mnt/proxy; PA=$R/pf-main/phase-a; PB=$R/pf-main/phase-b; STAMP=$(date +%Y%m%d-%H%M%S); OUT=/work/out; JOB=pfb-final
+          DEV_REPORT=$PA/dev/20261109-144404/dev-report.json    # the passing phase-A dev report (also committed: results/pf-main/phase-a/pfa-dev/reports/dev-report.json)
+          export PA PB OUT
+          # per-stage caps: every long-running command (installs, downloads, hashing, copies on CephFS, analysis) runs under `timeout <seconds>` (exit 124 on expiry = a failed stage)
+          cap() { _s=$1; shift; timeout -k 60 "$_s" "$@"; }
+          WORST=0; LAST=0
+          stage() { _n=$1; shift; "$@"; LAST=$?; echo "=== $_n exit code $LAST"; date -u; if [ $LAST -gt $WORST ]; then WORST=$LAST; fi; return 0; }
+          mkdir -p $R/logs $PB $OUT /work/hf
+          exec > >(tee -a $R/logs/$JOB-$STAMP.log) 2>&1
+          echo "=== $JOB $STAMP src $SRC_GIT_COMMIT"; nproc; date -u; df -h /mnt/proxy | tail -1
+          FREE_GB=$(df -BG --output=avail /mnt/proxy | tail -1 | tr -dc 0-9)
+          if [ "$FREE_GB" -lt 100 ]; then echo "ABORT: only ${FREE_GB}G free on the proxy PVC, need >= 100G"; exit 12; fi
+          [ -f $DEV_REPORT ] || { echo "ABORT: dev report $DEV_REPORT missing"; exit 20; }
+          # --- inputs: every phase-B feature file (5 encoders x 5 conditions x 10 files = 250), no .partial left behind (fail fast)
+          N=0
+          for c in clean camera light background noise; do
+            [ -f $PB/render/$c/RENDER_COMPLETE ] || { echo "ABORT: render of $c not published"; exit 20; }
+            for e in dinov3 siglip2 c-radiov4 vggt-omega sam3; do
+              for f in $PB/render/$c/libero_goal/*.hdf5; do
+                s=$(basename $f .hdf5)
+                [ -f $PB/feats/$c/$e/libero_goal/$s.h5 ] || { echo "ABORT: missing $PB/feats/$c/$e/libero_goal/$s.h5 (submit the final Job only when every extraction Job finished with exit 0)"; exit 20; }
+                N=$((N + 1))
+              done
+              ls $PB/feats/$c/$e/libero_goal/ | grep -q partial && { echo "ABORT: .partial file in $PB/feats/$c/$e/libero_goal"; exit 20; }
+            done
+          done
+          [ $N -eq 250 ] || { echo "ABORT: expected 250 phase-B feature files, found $N"; exit 20; }
+          echo "all $N phase-B feature files present"
+          [ -f /pf/smoke-report.json ]
+          [ ! -e $PB/final/$STAMP ] || { echo "ABORT: $PB/final/$STAMP exists"; exit 14; }
+          cap 1800 pip install --no-cache-dir -q --target /work/extlib h5py==3.16.0 numpy==2.2.6 huggingface-hub==2.2.0
+          cap 1800 env PYTHONPATH=/work/extlib python - <<'PY'
+          from huggingface_hub import snapshot_download
+          snapshot_download("yifengzhu-hf/LIBERO-datasets", repo_type="dataset", revision="f13aa24a3da8c43c7225569f28c562979fa0e35a",
+                            allow_patterns=["libero_goal/*.hdf5"], local_dir="/work/data")
+          PY
+          ls -la /work/data/libero_goal; date -u
+          set +e
+          # the raw files (the labels) must be the ones the render used: the config's hashes
+          stage raw-sha256 cap 900 bash -c "awk '/^  [a-z_]+_demo:/ {gsub(\":\",\"\",\$1); print \$2\"  /work/data/libero_goal/\"\$1\".hdf5\"}' /pf/phase-a.yaml | sha256sum -c -"
+          cat > /work/summary.py <<'PY'
+          import json, sys
+          r = json.load(open(sys.argv[1] + "/results.json"))
+          g = r.get("dev_gate") or {}
+          out = {"ftype": r["ftype"], "n_boot": r["n_boot"], "seed": r["seed"], "n_test_demos": r["n_test_demos"], "n_test_frames": r["n_test_frames"],
+                 "git_commit": r["git_commit"], "seconds": r["seconds"], "lag_check": r["lag_check"], "alphas_match_dev": r["alphas_match_dev"],
+                 "dev_gate": {k: g.get(k) for k in ("score", "threshold", "passed", "alpha")}, "deciding_slice": "full/combined (PLAN Amendment (c)); the others are robustness checks",
+                 "slices": {}}
+          for cfg, views in r["configs"].items():
+              for view, cv in views.items():
+                  p, b = cv["rule_P"], cv["rule_B"]
+                  out["slices"][cfg + "/" + view] = {
+                      "rule_P": {k: p[k] for k in ("fires", "R_is_largest", "next_largest", "diff_point", "diff_ci95")},
+                      "rule_B": {k: b[k] for k in ("fires_point_reading", "fires_ci_reading_strict", "R_gain_point", "R_gain_ci95", "others_point_reading", "others_ci_strict")},
+                      "pooled_e": cv["pooled_e"], "ordering_ours_by_e": cv["ordering"]["ours_by_e_point"]}
+          if r.get("drift"):
+              out["drift_combined"] = {e: {c: s["point"] for c, s in row.items()} for e, row in r["drift"]["combined"].items()}
+          print(json.dumps(out, indent=1))
+          PY
+          # final run, global features (primary) and mean features (secondary); both use the same passing dev report. The out dirs must not exist (pf_analysis claims them).
+          # Test labels are read here for the first time. preds.npz is saved (default) to the PVC only; the log gets the small summary.
+          if [ $LAST -eq 0 ]; then
+            stage final-global cap 21600 env PYTHONPATH=/work/extlib:/pf:/src python /pf/pf_analysis.py final --trval-feats $PA/feats --raw /work/data/libero_goal --suite libero_goal --ref-meta /pf/smoke-report.json --dev-report $DEV_REPORT --ftype global --n-boot 1000 --seed 0 --cond clean_rerender=$PB/feats/clean --cond camera=$PB/feats/camera --cond light=$PB/feats/light --cond background=$PB/feats/background --cond noise=$PB/feats/noise --out /work/final-global
+            RC_G=$LAST
+            if [ $RC_G -eq 0 ]; then
+              stage summary-global cap 300 bash -c 'python /work/summary.py /work/final-global > $OUT/summary-global.json'
+              echo "=== BEGIN PFB_SUMMARY_GLOBAL"; cat $OUT/summary-global.json; echo "=== END PFB_SUMMARY_GLOBAL"
+            fi
+            stage final-mean cap 21600 env PYTHONPATH=/work/extlib:/pf:/src python /pf/pf_analysis.py final --trval-feats $PA/feats --raw /work/data/libero_goal --suite libero_goal --ref-meta /pf/smoke-report.json --dev-report $DEV_REPORT --ftype mean --n-boot 1000 --seed 0 --cond clean_rerender=$PB/feats/clean --cond camera=$PB/feats/camera --cond light=$PB/feats/light --cond background=$PB/feats/background --cond noise=$PB/feats/noise --out /work/final-mean
+            RC_M=$LAST
+            if [ $RC_M -eq 0 ]; then
+              stage summary-mean cap 300 bash -c 'python /work/summary.py /work/final-mean > $OUT/summary-mean.json'
+              echo "=== BEGIN PFB_SUMMARY_MEAN"; cat $OUT/summary-mean.json; echo "=== END PFB_SUMMARY_MEAN"
+            fi
+            # copy whatever finished to the PVC (never overwrites: the stamp directory is new)
+            mkdir -p $PB/final/$STAMP
+            for d in final-global final-mean; do
+              if [ -d /work/$d ]; then cp -r /work/$d $PB/final/$STAMP/ && echo "copied $d to $PB/final/$STAMP/$d" || { echo "FINAL COPY FAILED: $d"; if [ $WORST -eq 0 ]; then WORST=15; fi; }; fi
+            done
+            ls -la $PB/final/$STAMP/*
+          fi
+          echo "=== exit codes: worst $WORST"; date -u
+          REP=$PB/reports/$JOB-$STAMP
+          mkdir -p $REP && cp -r $OUT/. $REP/ && echo "copied reports to $REP" || { echo "REPORT COPY FAILED"; if [ $WORST -eq 0 ]; then WORST=15; fi; }
+          (cd $OUT && tar czf /work/$JOB.tgz .)
+          ls -la /work/$JOB.tgz
+          if [ $(du -k /work/$JOB.tgz | cut -f1) -lt 2048 ]; then echo "=== BEGIN PFB_TGZ_B64"; base64 -w 76 /work/$JOB.tgz; echo "=== END PFB_TGZ_B64"; fi
+          echo "=== done; exiting with $WORST (0 only if every stage passed)"
+          exit $WORST
+        env:
+        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}   # sed at submit time (PHASE-B.md); the script aborts if it is still FILL_AT_SUBMIT
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: "/pf:/src"}
+        - {name: OMP_NUM_THREADS, value: "4"}
+        - {name: OPENBLAS_NUM_THREADS, value: "4"}
+        - {name: MKL_NUM_THREADS, value: "4"}
+        resources:
+          requests: {cpu: "4", memory: 20Gi, ephemeral-storage: 20Gi}
+          limits:   {cpu: "4800m", memory: 24Gi, ephemeral-storage: 24Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: pf, mountPath: /pf, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 24Gi}
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: pf
+        configMap: {name: stacking-encoders-pf-main-src-b}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
