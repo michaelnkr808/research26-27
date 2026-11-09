@@ -22,7 +22,7 @@ The all-task ridge probe (stored train frames of all ten tasks, 38,464 frames; s
 - By tenth of the demo, the part of the gap per tenth is between -0.0028 and -0.0098; the two largest are the 6th and 7th tenths (-0.0098, -0.0080) and the 10th (-0.0056); the last-but-one tenth is smallest. No clear early/late pattern (the stove-only round saw more in the late tenths; here it is flatter).
 - The 10 % of frames whose predictions move most hold 34 % of the excess (10 % would be even): mildly concentrated.
 - Per camera, single-camera probes (alpha 0.1): agentview 0.532 stored, 0.463 re-rendered (-0.069); wrist 0.620 and 0.579 (-0.041). At the Job's alpha 0.01: -0.129 and -0.052. Per-task parts for each camera are in `probe-all.json` (all negative). The agentview part is largest for the wine-bottle-on-rack task (-0.0145) and the top-drawer task; the wrist part is largest for bowl-on-cabinet (-0.0089).
-- Standardized feature cosine, stored vs re-render (the probe's view): agentview 0.77 on average (tasks 0.72 to 0.81), wrist 0.85 (0.77 to 0.91); raw cosines are all above 0.9 (see JSON for the per-task numbers of each).
+- Standardized feature cosine, stored vs re-render (the probe's view): agentview 0.77 on average (tasks 0.72 to 0.81), wrist 0.85 (0.77 to 0.91); per-task values are in `probe-all.json`.
 - Oracle check: subtracting the mean feature shift (estimated on the same val frames) lifts the all-task re-render R2 from 0.6053 to 0.6310, so the gap goes from -0.051 to -0.025 (half; the stove-only probe recovered 70 %).
 
 ### C. Is the all-task probe as brittle as the stove-only one? (verified, `alpha_sweep`)
