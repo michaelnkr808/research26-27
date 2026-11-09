@@ -1,0 +1,862 @@
+{
+ "schema": 1,
+ "split": "val",
+ "condition": "background",
+ "max_demos": 1,
+ "only_demos": null,
+ "pilot": true,
+ "not_for_training": true,
+ "config": {
+  "seed_draw": 0,
+  "seed_noise": 0,
+  "resize": "area",
+  "suite": "libero_goal",
+  "consistency_demo": "demo_30",
+  "n_files": 10,
+  "raw_sha256": {
+   "open_the_middle_drawer_of_the_cabinet_demo": "20252c7cf98cd7437061f7f200ae7b6cb6219fabbd53b4536dfaa8abda6ab737",
+   "open_the_top_drawer_and_put_the_bowl_inside_demo": "1b50d99a053a7e4547c9ae9ccd2e3cd762543d27be78f240f13440d7ae487ae8",
+   "push_the_plate_to_the_front_of_the_stove_demo": "36b4e1bced49d2f4ff6b2fce6b1596a63978e14199e2513cd0df71e127bf47a6",
+   "put_the_bowl_on_the_plate_demo": "e69528b0cf10dfc59b20698e12ec2affc03f3887309034d3eb74cac3ec929406",
+   "put_the_bowl_on_the_stove_demo": "ff77d3bf0f89a147d423840ecbd842cd63c3c55aeead91f88dbc0917be473e99",
+   "put_the_bowl_on_top_of_the_cabinet_demo": "e14c84ebc820a13ef9a92ca82a7f04bb299f0ee96dfe9cc907bab71aeb2683b2",
+   "put_the_cream_cheese_in_the_bowl_demo": "ee58a7d72c143a71bf1448674e70940ac7781c1d1bb10a1b0c7a5c69b26abbef",
+   "put_the_wine_bottle_on_the_rack_demo": "f9092aa70734fc4083e97fc58c3ba25f87c614d18326182ddc7a455f0ab4da2e",
+   "put_the_wine_bottle_on_top_of_the_cabinet_demo": "7dc087a7596d5cbbe394f681b21a0be434438b0dca73ac430c293fe4c818404a",
+   "turn_on_the_stove_demo": "387fc10747696b80dea6ed8d7f2beaa162bf92ae11750b241073cbd33aac73d5"
+  }
+ },
+ "config_sha256": "a993fb01bfc54b0d52a948a8d507834246c9e44fedbdee0e896f878d8b9e17f8",
+ "code_sha256": {
+  "pf_render.py": "854411d2138a74a79178ca09fda30a09ecd2feec4ea9904b3def93b10483816f",
+  "pf_rerender.py": "d6d4cced47e59e0b4f4c2b10e69eb3df0e2e70eb36f81d680990fa87b3ba069a",
+  "pf_smoke.py": "fde7bc7de33b1dc86997cc15220e25a73c8dfb34e1133c1604983bb50bdb0261",
+  "diagnostics.py": "ffb155b4cd8cb00813b9a4c9213c6553f1ea2d0e4a27ca96d272e8acec16d88b"
+ },
+ "environment": {
+  "software": {
+   "libraries": {
+    "mujoco": "3.3.2",
+    "robosuite": "1.4.0",
+    "numpy": "1.26.4",
+    "Pillow": "13.0.0",
+    "h5py": "3.16.0",
+    "scipy": "1.17.1",
+    "scikit-image": "0.24.0",
+    "opencv": "4.10.0.84",
+    "Wand": "0.6.13",
+    "PyOpenGL": "3.1.10",
+    "PyYAML": "6.0.2",
+    "python": "3.11.13",
+    "ImageMagick": "ImageMagick 6.9.11-60 Q16 x86_64 2021-01-25 https://imagemagick.org"
+   },
+   "libero_plus_commit": "4976dc30028e805ff8094b55501d532c48fec182",
+   "libero_source_fingerprint": "15df337878239ba6958d41366ac859b0055491f590fd2908c4481a8ebfaee792",
+   "bundle_key": "9182f8131559",
+   "bundle_tar_sha256": "86afbf57e6fd927f006742f26d3efc33b08e862654ffac7349d3522208944f03",
+   "image_digest": "pytorch/pytorch@sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2",
+   "mujoco_gl": "egl"
+  },
+  "hardware": {
+   "nvidia_smi": {
+    "gpu_name": "NVIDIA L4",
+    "driver_version": "615.71.09",
+    "n_gpus_visible": 1
+   },
+   "gl": {
+    "vendor": "NVIDIA Corporation",
+    "renderer": "NVIDIA L4/PCIe/SSE2",
+    "version": "4.6.0 NVIDIA 615.71.09"
+   }
+  },
+  "notes": [
+   "libero_plus_commit comes from LP_COMMIT or setup_sim.sh (the tarball has no .git); libero_source_fingerprint is the check on the files",
+   "env_bundle.sh exports no bundle checksum: bundle_key is recomputed as the script does it, bundle_tar_sha256 needs ENV_BUNDLE_SHA256 from the Job"
+  ]
+ },
+ "files": {
+  "open_the_middle_drawer_of_the_cabinet_demo": {
+   "complete": true,
+   "base": "open_the_middle_drawer_of_the_cabinet",
+   "split": "val",
+   "condition": "background",
+   "demos": [
+    "demo_30"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_nontest_compared": 40,
+   "settings_sha256": "ab5a586539151926fd6c8aa8d3527ba8301c6e05eb43beef39a8b3a2a4d37e65",
+   "frames": {
+    "demo_30": 135
+   },
+   "per_demo": {
+    "demo_30": {
+     "frames": 135,
+     "episode": {
+      "name": "open_the_middle_drawer_of_the_cabinet_tb_2",
+      "index": 21,
+      "n_choices": 30,
+      "list_sha256": "866929948186f40d4215341b43e6f451a28b30bce6df31ddb85f03b881aabbd9"
+     },
+     "scene_xml": "scenes/tabletop_table_CliffDesert006_AO_HIRES.xml",
+     "camera": {
+      "env_pos": [
+       0.6586,
+       0.0,
+       1.6104
+      ],
+      "saved_pos": [
+       0.658613,
+       0.0,
+       1.61035
+      ],
+      "env_quat": [
+       0.6380337911643937,
+       0.3048161434904502,
+       0.3048161434904502,
+       0.6380337911643937
+      ],
+      "saved_quat": [
+       0.638018,
+       0.30485,
+       0.30485,
+       0.638018
+      ],
+      "pos_max_diff": 5.0000000000105516e-05,
+      "quat_max_diff": 3.3856509549790026e-05,
+      "env_fovy": 45.0,
+      "tolerance": 0.0001,
+      "differs": false,
+      "override_used": false,
+      "label": "open_the_middle_drawer_of_the_cabinet_demo/demo_30/background"
+     },
+     "seconds_env_and_prepare": 5.103,
+     "seconds_frames": 0.711
+    }
+   },
+   "camera_override_used_in": [],
+   "seconds": 6.0,
+   "test_demo_reads": {
+    "arrays": [],
+    "model_file": []
+   }
+  },
+  "open_the_top_drawer_and_put_the_bowl_inside_demo": {
+   "complete": true,
+   "base": "open_the_top_drawer_and_put_the_bowl_inside",
+   "split": "val",
+   "condition": "background",
+   "demos": [
+    "demo_30"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_nontest_compared": 40,
+   "settings_sha256": "5f82041cdf6ea83c67e766e5c0b72de07c7d5668e90b262a9eaedbc2c97f110b",
+   "frames": {
+    "demo_30": 198
+   },
+   "per_demo": {
+    "demo_30": {
+     "frames": 198,
+     "episode": {
+      "name": "open_the_top_drawer_and_put_the_bowl_inside_tb_4",
+      "index": 39,
+      "n_choices": 45,
+      "list_sha256": "89876df1a15d02c8ac6ceef3826d9ae0f1e0ed9cce25e7dd9fabe653b00a5900"
+     },
+     "scene_xml": "scenes/tabletop_table_CliffDesert006_DISP_VAR2_HIRES.xml",
+     "camera": {
+      "env_pos": [
+       0.6586,
+       0.0,
+       1.6104
+      ],
+      "saved_pos": [
+       0.658613,
+       0.0,
+       1.61035
+      ],
+      "env_quat": [
+       0.6380337911643937,
+       0.3048161434904502,
+       0.3048161434904502,
+       0.6380337911643937
+      ],
+      "saved_quat": [
+       0.638018,
+       0.30485,
+       0.30485,
+       0.638018
+      ],
+      "pos_max_diff": 5.0000000000105516e-05,
+      "quat_max_diff": 3.3856509549790026e-05,
+      "env_fovy": 45.0,
+      "tolerance": 0.0001,
+      "differs": false,
+      "override_used": false,
+      "label": "open_the_top_drawer_and_put_the_bowl_inside_demo/demo_30/background"
+     },
+     "seconds_env_and_prepare": 1.935,
+     "seconds_frames": 1.016
+    }
+   },
+   "camera_override_used_in": [],
+   "seconds": 3.1,
+   "test_demo_reads": {
+    "arrays": [],
+    "model_file": []
+   }
+  },
+  "push_the_plate_to_the_front_of_the_stove_demo": {
+   "complete": true,
+   "base": "push_the_plate_to_the_front_of_the_stove",
+   "split": "val",
+   "condition": "background",
+   "demos": [
+    "demo_30"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_nontest_compared": 40,
+   "settings_sha256": "0d09d02aa4c8177d8a8b26c556b0afa2c37dc54368ea73af17f9f71009e8f8c1",
+   "frames": {
+    "demo_30": 141
+   },
+   "per_demo": {
+    "demo_30": {
+     "frames": 141,
+     "episode": {
+      "name": "push_the_plate_to_the_front_of_the_stove_table_17",
+      "index": 3,
+      "n_choices": 27,
+      "list_sha256": "44dbdb38a9241674b55cbfaa21c5a1492a16cad7fa7435f3631eb80dfab525ef"
+     },
+     "scene_xml": "scenes/tabletop_table_Marble01_REFL_3K.xml",
+     "camera": {
+      "env_pos": [
+       0.6586,
+       0.0,
+       1.6104
+      ],
+      "saved_pos": [
+       0.658613,
+       0.0,
+       1.61035
+      ],
+      "env_quat": [
+       0.6380337911643937,
+       0.3048161434904502,
+       0.3048161434904502,
+       0.6380337911643937
+      ],
+      "saved_quat": [
+       0.638018,
+       0.30485,
+       0.30485,
+       0.638018
+      ],
+      "pos_max_diff": 5.0000000000105516e-05,
+      "quat_max_diff": 3.3856509549790026e-05,
+      "env_fovy": 45.0,
+      "tolerance": 0.0001,
+      "differs": false,
+      "override_used": false,
+      "label": "push_the_plate_to_the_front_of_the_stove_demo/demo_30/background"
+     },
+     "seconds_env_and_prepare": 1.537,
+     "seconds_frames": 0.709
+    }
+   },
+   "camera_override_used_in": [],
+   "seconds": 2.4,
+   "test_demo_reads": {
+    "arrays": [],
+    "model_file": []
+   }
+  },
+  "put_the_bowl_on_the_plate_demo": {
+   "complete": true,
+   "base": "put_the_bowl_on_the_plate",
+   "split": "val",
+   "condition": "background",
+   "demos": [
+    "demo_30"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_nontest_compared": 40,
+   "settings_sha256": "436eb9a82b209d779073c7a357c92e076e8359b3a2d1305d0a233ddc21fb3e2c",
+   "frames": {
+    "demo_30": 102
+   },
+   "per_demo": {
+    "demo_30": {
+     "frames": 102,
+     "episode": {
+      "name": "put_the_bowl_on_the_plate_table_13",
+      "index": 3,
+      "n_choices": 30,
+      "list_sha256": "b060650cf2ae7616b840cd7a22b460a17b27ae7118743901ba3628ee4a541bc7"
+     },
+     "scene_xml": "scenes/tabletop250/tabletop_table_FabricPolyester003_DISP_6K.xml",
+     "camera": {
+      "env_pos": [
+       0.6586,
+       0.0,
+       1.6104
+      ],
+      "saved_pos": [
+       0.658613,
+       0.0,
+       1.61035
+      ],
+      "env_quat": [
+       0.6380337911643937,
+       0.3048161434904502,
+       0.3048161434904502,
+       0.6380337911643937
+      ],
+      "saved_quat": [
+       0.638018,
+       0.30485,
+       0.30485,
+       0.638018
+      ],
+      "pos_max_diff": 5.0000000000105516e-05,
+      "quat_max_diff": 3.3856509549790026e-05,
+      "env_fovy": 45.0,
+      "tolerance": 0.0001,
+      "differs": false,
+      "override_used": false,
+      "label": "put_the_bowl_on_the_plate_demo/demo_30/background"
+     },
+     "seconds_env_and_prepare": 1.57,
+     "seconds_frames": 0.536
+    }
+   },
+   "camera_override_used_in": [],
+   "seconds": 2.2,
+   "test_demo_reads": {
+    "arrays": [],
+    "model_file": []
+   }
+  },
+  "put_the_bowl_on_the_stove_demo": {
+   "complete": true,
+   "base": "put_the_bowl_on_the_stove",
+   "split": "val",
+   "condition": "background",
+   "demos": [
+    "demo_30"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_nontest_compared": 40,
+   "settings_sha256": "0b61a74a54c91f09c40beecede2c775b6057627e6185a1cedc7bdd3ff8e48354",
+   "frames": {
+    "demo_30": 107
+   },
+   "per_demo": {
+    "demo_30": {
+     "frames": 107,
+     "episode": {
+      "name": "put_the_bowl_on_the_stove_table_1",
+      "index": 0,
+      "n_choices": 6,
+      "list_sha256": "76870db568df80ca1c7fa26cdc2502b40d045395bc583927ae2761ef8cf1569b"
+     },
+     "scene_xml": "scenes/tabletop250/tabletop_table_FabricString001_DISP_3K.xml",
+     "camera": {
+      "env_pos": [
+       0.6586,
+       0.0,
+       1.6104
+      ],
+      "saved_pos": [
+       0.658613,
+       0.0,
+       1.61035
+      ],
+      "env_quat": [
+       0.6380337911643937,
+       0.3048161434904502,
+       0.3048161434904502,
+       0.6380337911643937
+      ],
+      "saved_quat": [
+       0.638018,
+       0.30485,
+       0.30485,
+       0.638018
+      ],
+      "pos_max_diff": 5.0000000000105516e-05,
+      "quat_max_diff": 3.3856509549790026e-05,
+      "env_fovy": 45.0,
+      "tolerance": 0.0001,
+      "differs": false,
+      "override_used": false,
+      "label": "put_the_bowl_on_the_stove_demo/demo_30/background"
+     },
+     "seconds_env_and_prepare": 1.479,
+     "seconds_frames": 0.558
+    }
+   },
+   "camera_override_used_in": [],
+   "seconds": 2.2,
+   "test_demo_reads": {
+    "arrays": [],
+    "model_file": []
+   }
+  },
+  "put_the_bowl_on_top_of_the_cabinet_demo": {
+   "complete": true,
+   "base": "put_the_bowl_on_top_of_the_cabinet",
+   "split": "val",
+   "condition": "background",
+   "demos": [
+    "demo_30"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_nontest_compared": 40,
+   "settings_sha256": "de7dcf719f0e71631f65bd9238ff0cb8afa29faab71df8e804cf9689040011d0",
+   "frames": {
+    "demo_30": 102
+   },
+   "per_demo": {
+    "demo_30": {
+     "frames": 102,
+     "episode": {
+      "name": "put_the_bowl_on_top_of_the_cabinet_table_12",
+      "index": 2,
+      "n_choices": 13,
+      "list_sha256": "fb7ad5bbc801f63030d2f42259e0eb18ca9e3a238b28f089c6af57ed434b00a2"
+     },
+     "scene_xml": "scenes/tabletop250/tabletop_table_CarbonFiber001_GLOSS_6K.xml",
+     "camera": {
+      "env_pos": [
+       0.6586,
+       0.0,
+       1.6104
+      ],
+      "saved_pos": [
+       0.658613,
+       0.0,
+       1.61035
+      ],
+      "env_quat": [
+       0.6380337911643937,
+       0.3048161434904502,
+       0.3048161434904502,
+       0.6380337911643937
+      ],
+      "saved_quat": [
+       0.638018,
+       0.30485,
+       0.30485,
+       0.638018
+      ],
+      "pos_max_diff": 5.0000000000105516e-05,
+      "quat_max_diff": 3.3856509549790026e-05,
+      "env_fovy": 45.0,
+      "tolerance": 0.0001,
+      "differs": false,
+      "override_used": false,
+      "label": "put_the_bowl_on_top_of_the_cabinet_demo/demo_30/background"
+     },
+     "seconds_env_and_prepare": 1.592,
+     "seconds_frames": 0.531
+    }
+   },
+   "camera_override_used_in": [],
+   "seconds": 2.3,
+   "test_demo_reads": {
+    "arrays": [],
+    "model_file": []
+   }
+  },
+  "put_the_cream_cheese_in_the_bowl_demo": {
+   "complete": true,
+   "base": "put_the_cream_cheese_in_the_bowl",
+   "split": "val",
+   "condition": "background",
+   "demos": [
+    "demo_30"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_nontest_compared": 40,
+   "settings_sha256": "5fe33c3608649c7a3732d242987d3d6b412f80bebb54a68b163536c61d70a4cc",
+   "frames": {
+    "demo_30": 94
+   },
+   "per_demo": {
+    "demo_30": {
+     "frames": 94,
+     "episode": {
+      "name": "put_the_cream_cheese_in_the_bowl_table_27",
+      "index": 8,
+      "n_choices": 32,
+      "list_sha256": "44fc8abc16d8ede3a891e7c56a5f739823e414e76a73827ea09226315a25c912"
+     },
+     "scene_xml": "scenes/tabletop250/tabletop_table_FabricCarpet001_COL_VAR2_3K.xml",
+     "camera": {
+      "env_pos": [
+       0.6586,
+       0.0,
+       1.6104
+      ],
+      "saved_pos": [
+       0.658613,
+       0.0,
+       1.61035
+      ],
+      "env_quat": [
+       0.6380337911643937,
+       0.3048161434904502,
+       0.3048161434904502,
+       0.6380337911643937
+      ],
+      "saved_quat": [
+       0.638018,
+       0.30485,
+       0.30485,
+       0.638018
+      ],
+      "pos_max_diff": 5.0000000000105516e-05,
+      "quat_max_diff": 3.3856509549790026e-05,
+      "env_fovy": 45.0,
+      "tolerance": 0.0001,
+      "differs": false,
+      "override_used": false,
+      "label": "put_the_cream_cheese_in_the_bowl_demo/demo_30/background"
+     },
+     "seconds_env_and_prepare": 1.773,
+     "seconds_frames": 0.521
+    }
+   },
+   "camera_override_used_in": [],
+   "seconds": 2.5,
+   "test_demo_reads": {
+    "arrays": [],
+    "model_file": []
+   }
+  },
+  "put_the_wine_bottle_on_the_rack_demo": {
+   "complete": true,
+   "base": "put_the_wine_bottle_on_the_rack",
+   "split": "val",
+   "condition": "background",
+   "demos": [
+    "demo_30"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_nontest_compared": 40,
+   "settings_sha256": "baa354e9cefb668c2708c037f0520d471e961867c28ddc5b7acb9bb74ed6b6a2",
+   "frames": {
+    "demo_30": 154
+   },
+   "per_demo": {
+    "demo_30": {
+     "frames": 154,
+     "episode": {
+      "name": "put_the_wine_bottle_on_the_rack_tb_11",
+      "index": 28,
+      "n_choices": 46,
+      "list_sha256": "fb21d553bfeba3bcf918e7cfb43b3f6db2ae4ae8313d4805afc5c0075741f59b"
+     },
+     "scene_xml": "scenes/tabletop_table_CliffDesert006_DISP_VAR1_HIRES.xml",
+     "camera": {
+      "env_pos": [
+       0.6586,
+       0.0,
+       1.6104
+      ],
+      "saved_pos": [
+       0.658613,
+       0.0,
+       1.61035
+      ],
+      "env_quat": [
+       0.6380337911643937,
+       0.3048161434904502,
+       0.3048161434904502,
+       0.6380337911643937
+      ],
+      "saved_quat": [
+       0.638018,
+       0.30485,
+       0.30485,
+       0.638018
+      ],
+      "pos_max_diff": 5.0000000000105516e-05,
+      "quat_max_diff": 3.3856509549790026e-05,
+      "env_fovy": 45.0,
+      "tolerance": 0.0001,
+      "differs": false,
+      "override_used": false,
+      "label": "put_the_wine_bottle_on_the_rack_demo/demo_30/background"
+     },
+     "seconds_env_and_prepare": 1.511,
+     "seconds_frames": 0.799
+    }
+   },
+   "camera_override_used_in": [],
+   "seconds": 2.4,
+   "test_demo_reads": {
+    "arrays": [],
+    "model_file": []
+   }
+  },
+  "put_the_wine_bottle_on_top_of_the_cabinet_demo": {
+   "complete": true,
+   "base": "put_the_wine_bottle_on_top_of_the_cabinet",
+   "split": "val",
+   "condition": "background",
+   "demos": [
+    "demo_30"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_nontest_compared": 40,
+   "settings_sha256": "9e9bba9bb70417ce2e57cdc2b062a16fbbdcf14fc94d0683def552b6aad5213a",
+   "frames": {
+    "demo_30": 99
+   },
+   "per_demo": {
+    "demo_30": {
+     "frames": 99,
+     "episode": {
+      "name": "put_the_wine_bottle_on_top_of_the_cabinet_tb_16",
+      "index": 26,
+      "n_choices": 41,
+      "list_sha256": "7ad3f8dcd51b3cf966e9151f5d321bb1e855b9d916f634e209453e487d2dec6c"
+     },
+     "scene_xml": "scenes/tabletop_table_CliffDesert006_REFL_HIRES.xml",
+     "camera": {
+      "env_pos": [
+       0.6586,
+       0.0,
+       1.6104
+      ],
+      "saved_pos": [
+       0.658613,
+       0.0,
+       1.61035
+      ],
+      "env_quat": [
+       0.6380337911643937,
+       0.3048161434904502,
+       0.3048161434904502,
+       0.6380337911643937
+      ],
+      "saved_quat": [
+       0.638018,
+       0.30485,
+       0.30485,
+       0.638018
+      ],
+      "pos_max_diff": 5.0000000000105516e-05,
+      "quat_max_diff": 3.3856509549790026e-05,
+      "env_fovy": 45.0,
+      "tolerance": 0.0001,
+      "differs": false,
+      "override_used": false,
+      "label": "put_the_wine_bottle_on_top_of_the_cabinet_demo/demo_30/background"
+     },
+     "seconds_env_and_prepare": 1.922,
+     "seconds_frames": 0.533
+    }
+   },
+   "camera_override_used_in": [],
+   "seconds": 2.6,
+   "test_demo_reads": {
+    "arrays": [],
+    "model_file": []
+   }
+  },
+  "turn_on_the_stove_demo": {
+   "complete": true,
+   "base": "turn_on_the_stove",
+   "split": "val",
+   "condition": "background",
+   "demos": [
+    "demo_30"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_nontest_compared": 40,
+   "settings_sha256": "562f6c91c84cac6ce8de20a3413c8f099e76089798b7c5f24e69f4459f723849",
+   "frames": {
+    "demo_30": 94
+   },
+   "per_demo": {
+    "demo_30": {
+     "frames": 94,
+     "episode": {
+      "name": "turn_on_the_stove_tb_6",
+      "index": 10,
+      "n_choices": 11,
+      "list_sha256": "cce306d4d56e9b7e8df7548cdb5f12a38e986417cc6a0f63861201abbb11a728"
+     },
+     "scene_xml": "scenes/tabletop_table_Cobblestone01_COL_VAR2_6K.xml",
+     "camera": {
+      "env_pos": [
+       0.6586,
+       0.0,
+       1.6104
+      ],
+      "saved_pos": [
+       0.658613,
+       0.0,
+       1.61035
+      ],
+      "env_quat": [
+       0.6380337911643937,
+       0.3048161434904502,
+       0.3048161434904502,
+       0.6380337911643937
+      ],
+      "saved_quat": [
+       0.638018,
+       0.30485,
+       0.30485,
+       0.638018
+      ],
+      "pos_max_diff": 5.0000000000105516e-05,
+      "quat_max_diff": 3.3856509549790026e-05,
+      "env_fovy": 45.0,
+      "tolerance": 0.0001,
+      "differs": false,
+      "override_used": false,
+      "label": "turn_on_the_stove_demo/demo_30/background"
+     },
+     "seconds_env_and_prepare": 1.552,
+     "seconds_frames": 0.528
+    }
+   },
+   "camera_override_used_in": [],
+   "seconds": 2.2,
+   "test_demo_reads": {
+    "arrays": [],
+    "model_file": []
+   }
+  }
+ },
+ "failures": [],
+ "draws": {
+  "open_the_middle_drawer_of_the_cabinet_demo/demo_30/background": {
+   "name": "open_the_middle_drawer_of_the_cabinet_tb_2",
+   "index": 21,
+   "n_choices": 30,
+   "list_sha256": "866929948186f40d4215341b43e6f451a28b30bce6df31ddb85f03b881aabbd9"
+  },
+  "open_the_top_drawer_and_put_the_bowl_inside_demo/demo_30/background": {
+   "name": "open_the_top_drawer_and_put_the_bowl_inside_tb_4",
+   "index": 39,
+   "n_choices": 45,
+   "list_sha256": "89876df1a15d02c8ac6ceef3826d9ae0f1e0ed9cce25e7dd9fabe653b00a5900"
+  },
+  "push_the_plate_to_the_front_of_the_stove_demo/demo_30/background": {
+   "name": "push_the_plate_to_the_front_of_the_stove_table_17",
+   "index": 3,
+   "n_choices": 27,
+   "list_sha256": "44dbdb38a9241674b55cbfaa21c5a1492a16cad7fa7435f3631eb80dfab525ef"
+  },
+  "put_the_bowl_on_the_plate_demo/demo_30/background": {
+   "name": "put_the_bowl_on_the_plate_table_13",
+   "index": 3,
+   "n_choices": 30,
+   "list_sha256": "b060650cf2ae7616b840cd7a22b460a17b27ae7118743901ba3628ee4a541bc7"
+  },
+  "put_the_bowl_on_the_stove_demo/demo_30/background": {
+   "name": "put_the_bowl_on_the_stove_table_1",
+   "index": 0,
+   "n_choices": 6,
+   "list_sha256": "76870db568df80ca1c7fa26cdc2502b40d045395bc583927ae2761ef8cf1569b"
+  },
+  "put_the_bowl_on_top_of_the_cabinet_demo/demo_30/background": {
+   "name": "put_the_bowl_on_top_of_the_cabinet_table_12",
+   "index": 2,
+   "n_choices": 13,
+   "list_sha256": "fb7ad5bbc801f63030d2f42259e0eb18ca9e3a238b28f089c6af57ed434b00a2"
+  },
+  "put_the_cream_cheese_in_the_bowl_demo/demo_30/background": {
+   "name": "put_the_cream_cheese_in_the_bowl_table_27",
+   "index": 8,
+   "n_choices": 32,
+   "list_sha256": "44fc8abc16d8ede3a891e7c56a5f739823e414e76a73827ea09226315a25c912"
+  },
+  "put_the_wine_bottle_on_the_rack_demo/demo_30/background": {
+   "name": "put_the_wine_bottle_on_the_rack_tb_11",
+   "index": 28,
+   "n_choices": 46,
+   "list_sha256": "fb21d553bfeba3bcf918e7cfb43b3f6db2ae4ae8313d4805afc5c0075741f59b"
+  },
+  "put_the_wine_bottle_on_top_of_the_cabinet_demo/demo_30/background": {
+   "name": "put_the_wine_bottle_on_top_of_the_cabinet_tb_16",
+   "index": 26,
+   "n_choices": 41,
+   "list_sha256": "7ad3f8dcd51b3cf966e9151f5d321bb1e855b9d916f634e209453e487d2dec6c"
+  },
+  "turn_on_the_stove_demo/demo_30/background": {
+   "name": "turn_on_the_stove_tb_6",
+   "index": 10,
+   "n_choices": 11,
+   "list_sha256": "cce306d4d56e9b7e8df7548cdb5f12a38e986417cc6a0f63861201abbb11a728"
+  }
+ },
+ "started_utc": "2026-11-09T13:03:34Z",
+ "resume_notes": [],
+ "checks": {
+  "raw_sha256_gating": {
+   "pass": true,
+   "enabled": true
+  },
+  "render_all_files": {
+   "pass": true,
+   "n_files": 10
+  }
+ },
+ "seconds": 32.7,
+ "timing": {
+  "frames": 1226,
+  "frame_loop_seconds": 6.44,
+  "seconds_per_frame": 0.005254486133768352,
+  "env_build_and_prepare_seconds_total": 19.97,
+  "noise_by_code": {}
+ }
+}

@@ -1,0 +1,307 @@
+=== pfa-pilot 20261109-130004 src 765b011dd94dd8bdc204bb88a625b4142790a26e
+GPU 0: NVIDIA L4 (UUID: GPU-314674b8-1fd2-7ad7-5622-62dfd3816efc)
+50
+Mon Nov  9 13:00:04 UTC 2026
+csi-cephfs-node@90a5afad-c313-4e49-9b5f-317100c6930e.nautilusfs=/volumes/csi/csi-vol-9fc6b0fe-e947-4528-a5c5-c5e80fc7d70d/9f0765b7-9592-498f-ae6c-7f42cf4c5f62  1.0T  763G  262G  75% /mnt/proxy
+env bundle key 9182f8131559 tar sha256 86afbf57e6fd927f006742f26d3efc33b08e862654ffac7349d3522208944f03 image pytorch/pytorch@sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2
+debconf: delaying package configuration, since apt-utils is not installed
+articulated_objects
+new_objects
+scenes
+serving_region.xml
+stable_hope_objects
+stable_scanned_objects
+textures
+turbosquid_objects
+wall.xml
+wall_frames.stl
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+sim ok: numpy 1.26.4 mujoco 3.3.2 robosuite 1.4.0
+TIMING restore: untar 5 s, debs + assets unzip + checks 112 s (/mnt/proxy/env/env-9182f8131559.tar)
+fastwam ok, torch 2.7.1+cu128 cuda True
+Fetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]Fetching 10 files:  10%|█         | 1/10 [00:06<00:56,  6.30s/it]Fetching 10 files:  20%|██        | 2/10 [00:09<00:35,  4.43s/it]Fetching 10 files: 100%|██████████| 10/10 [00:09<00:00,  1.06it/s]
+total 6223760
+drwxr-xr-x 2 root root       4096 Nov  9 13:02 .
+drwxr-xr-x 4 root root         51 Nov  9 13:02 ..
+-rw-r--r-- 1 root root  702223367 Nov  9 13:02 open_the_middle_drawer_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root 1017886342 Nov  9 13:02 open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5
+-rw-r--r-- 1 root root  762855139 Nov  9 13:02 push_the_plate_to_the_front_of_the_stove_demo.hdf5
+-rw-r--r-- 1 root root  468246288 Nov  9 13:02 put_the_bowl_on_the_plate_demo.hdf5
+-rw-r--r-- 1 root root  509123820 Nov  9 13:02 put_the_bowl_on_the_stove_demo.hdf5
+-rw-r--r-- 1 root root  510414285 Nov  9 13:02 put_the_bowl_on_top_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root  535715512 Nov  9 13:02 put_the_cream_cheese_in_the_bowl_demo.hdf5
+-rw-r--r-- 1 root root  878958730 Nov  9 13:02 put_the_wine_bottle_on_the_rack_demo.hdf5
+-rw-r--r-- 1 root root  540179470 Nov  9 13:02 put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root  447509922 Nov  9 13:02 turn_on_the_stove_demo.hdf5
+Mon Nov  9 13:02:19 UTC 2026
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_30 camera: 135 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_30 camera: 198 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_30 camera: 141 frames
+[render] put_the_bowl_on_the_plate_demo demo_30 camera: 102 frames
+[render] put_the_bowl_on_the_stove_demo demo_30 camera: 107 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_30 camera: 102 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_30 camera: 94 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_30 camera: 154 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_30 camera: 99 frames
+[render] turn_on_the_stove_demo demo_30 camera: 94 frames
+[render] done
+=== pilot-camera exit code 0
+Mon Nov  9 13:02:56 UTC 2026
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_30 light: 135 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_30 light: 198 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_30 light: 141 frames
+[render] put_the_bowl_on_the_plate_demo demo_30 light: 102 frames
+[render] put_the_bowl_on_the_stove_demo demo_30 light: 107 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_30 light: 102 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_30 light: 94 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_30 light: 154 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_30 light: 99 frames
+[render] turn_on_the_stove_demo demo_30 light: 94 frames
+[render] done
+=== pilot-light exit code 0
+Mon Nov  9 13:03:34 UTC 2026
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_30 background: 135 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_30 background: 198 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_30 background: 141 frames
+[render] put_the_bowl_on_the_plate_demo demo_30 background: 102 frames
+[render] put_the_bowl_on_the_stove_demo demo_30 background: 107 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_30 background: 102 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_30 background: 94 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_30 background: 154 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_30 background: 99 frames
+[render] turn_on_the_stove_demo demo_30 background: 94 frames
+[render] done
+=== pilot-background exit code 0
+Mon Nov  9 13:04:07 UTC 2026
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_30 noise: 135 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_30 noise: 198 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_30 noise: 141 frames
+[render] put_the_bowl_on_the_plate_demo demo_30 noise: 102 frames
+[render] put_the_bowl_on_the_stove_demo demo_30 noise: 107 frames
+/work/sim/LIBERO-plus/libero/libero/envs/env_wrapper.py:52: DeprecationWarning: The binary mode of fromstring is deprecated, as it behaves surprisingly on unicode inputs. Use frombuffer instead
+  x = cv2.imdecode(np.fromstring(x.make_blob(), np.uint8),
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_30 noise: 102 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_30 noise: 94 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_30 noise: 154 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_30 noise: 99 frames
+[render] turn_on_the_stove_demo demo_30 noise: 94 frames
+[render] done
+=== pilot-noise exit code 0
+Mon Nov  9 13:09:18 UTC 2026
+copied pilot renders to /mnt/proxy/pf-main/pilot/20261109-130004 (not for training)
+=== exit codes: worst 0
+Mon Nov  9 13:09:21 UTC 2026
+copied reports to /mnt/proxy/pf-main/phase-a/reports/pfa-pilot-20261109-130004
+-rw-r--r-- 1 root root 10237 Nov  9 13:09 /work/pfa-pilot.tgz
+=== BEGIN PFA_TGZ_B64
+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
+=== END PFA_TGZ_B64
+=== done; exiting with 0 (0 only if every stage passed)

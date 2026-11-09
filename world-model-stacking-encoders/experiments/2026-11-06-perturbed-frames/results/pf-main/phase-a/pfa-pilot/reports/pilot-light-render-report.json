@@ -1,0 +1,862 @@
+{
+ "schema": 1,
+ "split": "val",
+ "condition": "light",
+ "max_demos": 1,
+ "only_demos": null,
+ "pilot": true,
+ "not_for_training": true,
+ "config": {
+  "seed_draw": 0,
+  "seed_noise": 0,
+  "resize": "area",
+  "suite": "libero_goal",
+  "consistency_demo": "demo_30",
+  "n_files": 10,
+  "raw_sha256": {
+   "open_the_middle_drawer_of_the_cabinet_demo": "20252c7cf98cd7437061f7f200ae7b6cb6219fabbd53b4536dfaa8abda6ab737",
+   "open_the_top_drawer_and_put_the_bowl_inside_demo": "1b50d99a053a7e4547c9ae9ccd2e3cd762543d27be78f240f13440d7ae487ae8",
+   "push_the_plate_to_the_front_of_the_stove_demo": "36b4e1bced49d2f4ff6b2fce6b1596a63978e14199e2513cd0df71e127bf47a6",
+   "put_the_bowl_on_the_plate_demo": "e69528b0cf10dfc59b20698e12ec2affc03f3887309034d3eb74cac3ec929406",
+   "put_the_bowl_on_the_stove_demo": "ff77d3bf0f89a147d423840ecbd842cd63c3c55aeead91f88dbc0917be473e99",
+   "put_the_bowl_on_top_of_the_cabinet_demo": "e14c84ebc820a13ef9a92ca82a7f04bb299f0ee96dfe9cc907bab71aeb2683b2",
+   "put_the_cream_cheese_in_the_bowl_demo": "ee58a7d72c143a71bf1448674e70940ac7781c1d1bb10a1b0c7a5c69b26abbef",
+   "put_the_wine_bottle_on_the_rack_demo": "f9092aa70734fc4083e97fc58c3ba25f87c614d18326182ddc7a455f0ab4da2e",
+   "put_the_wine_bottle_on_top_of_the_cabinet_demo": "7dc087a7596d5cbbe394f681b21a0be434438b0dca73ac430c293fe4c818404a",
+   "turn_on_the_stove_demo": "387fc10747696b80dea6ed8d7f2beaa162bf92ae11750b241073cbd33aac73d5"
+  }
+ },
+ "config_sha256": "a993fb01bfc54b0d52a948a8d507834246c9e44fedbdee0e896f878d8b9e17f8",
+ "code_sha256": {
+  "pf_render.py": "854411d2138a74a79178ca09fda30a09ecd2feec4ea9904b3def93b10483816f",
+  "pf_rerender.py": "d6d4cced47e59e0b4f4c2b10e69eb3df0e2e70eb36f81d680990fa87b3ba069a",
+  "pf_smoke.py": "fde7bc7de33b1dc86997cc15220e25a73c8dfb34e1133c1604983bb50bdb0261",
+  "diagnostics.py": "ffb155b4cd8cb00813b9a4c9213c6553f1ea2d0e4a27ca96d272e8acec16d88b"
+ },
+ "environment": {
+  "software": {
+   "libraries": {
+    "mujoco": "3.3.2",
+    "robosuite": "1.4.0",
+    "numpy": "1.26.4",
+    "Pillow": "13.0.0",
+    "h5py": "3.16.0",
+    "scipy": "1.17.1",
+    "scikit-image": "0.24.0",
+    "opencv": "4.10.0.84",
+    "Wand": "0.6.13",
+    "PyOpenGL": "3.1.10",
+    "PyYAML": "6.0.2",
+    "python": "3.11.13",
+    "ImageMagick": "ImageMagick 6.9.11-60 Q16 x86_64 2021-01-25 https://imagemagick.org"
+   },
+   "libero_plus_commit": "4976dc30028e805ff8094b55501d532c48fec182",
+   "libero_source_fingerprint": "15df337878239ba6958d41366ac859b0055491f590fd2908c4481a8ebfaee792",
+   "bundle_key": "9182f8131559",
+   "bundle_tar_sha256": "86afbf57e6fd927f006742f26d3efc33b08e862654ffac7349d3522208944f03",
+   "image_digest": "pytorch/pytorch@sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2",
+   "mujoco_gl": "egl"
+  },
+  "hardware": {
+   "nvidia_smi": {
+    "gpu_name": "NVIDIA L4",
+    "driver_version": "615.71.09",
+    "n_gpus_visible": 1
+   },
+   "gl": {
+    "vendor": "NVIDIA Corporation",
+    "renderer": "NVIDIA L4/PCIe/SSE2",
+    "version": "4.6.0 NVIDIA 615.71.09"
+   }
+  },
+  "notes": [
+   "libero_plus_commit comes from LP_COMMIT or setup_sim.sh (the tarball has no .git); libero_source_fingerprint is the check on the files",
+   "env_bundle.sh exports no bundle checksum: bundle_key is recomputed as the script does it, bundle_tar_sha256 needs ENV_BUNDLE_SHA256 from the Job"
+  ]
+ },
+ "files": {
+  "open_the_middle_drawer_of_the_cabinet_demo": {
+   "complete": true,
+   "base": "open_the_middle_drawer_of_the_cabinet",
+   "split": "val",
+   "condition": "light",
+   "demos": [
+    "demo_30"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_nontest_compared": 40,
+   "settings_sha256": "92db9373e6eb39c4d3a1b993c61aeb8311cdc83e79a69348c1a065399b76ced6",
+   "frames": {
+    "demo_30": 135
+   },
+   "per_demo": {
+    "demo_30": {
+     "frames": 135,
+     "episode": {
+      "name": "open_the_middle_drawer_of_the_cabinet_light_7",
+      "index": 39,
+      "n_choices": 42,
+      "list_sha256": "cbcbc293fe2e4e5cbfa3eb28a3a23b819edec268c37cba22592959f2bc4aaebb"
+     },
+     "scene_xml": "scenes/lights/tabletop_light_sync_modified_192.xml",
+     "camera": {
+      "env_pos": [
+       0.6586,
+       0.0,
+       1.6104
+      ],
+      "saved_pos": [
+       0.658613,
+       0.0,
+       1.61035
+      ],
+      "env_quat": [
+       0.6380337911643937,
+       0.3048161434904502,
+       0.3048161434904502,
+       0.6380337911643937
+      ],
+      "saved_quat": [
+       0.638018,
+       0.30485,
+       0.30485,
+       0.638018
+      ],
+      "pos_max_diff": 5.0000000000105516e-05,
+      "quat_max_diff": 3.3856509549790026e-05,
+      "env_fovy": 45.0,
+      "tolerance": 0.0001,
+      "differs": false,
+      "override_used": false,
+      "label": "open_the_middle_drawer_of_the_cabinet_demo/demo_30/light"
+     },
+     "seconds_env_and_prepare": 4.644,
+     "seconds_frames": 0.809
+    }
+   },
+   "camera_override_used_in": [],
+   "seconds": 5.7,
+   "test_demo_reads": {
+    "arrays": [],
+    "model_file": []
+   }
+  },
+  "open_the_top_drawer_and_put_the_bowl_inside_demo": {
+   "complete": true,
+   "base": "open_the_top_drawer_and_put_the_bowl_inside",
+   "split": "val",
+   "condition": "light",
+   "demos": [
+    "demo_30"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_nontest_compared": 40,
+   "settings_sha256": "35be68e39ae524f96f5eb07d5205f859c89cae14fcf46fcc0aeb83e07c6ad10a",
+   "frames": {
+    "demo_30": 198
+   },
+   "per_demo": {
+    "demo_30": {
+     "frames": 198,
+     "episode": {
+      "name": "open_the_top_drawer_and_put_the_bowl_inside_light_37",
+      "index": 30,
+      "n_choices": 50,
+      "list_sha256": "9e15f59c3efeae62463abfb01e12f00295973f706b2173372626b1bdfa1f55cc"
+     },
+     "scene_xml": "scenes/lights/tabletop_light_sync_modified_309.xml",
+     "camera": {
+      "env_pos": [
+       0.6586,
+       0.0,
+       1.6104
+      ],
+      "saved_pos": [
+       0.658613,
+       0.0,
+       1.61035
+      ],
+      "env_quat": [
+       0.6380337911643937,
+       0.3048161434904502,
+       0.3048161434904502,
+       0.6380337911643937
+      ],
+      "saved_quat": [
+       0.638018,
+       0.30485,
+       0.30485,
+       0.638018
+      ],
+      "pos_max_diff": 5.0000000000105516e-05,
+      "quat_max_diff": 3.3856509549790026e-05,
+      "env_fovy": 45.0,
+      "tolerance": 0.0001,
+      "differs": false,
+      "override_used": false,
+      "label": "open_the_top_drawer_and_put_the_bowl_inside_demo/demo_30/light"
+     },
+     "seconds_env_and_prepare": 1.657,
+     "seconds_frames": 1.014
+    }
+   },
+   "camera_override_used_in": [],
+   "seconds": 2.8,
+   "test_demo_reads": {
+    "arrays": [],
+    "model_file": []
+   }
+  },
+  "push_the_plate_to_the_front_of_the_stove_demo": {
+   "complete": true,
+   "base": "push_the_plate_to_the_front_of_the_stove",
+   "split": "val",
+   "condition": "light",
+   "demos": [
+    "demo_30"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_nontest_compared": 40,
+   "settings_sha256": "fdd018d14c49c84f67d534362dda7b0646e1a0324afd24e0bbf3a21e818ddadc",
+   "frames": {
+    "demo_30": 141
+   },
+   "per_demo": {
+    "demo_30": {
+     "frames": 141,
+     "episode": {
+      "name": "push_the_plate_to_the_front_of_the_stove_light_42",
+      "index": 29,
+      "n_choices": 36,
+      "list_sha256": "0da5e40243acb59f81dde79c9a604f36fe9b40e6d4a7120e4ff695a52c7fcae7"
+     },
+     "scene_xml": "scenes/lights/tabletop_light_sync_modified_539.xml",
+     "camera": {
+      "env_pos": [
+       0.6586,
+       0.0,
+       1.6104
+      ],
+      "saved_pos": [
+       0.658613,
+       0.0,
+       1.61035
+      ],
+      "env_quat": [
+       0.6380337911643937,
+       0.3048161434904502,
+       0.3048161434904502,
+       0.6380337911643937
+      ],
+      "saved_quat": [
+       0.638018,
+       0.30485,
+       0.30485,
+       0.638018
+      ],
+      "pos_max_diff": 5.0000000000105516e-05,
+      "quat_max_diff": 3.3856509549790026e-05,
+      "env_fovy": 45.0,
+      "tolerance": 0.0001,
+      "differs": false,
+      "override_used": false,
+      "label": "push_the_plate_to_the_front_of_the_stove_demo/demo_30/light"
+     },
+     "seconds_env_and_prepare": 2.147,
+     "seconds_frames": 0.711
+    }
+   },
+   "camera_override_used_in": [],
+   "seconds": 3.0,
+   "test_demo_reads": {
+    "arrays": [],
+    "model_file": []
+   }
+  },
+  "put_the_bowl_on_the_plate_demo": {
+   "complete": true,
+   "base": "put_the_bowl_on_the_plate",
+   "split": "val",
+   "condition": "light",
+   "demos": [
+    "demo_30"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_nontest_compared": 40,
+   "settings_sha256": "33e0d97adea9deed941e6869ed81937cfd698901ac21266a80b129f8d7fe35d5",
+   "frames": {
+    "demo_30": 102
+   },
+   "per_demo": {
+    "demo_30": {
+     "frames": 102,
+     "episode": {
+      "name": "put_the_bowl_on_the_plate_light_9",
+      "index": 25,
+      "n_choices": 26,
+      "list_sha256": "fb467561f6014331b1a7f8ecb23e6885023e2bd9fd5bbd2f5431ce1d9af9d57a"
+     },
+     "scene_xml": "scenes/lights/tabletop_light_sync_modified_374.xml",
+     "camera": {
+      "env_pos": [
+       0.6586,
+       0.0,
+       1.6104
+      ],
+      "saved_pos": [
+       0.658613,
+       0.0,
+       1.61035
+      ],
+      "env_quat": [
+       0.6380337911643937,
+       0.3048161434904502,
+       0.3048161434904502,
+       0.6380337911643937
+      ],
+      "saved_quat": [
+       0.638018,
+       0.30485,
+       0.30485,
+       0.638018
+      ],
+      "pos_max_diff": 5.0000000000105516e-05,
+      "quat_max_diff": 3.3856509549790026e-05,
+      "env_fovy": 45.0,
+      "tolerance": 0.0001,
+      "differs": false,
+      "override_used": false,
+      "label": "put_the_bowl_on_the_plate_demo/demo_30/light"
+     },
+     "seconds_env_and_prepare": 1.99,
+     "seconds_frames": 0.603
+    }
+   },
+   "camera_override_used_in": [],
+   "seconds": 3.0,
+   "test_demo_reads": {
+    "arrays": [],
+    "model_file": []
+   }
+  },
+  "put_the_bowl_on_the_stove_demo": {
+   "complete": true,
+   "base": "put_the_bowl_on_the_stove",
+   "split": "val",
+   "condition": "light",
+   "demos": [
+    "demo_30"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_nontest_compared": 40,
+   "settings_sha256": "dad5e7307f14f1dd8117465c9bc610645a3a7dff8e52222b028f99a99f0ae4e2",
+   "frames": {
+    "demo_30": 107
+   },
+   "per_demo": {
+    "demo_30": {
+     "frames": 107,
+     "episode": {
+      "name": "put_the_bowl_on_the_stove_light_11",
+      "index": 0,
+      "n_choices": 4,
+      "list_sha256": "a190f486194c922ff07f6782cd95d5ffedc5d557380186ff048f3c3f4b3f3b0b"
+     },
+     "scene_xml": "scenes/lights/tabletop_light_sync_modified_309.xml",
+     "camera": {
+      "env_pos": [
+       0.6586,
+       0.0,
+       1.6104
+      ],
+      "saved_pos": [
+       0.658613,
+       0.0,
+       1.61035
+      ],
+      "env_quat": [
+       0.6380337911643937,
+       0.3048161434904502,
+       0.3048161434904502,
+       0.6380337911643937
+      ],
+      "saved_quat": [
+       0.638018,
+       0.30485,
+       0.30485,
+       0.638018
+      ],
+      "pos_max_diff": 5.0000000000105516e-05,
+      "quat_max_diff": 3.3856509549790026e-05,
+      "env_fovy": 45.0,
+      "tolerance": 0.0001,
+      "differs": false,
+      "override_used": false,
+      "label": "put_the_bowl_on_the_stove_demo/demo_30/light"
+     },
+     "seconds_env_and_prepare": 1.824,
+     "seconds_frames": 0.555
+    }
+   },
+   "camera_override_used_in": [],
+   "seconds": 2.5,
+   "test_demo_reads": {
+    "arrays": [],
+    "model_file": []
+   }
+  },
+  "put_the_bowl_on_top_of_the_cabinet_demo": {
+   "complete": true,
+   "base": "put_the_bowl_on_top_of_the_cabinet",
+   "split": "val",
+   "condition": "light",
+   "demos": [
+    "demo_30"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_nontest_compared": 40,
+   "settings_sha256": "bb917ea5105200bdab2796ec1834ce1d05deba787038d71a0b434c3d6bb462c8",
+   "frames": {
+    "demo_30": 102
+   },
+   "per_demo": {
+    "demo_30": {
+     "frames": 102,
+     "episode": {
+      "name": "put_the_bowl_on_top_of_the_cabinet_light_21",
+      "index": 3,
+      "n_choices": 13,
+      "list_sha256": "f277c5108c259062d4e3c173c5bf26e536ca48d895a38fa2541156c82382a5ce"
+     },
+     "scene_xml": "scenes/lights/tabletop_light_sync_modified_114.xml",
+     "camera": {
+      "env_pos": [
+       0.6586,
+       0.0,
+       1.6104
+      ],
+      "saved_pos": [
+       0.658613,
+       0.0,
+       1.61035
+      ],
+      "env_quat": [
+       0.6380337911643937,
+       0.3048161434904502,
+       0.3048161434904502,
+       0.6380337911643937
+      ],
+      "saved_quat": [
+       0.638018,
+       0.30485,
+       0.30485,
+       0.638018
+      ],
+      "pos_max_diff": 5.0000000000105516e-05,
+      "quat_max_diff": 3.3856509549790026e-05,
+      "env_fovy": 45.0,
+      "tolerance": 0.0001,
+      "differs": false,
+      "override_used": false,
+      "label": "put_the_bowl_on_top_of_the_cabinet_demo/demo_30/light"
+     },
+     "seconds_env_and_prepare": 2.574,
+     "seconds_frames": 0.603
+    }
+   },
+   "camera_override_used_in": [],
+   "seconds": 3.3,
+   "test_demo_reads": {
+    "arrays": [],
+    "model_file": []
+   }
+  },
+  "put_the_cream_cheese_in_the_bowl_demo": {
+   "complete": true,
+   "base": "put_the_cream_cheese_in_the_bowl",
+   "split": "val",
+   "condition": "light",
+   "demos": [
+    "demo_30"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_nontest_compared": 40,
+   "settings_sha256": "7fb780987d8a34c2c85a1d50ba7cb010759f80a5d9ea61f210779f7cd80383c5",
+   "frames": {
+    "demo_30": 94
+   },
+   "per_demo": {
+    "demo_30": {
+     "frames": 94,
+     "episode": {
+      "name": "put_the_cream_cheese_in_the_bowl_light_10",
+      "index": 1,
+      "n_choices": 25,
+      "list_sha256": "c06f361af2337e47d3a1211027e845ff6fc5d908753a350e0cc292f37ea70af4"
+     },
+     "scene_xml": "scenes/lights/tabletop_light_sync_modified_15.xml",
+     "camera": {
+      "env_pos": [
+       0.6586,
+       0.0,
+       1.6104
+      ],
+      "saved_pos": [
+       0.658613,
+       0.0,
+       1.61035
+      ],
+      "env_quat": [
+       0.6380337911643937,
+       0.3048161434904502,
+       0.3048161434904502,
+       0.6380337911643937
+      ],
+      "saved_quat": [
+       0.638018,
+       0.30485,
+       0.30485,
+       0.638018
+      ],
+      "pos_max_diff": 5.0000000000105516e-05,
+      "quat_max_diff": 3.3856509549790026e-05,
+      "env_fovy": 45.0,
+      "tolerance": 0.0001,
+      "differs": false,
+      "override_used": false,
+      "label": "put_the_cream_cheese_in_the_bowl_demo/demo_30/light"
+     },
+     "seconds_env_and_prepare": 1.856,
+     "seconds_frames": 0.504
+    }
+   },
+   "camera_override_used_in": [],
+   "seconds": 4.6,
+   "test_demo_reads": {
+    "arrays": [],
+    "model_file": []
+   }
+  },
+  "put_the_wine_bottle_on_the_rack_demo": {
+   "complete": true,
+   "base": "put_the_wine_bottle_on_the_rack",
+   "split": "val",
+   "condition": "light",
+   "demos": [
+    "demo_30"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_nontest_compared": 40,
+   "settings_sha256": "7668ef0771ff04e3acf0c75fae356edff5ac516ad0d1fec2dd68247cb6533fd9",
+   "frames": {
+    "demo_30": 154
+   },
+   "per_demo": {
+    "demo_30": {
+     "frames": 154,
+     "episode": {
+      "name": "put_the_wine_bottle_on_the_rack_light_18",
+      "index": 7,
+      "n_choices": 34,
+      "list_sha256": "e103ae82d527fa7c8aa990e95a0f290a513b80ba5e23541355790e1f424152f2"
+     },
+     "scene_xml": "scenes/lights/tabletop_light_sync_modified_247.xml",
+     "camera": {
+      "env_pos": [
+       0.6586,
+       0.0,
+       1.6104
+      ],
+      "saved_pos": [
+       0.658613,
+       0.0,
+       1.61035
+      ],
+      "env_quat": [
+       0.6380337911643937,
+       0.3048161434904502,
+       0.3048161434904502,
+       0.6380337911643937
+      ],
+      "saved_quat": [
+       0.638018,
+       0.30485,
+       0.30485,
+       0.638018
+      ],
+      "pos_max_diff": 5.0000000000105516e-05,
+      "quat_max_diff": 3.3856509549790026e-05,
+      "env_fovy": 45.0,
+      "tolerance": 0.0001,
+      "differs": false,
+      "override_used": false,
+      "label": "put_the_wine_bottle_on_the_rack_demo/demo_30/light"
+     },
+     "seconds_env_and_prepare": 1.584,
+     "seconds_frames": 0.779
+    }
+   },
+   "camera_override_used_in": [],
+   "seconds": 2.5,
+   "test_demo_reads": {
+    "arrays": [],
+    "model_file": []
+   }
+  },
+  "put_the_wine_bottle_on_top_of_the_cabinet_demo": {
+   "complete": true,
+   "base": "put_the_wine_bottle_on_top_of_the_cabinet",
+   "split": "val",
+   "condition": "light",
+   "demos": [
+    "demo_30"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_nontest_compared": 40,
+   "settings_sha256": "c1c74b442e84113d8801b852f88e455b9b41cdc7aa158929453daa812d20b56a",
+   "frames": {
+    "demo_30": 99
+   },
+   "per_demo": {
+    "demo_30": {
+     "frames": 99,
+     "episode": {
+      "name": "put_the_wine_bottle_on_top_of_the_cabinet_light_39",
+      "index": 19,
+      "n_choices": 28,
+      "list_sha256": "c727ca3f6ec9a0edea5af40029f99b5326479c2886df2392dbd9f983af7769be"
+     },
+     "scene_xml": "scenes/lights/tabletop_light_sync_modified_356.xml",
+     "camera": {
+      "env_pos": [
+       0.6586,
+       0.0,
+       1.6104
+      ],
+      "saved_pos": [
+       0.658613,
+       0.0,
+       1.61035
+      ],
+      "env_quat": [
+       0.6380337911643937,
+       0.3048161434904502,
+       0.3048161434904502,
+       0.6380337911643937
+      ],
+      "saved_quat": [
+       0.638018,
+       0.30485,
+       0.30485,
+       0.638018
+      ],
+      "pos_max_diff": 5.0000000000105516e-05,
+      "quat_max_diff": 3.3856509549790026e-05,
+      "env_fovy": 45.0,
+      "tolerance": 0.0001,
+      "differs": false,
+      "override_used": false,
+      "label": "put_the_wine_bottle_on_top_of_the_cabinet_demo/demo_30/light"
+     },
+     "seconds_env_and_prepare": 1.68,
+     "seconds_frames": 0.574
+    }
+   },
+   "camera_override_used_in": [],
+   "seconds": 2.4,
+   "test_demo_reads": {
+    "arrays": [],
+    "model_file": []
+   }
+  },
+  "turn_on_the_stove_demo": {
+   "complete": true,
+   "base": "turn_on_the_stove",
+   "split": "val",
+   "condition": "light",
+   "demos": [
+    "demo_30"
+   ],
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "n_nontest_compared": 40,
+   "settings_sha256": "0c2a1e3891e92a6ba53e203022f8540d1a92ee78293c8a4e116b3df6406cca9f",
+   "frames": {
+    "demo_30": 94
+   },
+   "per_demo": {
+    "demo_30": {
+     "frames": 94,
+     "episode": {
+      "name": "turn_on_the_stove_light_13",
+      "index": 3,
+      "n_choices": 21,
+      "list_sha256": "09f519f72669f6eca75f85418fc1bf0eb493a591b59cd7114ba45f0442a653af"
+     },
+     "scene_xml": "scenes/lights/tabletop_light_sync_modified_422.xml",
+     "camera": {
+      "env_pos": [
+       0.6586,
+       0.0,
+       1.6104
+      ],
+      "saved_pos": [
+       0.658613,
+       0.0,
+       1.61035
+      ],
+      "env_quat": [
+       0.6380337911643937,
+       0.3048161434904502,
+       0.3048161434904502,
+       0.6380337911643937
+      ],
+      "saved_quat": [
+       0.638018,
+       0.30485,
+       0.30485,
+       0.638018
+      ],
+      "pos_max_diff": 5.0000000000105516e-05,
+      "quat_max_diff": 3.3856509549790026e-05,
+      "env_fovy": 45.0,
+      "tolerance": 0.0001,
+      "differs": false,
+      "override_used": false,
+      "label": "turn_on_the_stove_demo/demo_30/light"
+     },
+     "seconds_env_and_prepare": 1.595,
+     "seconds_frames": 0.532
+    }
+   },
+   "camera_override_used_in": [],
+   "seconds": 2.2,
+   "test_demo_reads": {
+    "arrays": [],
+    "model_file": []
+   }
+  }
+ },
+ "failures": [],
+ "draws": {
+  "open_the_middle_drawer_of_the_cabinet_demo/demo_30/light": {
+   "name": "open_the_middle_drawer_of_the_cabinet_light_7",
+   "index": 39,
+   "n_choices": 42,
+   "list_sha256": "cbcbc293fe2e4e5cbfa3eb28a3a23b819edec268c37cba22592959f2bc4aaebb"
+  },
+  "open_the_top_drawer_and_put_the_bowl_inside_demo/demo_30/light": {
+   "name": "open_the_top_drawer_and_put_the_bowl_inside_light_37",
+   "index": 30,
+   "n_choices": 50,
+   "list_sha256": "9e15f59c3efeae62463abfb01e12f00295973f706b2173372626b1bdfa1f55cc"
+  },
+  "push_the_plate_to_the_front_of_the_stove_demo/demo_30/light": {
+   "name": "push_the_plate_to_the_front_of_the_stove_light_42",
+   "index": 29,
+   "n_choices": 36,
+   "list_sha256": "0da5e40243acb59f81dde79c9a604f36fe9b40e6d4a7120e4ff695a52c7fcae7"
+  },
+  "put_the_bowl_on_the_plate_demo/demo_30/light": {
+   "name": "put_the_bowl_on_the_plate_light_9",
+   "index": 25,
+   "n_choices": 26,
+   "list_sha256": "fb467561f6014331b1a7f8ecb23e6885023e2bd9fd5bbd2f5431ce1d9af9d57a"
+  },
+  "put_the_bowl_on_the_stove_demo/demo_30/light": {
+   "name": "put_the_bowl_on_the_stove_light_11",
+   "index": 0,
+   "n_choices": 4,
+   "list_sha256": "a190f486194c922ff07f6782cd95d5ffedc5d557380186ff048f3c3f4b3f3b0b"
+  },
+  "put_the_bowl_on_top_of_the_cabinet_demo/demo_30/light": {
+   "name": "put_the_bowl_on_top_of_the_cabinet_light_21",
+   "index": 3,
+   "n_choices": 13,
+   "list_sha256": "f277c5108c259062d4e3c173c5bf26e536ca48d895a38fa2541156c82382a5ce"
+  },
+  "put_the_cream_cheese_in_the_bowl_demo/demo_30/light": {
+   "name": "put_the_cream_cheese_in_the_bowl_light_10",
+   "index": 1,
+   "n_choices": 25,
+   "list_sha256": "c06f361af2337e47d3a1211027e845ff6fc5d908753a350e0cc292f37ea70af4"
+  },
+  "put_the_wine_bottle_on_the_rack_demo/demo_30/light": {
+   "name": "put_the_wine_bottle_on_the_rack_light_18",
+   "index": 7,
+   "n_choices": 34,
+   "list_sha256": "e103ae82d527fa7c8aa990e95a0f290a513b80ba5e23541355790e1f424152f2"
+  },
+  "put_the_wine_bottle_on_top_of_the_cabinet_demo/demo_30/light": {
+   "name": "put_the_wine_bottle_on_top_of_the_cabinet_light_39",
+   "index": 19,
+   "n_choices": 28,
+   "list_sha256": "c727ca3f6ec9a0edea5af40029f99b5326479c2886df2392dbd9f983af7769be"
+  },
+  "turn_on_the_stove_demo/demo_30/light": {
+   "name": "turn_on_the_stove_light_13",
+   "index": 3,
+   "n_choices": 21,
+   "list_sha256": "09f519f72669f6eca75f85418fc1bf0eb493a591b59cd7114ba45f0442a653af"
+  }
+ },
+ "started_utc": "2026-11-09T13:02:57Z",
+ "resume_notes": [],
+ "checks": {
+  "raw_sha256_gating": {
+   "pass": true,
+   "enabled": true
+  },
+  "render_all_files": {
+   "pass": true,
+   "n_files": 10
+  }
+ },
+ "seconds": 36.8,
+ "timing": {
+  "frames": 1226,
+  "frame_loop_seconds": 6.68,
+  "seconds_per_frame": 0.005451876019575856,
+  "env_build_and_prepare_seconds_total": 21.55,
+  "noise_by_code": {}
+ }
+}
