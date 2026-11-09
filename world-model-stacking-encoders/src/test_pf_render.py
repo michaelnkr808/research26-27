@@ -511,6 +511,11 @@ def test_provenance_and_frames():
 def test_tolerance():
     """PLAN Amendment 2026-11-09 (d): pass if every differing value is off by at most 1 and fewer than 1e-5 of an array's values differ."""
     assert R.MAX_ABS_DIFF_TOL == 1 and R.FRACTION_TOL == 1e-5
+    # boundaries of the rule itself: strictly fewer than 1e-5 of the values, at most one step
+    assert not R.within_tolerance(1, 100000, 1), "exactly 1e-5 must fail (strict <)"
+    assert R.within_tolerance(1, 100001, 1)
+    assert not R.within_tolerance(1, 10**7, 2), "a step of 2 fails whatever the fraction"
+    assert R.within_tolerance(0, 10, 0)
     n_frames = 24                                     # 24 * 128 * 128 * 3 = 1,179,648 values: one differing value is 8.5e-7 < 1e-5
     rng = np.random.default_rng(5)
     a = rng.integers(2, 250, (n_frames, 128, 128, 3), dtype=np.uint8)
