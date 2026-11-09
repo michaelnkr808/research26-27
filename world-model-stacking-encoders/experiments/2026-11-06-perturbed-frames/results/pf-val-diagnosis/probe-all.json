@@ -1,0 +1,762 @@
+{
+ "constant_val_action_dims_by_task": {
+  "open_the_middle_drawer_of_the_cabinet_demo": [
+   6
+  ],
+  "open_the_top_drawer_and_put_the_bowl_inside_demo": [],
+  "push_the_plate_to_the_front_of_the_stove_demo": [
+   6
+  ],
+  "put_the_bowl_on_the_plate_demo": [],
+  "put_the_bowl_on_the_stove_demo": [],
+  "put_the_bowl_on_top_of_the_cabinet_demo": [],
+  "put_the_cream_cheese_in_the_bowl_demo": [],
+  "put_the_wine_bottle_on_the_rack_demo": [],
+  "put_the_wine_bottle_on_top_of_the_cabinet_demo": [],
+  "turn_on_the_stove_demo": []
+ },
+ "n_train": 38464,
+ "n_val_full": 12416,
+ "n_val": 12316,
+ "tasks": [
+  "open_the_middle_drawer_of_the_cabinet_demo",
+  "open_the_top_drawer_and_put_the_bowl_inside_demo",
+  "push_the_plate_to_the_front_of_the_stove_demo",
+  "put_the_bowl_on_the_plate_demo",
+  "put_the_bowl_on_the_stove_demo",
+  "put_the_bowl_on_top_of_the_cabinet_demo",
+  "put_the_cream_cheese_in_the_bowl_demo",
+  "put_the_wine_bottle_on_the_rack_demo",
+  "put_the_wine_bottle_on_top_of_the_cabinet_demo",
+  "turn_on_the_stove_demo"
+ ],
+ "check_stored_full_val_r2_alpha0.1": {
+  "mine": 0.6538297787888515,
+  "tally_curve": 0.6538305228198683
+ },
+ "check_against_job_probe_report": {
+  "combined": {
+   "alpha": 0.1,
+   "mine_stored": 0.6561547374808125,
+   "job_stored": 0.6561556494914705,
+   "mine_rerender": 0.6052780650242656,
+   "job_rerender": 0.6052785138247245,
+   "max_abs_diff_to_job": 9.120106579940668e-07
+  },
+  "agentview": {
+   "alpha": 0.01,
+   "mine_stored": 0.542887476163713,
+   "job_stored": 0.5428944204730787,
+   "mine_rerender": 0.4142302373980757,
+   "job_rerender": 0.4141972015339723,
+   "max_abs_diff_to_job": 3.3035864103359014e-05
+  },
+  "wrist": {
+   "alpha": 0.01,
+   "mine_stored": 0.6264826746376125,
+   "job_stored": 0.6264840654828115,
+   "mine_rerender": 0.5745942295859662,
+   "job_rerender": 0.574600884097765,
+   "max_abs_diff_to_job": 6.654511798820373e-06
+  }
+ },
+ "alpha_sweep": {
+  "combined": {
+   "0.01": {
+    "stored": 0.6501841009415591,
+    "rerender": 0.567504892854485,
+    "gap": -0.08267920808707407
+   },
+   "0.1": {
+    "stored": 0.6561547374808125,
+    "rerender": 0.6052780650242656,
+    "gap": -0.05087667245654692
+   },
+   "1": {
+    "stored": 0.6099624420683342,
+    "rerender": 0.578399340097541,
+    "gap": -0.03156310197079315
+   },
+   "10": {
+    "stored": 0.475323876075051,
+    "rerender": 0.4626433290430609,
+    "gap": -0.01268054703199012
+   },
+   "100": {
+    "stored": 0.2529787893144947,
+    "rerender": 0.248891795241355,
+    "gap": -0.004086994073139699
+   },
+   "1000": {
+    "stored": 0.060402999191088144,
+    "rerender": 0.059588726596298845,
+    "gap": -0.000814272594789299
+   }
+  },
+  "agentview": {
+   "0.01": {
+    "stored": 0.542887476163713,
+    "rerender": 0.4142302373980757,
+    "gap": -0.12865723876563734
+   },
+   "0.1": {
+    "stored": 0.5324499173370845,
+    "rerender": 0.4631969791546003,
+    "gap": -0.06925293818248418
+   },
+   "1": {
+    "stored": 0.4617834688755455,
+    "rerender": 0.4260283214184997,
+    "gap": -0.03575514745704578
+   },
+   "10": {
+    "stored": 0.3158959252125063,
+    "rerender": 0.30290642472813706,
+    "gap": -0.012989500484369254
+   },
+   "100": {
+    "stored": 0.13284862538929648,
+    "rerender": 0.12849443037612604,
+    "gap": -0.004354195013170442
+   },
+   "1000": {
+    "stored": 0.025080015524538184,
+    "rerender": 0.024309811812912394,
+    "gap": -0.0007702037116257901
+   }
+  },
+  "wrist": {
+   "0.01": {
+    "stored": 0.6264826746376125,
+    "rerender": 0.5745942295859662,
+    "gap": -0.05188844505164636
+   },
+   "0.1": {
+    "stored": 0.6201843588445194,
+    "rerender": 0.5793537006768039,
+    "gap": -0.04083065816771547
+   },
+   "1": {
+    "stored": 0.5541287563025374,
+    "rerender": 0.5285244677220635,
+    "gap": -0.025604288580473922
+   },
+   "10": {
+    "stored": 0.4036567322612471,
+    "rerender": 0.3963695562692772,
+    "gap": -0.007287175991969874
+   },
+   "100": {
+    "stored": 0.19351199597768234,
+    "rerender": 0.1921723844110152,
+    "gap": -0.0013396115666671482
+   },
+   "1000": {
+    "stored": 0.03961528375576046,
+    "rerender": 0.039522581937005676,
+    "gap": -9.270181875478678e-05
+   }
+  }
+ },
+ "best_alpha_on_stored_val_combined": 0.1,
+ "alpha0.1": {
+  "task": {
+   "open_the_middle_drawer_of_the_cabinet_demo": {
+    "gap_contribution_to_overall": -0.0033541772799409062,
+    "relative_error_increase": 0.06284638626863659,
+    "share_of_total_excess_sse": 0.06533790735154325,
+    "share_of_val_frames": 0.115865540759987,
+    "n_demos_worse": 9,
+    "gap_ci95": [
+     -0.004931857110639268,
+     -0.0014744264059084213
+    ]
+   },
+   "open_the_top_drawer_and_put_the_bowl_inside_demo": {
+    "gap_contribution_to_overall": -0.00939280597428604,
+    "relative_error_increase": 0.1715482815734941,
+    "share_of_total_excess_sse": 0.21527584438969843,
+    "share_of_val_frames": 0.1620656057161416,
+    "n_demos_worse": 10,
+    "gap_ci95": [
+     -0.012985307392800368,
+     -0.005363547262306187
+    ]
+   },
+   "push_the_plate_to_the_front_of_the_stove_demo": {
+    "gap_contribution_to_overall": -0.007797417494161364,
+    "relative_error_increase": 0.28085218860144723,
+    "share_of_total_excess_sse": 0.15073026412678892,
+    "share_of_val_frames": 0.11846378694381293,
+    "n_demos_worse": 10,
+    "gap_ci95": [
+     -0.010004661313025964,
+     -0.006225135514336669
+    ]
+   },
+   "put_the_bowl_on_the_plate_demo": {
+    "gap_contribution_to_overall": -0.006017146302801187,
+    "relative_error_increase": 0.28733034532635693,
+    "share_of_total_excess_sse": 0.09604909137485362,
+    "share_of_val_frames": 0.07453718739850601,
+    "n_demos_worse": 10,
+    "gap_ci95": [
+     -0.006571201999318241,
+     -0.005378055005124908
+    ]
+   },
+   "put_the_bowl_on_the_stove_demo": {
+    "gap_contribution_to_overall": -0.0030903521958895305,
+    "relative_error_increase": 0.17369775974152502,
+    "share_of_total_excess_sse": 0.11751630979634972,
+    "share_of_val_frames": 0.08013965573238065,
+    "n_demos_worse": 9,
+    "gap_ci95": [
+     -0.004172657066383383,
+     -0.0019328320466337069
+    ]
+   },
+   "put_the_bowl_on_top_of_the_cabinet_demo": {
+    "gap_contribution_to_overall": -0.006110965550963702,
+    "relative_error_increase": 0.18290160675553246,
+    "share_of_total_excess_sse": 0.16133313481631406,
+    "share_of_val_frames": 0.08330626826891847,
+    "n_demos_worse": 10,
+    "gap_ci95": [
+     -0.008419216649707906,
+     -0.0039869135890849535
+    ]
+   },
+   "put_the_cream_cheese_in_the_bowl_demo": {
+    "gap_contribution_to_overall": -0.003347336550819484,
+    "relative_error_increase": 0.13840560424075932,
+    "share_of_total_excess_sse": 0.03887868318512312,
+    "share_of_val_frames": 0.0814387788242936,
+    "n_demos_worse": 8,
+    "gap_ci95": [
+     -0.00463484609868955,
+     -0.0021982462286905795
+    ]
+   },
+   "put_the_wine_bottle_on_the_rack_demo": {
+    "gap_contribution_to_overall": -0.0044686726801305,
+    "relative_error_increase": 0.079084662722811,
+    "share_of_total_excess_sse": 0.03865655994177562,
+    "share_of_val_frames": 0.13348489769405653,
+    "n_demos_worse": 8,
+    "gap_ci95": [
+     -0.005906116077732306,
+     -0.003165074676026336
+    ]
+   },
+   "put_the_wine_bottle_on_top_of_the_cabinet_demo": {
+    "gap_contribution_to_overall": -0.005266781915318977,
+    "relative_error_increase": 0.15360297313335414,
+    "share_of_total_excess_sse": 0.06729412898214251,
+    "share_of_val_frames": 0.08225073075673921,
+    "n_demos_worse": 8,
+    "gap_ci95": [
+     -0.006725306616906387,
+     -0.003502317705667339
+    ]
+   },
+   "turn_on_the_stove_demo": {
+    "gap_contribution_to_overall": -0.0020310165122360687,
+    "relative_error_increase": 0.0974802797196348,
+    "share_of_total_excess_sse": 0.04892807603541066,
+    "share_of_val_frames": 0.06844754790516401,
+    "n_demos_worse": 8,
+    "gap_ci95": [
+     -0.002815684538841647,
+     -0.0012055607958613291
+    ]
+   }
+  },
+  "n_demos_rerender_worse_of_100": 90,
+  "error_measure_note": "n_demos_rerender_worse_of_100, task shares, demo shares and top-10%-frames share above use RAW squared error summed over action dimensions (dominated by the gripper); the *_r2weighted entries weight each dimension by 1/total val variance, i.e. the same weighting as the mean R2",
+  "n_demos_rerender_worse_r2weighted_of_100": 95,
+  "n_demos_worse_per_task_r2weighted": {
+   "open_the_middle_drawer_of_the_cabinet_demo": 8,
+   "open_the_top_drawer_and_put_the_bowl_inside_demo": 9,
+   "push_the_plate_to_the_front_of_the_stove_demo": 10,
+   "put_the_bowl_on_the_plate_demo": 10,
+   "put_the_bowl_on_the_stove_demo": 10,
+   "put_the_bowl_on_top_of_the_cabinet_demo": 10,
+   "put_the_cream_cheese_in_the_bowl_demo": 10,
+   "put_the_wine_bottle_on_the_rack_demo": 10,
+   "put_the_wine_bottle_on_top_of_the_cabinet_demo": 9,
+   "turn_on_the_stove_demo": 9
+  },
+  "demo_share_of_excess_max_min_r2weighted": [
+   0.03624604539576771,
+   -0.007305596895356765
+  ],
+  "task_share_of_excess_r2weighted": {
+   "open_the_middle_drawer_of_the_cabinet_demo": 0.06592760745412014,
+   "open_the_top_drawer_and_put_the_bowl_inside_demo": 0.18461910995729008,
+   "push_the_plate_to_the_front_of_the_stove_demo": 0.15326115340588464,
+   "put_the_bowl_on_the_plate_demo": 0.11826925798145611,
+   "put_the_bowl_on_the_stove_demo": 0.060742026640390856,
+   "put_the_bowl_on_top_of_the_cabinet_demo": 0.12011330941395011,
+   "put_the_cream_cheese_in_the_bowl_demo": 0.065793149892142,
+   "put_the_wine_bottle_on_the_rack_demo": 0.08783343086930535,
+   "put_the_wine_bottle_on_top_of_the_cabinet_demo": 0.10352056532803276,
+   "turn_on_the_stove_demo": 0.039920389057427834
+  },
+  "top10pct_frames_by_prediction_shift_share_of_excess_r2weighted": 0.1975428940291503,
+  "demo_share_of_excess_top10": {
+   "open_the_top_drawer_and_put_the_bowl_inside_demo|demo_38": 0.041770722127448014,
+   "open_the_top_drawer_and_put_the_bowl_inside_demo|demo_33": 0.04044611552119302,
+   "put_the_wine_bottle_on_top_of_the_cabinet_demo|demo_34": 0.03394068287914846,
+   "put_the_bowl_on_top_of_the_cabinet_demo|demo_36": 0.026631592358785646,
+   "open_the_top_drawer_and_put_the_bowl_inside_demo|demo_35": 0.02643791232386738,
+   "push_the_plate_to_the_front_of_the_stove_demo|demo_37": 0.025677049247320078,
+   "push_the_plate_to_the_front_of_the_stove_demo|demo_30": 0.025501639043948015,
+   "open_the_top_drawer_and_put_the_bowl_inside_demo|demo_30": 0.025331526389200932,
+   "put_the_bowl_on_top_of_the_cabinet_demo|demo_37": 0.024256502459202387,
+   "open_the_top_drawer_and_put_the_bowl_inside_demo|demo_34": 0.024205142092077907
+  },
+  "demo_share_of_excess_max_min": [
+   0.041770722127448014,
+   -0.010543620269148216
+  ],
+  "per_tenth_share_of_excess": [
+   0.059325845401053755,
+   0.0620054617861665,
+   0.061084051189196506,
+   0.06571115956163388,
+   0.0903289679547388,
+   0.2268435358782444,
+   0.1725520794533565,
+   0.0523621622771501,
+   -0.021190174428398028,
+   0.23097691092685754
+  ],
+  "per_tenth_gap_contribution": [
+   -0.0038961325584094984,
+   -0.005678134200241874,
+   -0.004174350466847941,
+   -0.0033847951939874462,
+   -0.003553415324775468,
+   -0.009796328024626752,
+   -0.007987265316826,
+   -0.004060654166926459,
+   -0.0027656081200187047,
+   -0.005579989083887612
+  ],
+  "per_tenth_relative_error_increase": [
+   0.17135714790588663,
+   0.25827648120840396,
+   0.1490510058155583,
+   0.10746944849161832,
+   0.11305539777016471,
+   0.27286916929087424,
+   0.20822171601848272,
+   0.10054100272011657,
+   0.06000323357634496,
+   0.11759316380932083
+  ],
+  "top10pct_frames_by_prediction_shift_share_of_excess": 0.34153634200620286,
+  "camera": {
+   "agentview": {
+    "stored": 0.5324499173370845,
+    "rerender": 0.4631969791546003,
+    "per_task_gap_contribution": {
+     "open_the_middle_drawer_of_the_cabinet_demo": -0.005059284784776623,
+     "open_the_top_drawer_and_put_the_bowl_inside_demo": -0.00823540674494514,
+     "push_the_plate_to_the_front_of_the_stove_demo": -0.007947269765299572,
+     "put_the_bowl_on_the_plate_demo": -0.005352312199107102,
+     "put_the_bowl_on_the_stove_demo": -0.004546666860776964,
+     "put_the_bowl_on_top_of_the_cabinet_demo": -0.005188247970750562,
+     "put_the_cream_cheese_in_the_bowl_demo": -0.004833570613886131,
+     "put_the_wine_bottle_on_the_rack_demo": -0.014545335130686291,
+     "put_the_wine_bottle_on_top_of_the_cabinet_demo": -0.007888408201778297,
+     "turn_on_the_stove_demo": -0.005656435910478181
+    },
+    "per_task_relative_error_increase": {
+     "open_the_middle_drawer_of_the_cabinet_demo": 0.07915536711162319,
+     "open_the_top_drawer_and_put_the_bowl_inside_demo": 0.1117421423877547,
+     "push_the_plate_to_the_front_of_the_stove_demo": 0.23442000425540965,
+     "put_the_bowl_on_the_plate_demo": 0.15951779479903627,
+     "put_the_bowl_on_the_stove_demo": 0.15108446750640425,
+     "put_the_bowl_on_top_of_the_cabinet_demo": 0.11630777731998498,
+     "put_the_cream_cheese_in_the_bowl_demo": 0.12387623932002545,
+     "put_the_wine_bottle_on_the_rack_demo": 0.1893357232137709,
+     "put_the_wine_bottle_on_top_of_the_cabinet_demo": 0.1739981066876255,
+     "turn_on_the_stove_demo": 0.21265417816879362
+    }
+   },
+   "wrist": {
+    "stored": 0.6201843588445194,
+    "rerender": 0.5793537006768039,
+    "per_task_gap_contribution": {
+     "open_the_middle_drawer_of_the_cabinet_demo": -0.0038653952810119613,
+     "open_the_top_drawer_and_put_the_bowl_inside_demo": -0.004426527008166483,
+     "push_the_plate_to_the_front_of_the_stove_demo": -0.0048153907204488006,
+     "put_the_bowl_on_the_plate_demo": -0.005650039668999143,
+     "put_the_bowl_on_the_stove_demo": -0.0029902871808535083,
+     "put_the_bowl_on_top_of_the_cabinet_demo": -0.008852657784635384,
+     "put_the_cream_cheese_in_the_bowl_demo": -0.0023664818042757976,
+     "put_the_wine_bottle_on_the_rack_demo": -0.0033217626791532924,
+     "put_the_wine_bottle_on_top_of_the_cabinet_demo": -0.002901448279080164,
+     "turn_on_the_stove_demo": -0.0016406677610915404
+    },
+    "per_task_relative_error_increase": {
+     "open_the_middle_drawer_of_the_cabinet_demo": 0.06649182236734696,
+     "open_the_top_drawer_and_put_the_bowl_inside_demo": 0.07253768608950284,
+     "push_the_plate_to_the_front_of_the_stove_demo": 0.15714097020924878,
+     "put_the_bowl_on_the_plate_demo": 0.26025902430067815,
+     "put_the_bowl_on_the_stove_demo": 0.1485776371530101,
+     "put_the_bowl_on_top_of_the_cabinet_demo": 0.25072030891956154,
+     "put_the_cream_cheese_in_the_bowl_demo": 0.08933019809106701,
+     "put_the_wine_bottle_on_the_rack_demo": 0.05431456474945984,
+     "put_the_wine_bottle_on_top_of_the_cabinet_demo": 0.07109648516204925,
+     "turn_on_the_stove_demo": 0.06720989101414987
+    }
+   }
+  },
+  "oracle_mean_shift_removed": {
+   "r2": 0.630980426541956,
+   "gap": -0.02517431093885658
+  },
+  "cosine_standardized": {
+   "agentview_rgb": {
+    "open_the_middle_drawer_of_the_cabinet_demo": 0.7950093746185303,
+    "open_the_top_drawer_and_put_the_bowl_inside_demo": 0.7702816128730774,
+    "push_the_plate_to_the_front_of_the_stove_demo": 0.7905992865562439,
+    "put_the_bowl_on_the_plate_demo": 0.74951171875,
+    "put_the_bowl_on_the_stove_demo": 0.7208787202835083,
+    "put_the_bowl_on_top_of_the_cabinet_demo": 0.7540906667709351,
+    "put_the_cream_cheese_in_the_bowl_demo": 0.7517194747924805,
+    "put_the_wine_bottle_on_the_rack_demo": 0.7731934785842896,
+    "put_the_wine_bottle_on_top_of_the_cabinet_demo": 0.8135160803794861,
+    "turn_on_the_stove_demo": 0.7839874625205994,
+    "all": 0.7720687389373779
+   },
+   "eye_in_hand_rgb": {
+    "open_the_middle_drawer_of_the_cabinet_demo": 0.8655140399932861,
+    "open_the_top_drawer_and_put_the_bowl_inside_demo": 0.8053172826766968,
+    "push_the_plate_to_the_front_of_the_stove_demo": 0.9007103443145752,
+    "put_the_bowl_on_the_plate_demo": 0.8103197813034058,
+    "put_the_bowl_on_the_stove_demo": 0.7885388731956482,
+    "put_the_bowl_on_top_of_the_cabinet_demo": 0.7671753168106079,
+    "put_the_cream_cheese_in_the_bowl_demo": 0.8397747278213501,
+    "put_the_wine_bottle_on_the_rack_demo": 0.9049853682518005,
+    "put_the_wine_bottle_on_top_of_the_cabinet_demo": 0.8564464449882507,
+    "turn_on_the_stove_demo": 0.8916124105453491,
+    "all": 0.8456658720970154
+   }
+  },
+  "overall_gap": {
+   "value": -0.05087667245654692,
+   "ci95_demo_bootstrap": [
+    -0.05915500511806088,
+    -0.043874482394147436
+   ]
+  }
+ },
+ "alpha_best": {
+  "task": {
+   "open_the_middle_drawer_of_the_cabinet_demo": {
+    "gap_contribution_to_overall": -0.0033541772799409062,
+    "relative_error_increase": 0.06284638626863659,
+    "share_of_total_excess_sse": 0.06533790735154325,
+    "share_of_val_frames": 0.115865540759987,
+    "n_demos_worse": 9,
+    "gap_ci95": [
+     -0.004931857110639268,
+     -0.0014744264059084213
+    ]
+   },
+   "open_the_top_drawer_and_put_the_bowl_inside_demo": {
+    "gap_contribution_to_overall": -0.00939280597428604,
+    "relative_error_increase": 0.1715482815734941,
+    "share_of_total_excess_sse": 0.21527584438969843,
+    "share_of_val_frames": 0.1620656057161416,
+    "n_demos_worse": 10,
+    "gap_ci95": [
+     -0.012985307392800368,
+     -0.005363547262306187
+    ]
+   },
+   "push_the_plate_to_the_front_of_the_stove_demo": {
+    "gap_contribution_to_overall": -0.007797417494161364,
+    "relative_error_increase": 0.28085218860144723,
+    "share_of_total_excess_sse": 0.15073026412678892,
+    "share_of_val_frames": 0.11846378694381293,
+    "n_demos_worse": 10,
+    "gap_ci95": [
+     -0.010004661313025964,
+     -0.006225135514336669
+    ]
+   },
+   "put_the_bowl_on_the_plate_demo": {
+    "gap_contribution_to_overall": -0.006017146302801187,
+    "relative_error_increase": 0.28733034532635693,
+    "share_of_total_excess_sse": 0.09604909137485362,
+    "share_of_val_frames": 0.07453718739850601,
+    "n_demos_worse": 10,
+    "gap_ci95": [
+     -0.006571201999318241,
+     -0.005378055005124908
+    ]
+   },
+   "put_the_bowl_on_the_stove_demo": {
+    "gap_contribution_to_overall": -0.0030903521958895305,
+    "relative_error_increase": 0.17369775974152502,
+    "share_of_total_excess_sse": 0.11751630979634972,
+    "share_of_val_frames": 0.08013965573238065,
+    "n_demos_worse": 9,
+    "gap_ci95": [
+     -0.004172657066383383,
+     -0.0019328320466337069
+    ]
+   },
+   "put_the_bowl_on_top_of_the_cabinet_demo": {
+    "gap_contribution_to_overall": -0.006110965550963702,
+    "relative_error_increase": 0.18290160675553246,
+    "share_of_total_excess_sse": 0.16133313481631406,
+    "share_of_val_frames": 0.08330626826891847,
+    "n_demos_worse": 10,
+    "gap_ci95": [
+     -0.008419216649707906,
+     -0.0039869135890849535
+    ]
+   },
+   "put_the_cream_cheese_in_the_bowl_demo": {
+    "gap_contribution_to_overall": -0.003347336550819484,
+    "relative_error_increase": 0.13840560424075932,
+    "share_of_total_excess_sse": 0.03887868318512312,
+    "share_of_val_frames": 0.0814387788242936,
+    "n_demos_worse": 8,
+    "gap_ci95": [
+     -0.00463484609868955,
+     -0.0021982462286905795
+    ]
+   },
+   "put_the_wine_bottle_on_the_rack_demo": {
+    "gap_contribution_to_overall": -0.0044686726801305,
+    "relative_error_increase": 0.079084662722811,
+    "share_of_total_excess_sse": 0.03865655994177562,
+    "share_of_val_frames": 0.13348489769405653,
+    "n_demos_worse": 8,
+    "gap_ci95": [
+     -0.005906116077732306,
+     -0.003165074676026336
+    ]
+   },
+   "put_the_wine_bottle_on_top_of_the_cabinet_demo": {
+    "gap_contribution_to_overall": -0.005266781915318977,
+    "relative_error_increase": 0.15360297313335414,
+    "share_of_total_excess_sse": 0.06729412898214251,
+    "share_of_val_frames": 0.08225073075673921,
+    "n_demos_worse": 8,
+    "gap_ci95": [
+     -0.006725306616906387,
+     -0.003502317705667339
+    ]
+   },
+   "turn_on_the_stove_demo": {
+    "gap_contribution_to_overall": -0.0020310165122360687,
+    "relative_error_increase": 0.0974802797196348,
+    "share_of_total_excess_sse": 0.04892807603541066,
+    "share_of_val_frames": 0.06844754790516401,
+    "n_demos_worse": 8,
+    "gap_ci95": [
+     -0.002815684538841647,
+     -0.0012055607958613291
+    ]
+   }
+  },
+  "n_demos_rerender_worse_of_100": 90,
+  "error_measure_note": "n_demos_rerender_worse_of_100, task shares, demo shares and top-10%-frames share above use RAW squared error summed over action dimensions (dominated by the gripper); the *_r2weighted entries weight each dimension by 1/total val variance, i.e. the same weighting as the mean R2",
+  "n_demos_rerender_worse_r2weighted_of_100": 95,
+  "n_demos_worse_per_task_r2weighted": {
+   "open_the_middle_drawer_of_the_cabinet_demo": 8,
+   "open_the_top_drawer_and_put_the_bowl_inside_demo": 9,
+   "push_the_plate_to_the_front_of_the_stove_demo": 10,
+   "put_the_bowl_on_the_plate_demo": 10,
+   "put_the_bowl_on_the_stove_demo": 10,
+   "put_the_bowl_on_top_of_the_cabinet_demo": 10,
+   "put_the_cream_cheese_in_the_bowl_demo": 10,
+   "put_the_wine_bottle_on_the_rack_demo": 10,
+   "put_the_wine_bottle_on_top_of_the_cabinet_demo": 9,
+   "turn_on_the_stove_demo": 9
+  },
+  "demo_share_of_excess_max_min_r2weighted": [
+   0.03624604539576771,
+   -0.007305596895356765
+  ],
+  "task_share_of_excess_r2weighted": {
+   "open_the_middle_drawer_of_the_cabinet_demo": 0.06592760745412014,
+   "open_the_top_drawer_and_put_the_bowl_inside_demo": 0.18461910995729008,
+   "push_the_plate_to_the_front_of_the_stove_demo": 0.15326115340588464,
+   "put_the_bowl_on_the_plate_demo": 0.11826925798145611,
+   "put_the_bowl_on_the_stove_demo": 0.060742026640390856,
+   "put_the_bowl_on_top_of_the_cabinet_demo": 0.12011330941395011,
+   "put_the_cream_cheese_in_the_bowl_demo": 0.065793149892142,
+   "put_the_wine_bottle_on_the_rack_demo": 0.08783343086930535,
+   "put_the_wine_bottle_on_top_of_the_cabinet_demo": 0.10352056532803276,
+   "turn_on_the_stove_demo": 0.039920389057427834
+  },
+  "top10pct_frames_by_prediction_shift_share_of_excess_r2weighted": 0.1975428940291503,
+  "demo_share_of_excess_top10": {
+   "open_the_top_drawer_and_put_the_bowl_inside_demo|demo_38": 0.041770722127448014,
+   "open_the_top_drawer_and_put_the_bowl_inside_demo|demo_33": 0.04044611552119302,
+   "put_the_wine_bottle_on_top_of_the_cabinet_demo|demo_34": 0.03394068287914846,
+   "put_the_bowl_on_top_of_the_cabinet_demo|demo_36": 0.026631592358785646,
+   "open_the_top_drawer_and_put_the_bowl_inside_demo|demo_35": 0.02643791232386738,
+   "push_the_plate_to_the_front_of_the_stove_demo|demo_37": 0.025677049247320078,
+   "push_the_plate_to_the_front_of_the_stove_demo|demo_30": 0.025501639043948015,
+   "open_the_top_drawer_and_put_the_bowl_inside_demo|demo_30": 0.025331526389200932,
+   "put_the_bowl_on_top_of_the_cabinet_demo|demo_37": 0.024256502459202387,
+   "open_the_top_drawer_and_put_the_bowl_inside_demo|demo_34": 0.024205142092077907
+  },
+  "demo_share_of_excess_max_min": [
+   0.041770722127448014,
+   -0.010543620269148216
+  ],
+  "per_tenth_share_of_excess": [
+   0.059325845401053755,
+   0.0620054617861665,
+   0.061084051189196506,
+   0.06571115956163388,
+   0.0903289679547388,
+   0.2268435358782444,
+   0.1725520794533565,
+   0.0523621622771501,
+   -0.021190174428398028,
+   0.23097691092685754
+  ],
+  "per_tenth_gap_contribution": [
+   -0.0038961325584094984,
+   -0.005678134200241874,
+   -0.004174350466847941,
+   -0.0033847951939874462,
+   -0.003553415324775468,
+   -0.009796328024626752,
+   -0.007987265316826,
+   -0.004060654166926459,
+   -0.0027656081200187047,
+   -0.005579989083887612
+  ],
+  "per_tenth_relative_error_increase": [
+   0.17135714790588663,
+   0.25827648120840396,
+   0.1490510058155583,
+   0.10746944849161832,
+   0.11305539777016471,
+   0.27286916929087424,
+   0.20822171601848272,
+   0.10054100272011657,
+   0.06000323357634496,
+   0.11759316380932083
+  ],
+  "top10pct_frames_by_prediction_shift_share_of_excess": 0.34153634200620286,
+  "camera": {
+   "agentview": {
+    "stored": 0.5324499173370845,
+    "rerender": 0.4631969791546003,
+    "per_task_gap_contribution": {
+     "open_the_middle_drawer_of_the_cabinet_demo": -0.005059284784776623,
+     "open_the_top_drawer_and_put_the_bowl_inside_demo": -0.00823540674494514,
+     "push_the_plate_to_the_front_of_the_stove_demo": -0.007947269765299572,
+     "put_the_bowl_on_the_plate_demo": -0.005352312199107102,
+     "put_the_bowl_on_the_stove_demo": -0.004546666860776964,
+     "put_the_bowl_on_top_of_the_cabinet_demo": -0.005188247970750562,
+     "put_the_cream_cheese_in_the_bowl_demo": -0.004833570613886131,
+     "put_the_wine_bottle_on_the_rack_demo": -0.014545335130686291,
+     "put_the_wine_bottle_on_top_of_the_cabinet_demo": -0.007888408201778297,
+     "turn_on_the_stove_demo": -0.005656435910478181
+    },
+    "per_task_relative_error_increase": {
+     "open_the_middle_drawer_of_the_cabinet_demo": 0.07915536711162319,
+     "open_the_top_drawer_and_put_the_bowl_inside_demo": 0.1117421423877547,
+     "push_the_plate_to_the_front_of_the_stove_demo": 0.23442000425540965,
+     "put_the_bowl_on_the_plate_demo": 0.15951779479903627,
+     "put_the_bowl_on_the_stove_demo": 0.15108446750640425,
+     "put_the_bowl_on_top_of_the_cabinet_demo": 0.11630777731998498,
+     "put_the_cream_cheese_in_the_bowl_demo": 0.12387623932002545,
+     "put_the_wine_bottle_on_the_rack_demo": 0.1893357232137709,
+     "put_the_wine_bottle_on_top_of_the_cabinet_demo": 0.1739981066876255,
+     "turn_on_the_stove_demo": 0.21265417816879362
+    }
+   },
+   "wrist": {
+    "stored": 0.6201843588445194,
+    "rerender": 0.5793537006768039,
+    "per_task_gap_contribution": {
+     "open_the_middle_drawer_of_the_cabinet_demo": -0.0038653952810119613,
+     "open_the_top_drawer_and_put_the_bowl_inside_demo": -0.004426527008166483,
+     "push_the_plate_to_the_front_of_the_stove_demo": -0.0048153907204488006,
+     "put_the_bowl_on_the_plate_demo": -0.005650039668999143,
+     "put_the_bowl_on_the_stove_demo": -0.0029902871808535083,
+     "put_the_bowl_on_top_of_the_cabinet_demo": -0.008852657784635384,
+     "put_the_cream_cheese_in_the_bowl_demo": -0.0023664818042757976,
+     "put_the_wine_bottle_on_the_rack_demo": -0.0033217626791532924,
+     "put_the_wine_bottle_on_top_of_the_cabinet_demo": -0.002901448279080164,
+     "turn_on_the_stove_demo": -0.0016406677610915404
+    },
+    "per_task_relative_error_increase": {
+     "open_the_middle_drawer_of_the_cabinet_demo": 0.06649182236734696,
+     "open_the_top_drawer_and_put_the_bowl_inside_demo": 0.07253768608950284,
+     "push_the_plate_to_the_front_of_the_stove_demo": 0.15714097020924878,
+     "put_the_bowl_on_the_plate_demo": 0.26025902430067815,
+     "put_the_bowl_on_the_stove_demo": 0.1485776371530101,
+     "put_the_bowl_on_top_of_the_cabinet_demo": 0.25072030891956154,
+     "put_the_cream_cheese_in_the_bowl_demo": 0.08933019809106701,
+     "put_the_wine_bottle_on_the_rack_demo": 0.05431456474945984,
+     "put_the_wine_bottle_on_top_of_the_cabinet_demo": 0.07109648516204925,
+     "turn_on_the_stove_demo": 0.06720989101414987
+    }
+   }
+  },
+  "oracle_mean_shift_removed": {
+   "r2": 0.630980426541956,
+   "gap": -0.02517431093885658
+  },
+  "cosine_standardized": {
+   "agentview_rgb": {
+    "open_the_middle_drawer_of_the_cabinet_demo": 0.7950093746185303,
+    "open_the_top_drawer_and_put_the_bowl_inside_demo": 0.7702816128730774,
+    "push_the_plate_to_the_front_of_the_stove_demo": 0.7905992865562439,
+    "put_the_bowl_on_the_plate_demo": 0.74951171875,
+    "put_the_bowl_on_the_stove_demo": 0.7208787202835083,
+    "put_the_bowl_on_top_of_the_cabinet_demo": 0.7540906667709351,
+    "put_the_cream_cheese_in_the_bowl_demo": 0.7517194747924805,
+    "put_the_wine_bottle_on_the_rack_demo": 0.7731934785842896,
+    "put_the_wine_bottle_on_top_of_the_cabinet_demo": 0.8135160803794861,
+    "turn_on_the_stove_demo": 0.7839874625205994,
+    "all": 0.7720687389373779
+   },
+   "eye_in_hand_rgb": {
+    "open_the_middle_drawer_of_the_cabinet_demo": 0.8655140399932861,
+    "open_the_top_drawer_and_put_the_bowl_inside_demo": 0.8053172826766968,
+    "push_the_plate_to_the_front_of_the_stove_demo": 0.9007103443145752,
+    "put_the_bowl_on_the_plate_demo": 0.8103197813034058,
+    "put_the_bowl_on_the_stove_demo": 0.7885388731956482,
+    "put_the_bowl_on_top_of_the_cabinet_demo": 0.7671753168106079,
+    "put_the_cream_cheese_in_the_bowl_demo": 0.8397747278213501,
+    "put_the_wine_bottle_on_the_rack_demo": 0.9049853682518005,
+    "put_the_wine_bottle_on_top_of_the_cabinet_demo": 0.8564464449882507,
+    "turn_on_the_stove_demo": 0.8916124105453491,
+    "all": 0.8456658720970154
+   }
+  },
+  "overall_gap": {
+   "value": -0.05087667245654692,
+   "ci95_demo_bootstrap": [
+    -0.05915500511806088,
+    -0.043874482394147436
+   ]
+  }
+ },
+ "spearman_task_gap_vs_pixel_mad": {
+  "agentview_rgb": 0.17575757575757575,
+  "eye_in_hand_rgb": 0.49090909090909085
+ },
+ "spearman_task_gap_vs_laplacian_ratio": {
+  "agentview_rgb": 0.13939393939393938,
+  "eye_in_hand_rgb": 0.7575757575757575
+ }
+}

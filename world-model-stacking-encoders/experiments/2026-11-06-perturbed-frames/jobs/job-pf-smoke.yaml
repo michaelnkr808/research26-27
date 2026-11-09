@@ -1,0 +1,124 @@
+# First smoke test of the perturbed-frame experiment (PLAN.md Handoff steps 1 and 2, except the 0.01 val-R2 check, which is the
+# later validation step). One task file (libero_goal/turn_on_the_stove), three train/val demos, never a test demo.
+# User approval, verbatim (this session, 2026-11-08 about 00:15 UTC): the user picked "Approve phase 1 (Recommended)", whose text
+# was: "Counts as your go for both short cluster jobs: the smoke test, then the validation check if the smoke test passes. The
+# analysis-code worker starts now." On GPU room the user picked "Shrink seed 1 to two (Recommended)" (the lead did that: Job
+# stacking-encoders-proxy-eval-dinov3-s1-l4 is at parallelism 2), so this one smoke-test Job on 1 GPU keeps the total at 8 or fewer.
+# RESUBMITTED 2026-11-08 about 01:25 UTC after the first Job sat Pending 47 min (no node fit 4 CPU / 20Gi). User decision, verbatim:
+# "Resubmit smaller (Recommended)", option text: "Delete the waiting job and resubmit it unchanged except for 2 CPUs and 12 GB, so more
+# machines qualify. The code and checks stay identical." Only the CPU and memory lines changed; ConfigMap and code unchanged.
+# RERUN (-r2) 2026-11-08: the first Job (stacking-encoders-pf-smoke, 2 CPU / 12Gi) ran the q23, scenes, demos and clean stages and then hit a
+# code bug (check() got `name=` twice) in the camera stage. Fixed in commit dcf1292; the new code is in a NEW ConfigMap
+# stacking-encoders-pf-smoke-src-r2 and this Job has a new name, so nothing existing was modified or deleted. Checks unchanged.
+# RERUN (-r3) 2026-11-08: r2 hit DeadlineExceeded (3 h) at about 04:24 UTC without ever running. User decision (about 04:30 UTC),
+# verbatim: "Resubmit, longer wait (Recommended)", option text: "Same job and same cards, but it can wait up to 12 hours instead of
+# 3." Only the Job name and activeDeadlineSeconds (43200) changed vs r2; same ConfigMap stacking-encoders-pf-smoke-src-r2 (code dcf1292).
+#
+# Environment: the proxy eval Jobs' (jobs/rendered/job-eval-dinov3-s0-l4.yaml in the proxy-calibration experiment): same image,
+# `. /src/env_bundle.sh restore` (prebuilt venv + LIBERO-Plus @ 4976dc3 + assets unzip, from the existing ConfigMap
+# stacking-encoders-proxy-src, mounted read-only and NOT modified), HF secret, EGL variables. Differences: a short run-and-exit
+# command; the broad GPU card list of the eval's original manifest minus RTX A6000 and A40 (they never match nvidia.com/gpu; proxy
+# PLAN "Amendment 2026-11-06 (b)"), since this Job is short; no nvidia-smi sampling loop (the whole run is short and its GPU use
+# is brief by nature).
+# NEW code reaches the pod through a NEW ConfigMap, stacking-encoders-pf-smoke-src (src/pf_render.py, src/pf_smoke.py), created with:
+#   kubectl create configmap stacking-encoders-pf-smoke-src -n aria-world --request-timeout=30s --from-file=pf_render.py=<repo>/world-model-stacking-encoders/src/pf_render.py --from-file=pf_smoke.py=<repo>/world-model-stacking-encoders/src/pf_smoke.py
+# SRC_GIT_COMMIT below = the commit those two files were committed in. diagnostics.py comes from the existing proxy-src ConfigMap
+# (sha256 starts ffb155b4cd8c, identical to src/diagnostics.py in the repo, checked 2026-11-08).
+# Inputs: libero_goal/turn_on_the_stove_demo.hdf5 is downloaded in the pod from Hugging Face at the pinned commit f13aa24a (the file
+# opened in PLAN Feasibility 7b; the script checks its sha256). Cached features, read only: CephFS PVC stacking-encoders-features
+# (dinov3, sam3, vggt-omega) and RBD PVC michael-persistent (siglip2, c-radiov4) for the Q23 mean-feature sizes.
+# Outputs: PVC stacking-encoders-proxy, /mnt/proxy/pf-smoke/<stamp>/ (report.json, PNGs), plus a base64 tarball of the same at the end
+# of the pod log (between the markers PF_SMOKE_TGZ_B64), so nothing has to be read from the volume by touching other pods.
+# Follows _standards/08: Job, real command that exits, no sleep, no tolerations, 1 GPU, limits within 20% of requests,
+# backoffLimit 0 (a failed check is a result, not something to retry), ttl 86400, deadline 12 h from creation (queue included).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-pf-smoke-r3
+  namespace: aria-world
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 43200
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090, NVIDIA-RTX-A5000, NVIDIA-L40, NVIDIA-L40S, NVIDIA-A10, NVIDIA-L4]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net, ry-gpu-08.sdsc.optiputer.net]}  # GPU faults, 2026-11-03
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; STAMP=$(date +%Y%m%d-%H%M%S); OUT=/work/out; mkdir -p $R/logs $OUT /work/data
+          exec > >(tee -a $R/logs/pf-smoke-$STAMP.log) 2>&1
+          echo "=== pf-smoke $STAMP"; nvidia-smi -L; nproc; date -u
+          . /src/env_bundle.sh restore    # prebuilt venv + debs from the env-build Job; LIBERO-Plus assets unzip
+          python - <<'PY'
+          from huggingface_hub import snapshot_download
+          snapshot_download("yifengzhu-hf/LIBERO-datasets", repo_type="dataset", revision="f13aa24a3da8c43c7225569f28c562979fa0e35a",
+                            allow_patterns=["libero_goal/turn_on_the_stove_demo.hdf5"], local_dir="/work/data")
+          PY
+          ls -la /work/data/libero_goal; date -u
+          set +e
+          python /pf/pf_smoke.py --raw /work/data/libero_goal/turn_on_the_stove_demo.hdf5 --out $OUT
+          RC=$?
+          set -e
+          echo "=== pf_smoke.py exit code $RC"; ls -la $OUT; date -u
+          test -f $OUT/report.json
+          mkdir -p $R/pf-smoke/$STAMP
+          cp -r $OUT/. $R/pf-smoke/$STAMP/
+          echo "copied to $R/pf-smoke/$STAMP"
+          tar czf /work/pf-smoke.tgz -C $OUT .
+          ls -la /work/pf-smoke.tgz
+          echo "=== BEGIN PF_SMOKE_TGZ_B64"; base64 -w 76 /work/pf-smoke.tgz; echo "=== END PF_SMOKE_TGZ_B64"
+          echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: dcf1292458c7c3d4959f1af8db39fc0a1f3cce17}
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: "/pf:/src"}
+        - {name: SIM_DIR, value: /work/sim}
+        - {name: MUJOCO_GL, value: egl}
+        - {name: PYOPENGL_PLATFORM, value: egl}
+        - {name: NVIDIA_DRIVER_CAPABILITIES, value: "compute,utility,graphics"}
+        resources:                    # resized by the user 2026-11-08 to 2 CPU, 12Gi request (14Gi limit); scratch as the eval Jobs; limits <= 1.2x requests
+          requests: {cpu: "2", memory: 12Gi, nvidia.com/gpu: "1", ephemeral-storage: 50Gi}
+          limits:   {cpu: "2400m", memory: 14Gi, nvidia.com/gpu: "1", ephemeral-storage: 58Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: pf, mountPath: /pf, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: features, mountPath: /mnt/features, readOnly: true}
+        - {name: persistent, mountPath: /persistent, readOnly: true}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 58Gi}   # venv, LIBERO-Plus + unzipped assets, the demo file
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: pf
+        configMap: {name: stacking-encoders-pf-smoke-src-r2}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: features
+        persistentVolumeClaim: {claimName: stacking-encoders-features, readOnly: true}
+      - name: persistent
+        persistentVolumeClaim: {claimName: michael-persistent, readOnly: true}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 4Gi}

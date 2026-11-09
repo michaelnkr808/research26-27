@@ -1,0 +1,23 @@
+{
+ "device": "mps",
+ "torch": "2.15.0",
+ "hf_id": "facebook/dinov3-vitl16-pretrain-lvd1689m",
+ "bowl_box_raw_y0y1x0x1": [
+  46,
+  68,
+  50,
+  77
+ ],
+ "laplacian_energy_agentview_rgb": {
+  "stored": 1303.602783203125,
+  "rerender": 928.793701171875,
+  "stored_blurred_at_sigma": 0.4,
+  "stored_blurred": 936.890625
+ },
+ "laplacian_energy_eye_in_hand_rgb": {
+  "stored": 992.8248901367188,
+  "rerender": 795.8939819335938,
+  "stored_blurred_at_sigma": 0.4,
+  "stored_blurred": 706.5873413085938
+ }
+}

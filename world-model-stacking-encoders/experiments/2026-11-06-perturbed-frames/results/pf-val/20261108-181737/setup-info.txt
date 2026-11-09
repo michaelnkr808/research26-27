@@ -1,0 +1,2 @@
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]Loading weights: 100%|██████████| 415/415 [00:00<00:00, 12748.27it/s]
+setup ok: transformers 5.18.0 numpy 2.2.6 torch 2.7.1+cu128 h5py 3.16.0 huggingface_hub 2.2.0 dinov3 sha ea8dc2863c51be0a264bab82070e3e8836b02d51 image_mean (0.485, 0.456, 0.406) params 303129600

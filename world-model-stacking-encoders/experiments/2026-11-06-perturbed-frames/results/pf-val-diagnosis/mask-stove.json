@@ -1,0 +1,70 @@
+{
+ "base": {
+  "stored": 0.5792557379898933,
+  "rr": 0.47481838013066124
+ },
+ "masks": {
+  "3": {
+   "mask_fraction_of_pixels": 0.07568359375,
+   "repair_r2": 0.5505812018750204,
+   "repair_gain_over_rr": 0.07576282174435911,
+   "damage_r2": 0.5585021855056104,
+   "damage_loss_from_stored": -0.0207535524842829,
+   "share_of_total_abs_diff_inside_mask": 0.29339712858200073
+  },
+  "6": {
+   "mask_fraction_of_pixels": 0.1435546875,
+   "repair_r2": 0.5543160193495551,
+   "repair_gain_over_rr": 0.07949763921889386,
+   "damage_r2": 0.5391547869717332,
+   "damage_loss_from_stored": -0.040100951018160025,
+   "share_of_total_abs_diff_inside_mask": 0.4348923861980438
+  },
+  "12": {
+   "mask_fraction_of_pixels": 0.24200439453125,
+   "repair_r2": 0.5560024504888245,
+   "repair_gain_over_rr": 0.08118407035816322,
+   "damage_r2": 0.4907405456353276,
+   "damage_loss_from_stored": -0.08851519235456567,
+   "share_of_total_abs_diff_inside_mask": 0.5994670987129211
+  },
+  "25": {
+   "mask_fraction_of_pixels": 0.40277099609375,
+   "repair_r2": 0.5540670141234741,
+   "repair_gain_over_rr": 0.0792486339928129,
+   "damage_r2": 0.47762122014674835,
+   "damage_loss_from_stored": -0.10163451784314492,
+   "share_of_total_abs_diff_inside_mask": 0.7790337800979614
+  },
+  "3_inside_bowl_box": {
+   "mask_fraction_of_pixels": 0.016357421875,
+   "repair_r2": 0.47649637900370456,
+   "repair_gain_over_rr": 0.0016779988730433182,
+   "damage_r2": 0.5850129933479691,
+   "damage_loss_from_stored": 0.005757255358075808,
+   "share_of_total_abs_diff_inside_mask": 0.10611913353204727
+  },
+  "3_outside_bowl_box": {
+   "mask_fraction_of_pixels": 0.059326171875,
+   "repair_r2": 0.555143021295413,
+   "repair_gain_over_rr": 0.0803246411647518,
+   "damage_r2": 0.5508671158558723,
+   "damage_loss_from_stored": -0.028388622134020935,
+   "share_of_total_abs_diff_inside_mask": 0.18727800250053406
+  },
+  "6_outside_bowl_box": {
+   "mask_fraction_of_pixels": 0.12408447265625,
+   "repair_r2": 0.5584753781409438,
+   "repair_gain_over_rr": 0.08365699801028259,
+   "damage_r2": 0.5307570372797746,
+   "damage_loss_from_stored": -0.048498700710118636,
+   "share_of_total_abs_diff_inside_mask": 0.3228042721748352
+  }
+ },
+ "bowl_box_raw_y0y1x0x1": [
+  46,
+  68,
+  50,
+  77
+ ]
+}

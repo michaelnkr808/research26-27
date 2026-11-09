@@ -1,0 +1,80 @@
+{
+ "columns": "stored agentview | re-render agentview | stored wrist | re-render wrist (upright)",
+ "pngs": [
+  {
+   "png": "samples-0.png",
+   "rows": [
+    {
+     "file": "open_the_middle_drawer_of_the_cabinet_demo",
+     "demo": "demo_30",
+     "frame_j": 34
+    },
+    {
+     "file": "open_the_top_drawer_and_put_the_bowl_inside_demo",
+     "demo": "demo_30",
+     "frame_j": 49
+    },
+    {
+     "file": "push_the_plate_to_the_front_of_the_stove_demo",
+     "demo": "demo_30",
+     "frame_j": 35
+    },
+    {
+     "file": "put_the_bowl_on_the_plate_demo",
+     "demo": "demo_30",
+     "frame_j": 25
+    }
+   ]
+  },
+  {
+   "png": "samples-1.png",
+   "rows": [
+    {
+     "file": "put_the_bowl_on_the_stove_demo",
+     "demo": "demo_30",
+     "frame_j": 26
+    },
+    {
+     "file": "put_the_bowl_on_top_of_the_cabinet_demo",
+     "demo": "demo_30",
+     "frame_j": 25
+    },
+    {
+     "file": "put_the_cream_cheese_in_the_bowl_demo",
+     "demo": "demo_30",
+     "frame_j": 23
+    },
+    {
+     "file": "put_the_wine_bottle_on_the_rack_demo",
+     "demo": "demo_30",
+     "frame_j": 38
+    }
+   ]
+  },
+  {
+   "png": "samples-2.png",
+   "rows": [
+    {
+     "file": "put_the_wine_bottle_on_top_of_the_cabinet_demo",
+     "demo": "demo_30",
+     "frame_j": 24
+    },
+    {
+     "file": "turn_on_the_stove_demo",
+     "demo": "demo_30",
+     "frame_j": 23
+    },
+    {
+     "file": "open_the_middle_drawer_of_the_cabinet_demo",
+     "demo": "demo_33",
+     "frame_j": 68
+    },
+    {
+     "file": "open_the_top_drawer_and_put_the_bowl_inside_demo",
+     "demo": "demo_33",
+     "frame_j": 100
+    }
+   ]
+  }
+ ]
+}

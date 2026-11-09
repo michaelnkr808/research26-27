@@ -1,0 +1,1469 @@
+{
+ "checks": {
+  "raw_file_is_the_inspected_one": {
+   "pass": true,
+   "gating": false,
+   "sha256": "387fc10747696b80dea6ed8d7f2beaa162bf92ae11750b241073cbd33aac73d5",
+   "expected": "387fc10747696b80dea6ed8d7f2beaa162bf92ae11750b241073cbd33aac73d5"
+  },
+  "q23_all_five_feature_files_read": {
+   "pass": true,
+   "gating": true,
+   "files": {
+    "dinov3": true,
+    "sam3": true,
+    "vggt-omega": true,
+    "siglip2": true,
+    "c-radiov4": true
+   }
+  },
+  "q23_both_cameras_same_size": {
+   "pass": true,
+   "gating": false,
+   "sizes": {
+    "dinov3": {
+     "agentview_rgb": 1024,
+     "eye_in_hand_rgb": 1024
+    },
+    "sam3": {
+     "agentview_rgb": 1024,
+     "eye_in_hand_rgb": 1024
+    },
+    "vggt-omega": {
+     "agentview_rgb": 2048,
+     "eye_in_hand_rgb": 2048
+    },
+    "siglip2": {
+     "agentview_rgb": 1024,
+     "eye_in_hand_rgb": 1024
+    },
+    "c-radiov4": {
+     "agentview_rgb": 1152,
+     "eye_in_hand_rgb": 1152
+    }
+   }
+  },
+  "scenes_read": {
+   "pass": true,
+   "gating": true
+  },
+  "demos_none_is_test": {
+   "pass": true,
+   "gating": true,
+   "chosen": [
+    "demo_0",
+    "demo_29",
+    "demo_30"
+   ],
+   "split_of_chosen": {
+    "demo_0": "train",
+    "demo_29": "train",
+    "demo_30": "val"
+   },
+   "split_counts": {
+    "train": 30,
+    "val": 10,
+    "test": 10
+   },
+   "n_demos": 50
+  },
+  "demos_fixture_list_found": {
+   "pass": true,
+   "gating": true,
+   "fixtures": [
+    "flat_stove_1_main",
+    "wine_rack_1_main",
+    "wooden_cabinet_1_main"
+   ],
+   "info": {
+    "flat_stove_1_main": {
+     "pos_spread_max_m": 0.019357000000000013,
+     "quat_spread_max": 0.0,
+     "pos_min": [
+      -0.419816,
+      0.200246,
+      0.905
+     ],
+     "pos_max": [
+      -0.400459,
+      0.219481,
+      0.905
+     ]
+    },
+    "wine_rack_1_main": {
+     "pos_spread_max_m": 0.018970000000000042,
+     "quat_spread_max": 0.0,
+     "pos_min": [
+      -0.269618,
+      -0.269274,
+      0.92
+     ],
+     "pos_max": [
+      -0.250648,
+      -0.251054,
+      0.92
+     ]
+    },
+    "wooden_cabinet_1_main": {
+     "pos_spread_max_m": 0.019851600000000004,
+     "quat_spread_max": 0.0,
+     "pos_min": [
+      0.0201043,
+      -0.249448,
+      0.905
+     ],
+     "pos_max": [
+      0.0399559,
+      -0.230055,
+      0.905
+     ]
+    }
+   },
+   "n_demos_compared": 40,
+   "note": "from train+val demos only; the test demos were not read"
+  },
+  "clean_state_length_demo_0": {
+   "pass": true,
+   "gating": true,
+   "state_len_stored": 79,
+   "state_len_env": 79
+  },
+  "q20_env_fixtures_vs_demo_demo_0": {
+   "pass": true,
+   "gating": true,
+   "details": {
+    "flat_stove_1_main": {
+     "ok": true,
+     "z_ok": true,
+     "quat_ok": true,
+     "xy_in_region": true,
+     "env_pos": [
+      -0.409367688741435,
+      0.2040126508918737,
+      0.905
+     ],
+     "demo_pos": [
+      -0.418879,
+      0.218237,
+      0.905
+     ],
+     "env_quat": [
+      1.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "demo_quat": [
+      1.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "demo_quat_present": false,
+     "z_diff": 0.0,
+     "quat_max_diff": 0.0,
+     "region": "main_table_stove_region",
+     "bddl_range_offsets_xmin_ymin_xmax_ymax": [
+      -0.42,
+      0.2,
+      -0.4,
+      0.22
+     ],
+     "world_x_range": [
+      -0.42,
+      -0.4
+     ],
+     "world_y_range": [
+      0.2,
+      0.22
+     ],
+     "demo_xy_in_region": true
+    },
+    "wine_rack_1_main": {
+     "ok": true,
+     "z_ok": true,
+     "quat_ok": true,
+     "xy_in_region": true,
+     "env_pos": [
+      -0.2550905466120594,
+      -0.2566844547973543,
+      0.9199999999999999
+     ],
+     "demo_pos": [
+      -0.257198,
+      -0.265074,
+      0.92
+     ],
+     "env_quat": [
+      6.123233995736766e-17,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "demo_quat": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "demo_quat_present": true,
+     "z_diff": 1.1102230246251565e-16,
+     "quat_max_diff": 6.123233995736766e-17,
+     "region": "main_table_wine_rack_region",
+     "bddl_range_offsets_xmin_ymin_xmax_ymax": [
+      -0.27,
+      -0.27,
+      -0.25,
+      -0.25
+     ],
+     "world_x_range": [
+      -0.27,
+      -0.25
+     ],
+     "world_y_range": [
+      -0.27,
+      -0.25
+     ],
+     "demo_xy_in_region": true
+    },
+    "wooden_cabinet_1_main": {
+     "ok": true,
+     "z_ok": true,
+     "quat_ok": true,
+     "xy_in_region": true,
+     "env_pos": [
+      0.03625948486807539,
+      -0.2349975947133904,
+      0.905
+     ],
+     "demo_pos": [
+      0.0346026,
+      -0.249329,
+      0.905
+     ],
+     "env_quat": [
+      6.123233995736766e-17,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "demo_quat": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "demo_quat_present": true,
+     "z_diff": 0.0,
+     "quat_max_diff": 6.123233995736766e-17,
+     "region": "main_table_cabinet_region",
+     "bddl_range_offsets_xmin_ymin_xmax_ymax": [
+      0.02,
+      -0.25,
+      0.04,
+      -0.23
+     ],
+     "world_x_range": [
+      0.02,
+      0.04
+     ],
+     "world_y_range": [
+      -0.25,
+      -0.23
+     ],
+     "demo_xy_in_region": true
+    }
+   }
+  },
+  "fixtures_after_restore_clean_demo_0_k0": {
+   "pass": true,
+   "gating": true,
+   "details": {
+    "flat_stove_1_main": {
+     "ok": true,
+     "pos_max_diff": 0.0,
+     "quat_max_diff": 0.0
+    },
+    "wine_rack_1_main": {
+     "ok": true,
+     "pos_max_diff": 0.0,
+     "quat_max_diff": 0.0
+    },
+    "wooden_cabinet_1_main": {
+     "ok": true,
+     "pos_max_diff": 0.0,
+     "quat_max_diff": 0.0
+    }
+   }
+  },
+  "fixtures_after_restore_clean_demo_0_k78": {
+   "pass": true,
+   "gating": true,
+   "details": {
+    "flat_stove_1_main": {
+     "ok": true,
+     "pos_max_diff": 0.0,
+     "quat_max_diff": 0.0
+    },
+    "wine_rack_1_main": {
+     "ok": true,
+     "pos_max_diff": 0.0,
+     "quat_max_diff": 0.0
+    },
+    "wooden_cabinet_1_main": {
+     "ok": true,
+     "pos_max_diff": 0.0,
+     "quat_max_diff": 0.0
+    }
+   }
+  },
+  "clean_state_length_demo_29": {
+   "pass": true,
+   "gating": true,
+   "state_len_stored": 79,
+   "state_len_env": 79
+  },
+  "q20_env_fixtures_vs_demo_demo_29": {
+   "pass": true,
+   "gating": true,
+   "details": {
+    "flat_stove_1_main": {
+     "ok": true,
+     "z_ok": true,
+     "quat_ok": true,
+     "xy_in_region": true,
+     "env_pos": [
+      -0.4001800299623097,
+      0.20452644540169806,
+      0.905
+     ],
+     "demo_pos": [
+      -0.417241,
+      0.203977,
+      0.905
+     ],
+     "env_quat": [
+      1.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "demo_quat": [
+      1.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "demo_quat_present": false,
+     "z_diff": 0.0,
+     "quat_max_diff": 0.0,
+     "region": "main_table_stove_region",
+     "bddl_range_offsets_xmin_ymin_xmax_ymax": [
+      -0.42,
+      0.2,
+      -0.4,
+      0.22
+     ],
+     "world_x_range": [
+      -0.42,
+      -0.4
+     ],
+     "world_y_range": [
+      0.2,
+      0.22
+     ],
+     "demo_xy_in_region": true
+    },
+    "wine_rack_1_main": {
+     "ok": true,
+     "z_ok": true,
+     "quat_ok": true,
+     "xy_in_region": true,
+     "env_pos": [
+      -0.2537683793758487,
+      -0.2646934499428859,
+      0.9199999999999999
+     ],
+     "demo_pos": [
+      -0.252354,
+      -0.261329,
+      0.92
+     ],
+     "env_quat": [
+      6.123233995736766e-17,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "demo_quat": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "demo_quat_present": true,
+     "z_diff": 1.1102230246251565e-16,
+     "quat_max_diff": 6.123233995736766e-17,
+     "region": "main_table_wine_rack_region",
+     "bddl_range_offsets_xmin_ymin_xmax_ymax": [
+      -0.27,
+      -0.27,
+      -0.25,
+      -0.25
+     ],
+     "world_x_range": [
+      -0.27,
+      -0.25
+     ],
+     "world_y_range": [
+      -0.27,
+      -0.25
+     ],
+     "demo_xy_in_region": true
+    },
+    "wooden_cabinet_1_main": {
+     "ok": true,
+     "z_ok": true,
+     "quat_ok": true,
+     "xy_in_region": true,
+     "env_pos": [
+      0.03115713742392024,
+      -0.23710339554717577,
+      0.905
+     ],
+     "demo_pos": [
+      0.0247335,
+      -0.231913,
+      0.905
+     ],
+     "env_quat": [
+      6.123233995736766e-17,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "demo_quat": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "demo_quat_present": true,
+     "z_diff": 0.0,
+     "quat_max_diff": 6.123233995736766e-17,
+     "region": "main_table_cabinet_region",
+     "bddl_range_offsets_xmin_ymin_xmax_ymax": [
+      0.02,
+      -0.25,
+      0.04,
+      -0.23
+     ],
+     "world_x_range": [
+      0.02,
+      0.04
+     ],
+     "world_y_range": [
+      -0.25,
+      -0.23
+     ],
+     "demo_xy_in_region": true
+    }
+   }
+  },
+  "fixtures_after_restore_clean_demo_29_k0": {
+   "pass": true,
+   "gating": true,
+   "details": {
+    "flat_stove_1_main": {
+     "ok": true,
+     "pos_max_diff": 0.0,
+     "quat_max_diff": 0.0
+    },
+    "wine_rack_1_main": {
+     "ok": true,
+     "pos_max_diff": 0.0,
+     "quat_max_diff": 0.0
+    },
+    "wooden_cabinet_1_main": {
+     "ok": true,
+     "pos_max_diff": 0.0,
+     "quat_max_diff": 0.0
+    }
+   }
+  },
+  "fixtures_after_restore_clean_demo_29_k94": {
+   "pass": true,
+   "gating": true,
+   "details": {
+    "flat_stove_1_main": {
+     "ok": true,
+     "pos_max_diff": 0.0,
+     "quat_max_diff": 0.0
+    },
+    "wine_rack_1_main": {
+     "ok": true,
+     "pos_max_diff": 0.0,
+     "quat_max_diff": 0.0
+    },
+    "wooden_cabinet_1_main": {
+     "ok": true,
+     "pos_max_diff": 0.0,
+     "quat_max_diff": 0.0
+    }
+   }
+  },
+  "clean_state_length_demo_30": {
+   "pass": true,
+   "gating": true,
+   "state_len_stored": 79,
+   "state_len_env": 79
+  },
+  "q20_env_fixtures_vs_demo_demo_30": {
+   "pass": true,
+   "gating": true,
+   "details": {
+    "flat_stove_1_main": {
+     "ok": true,
+     "z_ok": true,
+     "quat_ok": true,
+     "xy_in_region": true,
+     "env_pos": [
+      -0.41761943096875126,
+      0.21762909896742771,
+      0.905
+     ],
+     "demo_pos": [
+      -0.405471,
+      0.218464,
+      0.905
+     ],
+     "env_quat": [
+      1.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "demo_quat": [
+      1.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "demo_quat_present": false,
+     "z_diff": 0.0,
+     "quat_max_diff": 0.0,
+     "region": "main_table_stove_region",
+     "bddl_range_offsets_xmin_ymin_xmax_ymax": [
+      -0.42,
+      0.2,
+      -0.4,
+      0.22
+     ],
+     "world_x_range": [
+      -0.42,
+      -0.4
+     ],
+     "world_y_range": [
+      0.2,
+      0.22
+     ],
+     "demo_xy_in_region": true
+    },
+    "wine_rack_1_main": {
+     "ok": true,
+     "z_ok": true,
+     "quat_ok": true,
+     "xy_in_region": true,
+     "env_pos": [
+      -0.26798889790440633,
+      -0.26401819873487975,
+      0.9199999999999999
+     ],
+     "demo_pos": [
+      -0.25951,
+      -0.256335,
+      0.92
+     ],
+     "env_quat": [
+      6.123233995736766e-17,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "demo_quat": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "demo_quat_present": true,
+     "z_diff": 1.1102230246251565e-16,
+     "quat_max_diff": 6.123233995736766e-17,
+     "region": "main_table_wine_rack_region",
+     "bddl_range_offsets_xmin_ymin_xmax_ymax": [
+      -0.27,
+      -0.27,
+      -0.25,
+      -0.25
+     ],
+     "world_x_range": [
+      -0.27,
+      -0.25
+     ],
+     "world_y_range": [
+      -0.27,
+      -0.25
+     ],
+     "demo_xy_in_region": true
+    },
+    "wooden_cabinet_1_main": {
+     "ok": true,
+     "z_ok": true,
+     "quat_ok": true,
+     "xy_in_region": true,
+     "env_pos": [
+      0.03913595285127992,
+      -0.23214790838004326,
+      0.905
+     ],
+     "demo_pos": [
+      0.0238004,
+      -0.248319,
+      0.905
+     ],
+     "env_quat": [
+      6.123233995736766e-17,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "demo_quat": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "demo_quat_present": true,
+     "z_diff": 0.0,
+     "quat_max_diff": 6.123233995736766e-17,
+     "region": "main_table_cabinet_region",
+     "bddl_range_offsets_xmin_ymin_xmax_ymax": [
+      0.02,
+      -0.25,
+      0.04,
+      -0.23
+     ],
+     "world_x_range": [
+      0.02,
+      0.04
+     ],
+     "world_y_range": [
+      -0.25,
+      -0.23
+     ],
+     "demo_xy_in_region": true
+    }
+   }
+  },
+  "fixtures_after_restore_clean_demo_30_k0": {
+   "pass": true,
+   "gating": true,
+   "details": {
+    "flat_stove_1_main": {
+     "ok": true,
+     "pos_max_diff": 0.0,
+     "quat_max_diff": 0.0
+    },
+    "wine_rack_1_main": {
+     "ok": true,
+     "pos_max_diff": 0.0,
+     "quat_max_diff": 0.0
+    },
+    "wooden_cabinet_1_main": {
+     "ok": true,
+     "pos_max_diff": 0.0,
+     "quat_max_diff": 0.0
+    }
+   }
+  },
+  "fixtures_after_restore_clean_demo_30_k93": {
+   "pass": true,
+   "gating": true,
+   "details": {
+    "flat_stove_1_main": {
+     "ok": true,
+     "pos_max_diff": 0.0,
+     "quat_max_diff": 0.0
+    },
+    "wine_rack_1_main": {
+     "ok": true,
+     "pos_max_diff": 0.0,
+     "quat_max_diff": 0.0
+    },
+    "wooden_cabinet_1_main": {
+     "ok": true,
+     "pos_max_diff": 0.0,
+     "quat_max_diff": 0.0
+    }
+   }
+  },
+  "orientation_matches_stored": {
+   "pass": true,
+   "gating": true,
+   "mae_direct": {
+    "agentview_image": 1.921616170141432,
+    "robot0_eye_in_hand_image": 1.571277767419815
+   },
+   "mae_vs_stored_rotated_180": {
+    "agentview_image": 74.74900394015842,
+    "robot0_eye_in_hand_image": 66.99742296006944
+   }
+  },
+  "restored_arm_joints_equal_stored": {
+   "pass": true,
+   "gating": false,
+   "max_diff": 0.0,
+   "n": 18
+  },
+  "camera_no_exception": {
+   "pass": false,
+   "gating": true,
+   "error": "TypeError(\"check() got multiple values for argument 'name'\")",
+   "traceback": "Traceback (most recent call last):\n  File \"/pf/pf_smoke.py\", line 61, in run\n    out = fn(*a, **k)\n          ^^^^^^^^^^^\n  File \"/pf/pf_smoke.py\", line 348, in stage_camera\n    check(\"camera_zero_change_state_length\", n_env0 == states.shape[1], env=n_env0, stored=int(states.shape[1]), name=name)\nTypeError: check() got multiple values for argument 'name'\n"
+  }
+ },
+ "stages": {
+  "q23": {
+   "seconds": 25.6,
+   "ok": true
+  },
+  "scenes": {
+   "seconds": 8.7,
+   "ok": true
+  },
+  "demos": {
+   "seconds": 0.1,
+   "ok": true
+  },
+  "clean": {
+   "seconds": 6.1,
+   "ok": true
+  },
+  "camera": {
+   "seconds": 0.7,
+   "ok": false,
+   "error": "TypeError(\"check() got multiple values for argument 'name'\")"
+  },
+  "perturb": {
+   "skipped": "stopped at camera_no_exception"
+  }
+ },
+ "stopped_at": "camera_no_exception",
+ "notes": [],
+ "provenance": {
+  "SRC_GIT_COMMIT": "9f1a03e281f8aad4db89aa014e26cbb5390c3570",
+  "mujoco": "3.3.2",
+  "robosuite": "1.4.0",
+  "numpy": "1.26.4",
+  "pillow": "13.0.0",
+  "h5py": "3.16.0",
+  "raw_file": "/work/data/libero_goal/turn_on_the_stove_demo.hdf5",
+  "raw_sha256": "387fc10747696b80dea6ed8d7f2beaa162bf92ae11750b241073cbd33aac73d5",
+  "diagnostics_sha256": "ffb155b4cd8cb00813b9a4c9213c6553f1ea2d0e4a27ca96d272e8acec16d88b",
+  "gpu": "NVIDIA L4",
+  "started_utc": "2026-11-08T01:19:43Z"
+ },
+ "q23": {
+  "mean_dim_per_camera": {
+   "dinov3": 1024,
+   "sam3": 1024,
+   "vggt-omega": 2048,
+   "siglip2": 1024,
+   "c-radiov4": 1152
+  },
+  "smallest": 1024,
+  "differ": true,
+  "reduce_to_smallest_with_PCA": [
+   "c-radiov4",
+   "vggt-omega"
+  ],
+  "details": {
+   "dinov3": {
+    "path": "/mnt/features/stacking-encoders/features/dinov3/libero_goal/turn_on_the_stove_demo.h5",
+    "exists": true,
+    "n_demos": 50,
+    "cams": {
+     "agentview_rgb": {
+      "mean_shape": [
+       80,
+       1024
+      ],
+      "global_shape": [
+       80,
+       1024
+      ],
+      "mean_dtype": "float16"
+     },
+     "eye_in_hand_rgb": {
+      "mean_shape": [
+       80,
+       1024
+      ],
+      "global_shape": [
+       80,
+       1024
+      ],
+      "mean_dtype": "float16"
+     }
+    },
+    "meta": {
+     "source_file": "/work/data/libero_goal/turn_on_the_stove_demo.hdf5",
+     "encoder": "dinov3",
+     "hf_id": "facebook/dinov3-vitl16-pretrain-lvd1689m",
+     "resolution": 224,
+     "cams": [
+      "agentview_rgb",
+      "eye_in_hand_rgb"
+     ],
+     "frame_stride": 1,
+     "rotate180": true,
+     "grid": 4,
+     "dtype": "float32",
+     "n_demos": 50,
+     "git_commit": "0cd09b5e745978cb4c61003959aa090674cbbca5"
+    }
+   },
+   "sam3": {
+    "path": "/mnt/features/stacking-encoders/features/sam3/libero_goal/turn_on_the_stove_demo.h5",
+    "exists": true,
+    "n_demos": 50,
+    "cams": {
+     "agentview_rgb": {
+      "mean_shape": [
+       80,
+       1024
+      ],
+      "global_shape": [
+       80,
+       1024
+      ],
+      "mean_dtype": "float16"
+     },
+     "eye_in_hand_rgb": {
+      "mean_shape": [
+       80,
+       1024
+      ],
+      "global_shape": [
+       80,
+       1024
+      ],
+      "mean_dtype": "float16"
+     }
+    },
+    "meta": {
+     "source_file": "/work/data/libero_goal/turn_on_the_stove_demo.hdf5",
+     "encoder": "sam3",
+     "hf_id": "facebook/sam3",
+     "resolution": 1008,
+     "cams": [
+      "agentview_rgb",
+      "eye_in_hand_rgb"
+     ],
+     "frame_stride": 1,
+     "rotate180": true,
+     "grid": 4,
+     "dtype": "float16",
+     "n_demos": 50,
+     "git_commit": "9e3bdb261eaf6f8a86398a1bdf1517414fb4f6b9"
+    }
+   },
+   "vggt-omega": {
+    "path": "/mnt/features/stacking-encoders/features/vggt-omega/libero_goal/turn_on_the_stove_demo.h5",
+    "exists": true,
+    "n_demos": 50,
+    "cams": {
+     "agentview_rgb": {
+      "mean_shape": [
+       80,
+       2048
+      ],
+      "global_shape": [
+       80,
+       2048
+      ],
+      "mean_dtype": "float16"
+     },
+     "eye_in_hand_rgb": {
+      "mean_shape": [
+       80,
+       2048
+      ],
+      "global_shape": [
+       80,
+       2048
+      ],
+      "mean_dtype": "float16"
+     }
+    },
+    "meta": {
+     "source_file": "/work/data/libero_goal/turn_on_the_stove_demo.hdf5",
+     "encoder": "vggt-omega",
+     "hf_id": "facebook/VGGT-Omega/vggt_omega_1b_512.pt",
+     "resolution": 512,
+     "cams": [
+      "agentview_rgb",
+      "eye_in_hand_rgb"
+     ],
+     "frame_stride": 1,
+     "rotate180": true,
+     "grid": 4,
+     "dtype": "float16",
+     "n_demos": 50,
+     "git_commit": "9e3bdb261eaf6f8a86398a1bdf1517414fb4f6b9"
+    }
+   },
+   "siglip2": {
+    "path": "/persistent/stacking-encoders/features/siglip2/libero_goal/turn_on_the_stove_demo.h5",
+    "exists": true,
+    "n_demos": 50,
+    "cams": {
+     "agentview_rgb": {
+      "mean_shape": [
+       80,
+       1024
+      ],
+      "global_shape": [
+       80,
+       1024
+      ],
+      "mean_dtype": "float16"
+     },
+     "eye_in_hand_rgb": {
+      "mean_shape": [
+       80,
+       1024
+      ],
+      "global_shape": [
+       80,
+       1024
+      ],
+      "mean_dtype": "float16"
+     }
+    },
+    "meta": {
+     "source_file": "/work/data/libero_goal/turn_on_the_stove_demo.hdf5",
+     "encoder": "siglip2",
+     "hf_id": "google/siglip2-large-patch16-384",
+     "resolution": 384,
+     "cams": [
+      "agentview_rgb",
+      "eye_in_hand_rgb"
+     ],
+     "frame_stride": 1,
+     "rotate180": true,
+     "grid": 4,
+     "dtype": "float16",
+     "n_demos": 50,
+     "git_commit": "f4a7b82edf0e828e15dd057463e82e71f53d666d"
+    }
+   },
+   "c-radiov4": {
+    "path": "/persistent/stacking-encoders/features/c-radiov4/libero_goal/turn_on_the_stove_demo.h5",
+    "exists": true,
+    "n_demos": 50,
+    "cams": {
+     "agentview_rgb": {
+      "mean_shape": [
+       80,
+       1152
+      ],
+      "global_shape": [
+       80,
+       2304
+      ],
+      "mean_dtype": "float16"
+     },
+     "eye_in_hand_rgb": {
+      "mean_shape": [
+       80,
+       1152
+      ],
+      "global_shape": [
+       80,
+       2304
+      ],
+      "mean_dtype": "float16"
+     }
+    },
+    "meta": {
+     "source_file": "/work/data/libero_goal/turn_on_the_stove_demo.hdf5",
+     "encoder": "c-radiov4",
+     "hf_id": "nvidia/C-RADIOv4-SO400M",
+     "resolution": 448,
+     "cams": [
+      "agentview_rgb",
+      "eye_in_hand_rgb"
+     ],
+     "frame_stride": 1,
+     "rotate180": true,
+     "grid": 4,
+     "dtype": "float16",
+     "n_demos": 50,
+     "git_commit": "f4a7b82edf0e828e15dd057463e82e71f53d666d"
+    }
+   }
+  }
+ },
+ "scenes": {
+  "base": {
+   "bddl": "turn_on_the_stove",
+   "problem_name": "libero_tabletop_manipulation",
+   "scene_xml": "/work/sim/LIBERO-plus/libero/libero/assets/scenes/libero_tabletop_base_style.xml",
+   "scene_properties": {
+    "floor_style": "light-gray",
+    "wall_style": "light-gray-plaster"
+   }
+  },
+  "light_1": {
+   "bddl": "turn_on_the_stove_light_1",
+   "problem_name": "libero_tabletop_manipulation_tabletop_light_sync_modified_411",
+   "scene_xml": "/work/sim/LIBERO-plus/libero/libero/assets/scenes/lights/tabletop_light_sync_modified_411.xml",
+   "scene_properties": {
+    "floor_style": "light-gray",
+    "wall_style": "light-gray-plaster"
+   },
+   "diff_vs_base": {
+    "n_changed_attrs": 4,
+    "n_added": 0,
+    "n_removed": 0,
+    "changed_attrs": [
+     {
+      "element": "/mujoco/worldbody/light[light1]",
+      "attr": "diffuse",
+      "base": ".8 .8 .8",
+      "variant": "0.7 0.7 0.7"
+     },
+     {
+      "element": "/mujoco/worldbody/light[light1]",
+      "attr": "dir",
+      "base": "0 -.15 -1",
+      "variant": "0 1 0"
+     },
+     {
+      "element": "/mujoco/worldbody/light[light2]",
+      "attr": "diffuse",
+      "base": ".8 .8 .8",
+      "variant": "0.7 0.7 0.7"
+     },
+     {
+      "element": "/mujoco/worldbody/light[light2]",
+      "attr": "dir",
+      "base": "0 -.15 -1",
+      "variant": "0 1 0"
+     }
+    ],
+    "added": [],
+    "removed": [],
+    "unified_diff_head": [
+     "--- base",
+     "+++ variant",
+     "@@ -49,2 +49,2 @@",
+     "-    <light name=\"light1\" diffuse=\".8 .8 .8\" dir=\"0 -.15 -1\" directional=\"false\" pos=\"1 1 4.0\" specular=\"0.3 0.3 0.3\" castshadow=\"false\"/>",
+     "-    <light name=\"light2\" diffuse=\".8 .8 .8\" dir=\"0 -.15 -1\" directional=\"false\" pos=\"-3. -3. 4.0\" specular=\"0.3 0.3 0.3\" castshadow=\"false\"/>",
+     "+    <light name=\"light1\" diffuse=\"0.7 0.7 0.7\" dir=\"0 1 0\" directional=\"false\" pos=\"1 1 4.0\" specular=\"0.3 0.3 0.3\" castshadow=\"false\"/>",
+     "+    <light name=\"light2\" diffuse=\"0.7 0.7 0.7\" dir=\"0 1 0\" directional=\"false\" pos=\"-3. -3. 4.0\" specular=\"0.3 0.3 0.3\" castshadow=\"false\"/>"
+    ],
+    "unified_diff_lines": 7,
+    "base_bytes": 8441,
+    "variant_bytes": 8439
+   }
+  },
+  "light_11": {
+   "bddl": "turn_on_the_stove_light_11",
+   "problem_name": "libero_tabletop_manipulation_tabletop_light_sync_modified_420",
+   "scene_xml": "/work/sim/LIBERO-plus/libero/libero/assets/scenes/lights/tabletop_light_sync_modified_420.xml",
+   "scene_properties": {
+    "floor_style": "light-gray",
+    "wall_style": "light-gray-plaster"
+   },
+   "diff_vs_base": {
+    "n_changed_attrs": 8,
+    "n_added": 0,
+    "n_removed": 0,
+    "changed_attrs": [
+     {
+      "element": "/mujoco/worldbody/light[light1]",
+      "attr": "castshadow",
+      "base": "false",
+      "variant": "true"
+     },
+     {
+      "element": "/mujoco/worldbody/light[light1]",
+      "attr": "diffuse",
+      "base": ".8 .8 .8",
+      "variant": "0.7 0.7 0.7"
+     },
+     {
+      "element": "/mujoco/worldbody/light[light1]",
+      "attr": "dir",
+      "base": "0 -.15 -1",
+      "variant": "-1 0 0"
+     },
+     {
+      "element": "/mujoco/worldbody/light[light1]",
+      "attr": "specular",
+      "base": "0.3 0.3 0.3",
+      "variant": "0.7 0.7 0.7"
+     },
+     {
+      "element": "/mujoco/worldbody/light[light2]",
+      "attr": "castshadow",
+      "base": "false",
+      "variant": "true"
+     },
+     {
+      "element": "/mujoco/worldbody/light[light2]",
+      "attr": "diffuse",
+      "base": ".8 .8 .8",
+      "variant": "0.7 0.7 0.7"
+     },
+     {
+      "element": "/mujoco/worldbody/light[light2]",
+      "attr": "dir",
+      "base": "0 -.15 -1",
+      "variant": "-1 0 0"
+     },
+     {
+      "element": "/mujoco/worldbody/light[light2]",
+      "attr": "specular",
+      "base": "0.3 0.3 0.3",
+      "variant": "0.7 0.7 0.7"
+     }
+    ],
+    "added": [],
+    "removed": [],
+    "unified_diff_head": [
+     "--- base",
+     "+++ variant",
+     "@@ -49,2 +49,2 @@",
+     "-    <light name=\"light1\" diffuse=\".8 .8 .8\" dir=\"0 -.15 -1\" directional=\"false\" pos=\"1 1 4.0\" specular=\"0.3 0.3 0.3\" castshadow=\"false\"/>",
+     "-    <light name=\"light2\" diffuse=\".8 .8 .8\" dir=\"0 -.15 -1\" directional=\"false\" pos=\"-3. -3. 4.0\" specular=\"0.3 0.3 0.3\" castshadow=\"false\"/>",
+     "+    <light name=\"light1\" diffuse=\"0.7 0.7 0.7\" dir=\"-1 0 0\" directional=\"false\" pos=\"1 1 4.0\" specular=\"0.7 0.7 0.7\" castshadow=\"true\"/>",
+     "+    <light name=\"light2\" diffuse=\"0.7 0.7 0.7\" dir=\"-1 0 0\" directional=\"false\" pos=\"-3. -3. 4.0\" specular=\"0.7 0.7 0.7\" castshadow=\"true\"/>"
+    ],
+    "unified_diff_lines": 7,
+    "base_bytes": 8441,
+    "variant_bytes": 8439
+   }
+  },
+  "background_table_1": {
+   "bddl": "turn_on_the_stove_table_1",
+   "problem_name": "libero_tabletop_manipulation_tabletop_table_fabricstring001_disp_4k",
+   "scene_xml": "/work/sim/LIBERO-plus/libero/libero/assets/scenes/tabletop250/tabletop_table_FabricString001_DISP_4K.xml",
+   "scene_properties": {
+    "floor_style": "light-gray",
+    "wall_style": "light-gray-plaster"
+   },
+   "diff_vs_base": {
+    "n_changed_attrs": 1,
+    "n_added": 0,
+    "n_removed": 0,
+    "changed_attrs": [
+     {
+      "element": "/mujoco/asset/texture[tex-table]",
+      "attr": "file",
+      "base": "../textures/martin_novak_wood_table.png",
+      "variant": "../phs/FabricString001_DISP_4K.png"
+     }
+    ],
+    "added": [],
+    "removed": [],
+    "unified_diff_head": [
+     "--- base",
+     "+++ variant",
+     "@@ -0,0 +1 @@",
+     "+<?xml version='1.0' encoding='UTF-8'?>",
+     "@@ -5,2 +6 @@",
+     "-    <material name=\"floorplane\" reflectance=\"0.0\" shininess=\"0.0\"",
+     "-\t      specular=\"0.0\" texrepeat=\"3 3\" texture=\"texplane\" texuniform=\"true\"/>",
+     "+    <material name=\"floorplane\" reflectance=\"0.0\" shininess=\"0.0\" specular=\"0.0\" texrepeat=\"3 3\" texture=\"texplane\" texuniform=\"true\"/>",
+     "@@ -8,2 +8,2 @@",
+     "-    <texture file=\"../textures/martin_novak_wood_table.png\" type=\"cube\" name=\"tex-table\"/>",
+     "-    <material name=\"table_texture\" reflectance=\"0.0\" shininess=\"0.0\" specular=\"0.2\" texrepeat=\"1 1\" texture=\"tex-table\" />",
+     "+    <texture file=\"../phs/FabricString001_DISP_4K.png\" type=\"cube\" name=\"tex-table\"/>",
+     "+    <material name=\"table_texture\" reflectance=\"0.0\" shininess=\"0.0\" specular=\"0.2\" texrepeat=\"1 1\" texture=\"tex-table\"/>",
+     "@@ -12 +12 @@",
+     "-    <material name=\"table_legs\" reflectance=\"0.8\" shininess=\"0.8\" texrepeat=\"1 1\" texture=\"tex-table-legs\" />",
+     "+    <material name=\"table_legs\" reflectance=\"0.8\" shininess=\"0.8\" texrepeat=\"1 1\" texture=\"tex-table-legs\"/>",
+     "@@ -15,2 +15 @@",
+     "-",
+     "-    <material name=\"walls_mat\" reflectance=\"0.0\" shininess=\"0.1\" specular=\"0.8\" texrepeat=\"3 3\" texture=\"tex-wall\" texuniform=\"true\" />",
+     "+    <material name=\"walls_mat\" reflectance=\"0.0\" shininess=\"0.1\" specular=\"0.8\" texrepeat=\"3 3\" texture=\"tex-wall\" texuniform=\"true\"/>",
+     "@@ -18,3 +17,2 @@",
+     "-    <texture  name=\"textable\" builtin=\"flat\" height=\"512\" width=\"512\" rgb1=\"0.5 0.5 0.5\" rgb2=\"0.5 0.5 0.5\"/>",
+     "-    <material name=\"table_mat\" texture=\"textable\" />",
+     "-",
+     "+    <texture name=\"textable\" builtin=\"flat\" height=\"512\" width=\"512\" rgb1=\"0.5 0.5 0.5\" rgb2=\"0.5 0.5 0.5\"/>",
+     "+    <material name=\"table_mat\" texture=\"textable\"/>",
+     "@@ -30 +27,0 @@",
+     "-    ",
+     "@@ -48 +44,0 @@",
+     "-",
+     "@@ -51 +46,0 @@",
+     "-",
+     "@@ -67 +61,0 @@",
+     "-    ",
+     "@@ -92 +85,0 @@",
+     "-",
+     "@@ -94 +87 @@",
+     "-    <camera mode=\"fixed\" name=\"sideview\" pos=\"-0.05651774593317116 1.2761224129427358 1.4879572214102434\" quat=\"0.009905065491771751 0.006877963156909582 0.5912228352893879 0.806418094001364\" />",
+     "+    <camera mode=\"fixed\" name=\"sideview\" pos=\"-0.05651774593317116 1.2761224129427358 1.4879572214102434\" quat=\"0.009905065491771751 0.006877963156909582 0.5912228352893879 0.806418094001364\"/>"
+    ],
+    "unified_diff_lines": 39,
+    "base_bytes": 8441,
+    "variant_bytes": 8447
+   }
+  },
+  "background_tb_13": {
+   "bddl": "turn_on_the_stove_tb_13",
+   "problem_name": "libero_tabletop_manipulation_tabletop_table_cobblestone01_disp_6k_wall_cream",
+   "scene_xml": "/work/sim/LIBERO-plus/libero/libero/assets/scenes/tabletop_table_Cobblestone01_DISP_6K.xml",
+   "scene_properties": {
+    "floor_style": "light-gray",
+    "wall_style": "cream"
+   },
+   "diff_vs_base": {
+    "n_changed_attrs": 1,
+    "n_added": 0,
+    "n_removed": 0,
+    "changed_attrs": [
+     {
+      "element": "/mujoco/asset/texture[tex-table]",
+      "attr": "file",
+      "base": "../textures/martin_novak_wood_table.png",
+      "variant": "ph/Cobblestone01_DISP_6K.png"
+     }
+    ],
+    "added": [],
+    "removed": [],
+    "unified_diff_head": [
+     "--- base",
+     "+++ variant",
+     "@@ -0,0 +1 @@",
+     "+<?xml version='1.0' encoding='UTF-8'?>",
+     "@@ -5,2 +6 @@",
+     "-    <material name=\"floorplane\" reflectance=\"0.0\" shininess=\"0.0\"",
+     "-\t      specular=\"0.0\" texrepeat=\"3 3\" texture=\"texplane\" texuniform=\"true\"/>",
+     "+    <material name=\"floorplane\" reflectance=\"0.0\" shininess=\"0.0\" specular=\"0.0\" texrepeat=\"3 3\" texture=\"texplane\" texuniform=\"true\"/>",
+     "@@ -8,2 +8,2 @@",
+     "-    <texture file=\"../textures/martin_novak_wood_table.png\" type=\"cube\" name=\"tex-table\"/>",
+     "-    <material name=\"table_texture\" reflectance=\"0.0\" shininess=\"0.0\" specular=\"0.2\" texrepeat=\"1 1\" texture=\"tex-table\" />",
+     "+    <texture file=\"ph/Cobblestone01_DISP_6K.png\" type=\"cube\" name=\"tex-table\"/>",
+     "+    <material name=\"table_texture\" reflectance=\"0.0\" shininess=\"0.0\" specular=\"0.2\" texrepeat=\"1 1\" texture=\"tex-table\"/>",
+     "@@ -12 +12 @@",
+     "-    <material name=\"table_legs\" reflectance=\"0.8\" shininess=\"0.8\" texrepeat=\"1 1\" texture=\"tex-table-legs\" />",
+     "+    <material name=\"table_legs\" reflectance=\"0.8\" shininess=\"0.8\" texrepeat=\"1 1\" texture=\"tex-table-legs\"/>",
+     "@@ -15,2 +15 @@",
+     "-",
+     "-    <material name=\"walls_mat\" reflectance=\"0.0\" shininess=\"0.1\" specular=\"0.8\" texrepeat=\"3 3\" texture=\"tex-wall\" texuniform=\"true\" />",
+     "+    <material name=\"walls_mat\" reflectance=\"0.0\" shininess=\"0.1\" specular=\"0.8\" texrepeat=\"3 3\" texture=\"tex-wall\" texuniform=\"true\"/>",
+     "@@ -18,3 +17,2 @@",
+     "-    <texture  name=\"textable\" builtin=\"flat\" height=\"512\" width=\"512\" rgb1=\"0.5 0.5 0.5\" rgb2=\"0.5 0.5 0.5\"/>",
+     "-    <material name=\"table_mat\" texture=\"textable\" />",
+     "-",
+     "+    <texture name=\"textable\" builtin=\"flat\" height=\"512\" width=\"512\" rgb1=\"0.5 0.5 0.5\" rgb2=\"0.5 0.5 0.5\"/>",
+     "+    <material name=\"table_mat\" texture=\"textable\"/>",
+     "@@ -30 +27,0 @@",
+     "-    ",
+     "@@ -48 +44,0 @@",
+     "-",
+     "@@ -51 +46,0 @@",
+     "-",
+     "@@ -67 +61,0 @@",
+     "-    ",
+     "@@ -92 +85,0 @@",
+     "-",
+     "@@ -94 +87 @@",
+     "-    <camera mode=\"fixed\" name=\"sideview\" pos=\"-0.05651774593317116 1.2761224129427358 1.4879572214102434\" quat=\"0.009905065491771751 0.006877963156909582 0.5912228352893879 0.806418094001364\" />",
+     "+    <camera mode=\"fixed\" name=\"sideview\" pos=\"-0.05651774593317116 1.2761224129427358 1.4879572214102434\" quat=\"0.009905065491771751 0.006877963156909582 0.5912228352893879 0.806418094001364\"/>"
+    ],
+    "unified_diff_lines": 39,
+    "base_bytes": 8441,
+    "variant_bytes": 8441
+   }
+  }
+ },
+ "demos": {
+  "chosen": [
+   "demo_0",
+   "demo_29",
+   "demo_30"
+  ],
+  "split_counts": {
+   "train": 30,
+   "val": 10,
+   "test": 10
+  },
+  "fixtures": [
+   "flat_stove_1_main",
+   "wine_rack_1_main",
+   "wooden_cabinet_1_main"
+  ],
+  "agentview_camera_same_in_all_nontest": true
+ },
+ "resize": {
+  "mae_all": {
+   "area": 1.7464469687806234,
+   "bicubic": 1.9992958274152544
+  },
+  "mae_agentview": {
+   "area": 1.921616170141432,
+   "bicubic": 2.21961690319909
+  },
+  "mae_wrist": {
+   "area": 1.571277767419815,
+   "bicubic": 1.778974751631419
+  },
+  "chosen": "area",
+  "n_frames_per_camera": 18,
+  "rule": "lower mean abs pixel difference vs the stored 128 frames (0-255, all frames, both cameras); tie -> area"
+ },
+ "clean": {
+  "per_demo": {
+   "demo_0": {
+    "n_states": 80,
+    "frames": [
+     0,
+     16,
+     31,
+     47,
+     62,
+     78
+    ]
+   },
+   "demo_29": {
+    "n_states": 96,
+    "frames": [
+     0,
+     19,
+     38,
+     56,
+     75,
+     94
+    ]
+   },
+   "demo_30": {
+    "n_states": 95,
+    "frames": [
+     0,
+     19,
+     37,
+     56,
+     74,
+     93
+    ]
+   }
+  },
+  "camera_pose_vs_saved": {
+   "demo_0": {
+    "env_pos": [
+     0.6586,
+     0.0,
+     1.6104
+    ],
+    "saved_pos": [
+     0.658613,
+     0.0,
+     1.61035
+    ],
+    "env_quat": [
+     0.6380337911643937,
+     0.3048161434904502,
+     0.3048161434904502,
+     0.6380337911643937
+    ],
+    "saved_quat": [
+     0.638018,
+     0.30485,
+     0.30485,
+     0.638018
+    ],
+    "pos_max_diff": 5.0000000000105516e-05,
+    "quat_max_diff": 3.3856509549790026e-05,
+    "env_fovy": 45.0,
+    "tolerance": 0.0001,
+    "differs": false,
+    "override_used": false,
+    "label": "clean"
+   },
+   "demo_29": {
+    "env_pos": [
+     0.6586,
+     0.0,
+     1.6104
+    ],
+    "saved_pos": [
+     0.658613,
+     0.0,
+     1.61035
+    ],
+    "env_quat": [
+     0.6380337911643937,
+     0.3048161434904502,
+     0.3048161434904502,
+     0.6380337911643937
+    ],
+    "saved_quat": [
+     0.638018,
+     0.30485,
+     0.30485,
+     0.638018
+    ],
+    "pos_max_diff": 5.0000000000105516e-05,
+    "quat_max_diff": 3.3856509549790026e-05,
+    "env_fovy": 45.0,
+    "tolerance": 0.0001,
+    "differs": false,
+    "override_used": false,
+    "label": "clean"
+   },
+   "demo_30": {
+    "env_pos": [
+     0.6586,
+     0.0,
+     1.6104
+    ],
+    "saved_pos": [
+     0.658613,
+     0.0,
+     1.61035
+    ],
+    "env_quat": [
+     0.6380337911643937,
+     0.3048161434904502,
+     0.3048161434904502,
+     0.6380337911643937
+    ],
+    "saved_quat": [
+     0.638018,
+     0.30485,
+     0.30485,
+     0.638018
+    ],
+    "pos_max_diff": 5.0000000000105516e-05,
+    "quat_max_diff": 3.3856509549790026e-05,
+    "env_fovy": 45.0,
+    "tolerance": 0.0001,
+    "differs": false,
+    "override_used": false,
+    "label": "clean"
+   }
+  },
+  "max_joint_pos_diff_vs_stored_joint_states": 0.0
+ },
+ "pngs_clean": "columns: stored 128, area-shrunk re-render, bicubic-shrunk re-render, |chosen - stored| x4; rows: agentview, wrist; turned upright (180 deg)",
+ "all_checks_passed": false,
+ "soft_checks_failed": [],
+ "seconds_total": 43.5
+}

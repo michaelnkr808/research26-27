@@ -1,0 +1,170 @@
+# RESUBMITTED 2026-11-08 (second time): the first copy of this Job sat Pending the whole 12 h and ended Failed (DeadlineExceeded) at 18:05 UTC,
+# never running, no outputs; it was deleted. User OK, verbatim (AskUserQuestion, 2026-11-08): "Resubmit, 48 h wait (Recommended)", option text:
+# "Same check, same card types. The Job's limit becomes 48 hours so the queue can't kill it. A separate 4-hour cap on the work itself means a hang
+# can't leave a GPU sitting idle." Changes vs the first copy, and nothing else: activeDeadlineSeconds 172800 (48 h from creation, queue included),
+# and a 4 h cap inside the container (shell function `cap`, `timeout` on every command except the sourced environment restore; exit 124 on expiry, which
+# counts as a failed stage; the report and log copies to the PVC still run). Same ConfigMap (source unchanged), cards, 2 CPU / 12Gi, checks.
+# SUBMITTED 2026-11-08 on the lead's go (user decision "Run the probe check (Recommended)", PLAN amendment 2026-11-08 (b)). Robustness fixes from a
+# fresh review: extraction environment and weights-revision check first (fail fast), samples and features saved to the PVC before the probe,
+# provenance and tally-reproduction gates, worst exit code at the end (Complete = everything passed). Validation check, PLAN Q2 / Handoff step 2: is the DINOv3 probe's val R2 the same on the
+# stored clean val frames and on clean val frames re-rendered through our pipeline (|difference| <= 0.01, combined; per camera reported)?
+# No test demo anywhere (the test demos' model_file, actions, features and frames are never read).
+# Approval, verbatim (this session, 2026-11-08 about 00:15 UTC): "Approve phase 1 (Recommended)", whose text was: "Counts as your go for both
+# short cluster jobs: the smoke test, then the validation check if the smoke test passes. The analysis-code worker starts now." Plus the
+# user's 2026-11-08 05:40 UTC decision "Find the cause, then check (Recommended)" (Job A, stacking-encoders-pf-diag, first). The lead sets
+# the go for this Job B.
+# What it does, in one pod, 1 GPU (2 CPU / 12Gi, the broad card list, 12 h deadline, as the smoke test r3):
+#   1. restore the eval environment, download the 10 libero_goal HDF5 files from Hugging Face at the pinned commit f13aa24a (the commit of the
+#      file the smoke test used; the tally downloaded `main`; sha256 of every file is printed);
+#   2. pf_validate.py render: for each file, the clean VAL demos only (diagnostics.demo_split over the tally's demo list = all demos, asserted
+#      against the dinov3 cache's demo names), Q20 check, fixture copy (list from the file's model_file differences over train+val demos),
+#      set_init_state(states[j+1]), render 256, area shrink to 128, written as LIBERO-layout files in /work/render/libero_goal/<stem>.hdf5
+#      (raw OpenGL orientation, n-1 frames per demo; PLAN amendment 2026-11-08 input contract);
+#   3. DINOv3 extraction of those frames with the unchanged src/extract_features.py from the proxy-src ConfigMap (--dtype float32, 224,
+#      rotate180, grid 4, frame_stride 1, both cameras = the tally's call), with transformers 5.18.0 / tokenizers 0.23.3 / huggingface-hub 2.2.0
+#      installed into a separate folder (the tally's pins) so the encoder code path matches the tally's; the model revision is checked against
+#      ea8dc28 (README data table);
+#   4. pf_validate.py probe: meta of the new feature files must equal the clean cache's on encoder, hf_id, resolution, rotate180, dtype, grid,
+#      frame_stride, cams (pf_analysis.check_meta; any mismatch fails); probe fit on the clean stored TRAIN features with the tally's alpha for
+#      dinov3|global; val R2 on stored vs re-rendered val frames, both on the same n-1 frames per demo; per camera and combined; lag check;
+#      the stored val R2 on all val frames at that alpha is compared with the tally JSON's value as a pipeline check.
+# GPU time estimate (speculative, nothing like it was timed): about 8.5 min restore (measured in the smoke test), download a few min, render
+# about 100 val demos x about 90 frames x 2 cameras (est. 10 to 20 min), DINOv3 on about 18,000 frames (est. 5 to 10 min), probe a few min:
+# well under 1 h total, so under NRP's 3 h flag. GPU utilization will be low for the restore and render parts, as in the smoke test.
+# NEW code through a NEW ConfigMap stacking-encoders-pf-val-src (NOT created yet), created with:
+#   kubectl create configmap stacking-encoders-pf-val-src -n aria-world --request-timeout=30s --from-file=pf_render.py=<repo>/world-model-stacking-encoders/src/pf_render.py --from-file=pf_smoke.py=<repo>/world-model-stacking-encoders/src/pf_smoke.py --from-file=pf_analysis.py=<repo>/world-model-stacking-encoders/src/pf_analysis.py --from-file=pf_validate.py=<repo>/world-model-stacking-encoders/src/pf_validate.py --from-file=<repo>/world-model-stacking-encoders/experiments/2026-10-19-feasibility-tally/results/tally-libero_goal-dinov3-c-radiov4.json --from-file=<repo>/world-model-stacking-encoders/experiments/2026-10-19-feasibility-tally/results/tally-libero_goal-dinov3-sam3.json --from-file=<repo>/world-model-stacking-encoders/experiments/2026-10-19-feasibility-tally/results/tally-libero_goal-dinov3-siglip2.json --from-file=<repo>/world-model-stacking-encoders/experiments/2026-10-19-feasibility-tally/results/tally-libero_goal-dinov3-vggt-omega.json
+# Outputs: PVC stacking-encoders-proxy /mnt/proxy/pf-val/<stamp>/ (reports) and a small base64 tarball at the end of the pod log between the
+# markers PF_VAL_TGZ_B64 (reports only; the rendered frames stay in the pod). Follows _standards/08: Job, real command that exits, no waiting loops,
+# no tolerations, 1 GPU, limits within 20% of requests, backoffLimit 0, ttl 86400.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-pf-val
+  namespace: aria-world
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 172800
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090, NVIDIA-RTX-A5000, NVIDIA-L40, NVIDIA-L40S, NVIDIA-A10, NVIDIA-L4]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net, ry-gpu-08.sdsc.optiputer.net]}  # GPU faults, 2026-11-03
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; STAMP=$(date +%Y%m%d-%H%M%S); OUT=/work/out; P=$R/pf-val/$STAMP
+          # 4-hour cap on the work itself (user, 2026-11-08): every command except the sourced environment restore runs under `timeout` with
+          # what is left of 14400 s counted from the start of the script; a timeout is exit code 124, i.e. a failed stage, never a pass.
+          T0=$(date +%s)
+          cap() { left=$(( 14400 - ($(date +%s) - T0) )); if [ $left -le 0 ]; then echo "=== 4 h cap used up before: $*"; return 124; fi; timeout $left "$@"; }
+          mkdir -p $R/logs $OUT /work/data /work/render /work/feats_rr
+          exec > >(tee -a $R/logs/pf-val-$STAMP.log) 2>&1
+          echo "=== pf-val $STAMP"; nvidia-smi -L; nproc; date -u
+          . /src/env_bundle.sh restore    # prebuilt venv + debs from the env-build Job; LIBERO-Plus assets unzip
+          # --- extraction environment first, and fail fast (set -e is still on): the tally's pins (transformers 5.18.0, numpy 2.2.6 ...)
+          # in a separate folder, an import test, the DINOv3 processor and weights, and the weights revision (ea8dc28).
+          cap pip install --no-cache-dir -q --target /work/extlib transformers==5.18.0 tokenizers==0.23.3 safetensors==0.8.0 huggingface-hub==2.2.0 einops==0.8.1 numpy==2.2.6
+          cap env PYTHONPATH=/work/extlib:$PYTHONPATH python - <<'PY' 2>&1 | tee $OUT/setup-info.txt
+          import h5py, numpy, torch, transformers, huggingface_hub
+          assert transformers.__version__ == "5.18.0", transformers.__version__
+          assert numpy.__version__ == "2.2.6", numpy.__version__
+          from transformers import AutoImageProcessor, AutoModel
+          from huggingface_hub import HfApi
+          repo = "facebook/dinov3-vitl16-pretrain-lvd1689m"
+          sha = HfApi().model_info(repo).sha
+          assert sha.startswith("ea8dc28"), f"DINOv3 revision is {sha}, expected ea8dc28"
+          proc = AutoImageProcessor.from_pretrained(repo)
+          model = AutoModel.from_pretrained(repo, dtype=torch.float32)
+          print("setup ok: transformers", transformers.__version__, "numpy", numpy.__version__, "torch", torch.__version__, "h5py", h5py.__version__,
+                "huggingface_hub", huggingface_hub.__version__, "dinov3 sha", sha, "image_mean", proc.image_mean, "params", sum(p.numel() for p in model.parameters()))
+          PY
+          cap python - <<'PY'
+          from huggingface_hub import snapshot_download
+          snapshot_download("yifengzhu-hf/LIBERO-datasets", repo_type="dataset", revision="f13aa24a3da8c43c7225569f28c562979fa0e35a",
+                            allow_patterns=["libero_goal/*.hdf5"], local_dir="/work/data")
+          PY
+          ls -la /work/data/libero_goal; sha256sum /work/data/libero_goal/*.hdf5 /src/diagnostics.py /src/extract_features.py; date -u
+          # --- from here on every stage's exit code is kept; the Job ends with the worst one, after the copies.
+          set +e
+          RC1=0; RC2=0; RC3=0; RC4=0
+          cap python /pf/pf_validate.py render --raw /work/data/libero_goal --out /work/render
+          RC1=$?
+          echo "=== render exit code $RC1"; date -u
+          if [ $RC1 -eq 0 ]; then
+            cap env PYTHONPATH=/work/extlib:$PYTHONPATH python /src/extract_features.py --encoder dinov3 --dtype float32 --batch-size 64 \
+              --out /work/feats_rr --hdf5 /work/render/libero_goal/*.hdf5
+            RC2=$?
+            echo "=== extract exit code $RC2"; date -u
+            ls $HF_HOME/hub/models--facebook--dinov3-vitl16-pretrain-lvd1689m/snapshots 2>/dev/null
+            # save what exists before the probe runs: features, sample frames (stored next to re-rendered), the rendered frames if small
+            mkdir -p $P
+            cap python /pf/pf_validate.py samples --raw /work/data/libero_goal --render-dir /work/render --out $OUT
+            RC4=$?
+            cp -r /work/feats_rr $P/ && echo "copied feats_rr to $P"
+            cp $OUT/samples*.png $OUT/samples.json $OUT/setup-info.txt /work/render/render-report.json $P/ 2>/dev/null
+            if [ $(du -sm /work/render/libero_goal | cut -f1) -lt 5000 ]; then cp -r /work/render/libero_goal $P/rendered_libero_goal && echo "copied rendered HDF5s"; else echo "rendered HDF5s over 5 GB, not copied"; fi
+            if [ $RC2 -eq 0 ]; then
+              cap python /pf/pf_validate.py probe --raw /work/data/libero_goal --out $OUT
+              RC3=$?
+              echo "=== probe exit code $RC3"
+            fi
+          fi
+          cp /work/render/render-report.json /work/render/render-crash.txt $OUT/ 2>/dev/null
+          WORST=$(( RC1 > RC2 ? RC1 : RC2 )); WORST=$(( WORST > RC3 ? WORST : RC3 )); WORST=$(( WORST > RC4 ? WORST : RC4 ))
+          echo "=== exit codes render $RC1 extract $RC2 probe $RC3 samples $RC4 -> worst $WORST"; ls -la $OUT; date -u
+          mkdir -p $P; cp -r $OUT/. $P/
+          echo "copied to $P"
+          (cd $OUT && tar czf /work/pf-val.tgz *.json *.txt)   # reports only; the sample PNGs, features and rendered frames are on the PVC
+          ls -la /work/pf-val.tgz
+          echo "=== BEGIN PF_VAL_TGZ_B64"; base64 -w 76 /work/pf-val.tgz; echo "=== END PF_VAL_TGZ_B64"
+          echo "=== done; exiting with $WORST (0 only if render, extract, samples and probe all passed)"
+          exit $WORST
+        env:
+        - {name: SRC_GIT_COMMIT, value: 0ffb10ca980bf9fa6c23c63478bf2bdd9d34e969}
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: "/pf:/src"}
+        - {name: SIM_DIR, value: /work/sim}
+        - {name: MUJOCO_GL, value: egl}
+        - {name: PYOPENGL_PLATFORM, value: egl}
+        - {name: NVIDIA_DRIVER_CAPABILITIES, value: "compute,utility,graphics"}
+        resources:                    # as the smoke test r3 (user, 2026-11-08): 2 CPU / 12Gi request, limits <= 1.2x requests
+          requests: {cpu: "2", memory: 12Gi, nvidia.com/gpu: "1", ephemeral-storage: 50Gi}
+          limits:   {cpu: "2400m", memory: 14Gi, nvidia.com/gpu: "1", ephemeral-storage: 58Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: pf, mountPath: /pf, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: features, mountPath: /mnt/features, readOnly: true}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 58Gi}   # venv, LIBERO-Plus + assets, 6.4 GB of HDF5, re-rendered frames, features
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: pf
+        configMap: {name: stacking-encoders-pf-val-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: features
+        persistentVolumeClaim: {claimName: stacking-encoders-features, readOnly: true}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 4Gi}

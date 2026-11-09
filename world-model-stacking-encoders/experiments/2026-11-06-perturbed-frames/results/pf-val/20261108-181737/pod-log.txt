@@ -1,0 +1,279 @@
+=== pf-val 20261108-181737
+GPU 0: NVIDIA L4 (UUID: GPU-f6ea209e-2318-0634-cc7f-e80df7e51bcc)
+43
+Sun Nov  8 18:17:37 UTC 2026
+debconf: delaying package configuration, since apt-utils is not installed
+articulated_objects
+new_objects
+scenes
+serving_region.xml
+stable_hope_objects
+stable_scanned_objects
+textures
+turbosquid_objects
+wall.xml
+wall_frames.stl
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+sim ok: numpy 1.26.4 mujoco 3.3.2 robosuite 1.4.0
+TIMING restore: untar 76 s, debs + assets unzip + checks 125 s (/mnt/proxy/env/env-9182f8131559.tar)
+fastwam ok, torch 2.7.1+cu128 cuda True
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+fastwam 0.1.0 requires accelerate==1.12.0, which is not installed.
+fastwam 0.1.0 requires boto3==1.35.99, which is not installed.
+fastwam 0.1.0 requires datasets==4.8.5, which is not installed.
+fastwam 0.1.0 requires deepspeed==0.18.7, which is not installed.
+fastwam 0.1.0 requires jsonlines==4.0.0, which is not installed.
+fastwam 0.1.0 requires modelscope==1.34.0, which is not installed.
+fastwam 0.1.0 requires torchcodec==0.4.0, which is not installed.
+fastwam 0.1.0 requires wandb==0.23.1, which is not installed.
+fastwam 0.1.0 requires huggingface-hub==0.29.2, but you have huggingface-hub 2.2.0 which is incompatible.
+fastwam 0.1.0 requires packaging==25.0, but you have packaging 26.3 which is incompatible.
+fastwam 0.1.0 requires pandas==2.2.3, but you have pandas 2.3.3 which is incompatible.
+fastwam 0.1.0 requires pillow==12.0.0, but you have pillow 13.0.0 which is incompatible.
+fastwam 0.1.0 requires pyarrow==24.0.0, but you have pyarrow 21.0.0 which is incompatible.
+fastwam 0.1.0 requires regex==2025.11.3, but you have regex 2026.11.7 which is incompatible.
+fastwam 0.1.0 requires rich==14.2.0, but you have rich 15.0.0 which is incompatible.
+fastwam 0.1.0 requires safetensors==0.5.3, but you have safetensors 0.8.0 which is incompatible.
+fastwam 0.1.0 requires tqdm==4.68.3, but you have tqdm 4.70.1 which is incompatible.
+fastwam 0.1.0 requires transformers==4.49.0, but you have transformers 5.18.0 which is incompatible.
+fastwam 0.1.0 requires typing-extensions==4.15.0, but you have typing-extensions 4.16.0 which is incompatible.
+
+[notice] A new release of pip is available: 24.0 -> 26.3
+[notice] To update, run: pip install --upgrade pip
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]Loading weights: 100%|██████████| 415/415 [00:00<00:00, 12748.27it/s]
+setup ok: transformers 5.18.0 numpy 2.2.6 torch 2.7.1+cu128 h5py 3.16.0 huggingface_hub 2.2.0 dinov3 sha ea8dc2863c51be0a264bab82070e3e8836b02d51 image_mean (0.485, 0.456, 0.406) params 303129600
+Fetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]Fetching 10 files:  10%|█         | 1/10 [00:05<00:53,  5.99s/it]Fetching 10 files:  20%|██        | 2/10 [00:08<00:31,  3.94s/it]Fetching 10 files:  30%|███       | 3/10 [00:08<00:15,  2.26s/it]Fetching 10 files:  40%|████      | 4/10 [00:09<00:10,  1.77s/it]Fetching 10 files: 100%|██████████| 10/10 [00:09<00:00,  1.02it/s]
+total 6223760
+drwxr-xr-x 2 root root       4096 Nov  8 18:21 .
+drwxr-xr-x 4 root root         51 Nov  8 18:21 ..
+-rw-r--r-- 1 root root  702223367 Nov  8 18:21 open_the_middle_drawer_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root 1017886342 Nov  8 18:21 open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5
+-rw-r--r-- 1 root root  762855139 Nov  8 18:21 push_the_plate_to_the_front_of_the_stove_demo.hdf5
+-rw-r--r-- 1 root root  468246288 Nov  8 18:21 put_the_bowl_on_the_plate_demo.hdf5
+-rw-r--r-- 1 root root  509123820 Nov  8 18:21 put_the_bowl_on_the_stove_demo.hdf5
+-rw-r--r-- 1 root root  510414285 Nov  8 18:21 put_the_bowl_on_top_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root  535715512 Nov  8 18:21 put_the_cream_cheese_in_the_bowl_demo.hdf5
+-rw-r--r-- 1 root root  878958730 Nov  8 18:21 put_the_wine_bottle_on_the_rack_demo.hdf5
+-rw-r--r-- 1 root root  540179470 Nov  8 18:21 put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root  447509922 Nov  8 18:21 turn_on_the_stove_demo.hdf5
+20252c7cf98cd7437061f7f200ae7b6cb6219fabbd53b4536dfaa8abda6ab737  /work/data/libero_goal/open_the_middle_drawer_of_the_cabinet_demo.hdf5
+1b50d99a053a7e4547c9ae9ccd2e3cd762543d27be78f240f13440d7ae487ae8  /work/data/libero_goal/open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5
+36b4e1bced49d2f4ff6b2fce6b1596a63978e14199e2513cd0df71e127bf47a6  /work/data/libero_goal/push_the_plate_to_the_front_of_the_stove_demo.hdf5
+e69528b0cf10dfc59b20698e12ec2affc03f3887309034d3eb74cac3ec929406  /work/data/libero_goal/put_the_bowl_on_the_plate_demo.hdf5
+ff77d3bf0f89a147d423840ecbd842cd63c3c55aeead91f88dbc0917be473e99  /work/data/libero_goal/put_the_bowl_on_the_stove_demo.hdf5
+e14c84ebc820a13ef9a92ca82a7f04bb299f0ee96dfe9cc907bab71aeb2683b2  /work/data/libero_goal/put_the_bowl_on_top_of_the_cabinet_demo.hdf5
+ee58a7d72c143a71bf1448674e70940ac7781c1d1bb10a1b0c7a5c69b26abbef  /work/data/libero_goal/put_the_cream_cheese_in_the_bowl_demo.hdf5
+f9092aa70734fc4083e97fc58c3ba25f87c614d18326182ddc7a455f0ab4da2e  /work/data/libero_goal/put_the_wine_bottle_on_the_rack_demo.hdf5
+7dc087a7596d5cbbe394f681b21a0be434438b0dca73ac430c293fe4c818404a  /work/data/libero_goal/put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5
+387fc10747696b80dea6ed8d7f2beaa162bf92ae11750b241073cbd33aac73d5  /work/data/libero_goal/turn_on_the_stove_demo.hdf5
+ffb155b4cd8cb00813b9a4c9213c6553f1ea2d0e4a27ca96d272e8acec16d88b  /src/diagnostics.py
+03734ba84a8696e0d9f605ec89c11b50f033af9ea41cb4ef841c3c30742bd6a1  /src/extract_features.py
+Sun Nov  8 18:21:50 UTC 2026
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_30: 135 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_31: 195 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_32: 166 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_33: 138 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_34: 145 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_35: 142 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_36: 125 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_37: 132 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_38: 127 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_39: 122 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_30: 198 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_31: 205 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_32: 198 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_33: 202 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_34: 197 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_35: 185 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_36: 226 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_37: 220 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_38: 182 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_39: 183 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_30: 141 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_31: 134 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_32: 114 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_33: 125 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_34: 153 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_35: 168 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_36: 144 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_37: 202 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_38: 133 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_39: 145 frames
+[render] put_the_bowl_on_the_plate_demo demo_30: 102 frames
+[render] put_the_bowl_on_the_plate_demo demo_31: 96 frames
+[render] put_the_bowl_on_the_plate_demo demo_32: 91 frames
+[render] put_the_bowl_on_the_plate_demo demo_33: 85 frames
+[render] put_the_bowl_on_the_plate_demo demo_34: 91 frames
+[render] put_the_bowl_on_the_plate_demo demo_35: 93 frames
+[render] put_the_bowl_on_the_plate_demo demo_36: 78 frames
+[render] put_the_bowl_on_the_plate_demo demo_37: 95 frames
+[render] put_the_bowl_on_the_plate_demo demo_38: 105 frames
+[render] put_the_bowl_on_the_plate_demo demo_39: 82 frames
+[render] put_the_bowl_on_the_stove_demo demo_30: 107 frames
+[render] put_the_bowl_on_the_stove_demo demo_31: 113 frames
+[render] put_the_bowl_on_the_stove_demo demo_32: 89 frames
+[render] put_the_bowl_on_the_stove_demo demo_33: 102 frames
+[render] put_the_bowl_on_the_stove_demo demo_34: 97 frames
+[render] put_the_bowl_on_the_stove_demo demo_35: 91 frames
+[render] put_the_bowl_on_the_stove_demo demo_36: 98 frames
+[render] put_the_bowl_on_the_stove_demo demo_37: 90 frames
+[render] put_the_bowl_on_the_stove_demo demo_38: 102 frames
+[render] put_the_bowl_on_the_stove_demo demo_39: 98 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_30: 102 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_31: 101 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_32: 99 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_33: 111 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_34: 141 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_35: 95 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_36: 96 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_37: 98 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_38: 86 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_39: 97 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_30: 94 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_31: 94 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_32: 84 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_33: 110 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_34: 106 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_35: 95 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_36: 93 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_37: 95 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_38: 102 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_39: 130 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_30: 154 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_31: 191 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_32: 172 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_33: 178 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_34: 150 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_35: 157 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_36: 152 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_37: 161 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_38: 166 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_39: 163 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_30: 99 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_31: 92 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_32: 96 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_33: 105 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_34: 121 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_35: 100 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_36: 104 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_37: 91 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_38: 104 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_39: 101 frames
+[render] turn_on_the_stove_demo demo_30: 94 frames
+[render] turn_on_the_stove_demo demo_31: 80 frames
+[render] turn_on_the_stove_demo demo_32: 84 frames
+[render] turn_on_the_stove_demo demo_33: 78 frames
+[render] turn_on_the_stove_demo demo_34: 74 frames
+[render] turn_on_the_stove_demo demo_35: 85 frames
+[render] turn_on_the_stove_demo demo_36: 83 frames
+[render] turn_on_the_stove_demo demo_37: 84 frames
+[render] turn_on_the_stove_demo demo_38: 89 frames
+[render] turn_on_the_stove_demo demo_39: 92 frames
+[render] done {"provenance_expected_files": {"pass": true}, "render_all_files": {"pass": true, "n_files": 10}} []
+=== render exit code 0
+Sun Nov  8 18:26:06 UTC 2026
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]Loading weights: 100%|██████████| 415/415 [00:00<00:00, 30932.54it/s]
+[extract] encoder=dinov3 hf_id=facebook/dinov3-vitl16-pretrain-lvd1689m res=224 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 2854 frames in 50.5s (56.5 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 3992 frames in 71.4s (55.9 frames/s)
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 2918 frames in 52.3s (55.8 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 1836 frames in 32.9s (55.7 frames/s)
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 1974 frames in 35.4s (55.7 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 2052 frames in 37.1s (55.3 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 2006 frames in 36.3s (55.2 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 3288 frames in 59.1s (55.6 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 2026 frames in 36.5s (55.6 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 1686 frames in 30.5s (55.3 frames/s)
+=== extract exit code 0
+Sun Nov  8 18:33:35 UTC 2026
+ea8dc2863c51be0a264bab82070e3e8836b02d51
+[samples] wrote 3 PNGs
+copied feats_rr to /mnt/proxy/pf-val/20261108-181737
+copied rendered HDF5s
+[probe] SUMMARY {"combined": {"val_r2_stored": 0.6561556494914705, "val_r2_rerender": 0.6052785138247245, "abs_difference": 0.05087713566674601, "alpha": 0.1}, "agentview": {"val_r2_stored": 0.5428944204730787, "val_r2_rerender": 0.4141972015339723, "abs_difference": 0.12869721893910635}, "wrist": {"val_r2_stored": 0.6264840654828115, "val_r2_rerender": 0.574600884097765, "abs_difference": 0.05188318138504655}, "checks": {"provenance_expected_files": true, "tally_frame_counts_train_val": true, "meta_equals_clean_cache": true, "stored_val_r2_matches_tally_curve": true, "lag_check_all_val_demos": true, "validation_gate_combined_within_0.01": false}}
+=== probe exit code 1
+=== exit codes render 0 extract 0 probe 1 samples 0 -> worst 1
+total 888
+drwxr-xr-x  2 root root   4096 Nov  8 19:08 .
+drwxrwxrwx 11 root root    158 Nov  8 18:21 ..
+-rw-r--r--  1 root root   4591 Nov  8 19:08 probe-report.json
+-rw-r--r--  1 root root   8052 Nov  8 19:08 render-report.json
+-rw-r--r--  1 root root 287234 Nov  8 18:33 samples-0.png
+-rw-r--r--  1 root root 301392 Nov  8 18:33 samples-1.png
+-rw-r--r--  1 root root 284080 Nov  8 18:33 samples-2.png
+-rw-r--r--  1 root root   1614 Nov  8 18:33 samples.json
+-rw-r--r--  1 root root    344 Nov  8 18:21 setup-info.txt
+Sun Nov  8 19:08:09 UTC 2026
+copied to /mnt/proxy/pf-val/20261108-181737
+-rw-r--r-- 1 root root 3248 Nov  8 19:08 /work/pf-val.tgz
+=== BEGIN PF_VAL_TGZ_B64
+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
+=== END PF_VAL_TGZ_B64
+=== done; exiting with 1 (0 only if render, extract, samples and probe all passed)
