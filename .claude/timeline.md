@@ -251,3 +251,11 @@
 - Proxy evals: all 16 shards done with zero errors; the seed-noise read waits for the user's go.
 - Decisions (user): render-consistency check added; deciding slice is full-size, global, both cameras; zero gain reported with rules unchanged; one-step pixel noise tolerated at one in a hundred thousand.
 - See: world-model-stacking-encoders/experiments/2026-11-06-perturbed-frames/LOG.md (2026-11-09 lead entries), .../PLAN.md (Amendments 2026-11-09 (b)-(d)), .../jobs/PHASE-A.md, world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/LOG.md (p)-(r)
+
+## 2026-11-09: stacking-encoders planning: pull-request workflow adopted, GitHub caught up, seed-noise verdict relayed
+
+- The user asked whether agents should open PRs reviewed by other agents instead of merging straight to main; chose PRs for anything that feeds a research conclusion, direct merges for log and status chores. A worker wrote the rule into the standards and it went through the new process itself as PR #1 (two review rounds posted as PR comments, merged 7bfb568). Lead prompt and worker definition updated to match; main now blocks force-pushes and deletions.
+- The first review round found GitHub main was three days and about 200 commits behind the Mac; scanned for secrets (none found) and pushed with the user's OK.
+- Seed-noise verdict read from main: the locked rule says "go ahead", but both DINOv3 models succeed around a tenth as often as the paper's, so the pre-committed scale-reading exit applies. The user chose to amend first (train the DINOv3 models longer or larger, rerun the noise check, thresholds unchanged) before the other 13 runs; handed to the implementation session as direction, which drafts the amendment as a PR.
+- The user lifted the two-worker cap for leads (high usage plan); all research leads told to re-read the lead prompt. Open: condense the rule text (follow-up PR), motion-score deferral unconfirmed, mention the case-study framing to the mentor.
+- See: _standards/05-ai-assisted-work.md (Git section), world-model-stacking-encoders/LOG.md (2026-11-09 [agent, lead, planning] PR workflow), world-model-stacking-encoders/writing/2026-11-09-proxy-exit-options.md, https://github.com/michaelnkr808/research26-27/pull/1
