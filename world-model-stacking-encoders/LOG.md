@@ -1453,3 +1453,14 @@ No operating rule changed.
 **Found:** the README Status line had already been partly updated (it named phase A), but still carried the stale 7-of-16 count. The perturbed-frames PLAN line 3 still calls Amendment 2026-11-09 a DRAFT while the experiment LOG records the user's decisions and the go; I cited the amendment without calling it signed off.
 **Next:** the lead resolves the LOG.md and PLAN.md merge with the exit-options worker. The README Question line rewording stays a separate user decision.
 **Open questions:** whether the perturbed-frames PLAN header should drop "DRAFT" (not my file). The same "L is the paper's best pair" wording still stands in `experiments/2026-10-19-feasibility-tally/README.md` line 80, `writing/hypotheses-draft.md` line 120 and `decisions/003` line 10 (locked text; needs a dated correction note), not fixed in this pass.
+
+## 2026-11-09 [agent, planning] (plan validity reviews recorded: direction logic, experiment design, literature)
+**Goal:** keep the findings of three independent read-only reviews run by the planning session on 2026-11-09 in the repo. Docs only.
+**Did:** wrote `writing/2026-11-09-plan-validity-review.md` with a plain-language summary, one section per review, and a "What was done about it" list. Findings keep the reviewers' labels; pointers are as of main 43c3b7d.
+**Found:**
+- Direction logic: the README question (a predictor) was not reachable by planned work, several exits ended in "user decides" with no options, and several docs were stale (section 1 of the file).
+- Experiment design: the proxy and seed-noise rules are decisive and match `lp_eval.py`; the 2.7 threshold is unjustified and there is no detection-power argument for 3 seeds (section 2).
+- Literature: leads only, no robot paper found that scores encoder pairs before training; narrowing suggested (section 3).
+Reviews were read-only; findings reported by subagents, spot-checked by the lead. Nothing here is a result.
+**Next:** the user decides which findings become plan changes; decisions/004 is in progress elsewhere.
+**Open questions:** (1) required baselines (3) objective-overlap label and (4) random ranking have never been run; (2) the detection-power argument for 3 seeds is missing; (3) whether to email the authors of the source paper (parked, PLAN:23).
