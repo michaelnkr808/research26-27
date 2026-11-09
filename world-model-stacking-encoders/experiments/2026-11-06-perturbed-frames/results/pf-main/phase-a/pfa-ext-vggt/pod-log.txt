@@ -1,0 +1,75 @@
+=== pfa-ext-vggt 20261109-101156 src 765b011dd94dd8bdc204bb88a625b4142790a26e
+GPU 0: NVIDIA GeForce RTX 2080 Ti (UUID: GPU-c7964f80-ed74-ee4a-b114-10666d28ce6b)
+76
+Mon Nov  9 10:11:56 UTC 2026
+csi-cephfs-node@90a5afad-c313-4e49-9b5f-317100c6930e.nautilusfs=/volumes/csi/csi-vol-9fc6b0fe-e947-4528-a5c5-c5e80fc7d70d/9f0765b7-9592-498f-ae6c-7f42cf4c5f62  1.0T  751G  274G  74% /mnt/proxy
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+revision facebook/VGGT-Omega 1041e80fc0e911235d3426b0a3d9a81075111a53 required prefix 1041e80
+open_the_middle_drawer_of_the_cabinet_demo.hdf5: OK
+open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: OK
+push_the_plate_to_the_front_of_the_stove_demo.hdf5: OK
+put_the_bowl_on_the_plate_demo.hdf5: OK
+put_the_bowl_on_the_stove_demo.hdf5: OK
+put_the_bowl_on_top_of_the_cabinet_demo.hdf5: OK
+put_the_cream_cheese_in_the_bowl_demo.hdf5: OK
+put_the_wine_bottle_on_the_rack_demo.hdf5: OK
+put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: OK
+turn_on_the_stove_demo.hdf5: OK
+total 4847208
+drwxr-xr-x 2 root root      4096 Nov  9 10:15 .
+drwxr-xr-x 3 root root      4096 Nov  9 10:12 ..
+-rw-r--r-- 1 root root 554938272 Nov  9 10:12 open_the_middle_drawer_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root 799813536 Nov  9 10:13 open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5
+-rw-r--r-- 1 root root 601239456 Nov  9 10:13 push_the_plate_to_the_front_of_the_stove_demo.hdf5
+-rw-r--r-- 1 root root 360984480 Nov  9 10:13 put_the_bowl_on_the_plate_demo.hdf5
+-rw-r--r-- 1 root root 394014624 Nov  9 10:14 put_the_bowl_on_the_stove_demo.hdf5
+-rw-r--r-- 1 root root 394801056 Nov  9 10:14 put_the_bowl_on_top_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root 412495776 Nov  9 10:14 put_the_cream_cheese_in_the_bowl_demo.hdf5
+-rw-r--r-- 1 root root 686272416 Nov  9 10:15 put_the_wine_bottle_on_the_rack_demo.hdf5
+-rw-r--r-- 1 root root 414265248 Nov  9 10:15 put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root 344666016 Nov  9 10:15 turn_on_the_stove_demo.hdf5
+Mon Nov  9 10:16:00 UTC 2026
+transformers 5.18.0 numpy 2.2.6
+[extract] encoder=vggt-omega hf_id=facebook/VGGT-Omega/vggt_omega_1b_512.pt res=512 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 11288 frames in 928.1s (12.2 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 16270 frames in 1340.6s (12.1 frames/s)
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 12230 frames in 1006.8s (12.1 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 7342 frames in 604.7s (12.1 frames/s)
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 8014 frames in 660.3s (12.1 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 8030 frames in 661.4s (12.1 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 8390 frames in 691.2s (12.1 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 13960 frames in 1149.0s (12.1 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 8426 frames in 693.9s (12.1 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 7010 frames in 577.2s (12.1 frames/s)
+=== extract-vggt-omega exit code 0
+Mon Nov  9 12:35:14 UTC 2026
+meta ok: vggt-omega 10 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams']
+=== meta-vggt-omega exit code 0
+Mon Nov  9 12:35:14 UTC 2026
+total 7271075
+drwxr-xr-x 2 root root         10 Nov  9 12:35 .
+drwxr-xr-x 3 root root          1 Nov  9 12:35 ..
+-rw-r--r-- 1 root root  832441736 Nov  9 12:35 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 1199754632 Nov  9 12:35 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root  901893512 Nov  9 12:35 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root  541511048 Nov  9 12:35 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root  591056264 Nov  9 12:35 put_the_bowl_on_the_stove_demo.h5
+-rw-r--r-- 1 root root  592235912 Nov  9 12:35 put_the_bowl_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  618777992 Nov  9 12:35 put_the_cream_cheese_in_the_bowl_demo.h5
+-rw-r--r-- 1 root root 1029442952 Nov  9 12:35 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root  621432200 Nov  9 12:35 put_the_wine_bottle_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  517033352 Nov  9 12:35 turn_on_the_stove_demo.h5
+=== copy-vggt-omega exit code 0
+Mon Nov  9 12:35:31 UTC 2026
+=== exit codes: worst 0
+Mon Nov  9 12:35:31 UTC 2026
+copied reports to /mnt/proxy/pf-main/phase-a/reports/pfa-ext-vggt-20261109-101156
+-rw-r--r-- 1 root root 225 Nov  9 12:35 /work/pfa-ext-vggt.tgz
+=== BEGIN PFA_TGZ_B64
+H4sIAAAAAAAAA+3TSwrCMBAG4Kw9RS5gm8lTT+DSjbiPNpUiGk2reHxroSCCuiqi/t9mQh4ww0+y
+nA1OtJwxXW091m5NRjqtyEoh233nSDFuhm+NsVPd+MQ5SzE2r+69O/9SWZ7CuaqruK+z5jLMhLeA
+rdZP8ydl7/JXTJDUzjIuBunmwZ/n36fPS78Oqxi3+XI2W4znu7DxnISmMBHlWoQpkVSmUFralfCq
+mPoJtZ+aiLxRPIXjqUqh4IcUyurSPxx9ejoAAAAAAAAAAAAAAAAAAAAAgN92BS18+PMAKAAA
+=== END PFA_TGZ_B64
+=== done; exiting with 0 (0 only if every stage passed)

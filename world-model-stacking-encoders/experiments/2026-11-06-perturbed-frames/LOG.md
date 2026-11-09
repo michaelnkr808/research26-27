@@ -369,3 +369,9 @@ Merged main into `pf-smoke` (c3deaab; has `src/pf_analysis.py`, PLAN amendment 8
 **Remaining in phase A (11:28 UTC):** `vggt` Running (since 10:12); `sam3-2`, `sam3-3` and the pilot Pending; the last eval shard Running. Then `pfa-dev`.
 **Test-set use:** none.
 **Next:** unchanged.
+
+## 2026-11-09 [agent, lead] phase A: VGGT-Omega Job complete (exit 0)
+**Verified (`results/pf-main/phase-a/pfa-ext-vggt/pod-log.txt`, `revisions.txt`):** `pfa-ext-vggt` ran on an RTX 2080 Ti (k8s-haosu-10), pod started 10:11:56, exited 0 at 12:35:33 UTC (about 2.4 h wall clock). Revision check passed (`1041e80...`); all ten files (100,960 frames) extracted at 12.1 frames/s; meta check against the smoke-report reference passed for 10 files; features copied to `/mnt/proxy/pf-main/phase-a/feats/vggt-omega/`.
+**Phase A tally (12:41 UTC):** render + DINOv3, SigLIP 2, C-RADIOv4, SAM 3 shard 1, VGGT-Omega done. `sam3-2`, `sam3-3` and the pilot still Pending (scheduler: nominated nodes held by terminating pods; 40 nodes short of GPUs). One eval shard Running. Live GPU pods of ours: 0.
+**Test-set use:** none.
+**Next:** SAM 3 shards 2 and 3, then `pfa-dev`; bring the gate result to the user.
