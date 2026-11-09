@@ -382,3 +382,9 @@ Merged main into `pf-smoke` (c3deaab; has `src/pf_analysis.py`, PLAN amendment 8
 **GPU checks (verified, in-pod nvidia-smi, 13:14 UTC):** `sam3-2` on an RTX 3090 (suncave-11, started 12:59:29) at 99%; `sam3-3` on an RTX 2080 Ti (k8s-haosu-17, started 13:00:49) at 100%; both passed the revision check and are extracting. One eval shard Running. Live GPU pods of ours: 2.
 **Test-set use:** none (pilot used demo_30, a val demo).
 **Next:** SAM 3 shards 2 and 3 exit, then `pfa-dev`; bring the gate result to the user.
+
+## 2026-11-09 [agent, lead] phase A: SAM 3 shard 2 complete (exit 0)
+**Verified (`results/pf-main/phase-a/pfa-ext-sam3-2/pod-log.txt`, `revisions.txt`):** `pfa-ext-sam3-2` ran on an RTX 3090 (suncave-11), pod started 12:59:42, exited 0 at 14:35:43 UTC (about 1.6 h wall clock). Revision check passed (`3c879f3...`); three files (push_the_plate..., put_the_bowl_on_the_plate, put_the_wine_bottle_on_the_rack; 12,230 + 7,342 + 13,960 = 33,532 frames) at 5.9 to 6.0 frames/s, 5,639 s of extraction, under the 10,800 s cap; meta check passed for 3 files; features copied to `/mnt/proxy/pf-main/phase-a/feats/sam3/`.
+**Shard 3 (verified, pod log at 14:39 UTC):** on the RTX 2080 Ti at 5.7 frames/s; three of its four files done (8,014 + 8,030 + 8,390 frames), the fourth (put_the_wine_bottle_on_top_of_the_cabinet, 8,426 frames) in progress.
+**Test-set use:** none.
+**Next:** shard 3 exit, then submit `jobs/rendered/job-pfa-dev.yaml` (CPU only); bring the gate result to the user.

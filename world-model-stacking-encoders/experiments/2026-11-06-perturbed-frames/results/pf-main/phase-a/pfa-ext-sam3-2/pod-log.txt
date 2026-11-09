@@ -1,0 +1,50 @@
+=== pfa-ext-sam3-2 20261109-125942 src 765b011dd94dd8bdc204bb88a625b4142790a26e
+GPU 0: NVIDIA GeForce RTX 3090 (UUID: GPU-99303557-b8fa-0c99-6823-077fc47e5654)
+15
+Mon Nov  9 12:59:42 UTC 2026
+csi-cephfs-node@90a5afad-c313-4e49-9b5f-317100c6930e.nautilusfs=/volumes/csi/csi-vol-9fc6b0fe-e947-4528-a5c5-c5e80fc7d70d/9f0765b7-9592-498f-ae6c-7f42cf4c5f62  1.0T  763G  262G  75% /mnt/proxy
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+revision facebook/sam3 3c879f39826c281e95690f02c7821c4de09afae7 required prefix 3c879f3
+put_the_wine_bottle_on_the_rack_demo.hdf5: OK
+push_the_plate_to_the_front_of_the_stove_demo.hdf5: OK
+put_the_bowl_on_the_plate_demo.hdf5: OK
+total 1609860
+drwxr-xr-x 2 root root       156 Nov  9 13:00 .
+drwxr-xr-x 3 root root        25 Nov  9 12:59 ..
+-rw-r--r-- 1 root root 601239456 Nov  9 13:00 push_the_plate_to_the_front_of_the_stove_demo.hdf5
+-rw-r--r-- 1 root root 360984480 Nov  9 13:00 put_the_bowl_on_the_plate_demo.hdf5
+-rw-r--r-- 1 root root 686272416 Nov  9 13:00 put_the_wine_bottle_on_the_rack_demo.hdf5
+Mon Nov  9 13:01:06 UTC 2026
+transformers 5.18.0 numpy 2.2.6
+Loading weights:   0%|          | 0/1468 [00:00<?, ?it/s]Loading weights:  25%|██▍       | 361/1468 [00:00<00:00, 3609.52it/s]Loading weights:  49%|████▉     | 722/1468 [00:01<00:01, 525.20it/s] Loading weights:  61%|██████    | 890/1468 [00:01<00:01, 405.30it/s]Loading weights:  68%|██████▊   | 993/1468 [00:02<00:01, 362.02it/s]Loading weights:  73%|███████▎  | 1076/1468 [00:02<00:00, 403.65it/s]Loading weights:  78%|███████▊  | 1152/1468 [00:02<00:00, 356.41it/s]Loading weights:  82%|████████▏ | 1211/1468 [00:02<00:00, 326.44it/s]Loading weights:  86%|████████▌ | 1258/1468 [00:03<00:00, 310.84it/s]Loading weights:  88%|████████▊ | 1298/1468 [00:03<00:00, 286.35it/s]Loading weights:  91%|█████████ | 1332/1468 [00:03<00:00, 261.20it/s]Loading weights:  93%|█████████▎| 1362/1468 [00:03<00:00, 258.07it/s]Loading weights:  95%|█████████▍| 1390/1468 [00:03<00:00, 244.66it/s]Loading weights:  96%|█████████▋| 1416/1468 [00:03<00:00, 225.92it/s]Loading weights:  98%|█████████▊| 1439/1468 [00:04<00:00, 219.94it/s]Loading weights: 100%|██████████| 1468/1468 [00:04<00:00, 359.57it/s]
+[extract] encoder=sam3 hf_id=facebook/sam3 res=1008 device=cuda
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 12230 frames in 2063.4s (5.9 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 7342 frames in 1249.7s (5.9 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 13960 frames in 2326.3s (6.0 frames/s)
+=== extract-sam3 exit code 0
+Mon Nov  9 14:35:41 UTC 2026
+meta ok: sam3 3 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams']
+=== meta-sam3 exit code 0
+Mon Nov  9 14:35:42 UTC 2026
+total 2452773
+drwxr-xr-x 2 root root         6 Nov  9 14:35 .
+drwxr-xr-x 3 root root         1 Nov  9 11:22 ..
+-rw-r--r-- 1 root root 416320904 Nov  9 11:22 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 599977352 Nov  9 11:22 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 451046792 Nov  9 14:35 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root 270855560 Nov  9 14:35 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root 514821512 Nov  9 14:35 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root 258616712 Nov  9 11:22 turn_on_the_stove_demo.h5
+=== copy-sam3 exit code 0
+Mon Nov  9 14:35:43 UTC 2026
+=== exit codes: worst 0
+Mon Nov  9 14:35:43 UTC 2026
+copied reports to /mnt/proxy/pf-main/phase-a/reports/pfa-ext-sam3-2-20261109-125942
+-rw-r--r-- 1 root root 213 Nov  9 14:35 /work/pfa-ext-sam3-2.tgz
+=== BEGIN PFA_TGZ_B64
+H4sIAAAAAAAAA+3RTQrCMBAF4Kw9RU7Q5rfTHCemCRTRaNqKx7cKBRHUVRHxfZsJyQRmeFXNVidm
+ZO29zp7r/SytIqONJKnneyIlGLfrj8bYNIy+cM5KzuO7vk/vP6qqSzz3Q58PQzVe1tnwFnBjzMv8
+pX7Mf+6TypBlXKwyzZM/z39Jnycf4jbnXT34veY6tOSSdq1qgmpldLZxIgkVqFUymC4K55OPxEs8
+TX2JHT+WmPrL8nHz7b0AAAAAAAAAAAAAAAAAAAAAAP7BFQGIYysAKAAA
+=== END PFA_TGZ_B64
+=== done; exiting with 0 (0 only if every stage passed)
