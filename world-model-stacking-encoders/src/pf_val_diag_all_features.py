@@ -2,8 +2,9 @@
 
 Same encoder code as the tally (extract_features.py dinov3 loader; rotate 180, bicubic to 224, CLS token). The split is made from demo names
 with diagnostics.demo_split BEFORE any pixel array is read; test demos' images are never read. Writes one npz per task into --out:
-keys agentview_rgb, eye_in_hand_rgb ([N,1024] float32), demo (int), j (int), split (0 train, 1 val). Order: all val first (pass 1), then train (pass 2).
-Resumable: an existing file for a pass is skipped. For the stove task, an existing stored_all.npz from pf_val_diag_features.py can be converted with --from-stove.
+keys agentview_rgb, eye_in_hand_rgb ([N,1024] float32), demo (int), j (int); the split is in the file name (<task>.val.npz / <task>.train.npz).
+Order: all val first (pass 1), then train (pass 2). Resumable: an existing file for a pass is skipped. For the stove task, an existing stored_all.npz
+from pf_val_diag_features.py is converted with --stove-npz.
 """
 
 import argparse

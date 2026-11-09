@@ -62,7 +62,8 @@ def main():
     ytr, yvf, yv = np.concatenate(y_tr), np.concatenate(y_va_full), np.concatenate(y_va)
     meta = np.array(meta)
     tk, dm, jj, nn = meta.T
-    rep = {"n_train": int(len(ytr)), "n_val_full": int(len(yvf)), "n_val": int(len(yv)), "tasks": tasks}
+    rep = {"constant_val_action_dims_by_task": {tasks[t]: [int(i) for i in np.where(yv[tk == t].std(0) < 1e-9)[0]] for t in range(len(tasks))},
+           "n_train": int(len(ytr)), "n_val_full": int(len(yvf)), "n_val": int(len(yv)), "tasks": tasks}
 
     def fitter(cols, alpha):
         xt = np.concatenate([xtr[c] for c in cols], axis=1)
@@ -119,6 +120,18 @@ def main():
                                    "share_of_val_frames": float(m.mean()), "n_demos_worse": int(sum((e_r - e_s)[(tk == t) & (dm == d)].sum() > 0 for d in range(30, 40)))}
         gaps_by_demo = {f"{tasks[t]}|demo_{d}": float((e_r - e_s)[(tk == t) & (dm == d)].sum() / tot) for t, d in ug}
         B["n_demos_rerender_worse_of_100"] = int(sum(v > 0 for v in gaps_by_demo.values()))
+        B["error_measure_note"] = "n_demos_rerender_worse_of_100, task shares, demo shares and top-10%-frames share above use RAW squared error summed over action dimensions (dominated by the gripper); the *_r2weighted entries weight each dimension by 1/total val variance, i.e. the same weighting as the mean R2"
+        w_ = 1.0 / SST
+        e_s_n, e_r_n = (((yv - ps) ** 2) * w_).sum(1), (((yv - prr) ** 2) * w_).sum(1)
+        tot_n = float((e_r_n - e_s_n).sum())
+        dn = {f"{tasks[t]}|demo_{d}": float((e_r_n - e_s_n)[(tk == t) & (dm == d)].sum() / tot_n) for t, d in ug}
+        B["n_demos_rerender_worse_r2weighted_of_100"] = int(sum(v > 0 for v in dn.values()))
+        B["n_demos_worse_per_task_r2weighted"] = {tasks[t]: int(sum(dn[f"{tasks[t]}|demo_{d}"] > 0 for d in range(30, 40))) for t in range(ntask)}
+        B["demo_share_of_excess_max_min_r2weighted"] = [max(dn.values()), min(dn.values())]
+        B["task_share_of_excess_r2weighted"] = {tasks[t]: float((e_r_n - e_s_n)[tk == t].sum() / tot_n) for t in range(ntask)}
+        mvn = np.abs(prr - ps).__mul__(w_).sum(1)
+        topn = np.argsort(-mvn)[: len(mvn) // 10]
+        B["top10pct_frames_by_prediction_shift_share_of_excess_r2weighted"] = float((e_r_n - e_s_n)[topn].sum() / tot_n)
         B["demo_share_of_excess_top10"] = dict(sorted(gaps_by_demo.items(), key=lambda kv: -kv[1])[:10])
         B["demo_share_of_excess_max_min"] = [max(gaps_by_demo.values()), min(gaps_by_demo.values())]
         frac = jj / (nn - 2).clip(1)
@@ -163,7 +176,7 @@ def main():
         for t in range(ntask):
             gt = ugs[ugs // 100 == t]
             dr = []
-            for _ in range(args.n_boot // 2):
+            for _ in range(args.n_boot):
                 pick = rng.choice(gt, len(gt), replace=True)
                 ix = np.concatenate([idx_of[g] for g in pick])
                 dr.append(float(-(((yv[ix] - prr[ix]) ** 2 - (yv[ix] - ps[ix]) ** 2).sum(0) / SST).mean()))

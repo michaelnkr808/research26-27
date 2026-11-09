@@ -6,7 +6,7 @@ dinov3 loader: 224 px bicubic, rotate 180 first, CLS token = "global"), and the 
 versions of the re-rendered (or stored) val frames for the cheap cause tests. Only the stove task is covered.
 
 Conditions (all val frames, n-1 per demo, frame j of the re-render pairs with stored image j):
-  stored            stored frames (all 50 demos, all n frames; the first 30 demos are probe training data)
+  stored            stored frames (the 40 train and val demos only, all n frames; demos 0-29 are probe training data; test demos are never read)
   rr                re-rendered frames, as the Job wrote them
   rr_colormatch     per-camera, per-channel mean/std of the re-render matched to the stored val frames
   rr_blur / rr_sharpen   gaussian blur (sigma 0.7) / unsharp mask (sigma 1.0, amount 1.0) of the re-render
