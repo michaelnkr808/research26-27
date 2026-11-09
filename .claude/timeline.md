@@ -235,3 +235,10 @@
 - Perturbed frames: the validation check failed. Our MuJoCo 3.3.2 re-renders lack the fine grain of the original LIBERO images, and the stored-trained probe can't tolerate the difference in any of the ten tasks (Mac diagnosis, two reviews).
 - Decision (user): retrain the probes on our own re-renders. The plan amendment had two review rounds, the user decided 8 points (0.025 sanity margin, two-step run, scene-file check and others), and it's merged. The cluster go-ahead comes later.
 - See: world-model-stacking-encoders/experiments/2026-11-06-perturbed-frames/PLAN.md (Amendment 2026-11-09), .../results/pf-val-diagnosis/README.md, world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/LOG.md (n)-(o)
+
+## 2026-11-09: stacking-encoders planning: perturbed-frames test explained; re-render redesign checked against the literature
+
+- Walked the user through the perturbed-frames test and why the probes now train on our own re-renders: the original demo pictures came from an unrecorded simulator setup, and mixing them with ours would blur the perturbation effect.
+- A literature subagent found the redesign matches common practice (LIBERO demos are routinely redrawn, MuJoCo version is a known source of shift, robustness benchmarks keep one pipeline). Caveats for a write-up: our set-state route is less common than action replay, and the probe's sensitivity can inflate effects. Not independently reviewed.
+- No decisions; nothing run.
+- See: world-model-stacking-encoders/LOG.md (2026-11-09 planning entry), world-model-stacking-encoders/experiments/2026-11-06-perturbed-frames/PLAN.md
