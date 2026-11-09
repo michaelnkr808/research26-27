@@ -1,0 +1,888 @@
+=== pfa-render 20261109-080327 src 765b011dd94dd8bdc204bb88a625b4142790a26e
+GPU 0: NVIDIA L4 (UUID: GPU-b821ed31-de59-4aeb-e064-ba50bccda32a)
+30
+Mon Nov  9 08:03:27 UTC 2026
+csi-cephfs-node@90a5afad-c313-4e49-9b5f-317100c6930e.nautilusfs=/volumes/csi/csi-vol-9fc6b0fe-e947-4528-a5c5-c5e80fc7d70d/9f0765b7-9592-498f-ae6c-7f42cf4c5f62  1.0T  740G  285G  73% /mnt/proxy
+env bundle key 9182f8131559 tar sha256 86afbf57e6fd927f006742f26d3efc33b08e862654ffac7349d3522208944f03 image pytorch/pytorch@sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2
+debconf: delaying package configuration, since apt-utils is not installed
+articulated_objects
+new_objects
+scenes
+serving_region.xml
+stable_hope_objects
+stable_scanned_objects
+textures
+turbosquid_objects
+wall.xml
+wall_frames.stl
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+sim ok: numpy 1.26.4 mujoco 3.3.2 robosuite 1.4.0
+TIMING restore: untar 4 s, debs + assets unzip + checks 168 s (/mnt/proxy/env/env-9182f8131559.tar)
+fastwam ok, torch 2.7.1+cu128 cuda True
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+fastwam 0.1.0 requires accelerate==1.12.0, which is not installed.
+fastwam 0.1.0 requires boto3==1.35.99, which is not installed.
+fastwam 0.1.0 requires datasets==4.8.5, which is not installed.
+fastwam 0.1.0 requires deepspeed==0.18.7, which is not installed.
+fastwam 0.1.0 requires jsonlines==4.0.0, which is not installed.
+fastwam 0.1.0 requires modelscope==1.34.0, which is not installed.
+fastwam 0.1.0 requires torchcodec==0.4.0, which is not installed.
+fastwam 0.1.0 requires wandb==0.23.1, which is not installed.
+fastwam 0.1.0 requires huggingface-hub==0.29.2, but you have huggingface-hub 2.2.0 which is incompatible.
+fastwam 0.1.0 requires packaging==25.0, but you have packaging 26.3 which is incompatible.
+fastwam 0.1.0 requires pandas==2.2.3, but you have pandas 2.3.3 which is incompatible.
+fastwam 0.1.0 requires pillow==12.0.0, but you have pillow 13.0.0 which is incompatible.
+fastwam 0.1.0 requires pyarrow==24.0.0, but you have pyarrow 21.0.0 which is incompatible.
+fastwam 0.1.0 requires regex==2025.11.3, but you have regex 2026.11.9 which is incompatible.
+fastwam 0.1.0 requires rich==14.2.0, but you have rich 15.0.0 which is incompatible.
+fastwam 0.1.0 requires safetensors==0.5.3, but you have safetensors 0.8.0 which is incompatible.
+fastwam 0.1.0 requires tqdm==4.68.3, but you have tqdm 4.70.1 which is incompatible.
+fastwam 0.1.0 requires transformers==4.49.0, but you have transformers 5.18.0 which is incompatible.
+fastwam 0.1.0 requires typing-extensions==4.15.0, but you have typing-extensions 4.16.0 which is incompatible.
+
+[notice] A new release of pip is available: 24.0 -> 26.3
+[notice] To update, run: pip install --upgrade pip
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]Loading weights: 100%|██████████| 415/415 [00:00<00:00, 27292.97it/s]
+setup ok: transformers 5.18.0 numpy 2.2.6 torch 2.7.1+cu128 h5py 3.16.0 huggingface_hub 2.2.0 dinov3 sha ea8dc2863c51be0a264bab82070e3e8836b02d51 image_mean (0.485, 0.456, 0.406) params 303129600
+Fetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]Fetching 10 files:  10%|█         | 1/10 [00:09<01:27,  9.75s/it]Fetching 10 files:  20%|██        | 2/10 [00:17<01:10,  8.80s/it]Fetching 10 files: 100%|██████████| 10/10 [00:17<00:00,  1.79s/it]
+total 6223760
+drwxr-xr-x 2 root root       4096 Nov  9 08:08 .
+drwxr-xr-x 4 root root         51 Nov  9 08:08 ..
+-rw-r--r-- 1 root root  702223367 Nov  9 08:08 open_the_middle_drawer_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root 1017886342 Nov  9 08:08 open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5
+-rw-r--r-- 1 root root  762855139 Nov  9 08:08 push_the_plate_to_the_front_of_the_stove_demo.hdf5
+-rw-r--r-- 1 root root  468246288 Nov  9 08:08 put_the_bowl_on_the_plate_demo.hdf5
+-rw-r--r-- 1 root root  509123820 Nov  9 08:08 put_the_bowl_on_the_stove_demo.hdf5
+-rw-r--r-- 1 root root  510414285 Nov  9 08:08 put_the_bowl_on_top_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root  535715512 Nov  9 08:08 put_the_cream_cheese_in_the_bowl_demo.hdf5
+-rw-r--r-- 1 root root  878958730 Nov  9 08:08 put_the_wine_bottle_on_the_rack_demo.hdf5
+-rw-r--r-- 1 root root  540179470 Nov  9 08:08 put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root  447509922 Nov  9 08:08 turn_on_the_stove_demo.hdf5
+20252c7cf98cd7437061f7f200ae7b6cb6219fabbd53b4536dfaa8abda6ab737  /work/data/libero_goal/open_the_middle_drawer_of_the_cabinet_demo.hdf5
+1b50d99a053a7e4547c9ae9ccd2e3cd762543d27be78f240f13440d7ae487ae8  /work/data/libero_goal/open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5
+36b4e1bced49d2f4ff6b2fce6b1596a63978e14199e2513cd0df71e127bf47a6  /work/data/libero_goal/push_the_plate_to_the_front_of_the_stove_demo.hdf5
+e69528b0cf10dfc59b20698e12ec2affc03f3887309034d3eb74cac3ec929406  /work/data/libero_goal/put_the_bowl_on_the_plate_demo.hdf5
+ff77d3bf0f89a147d423840ecbd842cd63c3c55aeead91f88dbc0917be473e99  /work/data/libero_goal/put_the_bowl_on_the_stove_demo.hdf5
+e14c84ebc820a13ef9a92ca82a7f04bb299f0ee96dfe9cc907bab71aeb2683b2  /work/data/libero_goal/put_the_bowl_on_top_of_the_cabinet_demo.hdf5
+ee58a7d72c143a71bf1448674e70940ac7781c1d1bb10a1b0c7a5c69b26abbef  /work/data/libero_goal/put_the_cream_cheese_in_the_bowl_demo.hdf5
+f9092aa70734fc4083e97fc58c3ba25f87c614d18326182ddc7a455f0ab4da2e  /work/data/libero_goal/put_the_wine_bottle_on_the_rack_demo.hdf5
+7dc087a7596d5cbbe394f681b21a0be434438b0dca73ac430c293fe4c818404a  /work/data/libero_goal/put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5
+387fc10747696b80dea6ed8d7f2beaa162bf92ae11750b241073cbd33aac73d5  /work/data/libero_goal/turn_on_the_stove_demo.hdf5
+ffb155b4cd8cb00813b9a4c9213c6553f1ea2d0e4a27ca96d272e8acec16d88b  /src/diagnostics.py
+03734ba84a8696e0d9f605ec89c11b50f033af9ea41cb4ef841c3c30742bd6a1  /src/extract_features.py
+Mon Nov  9 08:08:46 UTC 2026
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_0 clean: 137 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_1 clean: 137 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_2 clean: 150 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_3 clean: 130 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_4 clean: 140 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_5 clean: 138 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_6 clean: 120 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_7 clean: 140 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_8 clean: 124 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_9 clean: 157 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_10 clean: 129 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_11 clean: 126 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_12 clean: 137 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_13 clean: 127 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_14 clean: 127 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_15 clean: 139 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_16 clean: 184 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_17 clean: 194 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_18 clean: 125 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_19 clean: 126 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_20 clean: 115 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_21 clean: 127 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_22 clean: 128 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_23 clean: 136 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_24 clean: 152 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_25 clean: 159 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_26 clean: 127 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_27 clean: 155 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_28 clean: 186 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_29 clean: 145 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_30 clean: 135 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_31 clean: 195 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_32 clean: 166 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_33 clean: 138 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_34 clean: 145 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_35 clean: 142 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_36 clean: 125 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_37 clean: 132 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_38 clean: 127 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_39 clean: 122 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_0 clean: 169 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_1 clean: 186 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_2 clean: 283 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_3 clean: 198 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_4 clean: 249 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_5 clean: 175 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_6 clean: 177 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_7 clean: 201 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_8 clean: 183 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_9 clean: 172 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_10 clean: 298 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_11 clean: 227 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_12 clean: 214 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_13 clean: 189 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_14 clean: 177 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_15 clean: 184 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_16 clean: 248 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_17 clean: 176 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_18 clean: 183 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_19 clean: 195 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_20 clean: 184 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_21 clean: 169 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_22 clean: 217 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_23 clean: 199 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_24 clean: 218 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_25 clean: 187 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_26 clean: 228 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_27 clean: 183 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_28 clean: 269 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_29 clean: 201 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_30 clean: 198 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_31 clean: 205 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_32 clean: 198 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_33 clean: 202 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_34 clean: 197 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_35 clean: 185 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_36 clean: 226 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_37 clean: 220 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_38 clean: 182 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_39 clean: 183 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_0 clean: 154 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_1 clean: 127 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_2 clean: 124 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_3 clean: 199 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_4 clean: 192 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_5 clean: 116 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_6 clean: 153 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_7 clean: 122 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_8 clean: 138 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_9 clean: 145 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_10 clean: 214 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_11 clean: 143 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_12 clean: 141 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_13 clean: 150 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_14 clean: 177 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_15 clean: 135 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_16 clean: 205 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_17 clean: 133 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_18 clean: 166 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_19 clean: 162 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_20 clean: 174 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_21 clean: 148 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_22 clean: 146 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_23 clean: 128 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_24 clean: 168 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_25 clean: 152 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_26 clean: 144 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_27 clean: 219 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_28 clean: 146 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_29 clean: 135 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_30 clean: 141 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_31 clean: 134 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_32 clean: 114 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_33 clean: 125 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_34 clean: 153 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_35 clean: 168 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_36 clean: 144 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_37 clean: 202 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_38 clean: 133 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_39 clean: 145 frames
+[render] put_the_bowl_on_the_plate_demo demo_0 clean: 89 frames
+[render] put_the_bowl_on_the_plate_demo demo_1 clean: 87 frames
+[render] put_the_bowl_on_the_plate_demo demo_2 clean: 91 frames
+[render] put_the_bowl_on_the_plate_demo demo_3 clean: 93 frames
+[render] put_the_bowl_on_the_plate_demo demo_4 clean: 79 frames
+[render] put_the_bowl_on_the_plate_demo demo_5 clean: 88 frames
+[render] put_the_bowl_on_the_plate_demo demo_6 clean: 104 frames
+[render] put_the_bowl_on_the_plate_demo demo_7 clean: 91 frames
+[render] put_the_bowl_on_the_plate_demo demo_8 clean: 83 frames
+[render] put_the_bowl_on_the_plate_demo demo_9 clean: 89 frames
+[render] put_the_bowl_on_the_plate_demo demo_10 clean: 111 frames
+[render] put_the_bowl_on_the_plate_demo demo_11 clean: 84 frames
+[render] put_the_bowl_on_the_plate_demo demo_12 clean: 87 frames
+[render] put_the_bowl_on_the_plate_demo demo_13 clean: 97 frames
+[render] put_the_bowl_on_the_plate_demo demo_14 clean: 86 frames
+[render] put_the_bowl_on_the_plate_demo demo_15 clean: 83 frames
+[render] put_the_bowl_on_the_plate_demo demo_16 clean: 94 frames
+[render] put_the_bowl_on_the_plate_demo demo_17 clean: 87 frames
+[render] put_the_bowl_on_the_plate_demo demo_18 clean: 92 frames
+[render] put_the_bowl_on_the_plate_demo demo_19 clean: 94 frames
+[render] put_the_bowl_on_the_plate_demo demo_20 clean: 94 frames
+[render] put_the_bowl_on_the_plate_demo demo_21 clean: 105 frames
+[render] put_the_bowl_on_the_plate_demo demo_22 clean: 79 frames
+[render] put_the_bowl_on_the_plate_demo demo_23 clean: 106 frames
+[render] put_the_bowl_on_the_plate_demo demo_24 clean: 89 frames
+[render] put_the_bowl_on_the_plate_demo demo_25 clean: 102 frames
+[render] put_the_bowl_on_the_plate_demo demo_26 clean: 95 frames
+[render] put_the_bowl_on_the_plate_demo demo_27 clean: 86 frames
+[render] put_the_bowl_on_the_plate_demo demo_28 clean: 86 frames
+[render] put_the_bowl_on_the_plate_demo demo_29 clean: 102 frames
+[render] put_the_bowl_on_the_plate_demo demo_30 clean: 102 frames
+[render] put_the_bowl_on_the_plate_demo demo_31 clean: 96 frames
+[render] put_the_bowl_on_the_plate_demo demo_32 clean: 91 frames
+[render] put_the_bowl_on_the_plate_demo demo_33 clean: 85 frames
+[render] put_the_bowl_on_the_plate_demo demo_34 clean: 91 frames
+[render] put_the_bowl_on_the_plate_demo demo_35 clean: 93 frames
+[render] put_the_bowl_on_the_plate_demo demo_36 clean: 78 frames
+[render] put_the_bowl_on_the_plate_demo demo_37 clean: 95 frames
+[render] put_the_bowl_on_the_plate_demo demo_38 clean: 105 frames
+[render] put_the_bowl_on_the_plate_demo demo_39 clean: 82 frames
+[render] put_the_bowl_on_the_stove_demo demo_0 clean: 93 frames
+[render] put_the_bowl_on_the_stove_demo demo_1 clean: 98 frames
+[render] put_the_bowl_on_the_stove_demo demo_2 clean: 109 frames
+[render] put_the_bowl_on_the_stove_demo demo_3 clean: 96 frames
+[render] put_the_bowl_on_the_stove_demo demo_4 clean: 103 frames
+[render] put_the_bowl_on_the_stove_demo demo_5 clean: 98 frames
+[render] put_the_bowl_on_the_stove_demo demo_6 clean: 111 frames
+[render] put_the_bowl_on_the_stove_demo demo_7 clean: 91 frames
+[render] put_the_bowl_on_the_stove_demo demo_8 clean: 100 frames
+[render] put_the_bowl_on_the_stove_demo demo_9 clean: 93 frames
+[render] put_the_bowl_on_the_stove_demo demo_10 clean: 95 frames
+[render] put_the_bowl_on_the_stove_demo demo_11 clean: 92 frames
+[render] put_the_bowl_on_the_stove_demo demo_12 clean: 110 frames
+[render] put_the_bowl_on_the_stove_demo demo_13 clean: 93 frames
+[render] put_the_bowl_on_the_stove_demo demo_14 clean: 122 frames
+[render] put_the_bowl_on_the_stove_demo demo_15 clean: 101 frames
+[render] put_the_bowl_on_the_stove_demo demo_16 clean: 96 frames
+[render] put_the_bowl_on_the_stove_demo demo_17 clean: 113 frames
+[render] put_the_bowl_on_the_stove_demo demo_18 clean: 103 frames
+[render] put_the_bowl_on_the_stove_demo demo_19 clean: 105 frames
+[render] put_the_bowl_on_the_stove_demo demo_20 clean: 118 frames
+[render] put_the_bowl_on_the_stove_demo demo_21 clean: 91 frames
+[render] put_the_bowl_on_the_stove_demo demo_22 clean: 103 frames
+[render] put_the_bowl_on_the_stove_demo demo_23 clean: 99 frames
+[render] put_the_bowl_on_the_stove_demo demo_24 clean: 99 frames
+[render] put_the_bowl_on_the_stove_demo demo_25 clean: 103 frames
+[render] put_the_bowl_on_the_stove_demo demo_26 clean: 91 frames
+[render] put_the_bowl_on_the_stove_demo demo_27 clean: 103 frames
+[render] put_the_bowl_on_the_stove_demo demo_28 clean: 101 frames
+[render] put_the_bowl_on_the_stove_demo demo_29 clean: 90 frames
+[render] put_the_bowl_on_the_stove_demo demo_30 clean: 107 frames
+[render] put_the_bowl_on_the_stove_demo demo_31 clean: 113 frames
+[render] put_the_bowl_on_the_stove_demo demo_32 clean: 89 frames
+[render] put_the_bowl_on_the_stove_demo demo_33 clean: 102 frames
+[render] put_the_bowl_on_the_stove_demo demo_34 clean: 97 frames
+[render] put_the_bowl_on_the_stove_demo demo_35 clean: 91 frames
+[render] put_the_bowl_on_the_stove_demo demo_36 clean: 98 frames
+[render] put_the_bowl_on_the_stove_demo demo_37 clean: 90 frames
+[render] put_the_bowl_on_the_stove_demo demo_38 clean: 102 frames
+[render] put_the_bowl_on_the_stove_demo demo_39 clean: 98 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_0 clean: 90 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_1 clean: 109 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_2 clean: 98 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_3 clean: 122 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_4 clean: 85 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_5 clean: 95 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_6 clean: 101 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_7 clean: 105 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_8 clean: 95 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_9 clean: 109 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_10 clean: 87 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_11 clean: 104 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_12 clean: 97 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_13 clean: 102 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_14 clean: 100 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_15 clean: 104 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_16 clean: 96 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_17 clean: 89 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_18 clean: 104 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_19 clean: 118 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_20 clean: 99 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_21 clean: 104 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_22 clean: 108 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_23 clean: 90 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_24 clean: 107 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_25 clean: 102 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_26 clean: 92 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_27 clean: 98 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_28 clean: 90 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_29 clean: 89 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_30 clean: 102 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_31 clean: 101 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_32 clean: 99 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_33 clean: 111 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_34 clean: 141 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_35 clean: 95 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_36 clean: 96 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_37 clean: 98 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_38 clean: 86 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_39 clean: 97 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_0 clean: 91 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_1 clean: 112 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_2 clean: 102 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_3 clean: 103 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_4 clean: 93 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_5 clean: 91 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_6 clean: 109 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_7 clean: 94 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_8 clean: 98 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_9 clean: 94 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_10 clean: 106 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_11 clean: 97 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_12 clean: 135 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_13 clean: 95 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_14 clean: 105 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_15 clean: 85 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_16 clean: 104 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_17 clean: 106 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_18 clean: 95 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_19 clean: 91 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_20 clean: 108 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_21 clean: 168 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_22 clean: 94 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_23 clean: 151 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_24 clean: 103 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_25 clean: 107 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_26 clean: 146 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_27 clean: 112 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_28 clean: 94 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_29 clean: 103 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_30 clean: 94 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_31 clean: 94 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_32 clean: 84 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_33 clean: 110 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_34 clean: 106 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_35 clean: 95 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_36 clean: 93 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_37 clean: 95 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_38 clean: 102 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_39 clean: 130 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_0 clean: 346 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_1 clean: 173 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_2 clean: 183 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_3 clean: 257 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_4 clean: 157 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_5 clean: 169 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_6 clean: 151 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_7 clean: 155 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_8 clean: 200 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_9 clean: 168 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_10 clean: 156 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_11 clean: 147 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_12 clean: 176 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_13 clean: 154 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_14 clean: 198 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_15 clean: 148 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_16 clean: 162 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_17 clean: 217 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_18 clean: 183 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_19 clean: 169 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_20 clean: 181 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_21 clean: 152 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_22 clean: 154 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_23 clean: 203 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_24 clean: 151 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_25 clean: 171 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_26 clean: 151 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_27 clean: 176 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_28 clean: 169 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_29 clean: 159 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_30 clean: 154 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_31 clean: 191 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_32 clean: 172 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_33 clean: 178 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_34 clean: 150 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_35 clean: 157 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_36 clean: 152 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_37 clean: 161 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_38 clean: 166 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_39 clean: 163 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_0 clean: 92 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_1 clean: 129 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_2 clean: 86 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_3 clean: 122 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_4 clean: 104 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_5 clean: 92 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_6 clean: 115 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_7 clean: 112 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_8 clean: 106 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_9 clean: 99 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_10 clean: 103 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_11 clean: 98 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_12 clean: 89 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_13 clean: 92 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_14 clean: 99 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_15 clean: 115 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_16 clean: 91 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_17 clean: 113 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_18 clean: 128 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_19 clean: 114 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_20 clean: 103 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_21 clean: 100 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_22 clean: 100 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_23 clean: 119 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_24 clean: 120 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_25 clean: 99 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_26 clean: 103 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_27 clean: 99 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_28 clean: 113 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_29 clean: 145 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_30 clean: 99 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_31 clean: 92 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_32 clean: 96 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_33 clean: 105 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_34 clean: 121 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_35 clean: 100 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_36 clean: 104 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_37 clean: 91 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_38 clean: 104 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_39 clean: 101 frames
+[render] turn_on_the_stove_demo demo_0 clean: 79 frames
+[render] turn_on_the_stove_demo demo_1 clean: 95 frames
+[render] turn_on_the_stove_demo demo_2 clean: 88 frames
+[render] turn_on_the_stove_demo demo_3 clean: 85 frames
+[render] turn_on_the_stove_demo demo_4 clean: 92 frames
+[render] turn_on_the_stove_demo demo_5 clean: 91 frames
+[render] turn_on_the_stove_demo demo_6 clean: 93 frames
+[render] turn_on_the_stove_demo demo_7 clean: 95 frames
+[render] turn_on_the_stove_demo demo_8 clean: 85 frames
+[render] turn_on_the_stove_demo demo_9 clean: 76 frames
+[render] turn_on_the_stove_demo demo_10 clean: 96 frames
+[render] turn_on_the_stove_demo demo_11 clean: 87 frames
+[render] turn_on_the_stove_demo demo_12 clean: 102 frames
+[render] turn_on_the_stove_demo demo_13 clean: 89 frames
+[render] turn_on_the_stove_demo demo_14 clean: 88 frames
+[render] turn_on_the_stove_demo demo_15 clean: 98 frames
+[render] turn_on_the_stove_demo demo_16 clean: 90 frames
+[render] turn_on_the_stove_demo demo_17 clean: 85 frames
+[render] turn_on_the_stove_demo demo_18 clean: 76 frames
+[render] turn_on_the_stove_demo demo_19 clean: 80 frames
+[render] turn_on_the_stove_demo demo_20 clean: 84 frames
+[render] turn_on_the_stove_demo demo_21 clean: 87 frames
+[render] turn_on_the_stove_demo demo_22 clean: 78 frames
+[render] turn_on_the_stove_demo demo_23 clean: 91 frames
+[render] turn_on_the_stove_demo demo_24 clean: 91 frames
+[render] turn_on_the_stove_demo demo_25 clean: 89 frames
+[render] turn_on_the_stove_demo demo_26 clean: 84 frames
+[render] turn_on_the_stove_demo demo_27 clean: 99 frames
+[render] turn_on_the_stove_demo demo_28 clean: 94 frames
+[render] turn_on_the_stove_demo demo_29 clean: 95 frames
+[render] turn_on_the_stove_demo demo_30 clean: 94 frames
+[render] turn_on_the_stove_demo demo_31 clean: 80 frames
+[render] turn_on_the_stove_demo demo_32 clean: 84 frames
+[render] turn_on_the_stove_demo demo_33 clean: 78 frames
+[render] turn_on_the_stove_demo demo_34 clean: 74 frames
+[render] turn_on_the_stove_demo demo_35 clean: 85 frames
+[render] turn_on_the_stove_demo demo_36 clean: 83 frames
+[render] turn_on_the_stove_demo demo_37 clean: 84 frames
+[render] turn_on_the_stove_demo demo_38 clean: 89 frames
+[render] turn_on_the_stove_demo demo_39 clean: 92 frames
+[render] done
+=== render exit code 0
+Mon Nov  9 08:19:15 UTC 2026
+[compare] files compared 10, with differences 9, software differences 19, hardware differences 6
+=== compare-pf-val exit code 0
+Mon Nov  9 08:20:23 UTC 2026
+open_the_middle_drawer_of_the_cabinet_demo.hdf5: OK
+open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: OK
+push_the_plate_to_the_front_of_the_stove_demo.hdf5: OK
+put_the_bowl_on_the_plate_demo.hdf5: OK
+put_the_bowl_on_the_stove_demo.hdf5: OK
+put_the_bowl_on_top_of_the_cabinet_demo.hdf5: OK
+put_the_cream_cheese_in_the_bowl_demo.hdf5: OK
+put_the_wine_bottle_on_the_rack_demo.hdf5: OK
+put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: OK
+turn_on_the_stove_demo.hdf5: OK
+=== publish-render exit code 0
+Mon Nov  9 08:20:53 UTC 2026
+4.7G	/work/render/libero_goal
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]Loading weights:  46%|████▌     | 189/415 [00:00<00:00, 1777.14it/s]Loading weights:  88%|████████▊ | 367/415 [00:00<00:00, 1386.42it/s]Loading weights: 100%|██████████| 415/415 [00:00<00:00, 1409.51it/s]
+[extract] encoder=dinov3 hf_id=facebook/dinov3-vitl16-pretrain-lvd1689m res=224 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 11288 frames in 203.8s (55.4 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 16270 frames in 296.3s (54.9 frames/s)
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 12230 frames in 222.5s (55.0 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 7342 frames in 133.4s (55.0 frames/s)
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 8014 frames in 146.0s (54.9 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 8030 frames in 146.5s (54.8 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 8390 frames in 152.9s (54.9 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 13960 frames in 253.9s (55.0 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 8426 frames in 153.7s (54.8 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 7010 frames in 127.5s (55.0 frames/s)
+=== extract-dinov3 exit code 0
+Mon Nov  9 08:51:36 UTC 2026
+meta ok: dinov3 10 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams']
+=== meta-dinov3 exit code 0
+Mon Nov  9 08:51:37 UTC 2026
+total 3636515
+drwxr-xr-x 2 root root        10 Nov  9 08:51 .
+drwxr-xr-x 3 root root         1 Nov  9 08:51 ..
+-rw-r--r-- 1 root root 416320904 Nov  9 08:51 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 599977352 Nov  9 08:51 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 451046792 Nov  9 08:51 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root 270855560 Nov  9 08:51 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root 295628168 Nov  9 08:51 put_the_bowl_on_the_stove_demo.h5
+-rw-r--r-- 1 root root 296217992 Nov  9 08:51 put_the_bowl_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 309489032 Nov  9 08:51 put_the_cream_cheese_in_the_bowl_demo.h5
+-rw-r--r-- 1 root root 514821512 Nov  9 08:51 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root 310816136 Nov  9 08:51 put_the_wine_bottle_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 258616712 Nov  9 08:51 turn_on_the_stove_demo.h5
+=== copy-dinov3 exit code 0
+Mon Nov  9 08:51:42 UTC 2026
+=== exit codes: worst 0
+Mon Nov  9 08:51:42 UTC 2026
+copied reports to /mnt/proxy/pf-main/phase-a/reports/pfa-render-20261109-080327
+-rw-r--r-- 1 root root 19674 Nov  9 08:51 /work/pfa-render.tgz
+=== BEGIN PFA_TGZ_B64
+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
+hdSPu2inWb/qNs188X1eudfo34rrysN//kKfW34ef9tXif/16+bX5/bXr+Xy8T82q/6WzximyELK
+X/azJfyXMVkw9gtTXEvhrnL9S85kLvUvWX5LIa59XgacZ9kv69VqG/rea3//QT9/+hnMLSTNbpGZ
+/fZttf7y23PrFOFX9wc/xfXNt9OfdlPRfurb/9DNxc+r9dYtYS99fZqOhh9e+9Pz2k38/bC0zXca
+2DmtO0xGbkF6Pqzis82q3X5zGpotXAvLZv6l+f575qbbbO0mj3Xd1FnXZ24Zy47iZP+lX33L/mKZ
+4a1hgill//JfZ39FW3Nvfz83v61RU5TtolW6Kdract061daSt7yoRdNWQixy05iCF0q2bVlpt5Op
+heKc58ZK2ebiUpDuqfzkVt/uk1vZ3ibD8/ftal19/m3/73/by1+xopWVlrbhtW1sYbQxWlV1W1SV
+dP/WdclqVgoneV0Lzeq6aLko8pYtioaX/FK0Zbdo1qv58/JlM7ylp+6NAro9TlFXwm1z3GDkqm1N
+buVCKZWzWgleSdM2lXs7V5+4Wb2snWa0boFq1s/rrn/jg5mqW7dLdD3nwi7KwipTSyaKoqyMsot8
+WJAsa5XN25rb3FTSbThL0yzasmm0xQVaO+VsNo9/G97TP5afuurL24QZ/SArHu2j2z0Uefa/WJH9
+YYp5ITO3p3AbCvYrV9nn7fZ58/tvv3llePK/eVytP4Xk+ZduuVx9e+O4uP3TYx5s7fs/Pzf9//yH
+t7UnHtkje6W9f/+7f3xja4UTLjj0/+b2DG9rym3fHxkCslNbn9XzG+cP18kiPGhPL/+xqlZvbU2E
+O9m/PL1VMvbIi0cZamzlXmb19Y1oda/ycfBDDjXo5prPq/7NA8deeQvr1WK1eem2zVs7LMNvYlN1
+X7rtrx4+b9UU/nqbb38hTD+yy8Z2CjL/tHxbM82npWvjYW92zg5fPy6Fn8t17dv9tHzcrcPN+vdR
+K/+06pvs6ybzjf3T//nbf//b32X/IH/7l7//W/Pbv/7r/+B/2cs3bsetwvXq1Vb+frV2y7gzXlY9
+3sh60w3qcaUV6WCZZ/u2CqYeNXvM7UVL/deu7sr55ql7rNeda3T+WsNvauvT88u8d/bJ60MVaqWf
+u3Y286/dpnMm2rW22On1bXYm0c4enb30ri9d241eZ2hGeVkus9U6e+o2G7cInh7216wq+0GXfGvf
+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
+//Qq0awA8AUA
+=== END PFA_TGZ_B64
+=== done; exiting with 0 (0 only if every stage passed)
