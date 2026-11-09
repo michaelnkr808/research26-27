@@ -35,7 +35,8 @@ spec:
           case "${SRC_GIT_COMMIT:-}" in FILL*|"") echo "ABORT: SRC_GIT_COMMIT not filled in (render the manifest with sed at submit time, see PHASE-A.md)"; exit 11;; esac
           R=/mnt/proxy; PH=$R/pf-main/phase-a; STAMP=$(date +%Y%m%d-%H%M%S); OUT=/work/out; JOB=pfa-dev
           export PH OUT
-          # per-stage caps: every command except the sourced environment restore runs under `timeout <seconds>` (exit 124 on expiry = a failed stage)
+          # per-stage caps: every long-running command (installs, downloads, hashing and copies on CephFS, render, extraction, analysis) runs under `timeout <seconds>`
+          # (exit 124 on expiry = a failed stage); only the sourced environment restore and small file operations (mkdir, ls, cp of small reports) do not
           cap() { _s=$1; shift; timeout -k 60 "$_s" "$@"; }
           WORST=0; LAST=0
           stage() { _n=$1; shift; "$@"; LAST=$?; echo "=== $_n exit code $LAST"; date -u; if [ $LAST -gt $WORST ]; then WORST=$LAST; fi; return 0; }

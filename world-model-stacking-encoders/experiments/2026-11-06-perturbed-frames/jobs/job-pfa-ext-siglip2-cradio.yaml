@@ -35,7 +35,8 @@ spec:
           case "${SRC_GIT_COMMIT:-}" in FILL*|"") echo "ABORT: SRC_GIT_COMMIT not filled in (render the manifest with sed at submit time, see PHASE-A.md)"; exit 11;; esac
           R=/mnt/proxy; PH=$R/pf-main/phase-a; STAMP=$(date +%Y%m%d-%H%M%S); OUT=/work/out; JOB=pfa-ext-siglip2-cradio
           export PH OUT
-          # per-stage caps: every command except the sourced environment restore runs under `timeout <seconds>` (exit 124 on expiry = a failed stage)
+          # per-stage caps: every long-running command (installs, downloads, hashing and copies on CephFS, render, extraction, analysis) runs under `timeout <seconds>`
+          # (exit 124 on expiry = a failed stage); only the sourced environment restore and small file operations (mkdir, ls, cp of small reports) do not
           cap() { _s=$1; shift; timeout -k 60 "$_s" "$@"; }
           WORST=0; LAST=0
           stage() { _n=$1; shift; "$@"; LAST=$?; echo "=== $_n exit code $LAST"; date -u; if [ $LAST -gt $WORST ]; then WORST=$LAST; fi; return 0; }
@@ -52,10 +53,12 @@ spec:
             transformers==4.57.6 tokenizers==0.22.2 safetensors==0.8.0 huggingface-hub==0.36.2 \
             timm==1.0.30 einops==0.8.1 open-clip-torch==3.3.0 ftfy==6.3.1 regex==2026.9.29 \
             h5py==3.16.0 numpy==2.2.6 pillow==13.0.0
-          cap 300 python - <<'PY' || echo "(revision print failed; not gating)"
+          cap 300 python - <<'PY' 2>&1 | tee $OUT/revisions.txt
           from huggingface_hub import HfApi
-          for r in ["google/siglip2-large-patch16-384", "nvidia/C-RADIOv4-SO400M"]:
-              print("revision", r, HfApi().model_info(r).sha)
+          for r, want in [("google/siglip2-large-patch16-384", None), ("nvidia/C-RADIOv4-SO400M", None)]:
+              sha = HfApi().model_info(r).sha
+              print("revision", r, sha, "required prefix", want)
+              assert want is None or sha.startswith(want), f"{r} is at {sha}, expected {want}"
           PY
           STEMS_ALL=$(ls $PH/render/libero_goal/ | sed s/.hdf5$//)
           # --- inputs: the phase-A render published by job pfa-render (fail fast if it is not there or not intact)
@@ -64,16 +67,24 @@ spec:
           EXT=$(sha256sum /src/extract_features.py | cut -c1-12)
           [ "$EXT" = "03734ba84a86" ] || { echo "ABORT: /src/extract_features.py sha256 prefix is $EXT, expected 03734ba84a86 (the tally/pf-val extractor)"; exit 21; }
           STEMS="$STEMS_ALL"
-          mkdir -p /work/pfa-trainval/libero_goal
-          : > /work/sha-mine.txt
-          for s in $STEMS; do
-            [ -f $PH/render/libero_goal/$s.hdf5 ] || { echo "ABORT: $PH/render/libero_goal/$s.hdf5 missing"; exit 20; }
-            grep "  $s.hdf5\$" $PH/render/render-sha256.txt >> /work/sha-mine.txt
-            cp $PH/render/libero_goal/$s.hdf5 /work/pfa-trainval/libero_goal/$s.hdf5
-          done
-          [ $(wc -l < /work/sha-mine.txt) -eq 10 ] || { echo "ABORT: hash lines do not match the file count"; exit 20; }
-          (cd /work/pfa-trainval/libero_goal && sha256sum -c /work/sha-mine.txt)
-          ls -la /work/pfa-trainval/libero_goal; date -u
+          export STEMS
+          # the whole copy from CephFS and the hash check run under one 1800 s cap (a CephFS stall must not leave the GPU idle for hours); failure aborts the Job (set -e)
+          stage_in() {
+            set -e
+            mkdir -p /work/pfa-trainval/libero_goal
+            : > /work/sha-mine.txt
+            for s in $STEMS; do
+              [ -f $PH/render/libero_goal/$s.hdf5 ] || { echo "ABORT: $PH/render/libero_goal/$s.hdf5 missing"; exit 20; }
+              grep "  $s.hdf5\$" $PH/render/render-sha256.txt >> /work/sha-mine.txt
+              cp $PH/render/libero_goal/$s.hdf5 /work/pfa-trainval/libero_goal/$s.hdf5
+            done
+            [ $(wc -l < /work/sha-mine.txt) -eq 10 ] || { echo "ABORT: hash lines do not match the file count"; exit 20; }
+            (cd /work/pfa-trainval/libero_goal && sha256sum -c /work/sha-mine.txt)
+            ls -la /work/pfa-trainval/libero_goal
+          }
+          export -f stage_in
+          cap 1800 bash -c stage_in
+          date -u
           python -c "import transformers, numpy; print('transformers', transformers.__version__, 'numpy', numpy.__version__)"
           set +e
           mkdir -p /work/feats
@@ -89,7 +100,7 @@ spec:
             ls -la $_d
           }
           export -f copy_feats
-          stage extract-siglip2 cap 7200 python /src/extract_features.py --encoder siglip2 --variant google/siglip2-large-patch16-384 --dtype float16 --batch-size 64 --out /work/feats --hdf5 /work/pfa-trainval/libero_goal/*.hdf5
+          stage extract-siglip2 cap 3600 python /src/extract_features.py --encoder siglip2 --variant google/siglip2-large-patch16-384 --dtype float16 --batch-size 64 --out /work/feats --hdf5 /work/pfa-trainval/libero_goal/*.hdf5
           EXT_OK=$LAST
           if [ $EXT_OK -eq 0 ]; then
             stage meta-siglip2 cap 900 python - siglip2 10 <<'PY'
@@ -113,7 +124,7 @@ spec:
           PY
             if [ $LAST -eq 0 ]; then stage copy-siglip2 cap 3600 bash -c 'copy_feats "$@"' _ siglip2; fi
           fi
-          stage extract-c-radiov4 cap 10800 python /src/extract_features.py --encoder c-radiov4 --dtype float16 --batch-size 64 --out /work/feats --hdf5 /work/pfa-trainval/libero_goal/*.hdf5
+          stage extract-c-radiov4 cap 5400 python /src/extract_features.py --encoder c-radiov4 --dtype float16 --batch-size 64 --out /work/feats --hdf5 /work/pfa-trainval/libero_goal/*.hdf5
           EXT_OK=$LAST
           if [ $EXT_OK -eq 0 ]; then
             stage meta-c-radiov4 cap 900 python - c-radiov4 10 <<'PY'

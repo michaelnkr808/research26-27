@@ -36,7 +36,8 @@ spec:
           case "${SRC_GIT_COMMIT:-}" in FILL*|"") echo "ABORT: SRC_GIT_COMMIT not filled in (render the manifest with sed at submit time, see PHASE-A.md)"; exit 11;; esac
           R=/mnt/proxy; PH=$R/pf-main/phase-a; STAMP=$(date +%Y%m%d-%H%M%S); OUT=/work/out; JOB=pfa-ext-sam3-1
           export PH OUT
-          # per-stage caps: every command except the sourced environment restore runs under `timeout <seconds>` (exit 124 on expiry = a failed stage)
+          # per-stage caps: every long-running command (installs, downloads, hashing and copies on CephFS, render, extraction, analysis) runs under `timeout <seconds>`
+          # (exit 124 on expiry = a failed stage); only the sourced environment restore and small file operations (mkdir, ls, cp of small reports) do not
           cap() { _s=$1; shift; timeout -k 60 "$_s" "$@"; }
           WORST=0; LAST=0
           stage() { _n=$1; shift; "$@"; LAST=$?; echo "=== $_n exit code $LAST"; date -u; if [ $LAST -gt $WORST ]; then WORST=$LAST; fi; return 0; }
@@ -52,26 +53,36 @@ spec:
           cap 1800 pip install --no-cache-dir -q torch==2.7.1 torchvision==0.22.1 \
             transformers==5.18.0 tokenizers==0.23.3 safetensors==0.8.0 huggingface-hub==2.2.0 \
             einops==0.8.1 h5py==3.16.0 numpy==2.2.6 pillow==13.0.0
-          cap 300 python - <<'PY' || echo "(revision print failed; not gating)"
+          cap 300 python - <<'PY' 2>&1 | tee $OUT/revisions.txt
           from huggingface_hub import HfApi
-          for r in ["facebook/sam3"]:
-              print("revision", r, HfApi().model_info(r).sha)
+          for r, want in [("facebook/sam3", "3c879f3")]:
+              sha = HfApi().model_info(r).sha
+              print("revision", r, sha, "required prefix", want)
+              assert want is None or sha.startswith(want), f"{r} is at {sha}, expected {want}"
           PY
           # --- inputs: the phase-A render published by job pfa-render (fail fast if it is not there or not intact)
           [ -f $PH/render/RENDER_COMPLETE ] || { echo "ABORT: $PH/render/RENDER_COMPLETE missing: submit this Job only after job-pfa-render has finished with exit 0"; exit 20; }
           [ -f $PH/render/render-sha256.txt ] || { echo "ABORT: no render-sha256.txt"; exit 20; }
           EXT=$(sha256sum /src/extract_features.py | cut -c1-12)
           [ "$EXT" = "03734ba84a86" ] || { echo "ABORT: /src/extract_features.py sha256 prefix is $EXT, expected 03734ba84a86 (the tally/pf-val extractor)"; exit 21; }
-          mkdir -p /work/pfa-trainval/libero_goal
-          : > /work/sha-mine.txt
-          for s in $STEMS; do
-            [ -f $PH/render/libero_goal/$s.hdf5 ] || { echo "ABORT: $PH/render/libero_goal/$s.hdf5 missing"; exit 20; }
-            grep "  $s.hdf5\$" $PH/render/render-sha256.txt >> /work/sha-mine.txt
-            cp $PH/render/libero_goal/$s.hdf5 /work/pfa-trainval/libero_goal/$s.hdf5
-          done
-          [ $(wc -l < /work/sha-mine.txt) -eq 3 ] || { echo "ABORT: hash lines do not match the file count"; exit 20; }
-          (cd /work/pfa-trainval/libero_goal && sha256sum -c /work/sha-mine.txt)
-          ls -la /work/pfa-trainval/libero_goal; date -u
+          export STEMS
+          # the whole copy from CephFS and the hash check run under one 1800 s cap (a CephFS stall must not leave the GPU idle for hours); failure aborts the Job (set -e)
+          stage_in() {
+            set -e
+            mkdir -p /work/pfa-trainval/libero_goal
+            : > /work/sha-mine.txt
+            for s in $STEMS; do
+              [ -f $PH/render/libero_goal/$s.hdf5 ] || { echo "ABORT: $PH/render/libero_goal/$s.hdf5 missing"; exit 20; }
+              grep "  $s.hdf5\$" $PH/render/render-sha256.txt >> /work/sha-mine.txt
+              cp $PH/render/libero_goal/$s.hdf5 /work/pfa-trainval/libero_goal/$s.hdf5
+            done
+            [ $(wc -l < /work/sha-mine.txt) -eq 3 ] || { echo "ABORT: hash lines do not match the file count"; exit 20; }
+            (cd /work/pfa-trainval/libero_goal && sha256sum -c /work/sha-mine.txt)
+            ls -la /work/pfa-trainval/libero_goal
+          }
+          export -f stage_in
+          cap 1800 bash -c stage_in
+          date -u
           python -c "import transformers, numpy; print('transformers', transformers.__version__, 'numpy', numpy.__version__)"
           set +e
           mkdir -p /work/feats
@@ -87,7 +98,7 @@ spec:
             ls -la $_d
           }
           export -f copy_feats
-          stage extract-sam3 cap 18000 python /src/extract_features.py --encoder sam3 --dtype float16 --batch-size 8 --out /work/feats --hdf5 /work/pfa-trainval/libero_goal/*.hdf5
+          stage extract-sam3 cap 10800 python /src/extract_features.py --encoder sam3 --dtype float16 --batch-size 8 --out /work/feats --hdf5 /work/pfa-trainval/libero_goal/*.hdf5
           EXT_OK=$LAST
           if [ $EXT_OK -eq 0 ]; then
             stage meta-sam3 cap 900 python - sam3 3 <<'PY'

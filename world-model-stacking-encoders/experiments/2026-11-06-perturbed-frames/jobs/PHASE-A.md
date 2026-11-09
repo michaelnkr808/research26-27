@@ -33,7 +33,7 @@ The `/pf` keys are the only code the Jobs run besides `/src/extract_features.py`
 
 ## 3. Filling in SRC_GIT_COMMIT and submitting (the lead, after the go)
 
-Each manifest has `SRC_GIT_COMMIT: FILL_AT_SUBMIT`; the script aborts with exit 11 if it is still that. Render at submit time and keep the rendered copies (as RUN.md does), do not edit the originals: `sed "s/FILL_AT_SUBMIT/<sha>/" jobs/job-pfa-render.yaml > jobs/rendered/job-pfa-render.yaml`, then `kubectl apply -f jobs/rendered/job-pfa-render.yaml`. `<sha>` is the commit that holds the ConfigMap sources. Record it in the experiment README (08 checklist item 5).
+Each manifest has `SRC_GIT_COMMIT: FILL_AT_SUBMIT`; the script aborts with exit 11 if it is still that. Render at submit time and keep the rendered copies (as RUN.md does), do not edit the originals: `mkdir -p jobs/rendered`, then `sed "s/FILL_AT_SUBMIT/<sha>/" jobs/job-pfa-render.yaml > jobs/rendered/job-pfa-render.yaml`, then `kubectl apply -f jobs/rendered/job-pfa-render.yaml`. `<sha>` is the commit that holds the ConfigMap sources. Record it in the experiment README (08 checklist item 5).
 
 ## 4. Order and stagger (shared cap: 8 GPUs at once in the namespace)
 
@@ -47,7 +47,7 @@ GPU use of each step: Job 1 holds 1 for about 1.5 h (speculative), Job 2 holds 1
 |---|---|---|---|
 | 0 | (optional) pilot, once the user has said it runs | 1 | 5 |
 | 1 | Job 1 (render), alongside the pilot if that runs | 1 (+1 pilot) | 5 (6 with pilot) |
-| 2 | after Job 1 exits 0: Job 2, Job 3, SAM 3 shard 1, SAM 3 shard 2 | 4 | 8 |
+| 2 | after Job 1 exits 0: Job 2, Job 3, SAM 3 shard 1, SAM 3 shard 2 (8 only if the pilot has already exited; if the pilot still runs, submit one of the four later) | 4 | 8 |
 | 3 | SAM 3 shard 3 when any of Jobs 2, 3, shard 1 or 2 has finished, or when an eval has finished | 1 | at most 8 |
 | 4 | Job 5 (dev) after Jobs 1 to 4 have all exited 0 | 0 | unchanged |
 
@@ -77,7 +77,7 @@ The reference metas are `results/smoke/report.json`, `q23.details.<encoder>.meta
 | vggt-omega | `--encoder vggt-omega --dtype float16 --batch-size 16` | hf_id facebook/VGGT-Omega/vggt_omega_1b_512.pt, resolution 512, dtype float16 | transformers 5.18.0 plus the vggt-omega commit `48b23c8` tarball (`--no-deps`), from `2026-10-19-feasibility-tally/extract-job.yaml` |
 | sam3 | `--encoder sam3 --dtype float16 --batch-size 8` | hf_id facebook/sam3, resolution 1008, dtype float16 | transformers 5.18.0 from the tally Job |
 
-Batch sizes are not in the metas (only the keys above are checked); they are the old Jobs' values. The model revisions of SigLIP 2, C-RADIOv4, SAM 3 and VGGT-Omega are printed at the start of each Job (`revision <repo> <sha>`) and not enforced; compare them with PLAN Amendment 2026-11-09 section 6 (SAM 3 `3c879f3`, VGGT-Omega `1041e80`, C-RADIOv4 remote code `c0457f5`) in the log. Only DINOv3's revision (`ea8dc28`) is asserted, as pf-val did. The metas also hold `n_demos` (40 here vs the reference 50, not a checked key) and `git_commit` (the Job's `SRC_GIT_COMMIT`, not a checked key).
+Batch sizes are not in the metas (only the keys above are checked); they are the old Jobs' values. Model revisions are checked at the start of each Job, before extraction, and written to `revisions.txt` in the Job's reports: DINOv3 must start with `ea8dc28` (Job 1, as pf-val), SAM 3 with `3c879f3` and VGGT-Omega with `1041e80` (PLAN Amendment 2026-11-09 section 6; the Job fails otherwise). SigLIP 2 has no pinned sha in the PLAN: its `main` sha is recorded in `revisions.txt` (Job 2 report), and **phase B must assert the sha recorded there**. C-RADIOv4's revision (`c0457f5`) is pinned inside `extract_features.py`, so it is enforced by the extractor; the `main` sha printed for `nvidia/C-RADIOv4-SO400M` may differ from the pinned one without being a problem. The metas also hold `n_demos` (40 here vs the reference 50, not a checked key) and `git_commit` (the Job's `SRC_GIT_COMMIT`, not a checked key).
 
 ### Staging path rule (important for phase B)
 
@@ -102,12 +102,12 @@ All estimates are speculative (rates from earlier runs on other cards, noise cos
 
 | Job | Stage caps (seconds) | Estimate | GPU-h (pod time) |
 |---|---|---|---|
-| 1 render | pip 900, setup test 900, bundle hash 1800, download 1800, render 7200, compare 3600, publish 5400, DINOv3 7200, meta 900, copy 3600 | restore about 3.4 min (measured in pf-val), render 50,480 states at 48 per second = about 18 min, DINOv3 100,960 images at 55.7 per second = about 30 min | about 1.4 |
-| 2 siglip2 + c-radiov4 | pip 1800, SigLIP 2 7200, C-RADIOv4 10800, meta 900, copy 3600 each | SigLIP 2 100,960 / 142 per second = 0.2 h, C-RADIOv4 100,960 / 62 = 0.45 h (TITAN RTX rates) | about 0.8 |
-| 3 vggt | pip 1800 (+ vggt install 1800), extract 21600, meta 900, copy 3600 | 100,960 / 12.5 per second = 2.2 h (2080 Ti rate) | about 2.4 |
-| 4 sam3 x3 | extract 18000 each | 100,960 / 5.5 per second = 5.1 h in total, about 1.7 h per shard | about 5.7 in total |
+| 1 render | pip 900, setup test 900, bundle hash 1800, download 1800; render 7200, compare 1800, publish 3600 under one shared 9000 s budget (render + compare + publish together, so the GPU cannot sit idle more than 2.5 h); DINOv3 3600, meta 900, copy 3600 | restore about 3.4 min (measured in pf-val), render 50,480 states at 48 per second = about 18 min, DINOv3 100,960 images at 55.7 per second = about 30 min | about 1.4 |
+| 2 siglip2 + c-radiov4 | input copy + hash check 1800, pip 1800, SigLIP 2 3600, C-RADIOv4 5400, meta 900, copy 3600 each | SigLIP 2 100,960 / 142 per second = 0.2 h, C-RADIOv4 100,960 / 62 = 0.45 h (TITAN RTX rates) | about 0.8 |
+| 3 vggt | input copy + hash check 1800, pip 1800 (+ vggt install 1800), extract 14400, meta 900, copy 3600 | 100,960 / 12.5 per second = 2.2 h (2080 Ti rate) | about 2.4 |
+| 4 sam3 x3 | input copy + hash check 1800, extract 10800 each | 100,960 / 5.5 per second = 5.1 h in total, about 1.7 h per shard | about 5.7 in total |
 | 5 dev | pip 1800, download 1800, raw hash 900, dev 28800 | unknown (many ridge fits, 8 alphas, up to 6,656 columns) | 0 GPU |
-| 6 pilot | restore, download, 4 x 3600 | a few minutes per condition | about 0.4 |
+| 6 pilot | restore, download, 4 x 1200 | a few minutes per condition | about 0.4 |
 
 Total phase A without the pilot: about 10.3 GPU-h (speculative); the PLAN's section 8 estimate for train+val was about 8.5 extraction + 1 render.
 
@@ -118,7 +118,7 @@ Sizing notes. Memory and CPU for Jobs 3 and 4 are the tally Job's (measured ther
 ## 8. Pre-flight checklist (08, adapted) and what the lead must do before submitting
 
 1. The user's separate go (per the PLAN's handoff: "code changes, review, then the user's go"). Phase A is gated: nothing in phase B until gate A has passed.
-2. Sources committed; `SRC_GIT_COMMIT` filled in the rendered copies; the commit hash recorded in the experiment README. The 08 checklist items 1 to 9 apply: Job not pod, 1 GPU, limits within 20% of requests (verified by `check.py` output in the LOG), no tolerations (none), no `sleep` (none), Violations page after launch, delete the Jobs afterwards.
+2. Sources committed; `SRC_GIT_COMMIT` filled in the rendered copies; the commit hash recorded in the experiment README. The 08 checklist items 1 to 9 apply: Job not pod, 1 GPU, limits within 20% of requests (checked by `jobs/check-pfa-jobs.py <jobs dir> <scratch dir>`, which also runs `bash -n` on each extracted script), no tolerations (none), no `sleep` (none), Violations page after launch, delete the Jobs afterwards.
 3. Create `stacking-encoders-pf-main-src` (section 2) and verify the keys by sha256.
 4. Confirm `stacking-encoders-proxy-src` holds the expected `extract_features.py` and env scripts (section 2).
 5. Recount live GPU pods (section 4) and check free space on the PVC (`df` is also done by each Job).

@@ -36,7 +36,8 @@ spec:
           case "${SRC_GIT_COMMIT:-}" in FILL*|"") echo "ABORT: SRC_GIT_COMMIT not filled in (render the manifest with sed at submit time, see PHASE-A.md)"; exit 11;; esac
           R=/mnt/proxy; PH=$R/pf-main/phase-a; STAMP=$(date +%Y%m%d-%H%M%S); OUT=/work/out; JOB=pfa-render
           export PH OUT
-          # per-stage caps: every command except the sourced environment restore runs under `timeout <seconds>` (exit 124 on expiry = a failed stage)
+          # per-stage caps: every long-running command (installs, downloads, hashing and copies on CephFS, render, extraction, analysis) runs under `timeout <seconds>`
+          # (exit 124 on expiry = a failed stage); only the sourced environment restore and small file operations (mkdir, ls, cp of small reports) do not
           cap() { _s=$1; shift; timeout -k 60 "$_s" "$@"; }
           WORST=0; LAST=0
           stage() { _n=$1; shift; "$@"; LAST=$?; echo "=== $_n exit code $LAST"; date -u; if [ $LAST -gt $WORST ]; then WORST=$LAST; fi; return 0; }
@@ -46,6 +47,8 @@ spec:
           FREE_GB=$(df -BG --output=avail /mnt/proxy | tail -1 | tr -dc 0-9)
           if [ "$FREE_GB" -lt 100 ]; then echo "ABORT: only ${FREE_GB}G free on the proxy PVC, need >= 100G (expected use about 30G)"; exit 12; fi
           [ ! -e $PH/render ] && [ ! -e $PH/render.part ] && [ ! -e $PH/feats/dinov3 ] || { echo "ABORT: $PH/render, render.part or feats/dinov3 already exists (never overwritten; see PHASE-A.md for cleanup)"; exit 14; }
+          EXT=$(sha256sum /src/extract_features.py | cut -c1-12)
+          [ "$EXT" = "03734ba84a86" ] || { echo "ABORT: /src/extract_features.py sha256 prefix is $EXT, expected 03734ba84a86 (the tally/pf-val extractor)"; exit 21; }
           # --- environment bundle identity (Amendment 2026-11-09 (b)): the key is recomputed exactly as env_bundle.sh does it, the tar's sha256 is taken here
           BKEY=$(cat /src/setup_env.sh /src/setup_sim.sh /src/env_bundle.sh | sha256sum | cut -c1-12)
           [ -f $R/env/env-$BKEY.tar ] || { echo "ABORT: no env bundle $R/env/env-$BKEY.tar for the scripts in /src"; exit 13; }
@@ -78,10 +81,13 @@ spec:
           ls -la /work/data/libero_goal; sha256sum /work/data/libero_goal/*.hdf5 /src/diagnostics.py /src/extract_features.py; date -u
           # --- from here on every stage's exit code is kept; the Job ends with the worst one, after the copies.
           set +e
+          # overall budget for the CPU-only stages (render + compare + publish): together at most 9000 s (2.5 h) with the GPU idle; bcap <stage cap> <cmd> uses min(stage cap, what is left)
+          T1=$(date +%s)
+          bcap() { _s=$1; shift; _left=$(( 9000 - ($(date +%s) - T1) )); if [ $_left -le 0 ]; then echo "=== 9000 s budget used up before: $*"; return 124; fi; if [ $_left -lt $_s ]; then _s=$_left; fi; timeout -k 60 "$_s" "$@"; }
           mkdir -p /work/render /work/feats /work/pfa-trainval
           # 1. render: train and val demos, clean, one HDF5 per task (40 demos) in one root (phase A); refuses at startup if IMAGE_DIGEST, the bundle key,
           #    the LIBERO-Plus fingerprint or the mujoco/robosuite versions are missing. Estimate (speculative): 50,480 states at pf-val's 48 states/s = about 18 min.
-          stage render cap 7200 python /pf/pf_rerender.py render --raw /work/data/libero_goal --config /pf/phase-a.yaml --out /work/render --split trainval --condition clean --env-scripts-dir /src
+          stage render bcap 7200 python /pf/pf_rerender.py render --raw /work/data/libero_goal --config /pf/phase-a.yaml --out /work/render --split trainval --condition clean --env-scripts-dir /src
           RC_R=$LAST
           PUB=1
           EXT_OK=1
@@ -90,7 +96,7 @@ spec:
           PFV=/mnt/proxy/pf-val/20261108-181737
           if [ $RC_R -eq 0 ] && [ -d $PFV/rendered_libero_goal ] && [ -f $PFV/render-report.json ]; then
             mkdir -p /work/pfval-ref && ln -sfn $PFV/rendered_libero_goal /work/pfval-ref/libero_goal && ln -sf $PFV/render-report.json /work/pfval-ref/render-report.json
-            stage compare-pf-val cap 3600 python /pf/pf_rerender.py compare --report-only --demos val --ref-dir /work/pfval-ref --new-dir /work/render --out $OUT/compare-vs-pf-val.json
+            stage compare-pf-val bcap 1800 python /pf/pf_rerender.py compare --report-only --demos val --ref-dir /work/pfval-ref --new-dir /work/render --out $OUT/compare-vs-pf-val.json
           else
             echo "=== compare-pf-val SKIPPED (render failed, or $PFV/rendered_libero_goal / its render-report.json is not on the PVC)"
           fi
@@ -107,7 +113,7 @@ spec:
           }
           export -f publish_render
           if [ $RC_R -eq 0 ]; then
-            stage publish-render cap 5400 bash -c publish_render
+            stage publish-render bcap 3600 bash -c publish_render
             PUB=$LAST
             du -sh /work/render/libero_goal
           fi
@@ -126,7 +132,7 @@ spec:
           export -f copy_feats
           if [ $RC_R -eq 0 ] && [ $PUB -eq 0 ]; then
             mv /work/render/libero_goal /work/pfa-trainval/libero_goal
-            stage extract-dinov3 cap 7200 env PYTHONPATH=/work/extlib:$PYTHONPATH python /src/extract_features.py --encoder dinov3 --dtype float32 --batch-size 64 --out /work/feats --hdf5 /work/pfa-trainval/libero_goal/*.hdf5
+            stage extract-dinov3 cap 3600 env PYTHONPATH=/work/extlib:$PYTHONPATH python /src/extract_features.py --encoder dinov3 --dtype float32 --batch-size 64 --out /work/feats --hdf5 /work/pfa-trainval/libero_goal/*.hdf5
             EXT_OK=$LAST
           fi
           if [ $EXT_OK -eq 0 ]; then
