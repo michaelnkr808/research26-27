@@ -2,7 +2,9 @@
 
 Written 2026-10-19 by an agent after mentor feedback. Nothing here is a finding. The user picks the hypothesis; this file lays out options.
 
-**Status 2026-11-09:** the 2026-10-21 draft question and the "Outcome rule (proposed)" under the feasibility experiment are superseded by `decisions/003` (the tally met its rethink rule; hypothesis choice deferred, 003 line 9). H-B "Recommended primary" was written before the tally, and its premise (gain flags D+R) failed. A direction-level hypothesis is still not chosen.
+**Status 2026-11-09:** the 2026-10-21 draft question and the "Outcome rule (proposed)" under the feasibility experiment are superseded by `decisions/003` (the tally met its rethink rule; hypothesis choice deferred, 003 line 9). H-B "Recommended primary" was written before the tally, and its premise (gain flags D+R) failed. A direction-level hypothesis is still not chosen: the paper framing is decided (decisions/004, 2026-11-09); no single hypothesis is chosen, the experiments' pre-registered rules stand in.
+
+**Decided 2026-11-09 (decisions/004): option C.** The paper is a case study of the reported D+R drop (reproducible across training seeds? any trace in frozen features, or only in training?), and the conditional pair-score predictor is the stated follow-up, taken up once there is a confirmed effect to predict. The README question and the novelty statement below were rewritten accordingly.
 
 ## Update 2026-10-21: tally outcome and reframe (agent; see LOG 2026-10-21 (i))
 - The feasibility tally (4 pairs) met the pre-set "rethink" rule. Neither CKA nor gain(B|D) singles out D+R, and gain(B|D) ranks R highest (README key findings, signed off).
@@ -55,9 +57,13 @@ User's goals (stated 2026-10-19): **wants to publish.** Hypothesis still to be c
 - **Outcome rule (proposed)** [superseded 2026-10-27 by decisions/003]: if neither metric gets D+R's sign or the rough ordering, rethink before building the proxy policy (decision 001). If one does, the proxy-policy multi-seed study becomes the paper's main experiment.
 
 ## Novelty statement (draft; needs the related-work check in `literature/notes/agostinelli2022-transferability-ensembles.md`)
+**Draft 2026-11-09 (decisions/004), replaces the paragraph below:**
+> We study feature-level stacking of frozen vision foundation encoders inside a world action model, where combining can hurt [verified: liu2026what, D+R is −5.41 points below DINOv3 alone (Table 10 vs Table 1), single checkpoint per config]. We provide the first multi-seed check of a reported harmful composition in a from-scratch proxy policy (a proxy null does not speak to the paper's model, decisions/003 amendment, proxy PLAN:161) [speculative: the literature session found no published multi-seed replication of an encoder-composition table, 2026-11-09, leads not read in full; our multi-seed result does not exist yet, the proxy runs are still evaluating]. We show that conditional probing [speculative: Hewitt et al. 2021, arXiv 2109.09234; our gain(B|A) is its linear ridge-R² special case], symmetric similarity (CKA) and a target-side interference measure on frozen features do not flag it on clean frames [verified: tally and target-diagnostics, n = 4 pairs]; on perturbed frames the result is pending [no result yet: `experiments/2026-11-06-perturbed-frames/` phase B has not run]. The conditional pair-score predictor is the follow-up.
+
+**Old paragraph** [superseded 2026-11-09 by the paragraph above]:
 > Prior transferability work (e.g. agostinelli2022) selects ensembles of fine-tuned models whose *outputs are averaged*, using label-space metrics that are additive across members. We study *feature-level* stacking of frozen vision foundation encoders inside a world action model. There, combining encoders can hurt, the encoders share no label space, and the useful quantity is *conditional* and asymmetric (what B adds to A for predicting actions or future features). We test whether a cheap conditional measure predicts closed-loop gains where symmetric similarity does not.
 
-Note 2026-11-09: gain(B|A) is a linear special case of conditional probing (Hewitt et al. 2021, arXiv 2109.09234; the user read it 2026-11-08, direction LOG entry on the literature session's branch, not yet on main; recalled from the planning lead, verify when merged), so the measure itself is probably not claimable as new (speculative until the literature entry merges). The novelty statement needs a rewrite the user has not decided.
+Note 2026-11-09: gain(B|A) is a linear special case of conditional probing (Hewitt et al. 2021, arXiv 2109.09234; the user read it 2026-11-08, direction LOG entry on the literature session's branch, not yet on main; recalled from the planning lead, verify when merged), so the measure itself is probably not claimable as new (speculative until the literature entry merges). The novelty statement needs a rewrite the user has not decided. [superseded 2026-11-09 by the draft above; decisions/004]
 
 What "WAM introduces" (mentor's question), candidate answers to check:
 - (a) Feature fusion into one model, not output averaging.

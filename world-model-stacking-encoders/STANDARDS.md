@@ -3,7 +3,7 @@
 > These rules extend the general standards in `../_standards/`. A rule that *relaxes* a general rule must name it and say why.
 
 ## Scope
-- **Research question:** see `README.md` (draft until the hypothesis is chosen; candidates in `writing/hypotheses-draft.md`).
+- **Research question:** see `README.md` (decided 2026-11-09, decisions/004).
 - **In scope / out of scope:**
   - **In:** frozen vision encoders; feature-level combination (concatenation); cheap pre-training diagnostics (CKA, conditional probe gain); LIBERO / LIBERO-Plus.
   - **Out for now:** training or fine-tuning encoders; output-averaging ensembles; real-robot evaluation; the specialist-vs-generalist question (H-D) unless it falls out cheaply.
