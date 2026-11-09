@@ -878,6 +878,25 @@ def test_review_fixes():
                 expect(lambda: run_final(w, t / "f8", ok), AssertionError, "test labels read")
             finally:
                 P.load_test_layout = old
+            # (a) final must use the same reference-meta file as dev (sha256 recorded); the error says to pass --ref-meta.
+            assert good["ref_meta_sha256"] == P.file_sha256(w["ref_meta"])
+            other_ref = t / "other_ref.json"
+            other_ref.write_text(w["ref_meta"].read_text() + "\n")
+            expect(lambda: run_final(w, t / "f9", ok, ref_meta_path=other_ref), P.GateError, "--ref-meta")
+            expect(lambda: P.load_reference_meta(t / "no_such.json"), FileNotFoundError, "--ref-meta")
+            # (b) the report keeps each encoder's OWN meta, not the reference's.
+            ref2 = json.loads(w["ref_meta"].read_text())
+            for e in ref2["q23"]["details"]:
+                ref2["q23"]["details"][e]["meta"]["git_commit"] = "tally-cache-commit"
+            (t / "ref2.json").write_text(json.dumps(ref2))
+            rep2 = run_dev(w, t / "d_ref2", ref_meta_path=t / "ref2.json")
+            assert all("git_commit" not in m for m in rep2["encoders"].values()) and rep2["encoders"]["sam3"] == meta_for("sam3")
+            # (d) a partner re-extracted in place after dev is refused (hashes of every train/val feature file).
+            assert set(good["feature_sha256"]) == {f"{e}/task{i}.h5" for e in DIMS for i in range(2)}
+            with h5py.File(w["feats"] / "siglip2" / SUITE / "task1.h5", "a") as f:
+                f["demo_3"][D.CAMS[0]]["global"][0, 0] += 1e-3
+            expect(lambda: run_final(w, t / "f10", ok), P.GateError, "siglip2/task1.h5")
+            assert not (t / "f10").exists()
     print("review fixes: real tally JSONs, tally failure recorded, lag required, tally-cache metas, stale report, gate before labels ok")
 
 

@@ -54,6 +54,7 @@ Never overwrites: the output dir must not exist.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
 import sys
@@ -153,8 +154,19 @@ def check_meta(f, clean_meta, label):
             raise ValueError(f"{label}: meta '{k}' is {m[k]!r}, the clean cache has {clean_meta[k]!r}")
 
 
+def file_sha256(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(16 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def load_reference_meta(path=REF_META_PATH, encoders=None):
     """{encoder: meta} of the tally cache from the smoke report (q23.details.<encoder>.meta); every META_KEYS key must exist."""
+    if not Path(path).is_file():
+        raise FileNotFoundError(f"reference-meta file {path} not found; pass --ref-meta <smoke report.json> "
+                                "(the default path exists only in a repo checkout)")
     det = json.loads(Path(path).read_text())["q23"]["details"]
     out = {}
     for e in (encoders or [DINO] + list(PARTNERS.values())):
@@ -174,7 +186,7 @@ def _read_meta(f, label):
 
 
 def load_rendered(root, raw_dir, suite, encoders, ftypes, phases=DEV_PHASES, allow_test=False,
-                  expected_frames=EXPECTED_FRAMES, ref_meta=None):
+                  expected_frames=EXPECTED_FRAMES, ref_meta=None, hash_files=False):
     """Re-rendered clean features of the demos in `phases`, with labels actions[:n-1] from the raw HDF5.
 
     Order of work: (1) the split of every raw file is computed from all its demo names and checked
@@ -182,6 +194,8 @@ def load_rendered(root, raw_dir, suite, encoders, ftypes, phases=DEV_PHASES, all
     `phases`. A test demo is never opened unless allow_test=True (the development entry never sets it).
     Every feature file must hold exactly n-1 frames per demo and its meta must match ref_meta[enc] (the tally
     cache's, see load_reference_meta) on META_KEYS; without ref_meta (low-level use) it must match the first file's.
+    The returned meta[enc] is the encoder's OWN first-file meta (provenance); check_meta[enc] is what files are checked
+    against. hash_files=True also returns sha256[<enc>/<file>] of every feature file used.
 
     Returns a namespace: feats[enc][ftype][cam] (rows in file order, demo order), actions, split (per frame),
     index [(stem, demo, T, part)], meta[enc], files, counts {part: frames per camera}.
@@ -213,8 +227,8 @@ def load_rendered(root, raw_dir, suite, encoders, ftypes, phases=DEV_PHASES, all
         try:
             for e, f in fe.items():
                 m = _read_meta(f, f"{root}/{e}/{raw.stem}")
-                meta.setdefault(e, ref_meta[e] if ref_meta is not None else m)
-                check_meta(f, meta[e], f"{root}/{e}/{raw.stem}")
+                meta.setdefault(e, m)
+                check_meta(f, ref_meta[e] if ref_meta is not None else meta[e], f"{root}/{e}/{raw.stem}")
             with h5py.File(raw, "r") as fr:
                 for d in names:
                     if sp[d] not in phases:
@@ -253,7 +267,12 @@ def load_rendered(root, raw_dir, suite, encoders, ftypes, phases=DEV_PHASES, all
         for p in phases:
             if counts[p] != expected_frames[p]:
                 raise ValueError(f"{p}: {counts[p]} re-rendered frames per camera, expected {expected_frames[p]}")
+    sha = None
+    if hash_files:
+        sha = {f"{e}/{r.stem}.h5": file_sha256(Path(root) / e / suite / (r.stem + ".h5"))
+               for e in encoders for r in raw_files}
     return types.SimpleNamespace(feats=feats, actions=actions, split=split, index=index, meta=meta,
+                                 check_meta=ref_meta if ref_meta is not None else meta, sha256=sha,
                                  files=[r.name for r in raw_files], counts=counts)
 
 
@@ -375,7 +394,7 @@ def load_stored(stored_root, suite, enc, ftype, index, clean_meta):
 
 def lag_check_stored(tr, stored_root, suite, ftype, whiten):
     """Lag check of the re-rendered DINOv3 features against the stored ones, train and val demos only."""
-    st = load_stored(stored_root, suite, DINO, ftype, tr.index, tr.meta[DINO])
+    st = load_stored(stored_root, suite, DINO, ftype, tr.index, tr.check_meta[DINO])
     off = np.concatenate([[0], np.cumsum([t for _, _, t, _ in tr.index])])
     train = tr.split == "train"
     for cam in CAMS:
@@ -692,7 +711,7 @@ def _dev(trval_root, raw_dir, suite, out_dir, ftype, sizes, stored_root, tally_d
     ftypes = sorted({"global", ftype})
     ref_meta = load_reference_meta(ref_meta_path, encoders)
     tr = load_rendered(trval_root, raw_dir, suite, encoders, ftypes, phases=DEV_PHASES, allow_test=False,
-                       expected_frames=expected_frames, ref_meta=ref_meta)
+                       expected_frames=expected_frames, ref_meta=ref_meta, hash_files=True)
     log(f"train+val: {tr.counts} frames per camera, {len(tr.index)} demos")
     train, val = tr.split == "train", tr.split == "val"
     notes = {}
@@ -718,7 +737,7 @@ def _dev(trval_root, raw_dir, suite, out_dir, ftype, sizes, stored_root, tally_d
     try:
         w_tr, b_tr = D.ridge_fit(xg[train], tr.actions[train], g_alpha)
         vidx = [e for e in tr.index if e[3] == "val"]
-        sv = load_stored(stored_root, suite, DINO, "global", vidx, tr.meta[DINO])
+        sv = load_stored(stored_root, suite, DINO, "global", vidx, tr.check_meta[DINO])
         xs = np.concatenate([tfs_g[c](np.concatenate([a[:-1] for a in sv[c]])) for c in CAMS], 1)
         cross = {"val_r2_stored_features": float(D.r2(tr.actions[val], xs @ w_tr + b_tr).mean()),
                  "val_r2_rerender_features": g_score, "alpha": g_alpha,
@@ -736,7 +755,8 @@ def _dev(trval_root, raw_dir, suite, out_dir, ftype, sizes, stored_root, tally_d
               "raw_dir": str(raw_dir), "files": tr.files, "git_commit": D.git_commit(), "pca_whiten": pca_whiten,
               "n_frames": tr.counts, "n_demos": len(tr.index), "expected_frames": expected_frames,
               "encoders": {e: tr.meta[e] for e in encoders}, "alphas_grid": D.ALPHAS, "gate": gate,
-              "lag_check": lag, "cross_value": cross, "ref_meta_path": str(ref_meta_path), "per_camera_sizes": dims,
+              "lag_check": lag, "cross_value": cross, "ref_meta_path": str(ref_meta_path),
+              "ref_meta_sha256": file_sha256(ref_meta_path), "feature_sha256": tr.sha256, "per_camera_sizes": dims,
               "matched": {"target": target, "reduced": reduced, "declared_sizes": sizes}, "configs": {}, "notes": notes}
     if not reduced:
         report["matched"]["note"] = "all encoders already have the smallest size; the matched row would equal the full row and is skipped"
@@ -831,7 +851,14 @@ def _run(trval_root, raw_dir, suite, cond_roots, dev_report, out_dir, ftype="glo
 
     ref_meta = load_reference_meta(ref_meta_path, encoders)
     tr = load_rendered(trval_root, raw_dir, suite, encoders, sorted({"global", ftype}), phases=("train", "val"),
-                       allow_test=False, expected_frames=expected_frames, ref_meta=ref_meta)
+                       allow_test=False, expected_frames=expected_frames, ref_meta=ref_meta, hash_files=True)
+    if file_sha256(ref_meta_path) != dev_rep.get("ref_meta_sha256"):
+        raise GateError(f"{dev_report}: the dev run used a different reference-meta file than {ref_meta_path}; "
+                        "pass the same --ref-meta as dev")
+    changed = sorted(k for k in set(tr.sha256) | set(dev_rep.get("feature_sha256") or {})
+                     if tr.sha256.get(k) != (dev_rep.get("feature_sha256") or {}).get(k))
+    if changed:
+        raise GateError(f"{dev_report}: train/val feature files changed since the dev run (re-extracted in place?): {changed[:5]}")
     if tr.counts != dev_rep["n_frames"]:
         raise GateError(f"train/val frame counts {tr.counts} differ from the dev report's {dev_rep['n_frames']}")
     # Do not trust a stale dev report: recompute the gate curve (global features, whatever ftype) and compare.
@@ -843,7 +870,7 @@ def _run(trval_root, raw_dir, suite, cond_roots, dev_report, out_dir, ftype="glo
                         f"(alpha {g_alpha}) differs from the report's (alpha {dev_rep['gate']['alpha']})")
     if not g_curve[g_alpha] >= gate_threshold():
         raise GateError(f"recomputed gate score {g_curve[g_alpha]} is below the threshold {gate_threshold()}")
-    feats, meta, split = tr.feats, tr.meta, tr.split
+    feats, meta, split = tr.feats, tr.check_meta, tr.split
     trva = np.ones(len(split), bool)                       # every row loaded is train or val
     lag = None if stored_root is None else lag_check_stored(tr, stored_root, suite, ftype, pca_whiten)
     demos, y_test = load_test_layout(raw_dir, expected_frames)      # first read of test labels
@@ -866,7 +893,8 @@ def _run(trval_root, raw_dir, suite, cond_roots, dev_report, out_dir, ftype="glo
     log(f"per-camera sizes {dims}; matched target {target}, reduced {reduced}")
 
     W = make_weights(k, n_boot, seed)
-    results = {"suite": suite, "ftype": ftype, "files": tr.files, "encoders": {e: meta[e] for e in encoders},
+    results = {"suite": suite, "ftype": ftype, "files": tr.files, "encoders": {e: tr.meta[e] for e in encoders},
+               "feature_sha256": tr.sha256, "ref_meta_sha256": file_sha256(ref_meta_path),
                "git_commit": D.git_commit(), "seed": seed, "n_boot": n_boot, "n_test_demos": k,
                "n_test_frames": int(len(y_test)), "n_trainval_frames": tr.counts,
                "frames_per_demo_dropped_last": [int(n - t) for (_, _, n, _), t in zip(demos, lengths)],
