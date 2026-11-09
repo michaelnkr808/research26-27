@@ -885,3 +885,9 @@ Lead session. UTC. Covers 2026-11-07 about 23:47 to 2026-11-08 about 04:30.
 - verified (pod log committed as `results/logs/eval-dinov3-s0-l4-1-fq9kz.log`): seed 0 shard 4 finished before 10:26 UTC, 3766 records, 0 errors, 376 episodes/h, policy busy 50%. Seed 0 is complete (8 of 8 shards).
 - Left: `s1-l4-0-6j5fv` (seed 1 shard 2), due about 14:30 UTC (speculative, from its 09:16 rate).
 **Next:** unchanged from (p).
+
+## 2026-11-09 (r) [agent, lead] (seed 1 shard 2 done; all 16 shards complete)
+- verified (pod log committed as `results/logs/eval-dinov3-s1-l4-0-6j5fv.log`): seed 1 shard 2 finished at 14:04 UTC with 3766 records and 0 errors (32,077 s of rollout, 423 episodes/h, policy busy 51%, GPU 51.9% mean over 1070 samples; peak cgroup memory 32.6 GB). Output: `/mnt/proxy/rollouts/eval-dinov3-s1/dinov3-s1.2of8.jsonl`, 3766 lines.
+- Status: all 16 shards (seeds 0 and 1, 8 shards each) are done with 0 errors across the run. Expected record counts: shards 0 and 1 hold 3767, shards 2 to 7 hold 3766, per seed.
+- Not yet run: `lp_eval.py seednoise`. It waits for the user's go in this window (agreed in (p)); no verdict exists yet. The pre-committed exit options are in `writing/2026-11-09-proxy-exit-options.md`.
+**Next:** the user gives the go for `lp_eval.py seednoise` (with the exact per-shard counts above); then relay the branch and the two DINOv3 means, in words, to the planning session. Delete the finished eval Jobs after the seednoise read confirms the record counts.
