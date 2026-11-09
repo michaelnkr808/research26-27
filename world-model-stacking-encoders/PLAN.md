@@ -25,6 +25,7 @@ Each experiment folder has its own `PLAN.md` (the design, written before running
 - Retrospective check of our diagnostics against the paper's 16 composition results (reviewer, 2026-10-28; suggestive only).
 
 ## Recently done
+- 2026-11-09: exit options for the proxy replication written before the seed-noise verdict was read; nothing decided (LOG 2026-11-09 [agent, planning] proxy exit options; `writing/2026-11-09-proxy-exit-options.md`).
 - 2026-11-08: motion-score prior-art search for the user's motion-alignment idea; a label-free 'how much features change' statistic already exists (Tsagkas et al. 2025), the spatial 'where' version was not found (LOG 2026-11-08 [agent, planning]; `writing/2026-11-08-motion-score-prior-art.md`).
 - 2026-11-07: literature search, 50 candidate papers in three themes plus a top 10, all links and notes checked by reviewers; leads only, nothing read yet (`literature/reading-list/`, LOG 2026-11-07 [agent, literature]).
 - 2026-11-06: which VLA liu2026what uses: none, its model is a world action model; VLAs appear only as Table 3 baselines and in titles (LOG 2026-11-06 [agent, planning] liu2026what read; `literature/notes/liu2026-what-visual-representations-wams.md`, "Read for the mentor's 2026-11-06 points").
