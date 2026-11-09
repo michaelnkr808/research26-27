@@ -871,3 +871,12 @@ Lead session. UTC. Covers 2026-11-07 about 23:47 to 2026-11-08 about 04:30.
 - Status: 12 of 16 shards done. About 11,000 episodes are left on the three running shards, plus 3766 for seed 1 shard 2. Estimate (speculative, from the current rates): the three running shards finish about 09:00-10:30 UTC Nov 9.
 
 **Next:** save the remaining shard logs. When all 16 are done, run `lp_eval.py seednoise` with the exact counts (shards 0 and 1 hold 3767 jobs) and bring the verdict to the user.
+
+## 2026-11-09 (p) [agent, lead] (seed 0 shards 6 and 7 done, 14 of 16; two shards left)
+
+- verified (pod logs committed as `results/logs/eval-dinov3-s0-l4-2-8l7qd.log` and `eval-dinov3-s0-l4-3-ls5b8.log`): seed 0 shards 6 and 7 finished before 10:01 UTC with 3766 records each and 0 errors, at 401 and 405 episodes/h, policy busy 49-50%.
+- verified (10:01 UTC): still Running: `s0-l4-1-fq9kz` (seed 0 shard 4, about 400 queued at 09:16, so due about 10:20 UTC, speculative) and `s1-l4-0-6j5fv` (seed 1 shard 2, about 2,180 queued at 09:16 at 422 episodes/h, so due about 14:30 UTC, speculative).
+- The freed L4 slots went to the perturbed-frame phase-A Jobs (experiment `2026-11-06-perturbed-frames/LOG.md`, 2026-11-09 lead entries).
+- Planning's pre-committed exit-options memo is on main (`writing/2026-11-09-proxy-exit-options.md`), written before any verdict. Agreed with the planning session: `lp_eval.py seednoise` runs only after the user's go in this window; the planning session then gets the branch and the two DINOv3 means in words.
+
+**Next:** save the last two shard logs when they finish; ask the user for the go to run `lp_eval.py seednoise` (shards 0 and 1 hold 3767 jobs, the rest 3766); relay the branch to planning.
