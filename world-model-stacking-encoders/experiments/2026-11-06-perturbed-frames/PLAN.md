@@ -315,6 +315,7 @@ After the source read (Feasibility above). Answered from the source, untested (u
 ### Amendment 2026-11-09: probes are retrained on our own re-renders; the tally becomes a separate reference (DRAFT for the user's sign-off and a fresh review; no re-render-trained result of any kind exists)
 
 [Note 2026-11-09: signed off by the user (Q1 to Q8 decided below, Q9 go decided); the "DRAFT" in the heading above is historical. Phase A was submitted 07:34 UTC 2026-11-09.]
+[Note 2026-11-09, 15:30 UTC: phase A finished; gate A passed (val R2 0.6640 vs threshold 0.6312; LOG "phase A: gate A PASSED"). Phase B waits for the user's separate go.]
 
 Drafted 2026-11-09 by an implementation worker from docs and source reading only (no cluster, no compute, no code changed). Labels: `verified` (read or run in a repo file, the file named), `recalled` (memory, unchecked), `speculative` (a guess or proposal). Everything marked "proposal" or in "For the user to decide" is not a decision until the user makes it. Earlier text is kept; items it replaces carry a bracketed "Superseded 2026-11-09" note pointing here.
 
@@ -527,6 +528,7 @@ Written 2026-11-09 by an implementation worker (pf-plan-slice). Labels: `verifie
 3. Zero or negative clean gain: where our re-measured clean gain for a partner differs from the tally (including zero or negative), the report states that plainly for that partner and flags the pair. Rule P still runs for every pair. No pair is dropped and nothing is re-tuned because of it.
 
 **Timing (fixed before any result).** Both rules are fixed before any test frame is rendered and before any re-render-trained result exists. As of this entry no dev report exists: phase A was submitted at 07:34 UTC 2026-11-09 (lead LOG, phase A go) and nothing has finished.
+[Note 2026-11-09, 15:30 UTC: the dev report now exists (`results/pf-main/phase-a/pfa-dev/reports/dev-report.json`); the rules above were committed before it. All four clean val gains in the deciding slice are positive, so the zero-gain reading rule is not triggered.]
 
 **Accepted risk (verified from LOG 2026-11-08 reviewer notes and Q20).** The scene-XML diff gate for light and background variants is not implemented. Draws are uniform over all 279 light and 281 background names, so an undrawn variant that changes more than light or table texture would be caught only where it touches fixture bodies (Q20). Recorded as an accepted risk; re-examined if phase B's pilot or render reports show anything odd.
 
