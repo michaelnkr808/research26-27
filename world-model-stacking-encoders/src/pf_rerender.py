@@ -327,6 +327,17 @@ def output_complete(final, entry):
         return False
 
 
+def require_strict_fields(env_info):
+    """A main-run render (not a pilot) refuses at startup if any provenance field the consistency check later needs is null or
+    missing, so a phase A that forgot IMAGE_DIGEST (or lacks the bundle scripts or libero) fails before it renders anything instead of
+    leaving a reference report that phase B cannot accept."""
+    flat = R._flat(env_info.get("software") or {})
+    missing = [k for k in R.STRICT_REQUIRED if flat.get(k) is None]
+    if missing:
+        raise R.RenderCheckError(f"provenance fields are null or missing: {missing}. Set IMAGE_DIGEST, mount the env scripts "
+                                 f"(--env-scripts-dir) and make libero importable before a main-run render (only --pilot may go without)")
+
+
 def timing_summary(files):
     """Seconds per frame for the condition (frame loop; env build and prepare apart) and, for noise, per noise code. From the per-demo
     records of a report's `files`."""
@@ -379,6 +390,8 @@ def render_run(raw_dir, out_root, split, condition, cfg, classification, env_inf
             raise R.RenderCheckError("--pilot needs --split val, --max-demos and a perturbed condition")
     elif condition != "clean" and split != "test":
         raise R.RenderCheckError("perturbed conditions are rendered for the test split only (PLAN); use --pilot for a val pilot")
+    if not pilot:
+        require_strict_fields(env_info)
     if condition != "clean" and condition not in R.PTYPES:
         raise R.RenderCheckError(f"unknown condition {condition}")
     if condition != "clean" and classification is None:
@@ -573,7 +586,21 @@ def run_consistency(raw_dir, ref_root, out_root, cfg, env_info, *, render=render
         write_json(path, rep)
 
 
-def compare_dirs(ref_dir, new_dir, ref_report=None, new_report=None, suite=SUITE):
+def parse_demos(spec):
+    """None (default: the union of the demos of both files), 'val' / 'train' / 'trainval' (the fixed split of the 50-demo files) or a
+    comma-separated list of demo names."""
+    if spec is None:
+        return None
+    ranges = {"train": range(0, 30), "val": range(30, 40), "trainval": range(0, 40)}
+    if spec in ranges:
+        return [f"demo_{i}" for i in ranges[spec]]
+    names = [x.strip() for x in spec.split(",") if x.strip()]
+    if not names or not all(re.fullmatch(r"demo_\d+", x) for x in names):
+        raise ValueError(f"--demos: {spec!r}")
+    return names
+
+
+def compare_dirs(ref_dir, new_dir, ref_report=None, new_report=None, suite=SUITE, demos=None):
     """Render-free comparison of two render outputs: environment records (software difference listed under `stop`, hardware under
     `recorded`) and the pixels of every demo present in either file (a demo in one file only counts as a difference), per task file."""
     rr = Path(ref_report or Path(ref_dir) / "render-report.json")
@@ -585,7 +612,9 @@ def compare_dirs(ref_dir, new_dir, ref_report=None, new_report=None, suite=SUITE
     out = {"reference": str(ref_dir), "new": str(new_dir), "reference_report_found": rr.exists(), "new_report_found": nr.exists(),
            "provenance_comparison": R.compare_provenance(ref_env, new_env), "files_only_in_reference": sorted(set(stems) - set(stems_new)),
            "files_only_in_new": sorted(set(stems_new) - set(stems))}
-    out["pixels"] = pixel_comparison(ref_dir, new_dir, suite, sorted(set(stems) & set(stems_new)))
+    common = sorted(set(stems) & set(stems_new))
+    out["demos_compared"] = demos if demos is not None else "union of both files"
+    out["pixels"] = pixel_comparison(ref_dir, new_dir, suite, common, None if demos is None else {s: demos for s in common})
     out["identical"] = bool(out["pixels"]) and all(r["identical"] for r in out["pixels"].values()) and not out["files_only_in_reference"] \
         and not out["files_only_in_new"]
     return out
@@ -659,7 +688,7 @@ def cmd_check(args):
 
 
 def cmd_compare(args):
-    out = compare_dirs(args.ref_dir, args.new_dir, args.ref_report, args.new_report)
+    out = compare_dirs(args.ref_dir, args.new_dir, args.ref_report, args.new_report, demos=parse_demos(args.demos))
     out["mode"] = "report-only" if args.report_only else "strict"
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     write_json(args.out, out)
@@ -709,6 +738,8 @@ def build_parser():
     m.add_argument("--new-report", default=None)
     m.add_argument("--out", required=True)
     m.add_argument("--report-only", action="store_true")
+    m.add_argument("--demos", default=None, help="val | train | trainval | demo_30,demo_31,...: compare only these demos (default: the union "
+                                                 "of both files, so a demo on one side only counts as a difference); phase A vs pf-val uses val")
     d = sub.add_parser("draws")
     common(d)
     return ap

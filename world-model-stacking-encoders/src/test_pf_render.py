@@ -761,10 +761,12 @@ def test_consistency_end_to_end():
                 rc = PR.main(["check-consistency", "--raw", str(raw), "--config", str(cfgp), "--consistency-ref", str(t / "phaseA_nokey"),
                               "--out", str(t / "c6")])
             assert rc == PR.RC_CONSISTENCY
-            # strict: a null bundle key on both sides is not "same"
+            # strict: a null bundle key on both sides is not "same" (reference report patched, since a main-run render refuses to write one)
+            shutil.copytree(t / "phaseA", t / "phaseA_nullbundle")
+            rj = json.loads((t / "phaseA_nullbundle/render-report.json").read_text())
+            rj["environment"]["software"]["bundle_key"] = None
+            (t / "phaseA_nullbundle/render-report.json").write_text(json.dumps(rj))
             cur["env"] = env_info(bundle_key=None)
-            with Stub():
-                PR.render_run(raw, t / "phaseA_nullbundle", "trainval", "clean", CFG, None, cur["env"], max_demos=31)
             with Stub() as stub:
                 rc = PR.main(["check-consistency", "--raw", str(raw), "--config", str(cfgp), "--consistency-ref", str(t / "phaseA_nullbundle"),
                               "--out", str(t / "c7")])
@@ -825,6 +827,38 @@ def test_consistency_end_to_end():
             assert rb["files"]["task_a_demo"]["demos"] == [f"demo_{i}" for i in range(40, 50)]
             assert stub.log["make"][:3] == ["task_a", "task_b", "task_c"] and len(stub.log["make"]) == 6, "consistency (3 envs) then test render (3 envs)"
             assert (t / "B4/consistency/consistency-report.json").exists()
+            # main-run render refuses at startup if a strict provenance field is null; a pilot does not
+            for key in ("image_digest", "bundle_key", "libero_source_fingerprint"):
+                with Stub() as stub:
+                    expect(R.RenderCheckError, PR.render_run, raw, t / ("nullA_" + key), "trainval", "clean", CFG, None, env_info(**{key: None}))
+                    assert stub.log["make"] == [] and not list((t / ("nullA_" + key) / "libero_goal").glob("*"))
+            with Stub() as stub:
+                expect(R.RenderCheckError, PR.render_run, raw, t / "nullA_lib", "trainval", "clean", CFG, None, env_info(lib_mujoco=None))
+                expect(R.RenderCheckError, PR.render_run, raw, t / "nullB", "test", "clean", CFG, None, env_info(image_digest=None))
+                assert stub.log["make"] == []
+                PR.render_run(raw, t / "nullpilot", "val", "camera", CFG, cl, env_info(image_digest=None), max_demos=1, pilot=True)
+            cur["env"] = env_info(image_digest=None)
+            with Stub() as stub:
+                rc = PR.main(["render", "--split", "trainval", "--condition", "clean", "--raw", str(raw), "--config", str(cfgp),
+                              "--out", str(t / "nullcli")])
+            assert rc == PR.RC_CHECK and stub.log["make"] == []
+            cur["env"] = env_info()
+            # --demos: a val-only reference (the pf-val case) against a trainval render
+            with Stub():
+                PR.render_run(raw, t / "valonly", "val", "clean", CFG, None, env_info())
+            rc = PR.main(["compare", "--ref-dir", str(t / "valonly"), "--new-dir", str(t / "phaseA"), "--out", str(t / "cmp_u.json"), "--report-only"])
+            assert rc == PR.RC_OK and not json.loads((t / "cmp_u.json").read_text())["identical"]
+            rc = PR.main(["compare", "--ref-dir", str(t / "valonly"), "--new-dir", str(t / "phaseA"), "--out", str(t / "cmp_v.json"),
+                          "--report-only", "--demos", "val"])
+            cv = json.loads((t / "cmp_v.json").read_text())
+            assert rc == PR.RC_OK and cv["identical"] and cv["demos_compared"] == [f"demo_{i}" for i in range(30, 40)]
+            with Stub(shift=1):
+                PR.render_run(raw, t / "phaseA_s", "trainval", "clean", CFG, None, env_info())
+            rc = PR.main(["compare", "--ref-dir", str(t / "valonly"), "--new-dir", str(t / "phaseA_s"), "--out", str(t / "cmp_w.json"),
+                          "--report-only", "--demos", "val"])
+            assert not json.loads((t / "cmp_w.json").read_text())["identical"], "a shifted pixel must still show with the filter"
+            assert PR.parse_demos("demo_30, demo_31") == ["demo_30", "demo_31"] and PR.parse_demos(None) is None
+            expect(ValueError, PR.parse_demos, "30")
             # report-only compare (what phase A does against the pf-val val frames): never fails on differences, lists them
             rc = PR.main(["compare", "--ref-dir", str(t / "phaseA"), "--new-dir", str(t / "phaseA"), "--out", str(t / "cmp1.json"), "--report-only"])
             assert rc == PR.RC_OK and json.loads((t / "cmp1.json").read_text())["identical"]
