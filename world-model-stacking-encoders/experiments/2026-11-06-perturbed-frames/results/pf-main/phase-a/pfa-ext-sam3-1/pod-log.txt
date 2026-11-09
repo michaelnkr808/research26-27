@@ -1,0 +1,47 @@
+=== pfa-ext-sam3-1 20261109-090651 src 765b011dd94dd8bdc204bb88a625b4142790a26e
+GPU 0: NVIDIA L4 (UUID: GPU-95a65eff-fe58-9b92-8e32-ba16d579963c)
+32
+Mon Nov  9 09:06:51 UTC 2026
+csi-cephfs-node@90a5afad-c313-4e49-9b5f-317100c6930e.nautilusfs=/volumes/csi/csi-vol-9fc6b0fe-e947-4528-a5c5-c5e80fc7d70d/9f0765b7-9592-498f-ae6c-7f42cf4c5f62  1.0T  748G  277G  73% /mnt/proxy
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+revision facebook/sam3 3c879f39826c281e95690f02c7821c4de09afae7 required prefix 3c879f3
+open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: OK
+open_the_middle_drawer_of_the_cabinet_demo.hdf5: OK
+turn_on_the_stove_demo.hdf5: OK
+total 1659588
+drwxr-xr-x 2 root root       173 Nov  9 09:07 .
+drwxr-xr-x 3 root root        33 Nov  9 09:07 ..
+-rw-r--r-- 1 root root 554938272 Nov  9 09:07 open_the_middle_drawer_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root 799813536 Nov  9 09:07 open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5
+-rw-r--r-- 1 root root 344666016 Nov  9 09:08 turn_on_the_stove_demo.hdf5
+Mon Nov  9 09:08:13 UTC 2026
+transformers 5.18.0 numpy 2.2.6
+Loading weights:   0%|          | 0/1468 [00:00<?, ?it/s]Loading weights:  23%|██▎       | 344/1468 [00:00<00:00, 3418.17it/s]Loading weights:  47%|████▋     | 686/1468 [00:00<00:00, 1177.87it/s]Loading weights:  60%|█████▉    | 875/1468 [00:01<00:01, 565.95it/s] Loading weights:  67%|██████▋   | 990/1468 [00:01<00:00, 485.13it/s]Loading weights:  73%|███████▎  | 1072/1468 [00:01<00:00, 507.64it/s]Loading weights:  78%|███████▊  | 1148/1468 [00:02<00:00, 395.04it/s]Loading weights:  82%|████████▏ | 1205/1468 [00:02<00:00, 359.69it/s]Loading weights:  85%|████████▌ | 1252/1468 [00:02<00:00, 341.95it/s]Loading weights:  88%|████████▊ | 1293/1468 [00:02<00:00, 295.37it/s]Loading weights:  90%|█████████ | 1327/1468 [00:02<00:00, 238.44it/s]Loading weights:  92%|█████████▏| 1354/1468 [00:03<00:00, 213.46it/s]Loading weights:  94%|█████████▍| 1385/1468 [00:03<00:00, 228.33it/s]Loading weights:  96%|█████████▌| 1411/1468 [00:03<00:00, 219.75it/s]Loading weights:  98%|█████████▊| 1435/1468 [00:03<00:00, 189.62it/s]Loading weights: 100%|█████████▉| 1464/1468 [00:03<00:00, 206.95it/s]Loading weights: 100%|██████████| 1468/1468 [00:03<00:00, 393.66it/s]
+[extract] encoder=sam3 hf_id=facebook/sam3 res=1008 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 11288 frames in 2615.6s (4.3 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 16270 frames in 3786.1s (4.3 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 7010 frames in 1635.9s (4.3 frames/s)
+=== extract-sam3 exit code 0
+Mon Nov  9 11:22:41 UTC 2026
+meta ok: sam3 3 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams']
+=== meta-sam3 exit code 0
+Mon Nov  9 11:22:41 UTC 2026
+total 1245035
+drwxr-xr-x 2 root root         3 Nov  9 11:22 .
+drwxr-xr-x 3 root root         1 Nov  9 11:22 ..
+-rw-r--r-- 1 root root 416320904 Nov  9 11:22 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 599977352 Nov  9 11:22 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 258616712 Nov  9 11:22 turn_on_the_stove_demo.h5
+=== copy-sam3 exit code 0
+Mon Nov  9 11:22:43 UTC 2026
+=== exit codes: worst 0
+Mon Nov  9 11:22:43 UTC 2026
+copied reports to /mnt/proxy/pf-main/phase-a/reports/pfa-ext-sam3-1-20261109-090651
+-rw-r--r-- 1 root root 212 Nov  9 11:22 /work/pfa-ext-sam3-1.tgz
+=== BEGIN PFA_TGZ_B64
+H4sIAAAAAAAAA+3RTQrCMBAF4Kw9RU7Q5j/NcWJMIIhG01Z6fLVQEEFdFRHft5nATGCG17RkdezG
+aj3Xm+c6v7kWVklmlLnPWSs0oXr91QgZ+8FXSkktZXg396n/o5q2xkvuczn2zTCtc+E9YKPUy/y5
+fMzfEMaFZoJQtso2T/48/yV9mnyI21L2be8PksrQWZek64QJouPRaeNYYiLYTvCgdpE5n3y0tMbz
+mGvc0VONKU/Lx8237wIAAAAAAAAAAAAAAAAAAAAA+AdXQx+egQAoAAA=
+=== END PFA_TGZ_B64
+=== done; exiting with 0 (0 only if every stage passed)

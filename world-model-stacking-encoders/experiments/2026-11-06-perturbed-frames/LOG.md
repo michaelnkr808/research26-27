@@ -363,3 +363,9 @@ Merged main into `pf-smoke` (c3deaab; has `src/pf_analysis.py`, PLAN amendment 8
 ## 2026-11-09 [agent, lead] phase A: SigLIP 2 + C-RADIOv4 Job complete (exit 0)
 **Verified (`results/pf-main/phase-a/pfa-ext-siglip2-cradio/pod-log.txt`, `revisions.txt`):** `pfa-ext-siglip2-cradio` ran on an RTX 3090 (suncave-15) and exited 0 at 10:30:34 UTC: SigLIP 2 at about 112 images/s, C-RADIOv4 from 09:58 to 10:30; both meta checks against the smoke-report reference passed for 10 files; features copied to `/mnt/proxy/pf-main/phase-a/feats/{siglip2,c-radiov4}/`. The SigLIP 2 `main` sha is in `revisions.txt` (phase B must assert it, PHASE-A.md section 5). GPU-hours held: see the first and last timestamps in the pod log (about 0.9 h on the wall clock; estimate 0.8).
 **Remaining in phase A:** `sam3-1` and `vggt` Running; `sam3-2`, `sam3-3`, pilot Pending. Then `pfa-dev`.
+
+## 2026-11-09 [agent, lead] phase A: SAM 3 shard 1 complete (exit 0)
+**Verified (`results/pf-main/phase-a/pfa-ext-sam3-1/pod-log.txt`, `revisions.txt`):** `pfa-ext-sam3-1` ran on the L4 (gpu05), started 08:54:57, exited 0 at 11:22:43 UTC (about 2.5 h wall clock). Revision check passed (`3c879f3...`); its three files (open_the_top_drawer..., open_the_middle_drawer..., turn_on_the_stove; 11,288 + 16,270 + 7,010 = 34,568 frames) extracted at 4.3 frames/s, 8,037.6 s of extraction, under the 10,800 s cap; meta check against the smoke-report reference passed for 3 files; features copied to `/mnt/proxy/pf-main/phase-a/feats/sam3/`. Report bundle holds only `revisions.txt`.
+**Remaining in phase A (11:28 UTC):** `vggt` Running (since 10:12); `sam3-2`, `sam3-3` and the pilot Pending; the last eval shard Running. Then `pfa-dev`.
+**Test-set use:** none.
+**Next:** unchanged.
