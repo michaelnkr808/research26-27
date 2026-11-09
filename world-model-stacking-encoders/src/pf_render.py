@@ -521,34 +521,53 @@ def compare_provenance(ref, new, strict=False):
     return out
 
 
+# Tolerance of the render-consistency check (PLAN Amendment 2026-11-09 (d), user decision): a demo-camera array passes when no
+# value differs by more than MAX_ABS_DIFF_TOL (of 255) and fewer than FRACTION_TOL of its values differ at all.
+MAX_ABS_DIFF_TOL = 1
+FRACTION_TOL = 1e-6
+
+
+def within_tolerance(n_different, n_values, max_abs_diff):
+    return n_different == 0 or (max_abs_diff <= MAX_ABS_DIFF_TOL and n_different / n_values < FRACTION_TOL)
+
+
 def compare_frames(ref_path, new_path, demos=None):
-    """Byte-for-byte comparison of the uint8 128 x 128 render outputs of two HDF5 files (LIBERO layout, data/<demo>/obs/<cam>).
-    demos: names to compare, default every demo present in either file (one present on one side only is reported missing). Returns {"identical": bool, "demos": {demo: {cam: {...}}}}.
-    Any difference in any value, a demo missing in either file, or a shape difference makes identical False."""
+    """Comparison of the uint8 128 x 128 render outputs of two HDF5 files (LIBERO layout, data/<demo>/obs/<cam>).
+    demos: names to compare, default every demo present in either file (one present on one side only is reported missing).
+    Returns {"identical": bool, "within_tolerance": bool, "verdict": "identical" | "within_tolerance" | "exceeds_tolerance",
+    "demos": {demo: {cam: {...}}}, "missing": [...]}. Per demo-camera array: n_different, n_values, fraction_different, max_abs_diff,
+    n_frames_different, identical, within_tolerance (see MAX_ABS_DIFF_TOL and FRACTION_TOL). `identical` is byte-for-byte; `within_tolerance`
+    is True when every array passes the tolerance. A demo missing in either file, no demos, a shape or dtype difference is never within
+    tolerance."""
     import h5py
-    res = {"identical": True, "demos": {}, "missing": []}
+    res = {"identical": True, "within_tolerance": True, "demos": {}, "missing": [],
+           "tolerance": {"max_abs_diff": MAX_ABS_DIFF_TOL, "fraction": FRACTION_TOL}}
     with h5py.File(ref_path, "r") as a, h5py.File(new_path, "r") as b:
         da, db = a["data"], b["data"]
         names = list(demos) if demos is not None else sorted(set(da.keys()) | set(db.keys()), key=demo_index)
         if not names:
-            res["identical"] = False
+            res["identical"] = res["within_tolerance"] = False
             res["missing"].append("no demos to compare")
         for d in names:
             if d not in da or d not in db:
-                res["identical"] = False
+                res["identical"] = res["within_tolerance"] = False
                 res["missing"].append(d)
                 continue
             res["demos"][d] = {}
             for c in HDF5_KEY.values():
                 x, y = da[d]["obs"][c][:], db[d]["obs"][c][:]
                 if x.shape != y.shape or x.dtype != y.dtype:
-                    r = {"identical": False, "shape_ref": list(x.shape), "shape_new": list(y.shape), "n_different": None}
+                    r = {"identical": False, "within_tolerance": False, "shape_ref": list(x.shape), "shape_new": list(y.shape),
+                         "dtype_ref": str(x.dtype), "dtype_new": str(y.dtype), "n_different": None}
                 else:
                     diff = x != y
                     nd = int(diff.sum())
-                    r = {"identical": nd == 0, "n_different": nd, "n_values": int(x.size),
-                         "max_abs_diff": int(np.abs(x.astype(np.int16) - y.astype(np.int16)).max()) if nd else 0,
+                    mad = int(np.abs(x.astype(np.int16) - y.astype(np.int16)).max()) if nd else 0
+                    r = {"identical": nd == 0, "within_tolerance": bool(within_tolerance(nd, int(x.size), mad)), "n_different": nd,
+                         "n_values": int(x.size), "fraction_different": nd / int(x.size) if x.size else 0.0, "max_abs_diff": mad,
                          "n_frames_different": int(diff.reshape(len(x), -1).any(axis=1).sum()) if nd else 0}
                 res["demos"][d][c] = r
                 res["identical"] &= r["identical"]
+                res["within_tolerance"] &= r["within_tolerance"]
+    res["verdict"] = "identical" if res["identical"] else "within_tolerance" if res["within_tolerance"] else "exceeds_tolerance"
     return res
