@@ -900,3 +900,14 @@ Lead session. UTC. Covers 2026-11-07 about 23:47 to 2026-11-08 about 04:30.
 - Test-set use: none. No rollout was run and no result was produced this entry.
 
 **Next:** the lead creates the ConfigMap (command in `jobs/SEEDNOISE.md`) and submits the Job on the user's go (given 2026-11-09 in chat: "run the seednoise"), saves the pod log within 24 h, recovers the files, and brings the verdict to the user in words.
+
+## 2026-11-09 (t) [agent, implementation worker] (seed-noise read run: OUTCOME go ahead; records recovered)
+- verified (pod log, committed as `results/logs/seednoise-read-4g9vn.log`; pod `stacking-encoders-proxy-seednoise-read-4g9vn`): the read Job `stacking-encoders-proxy-seednoise-read` was created 19:51:46 UTC and Succeeded 19:52:55 on 2026-11-09. All stages exited 0 (`=== done worst 0`). In-pod unit tests passed; the full-subset sha256 check passed.
+- verified (log SHA256/LINES lines): record counts per seed are 3767 for shards 0 and 1 and 3766 for shards 2 to 7, for both seeds (training seed 1 `dinov3-s1.Kof8.jsonl`, training seed 0 `dinov3-s0-a40.Kof8.jsonl`).
+- verified (printed by `lp_eval.py seednoise`, config `dinov3`, A = training seed 1, B = training seed 0): 10,030 LIBERO-Plus episodes compared in both seeds; 40 clean-LIBERO records per seed excluded from the rule. Mean LIBERO-Plus success A 8.31505483549352 points, B 7.1552010634762375 points. Noise delta A - B = +1.1598537720172815 points (printed +1.160). Episodes with A lower 1016, A higher 1257, equal 7757. Threshold T = 2.7 points; floor 2.7 points. Printed outcome: "go ahead".
+- Reading of the locked rule (PLAN "Seed-noise rule (locked 2026-11-06)"): both means are above the 2.7-point floor and |delta| (about 1.16) is below 2.7, so the rule says "go ahead" with the other 13 runs. That go-ahead is now the user's decision to take. The note in the rule still applies: this is one delta from two seeds, a rough guide, and the two seeds may have trained on different GPU models.
+- verified: recovered the 16 record files from the log's base64 blocks (the SEEDNOISE.md recipe, extended to split by seed) into `results/full-benchmark/rollouts/eval-dinov3-s1/` and `eval-dinov3-s0/` (8 files each); all 16 sha256 and line counts match the SHA256/LINES lines in the log ("16 of 16 match"). The JSON block is saved as `results/full-benchmark/seednoise.json`.
+- verified (Mac re-run): `lp_eval.py seednoise` on the recovered files with `results/full-benchmark/full-subset.json` printed the same numbers (means 8.31505483549352 and 7.1552010634762375, delta 1.1598537720172815, lower 1016 / higher 1257 / equal 7757) and "OUTCOME: go ahead"; its JSON equals the pod's JSON. No differences.
+- Test-set use: none. No new rollouts were run; the check reads records already produced.
+
+**Next:** the user decides on the other 13 runs (`writing/2026-11-09-proxy-exit-options.md`). The lead deletes the finished eval Jobs and the read Job.

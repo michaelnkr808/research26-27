@@ -1,0 +1,34 @@
+{
+ "problems": [],
+ "config": "dinov3",
+ "train_seed_a": [
+  1
+ ],
+ "train_seed_b": [
+  0
+ ],
+ "subset_id": [
+  "91072e5da8499c99"
+ ],
+ "shards": {
+  "A": 8,
+  "B": 8
+ },
+ "n_episodes": 10030,
+ "n_episodes_a": 10030,
+ "n_episodes_b": 10030,
+ "clean_records_excluded": {
+  "A": 40,
+  "B": 40
+ },
+ "mean_a_pts": 8.31505483549352,
+ "mean_b_pts": 7.1552010634762375,
+ "delta_pts": 1.1598537720172815,
+ "a_lower": 1016,
+ "a_higher": 1257,
+ "equal": 7757,
+ "threshold_pts": 2.7,
+ "outcome": "go ahead",
+ "partial": false,
+ "gpu_note": "Note: the two training seeds may have trained on different GPU models (LOG 2026-11-06 (c)); noted, not corrected for."
+}
