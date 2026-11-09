@@ -1,0 +1,109 @@
+=== pfa-ext-siglip2-cradio 20261109-093755 src 765b011dd94dd8bdc204bb88a625b4142790a26e
+GPU 0: NVIDIA GeForce RTX 3090 (UUID: GPU-30b157d2-b4ca-c1f6-4cb4-7fa6d51fd891)
+14
+Mon Nov  9 09:37:55 UTC 2026
+csi-cephfs-node@90a5afad-c313-4e49-9b5f-317100c6930e.nautilusfs=/volumes/csi/csi-vol-9fc6b0fe-e947-4528-a5c5-c5e80fc7d70d/9f0765b7-9592-498f-ae6c-7f42cf4c5f62  1.0T  748G  277G  73% /mnt/proxy
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+revision google/siglip2-large-patch16-384 1b426889ea62b5a72bf9839009a1b184bfc9c178 required prefix None
+revision nvidia/C-RADIOv4-SO400M c0457f5dc26ca145f954cd4fc5bb6114e5705ad8 required prefix None
+open_the_middle_drawer_of_the_cabinet_demo.hdf5: OK
+open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: OK
+push_the_plate_to_the_front_of_the_stove_demo.hdf5: OK
+put_the_bowl_on_the_plate_demo.hdf5: OK
+put_the_bowl_on_the_stove_demo.hdf5: OK
+put_the_bowl_on_top_of_the_cabinet_demo.hdf5: OK
+put_the_cream_cheese_in_the_bowl_demo.hdf5: OK
+put_the_wine_bottle_on_the_rack_demo.hdf5: OK
+put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: OK
+turn_on_the_stove_demo.hdf5: OK
+total 4847164
+drwxr-xr-x 2 root root      4096 Nov  9 09:41 .
+drwxr-xr-x 3 root root        25 Nov  9 09:38 ..
+-rw-r--r-- 1 root root 554938272 Nov  9 09:38 open_the_middle_drawer_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root 799813536 Nov  9 09:39 open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5
+-rw-r--r-- 1 root root 601239456 Nov  9 09:39 push_the_plate_to_the_front_of_the_stove_demo.hdf5
+-rw-r--r-- 1 root root 360984480 Nov  9 09:39 put_the_bowl_on_the_plate_demo.hdf5
+-rw-r--r-- 1 root root 394014624 Nov  9 09:40 put_the_bowl_on_the_stove_demo.hdf5
+-rw-r--r-- 1 root root 394801056 Nov  9 09:40 put_the_bowl_on_top_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root 412495776 Nov  9 09:40 put_the_cream_cheese_in_the_bowl_demo.hdf5
+-rw-r--r-- 1 root root 686272416 Nov  9 09:41 put_the_wine_bottle_on_the_rack_demo.hdf5
+-rw-r--r-- 1 root root 414265248 Nov  9 09:41 put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root 344666016 Nov  9 09:42 turn_on_the_stove_demo.hdf5
+Mon Nov  9 09:42:29 UTC 2026
+transformers 4.57.6 numpy 2.2.6
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+[extract] encoder=siglip2 hf_id=google/siglip2-large-patch16-384 res=384 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 11288 frames in 92.0s (122.7 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 16270 frames in 144.1s (112.9 frames/s)
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 12230 frames in 110.3s (110.9 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 7342 frames in 66.5s (110.4 frames/s)
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 8014 frames in 71.9s (111.5 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 8030 frames in 71.4s (112.5 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 8390 frames in 74.7s (112.3 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 13960 frames in 124.5s (112.2 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 8426 frames in 75.0s (112.3 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 7010 frames in 62.8s (111.7 frames/s)
+=== extract-siglip2 exit code 0
+Mon Nov  9 09:58:18 UTC 2026
+meta ok: siglip2 10 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams']
+=== meta-siglip2 exit code 0
+Mon Nov  9 09:58:18 UTC 2026
+total 3636515
+drwxr-xr-x 2 root root        10 Nov  9 09:58 .
+drwxr-xr-x 3 root root         1 Nov  9 09:58 ..
+-rw-r--r-- 1 root root 416320904 Nov  9 09:58 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 599977352 Nov  9 09:58 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 451046792 Nov  9 09:58 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root 270855560 Nov  9 09:58 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root 295628168 Nov  9 09:58 put_the_bowl_on_the_stove_demo.h5
+-rw-r--r-- 1 root root 296217992 Nov  9 09:58 put_the_bowl_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 309489032 Nov  9 09:58 put_the_cream_cheese_in_the_bowl_demo.h5
+-rw-r--r-- 1 root root 514821512 Nov  9 09:58 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root 310816136 Nov  9 09:58 put_the_wine_bottle_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 258616712 Nov  9 09:58 turn_on_the_stove_demo.h5
+=== copy-siglip2 exit code 0
+Mon Nov  9 09:58:34 UTC 2026
+[extract] encoder=c-radiov4 hf_id=nvidia/C-RADIOv4-SO400M res=448 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 11288 frames in 198.7s (56.8 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 16270 frames in 298.9s (54.4 frames/s)
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 12230 frames in 224.2s (54.5 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 7342 frames in 134.1s (54.7 frames/s)
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 8014 frames in 147.6s (54.3 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 8030 frames in 147.4s (54.5 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 8390 frames in 155.2s (54.1 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 13960 frames in 256.0s (54.5 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 8426 frames in 155.0s (54.3 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 7010 frames in 128.9s (54.4 frames/s)
+=== extract-c-radiov4 exit code 0
+Mon Nov  9 10:30:10 UTC 2026
+meta ok: c-radiov4 10 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams']
+=== meta-c-radiov4 exit code 0
+Mon Nov  9 10:30:10 UTC 2026
+total 4317995
+drwxr-xr-x 2 root root        10 Nov  9 10:30 .
+drwxr-xr-x 3 root root         1 Nov  9 10:30 ..
+-rw-r--r-- 1 root root 494343560 Nov  9 10:30 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 712435592 Nov  9 10:30 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 535580552 Nov  9 10:30 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root 321603464 Nov  9 10:30 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root 351020936 Nov  9 10:30 put_the_bowl_on_the_stove_demo.h5
+-rw-r--r-- 1 root root 351721352 Nov  9 10:30 put_the_bowl_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 367480712 Nov  9 10:30 put_the_cream_cheese_in_the_bowl_demo.h5
+-rw-r--r-- 1 root root 611313032 Nov  9 10:30 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root 369056648 Nov  9 10:30 put_the_wine_bottle_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 307069832 Nov  9 10:30 turn_on_the_stove_demo.h5
+=== copy-c-radiov4 exit code 0
+Mon Nov  9 10:30:34 UTC 2026
+=== exit codes: worst 0
+Mon Nov  9 10:30:34 UTC 2026
+copied reports to /mnt/proxy/pf-main/phase-a/reports/pfa-ext-siglip2-cradio-20261109-093755
+-rw-r--r-- 1 root root 292 Nov  9 10:30 /work/pfa-ext-siglip2-cradio.tgz
+=== BEGIN PFA_TGZ_B64
+H4sIAAAAAAAAA+3RMW7DIBQGYM89BRdwDPgB9li1S4c2UnsCwNhBimIXO1aO3yRSM0RKO1lR1f9b
+QA8ED/5VkS2OHxmlzuPR9XieCyUNlUIKY451Y6TMmFq+tSzbj5NNjGWp76ef9v22/ketihTmOMZ+
+N66mwzIvPAWsiW7mX3JzyV+e6kKSNhnji3Rz5Z/n/50+6/q+24ZijN02DjLf2tSFfLCT3widlxUx
+4UjqqqqD1dIpa6Rr66qsOa+tcKIi1/raC1OxFD73MYWGDSm08cDe+l14uNyzm2MTbfGUvz8+v6xn
+yj/WxPkr85yUaVXjpfZWkGprRb6h1ivntBAUlOHKNjeOv/c3AgAAAAAAAAAAAAAAAAAAAADcxRf6
+3JugACgAAA==
+=== END PFA_TGZ_B64
+=== done; exiting with 0 (0 only if every stage passed)

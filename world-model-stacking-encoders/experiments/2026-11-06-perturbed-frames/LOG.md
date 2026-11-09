@@ -359,3 +359,7 @@ Merged main into `pf-smoke` (c3deaab; has `src/pf_analysis.py`, PLAN amendment 8
 ## 2026-11-09 [agent, lead] phase A: VGGT-Omega running (GPU check ok)
 **Verified (10:27 UTC):** `pfa-ext-vggt` started 10:11:56 on an RTX 2080 Ti (k8s-haosu-10); revision check passed (`1041e80...`); extraction started 10:16; GPU 100% at 10:27 (in-pod nvidia-smi). `pfa-ext-siglip2-cradio` (C-RADIOv4 stage) and `pfa-ext-sam3-1` still Running; `sam3-2`, `sam3-3` and the pilot Pending (the pilot's L4 slot is held by a terminating eval pod, scheduler message). One eval shard left. Live GPU pods: 1 eval + 3 ours.
 **Next:** unchanged.
+
+## 2026-11-09 [agent, lead] phase A: SigLIP 2 + C-RADIOv4 Job complete (exit 0)
+**Verified (`results/pf-main/phase-a/pfa-ext-siglip2-cradio/pod-log.txt`, `revisions.txt`):** `pfa-ext-siglip2-cradio` ran on an RTX 3090 (suncave-15) and exited 0 at 10:30:34 UTC: SigLIP 2 at about 112 images/s, C-RADIOv4 from 09:58 to 10:30; both meta checks against the smoke-report reference passed for 10 files; features copied to `/mnt/proxy/pf-main/phase-a/feats/{siglip2,c-radiov4}/`. The SigLIP 2 `main` sha is in `revisions.txt` (phase B must assert it, PHASE-A.md section 5). GPU-hours held: see the first and last timestamps in the pod log (about 0.9 h on the wall clock; estimate 0.8).
+**Remaining in phase A:** `sam3-1` and `vggt` Running; `sam3-2`, `sam3-3`, pilot Pending. Then `pfa-dev`.
