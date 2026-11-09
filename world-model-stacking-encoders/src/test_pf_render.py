@@ -509,9 +509,9 @@ def test_provenance_and_frames():
 
 
 def test_tolerance():
-    """PLAN Amendment 2026-11-09 (d): pass if every differing value is off by at most 1 and fewer than 1e-6 of an array's values differ."""
-    assert R.MAX_ABS_DIFF_TOL == 1 and R.FRACTION_TOL == 1e-6
-    n_frames = 24                                     # 24 * 128 * 128 * 3 = 1,179,648 values: one differing value is 8.5e-7 < 1e-6
+    """PLAN Amendment 2026-11-09 (d): pass if every differing value is off by at most 1 and fewer than 1e-5 of an array's values differ."""
+    assert R.MAX_ABS_DIFF_TOL == 1 and R.FRACTION_TOL == 1e-5
+    n_frames = 24                                     # 24 * 128 * 128 * 3 = 1,179,648 values: one differing value is 8.5e-7 < 1e-5
     rng = np.random.default_rng(5)
     a = rng.integers(2, 250, (n_frames, 128, 128, 3), dtype=np.uint8)
     w = rng.integers(2, 250, (n_frames, 128, 128, 3), dtype=np.uint8)
@@ -538,20 +538,25 @@ def test_tolerance():
         c = r["demos"]["demo_30"]["eye_in_hand_rgb"]
         assert r["verdict"] == "within_tolerance" and not r["identical"] and r["within_tolerance"], r
         assert c["n_different"] == 1 and c["max_abs_diff"] == 1 and c["n_frames_different"] == 1 and c["within_tolerance"] and not c["identical"]
-        assert 0 < c["fraction_different"] < 1e-6 and c["n_values"] == n_frames * 128 * 128 * 3
-        assert r["demos"]["demo_30"]["agentview_rgb"]["identical"] and r["tolerance"] == {"max_abs_diff": 1, "fraction": 1e-6}
+        assert 0 < c["fraction_different"] < 1e-5 and c["n_values"] == n_frames * 128 * 128 * 3
+        assert r["demos"]["demo_30"]["agentview_rgb"]["identical"] and r["tolerance"] == {"max_abs_diff": 1, "fraction": 1e-5}
         # off by 2: fails
         w2 = w.copy(); w2[7, 40, 50, 2] += 2
         write(t / "two.h5", a, w2)
         r = R.compare_frames(t / "ref.h5", t / "two.h5")
         c = r["demos"]["demo_30"]["eye_in_hand_rgb"]
         assert r["verdict"] == "exceeds_tolerance" and not r["within_tolerance"] and c["max_abs_diff"] == 2 and not c["within_tolerance"]
-        # off by one in more than 1e-6 of the values (two values of 1.18 million): fails
+        # two values off by one (1.7e-6, above the first version's 1e-6) now pass; 13 values (1.1e-5, above 1e-5) fail
         w3 = w.copy(); w3[7, 40, 50, 2] += 1; w3[8, 41, 50, 2] += 1
+        write(t / "two_px.h5", a, w3)
+        assert R.compare_frames(t / "ref.h5", t / "two_px.h5")["verdict"] == "within_tolerance"
+        w3 = w.copy()
+        for k in range(13):
+            w3[k, 40, 50, 2] += 1
         write(t / "many.h5", a, w3)
         r = R.compare_frames(t / "ref.h5", t / "many.h5")
         c = r["demos"]["demo_30"]["eye_in_hand_rgb"]
-        assert r["verdict"] == "exceeds_tolerance" and c["max_abs_diff"] == 1 and c["fraction_different"] > 1e-6 and not c["within_tolerance"]
+        assert r["verdict"] == "exceeds_tolerance" and c["max_abs_diff"] == 1 and c["fraction_different"] > 1e-5 and not c["within_tolerance"]
         # a failing array anywhere fails the whole file, a within-tolerance one next to it does not rescue it
         w4 = w1.copy(); w4[0, 0, 0, 0] ^= 128
         write(t / "mixed.h5", a, w4)
@@ -585,7 +590,7 @@ def test_tolerance():
     assert len(d) == 1 and "pf_rerender.py" in d[0] and not PR.code_hash_differences({"a": "1"}, {"a": "1"})
     assert not R.compare_provenance({**env_info(), "code_sha256": {"x": "1"}}, {**env_info(), "code_sha256": {"x": "2"}}, strict=True)["stop"]
     print("tolerance: identical; one value off by one in 1.18 M values passes as within_tolerance and is reported; off by 2, off by one in "
-          "more than 1e-6 of the values, shape, dtype, missing demo, missing camera key fail; code-hash difference recorded, not a stop")
+          "more than 1e-5 of the values, shape, dtype, missing demo, missing camera key fail; code-hash difference recorded, not a stop")
 
 
 def read_frames(root, stem, d, cam):

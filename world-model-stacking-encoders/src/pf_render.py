@@ -524,7 +524,7 @@ def compare_provenance(ref, new, strict=False):
 # Tolerance of the render-consistency check (PLAN Amendment 2026-11-09 (d), user decision): a demo-camera array passes when no
 # value differs by more than MAX_ABS_DIFF_TOL (of 255) and fewer than FRACTION_TOL of its values differ at all.
 MAX_ABS_DIFF_TOL = 1
-FRACTION_TOL = 1e-6
+FRACTION_TOL = 1e-5      # 1e-6 in the first version of (d); raised by the user the same morning, correction block under (d)
 
 
 def within_tolerance(n_different, n_values, max_abs_diff):
