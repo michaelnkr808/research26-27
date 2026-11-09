@@ -53,6 +53,7 @@
 - Notation or terminology: encoders by letter as in Table 10 (D=DINOv3, V=V-JEPA 2.1, L=SigLIP 2, S=SAM 3, G=VGGT-Ω, H=HRP, U=UniTok, R=C-RADIOv4). "Similarity" = CKA; "complementarity" = gain(B|A) on a named task target. Never use the two interchangeably.
 - Figure and table conventions:
 - Target output format or venue: a publication (user goal, 2026-10-19). Venue to be decided with the mentor.
+- Pull requests: `main` moves by PR for conclusion-feeding changes (`../_standards/05`, Git). In this direction that means `experiments/*/` code, experiment PLAN outcome rules and amendments, `decisions/`, `writing/` memos, `reviews/`, and README key findings. Direction `LOG.md` entries (which name the PR), PLAN Now/Next moves, README status lines, and `literature/reading-list/` leads merge directly, and the merging session pushes `main` right after.
 
 ## Overrides of general standards
 | General rule | Override | Reason |

@@ -25,6 +25,7 @@ Each question about a direction has one file that answers it. The direction root
 ## 2026-10-15
 **Goal:** what I set out to do
 **Did:** what actually happened
+**PR:** #N, or "direct"
 **Found:** results/observations (link experiments/sources)
 **Next:** concrete next step
 **Open questions:**
