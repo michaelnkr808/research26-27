@@ -1,7 +1,7 @@
 # PHASE A, job 3 of 6 (pfa-ext-vggt). NOT SUBMITTED. Submit only after job-pfa-render has finished with exit 0 (the script checks and aborts).
 # VGGT-Omega on the phase-A trainval render. Pins, flags and the vggt-omega install from experiments/2026-10-19-feasibility-tally/extract-job.yaml
 # (transformers 5.18.0, fp16, batch 16, 512 px). Estimate (speculative): 100,960 images at 12.5 per second (2080 Ti rate) = 2.2 h, about 2.4 GPU-h with start-up.
-# Resources as the tally Job (measured there, tally README); cap 6 h inside.
+# Resources as the tally Job (measured there, tally README); cap 4 h inside.
 apiVersion: batch/v1
 kind: Job
 metadata:

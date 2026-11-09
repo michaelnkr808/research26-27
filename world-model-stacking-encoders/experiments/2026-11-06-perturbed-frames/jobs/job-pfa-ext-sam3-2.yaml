@@ -1,7 +1,7 @@
 # PHASE A, job 4 of 6, shard 2 of 3 (pfa-ext-sam3-2). NOT SUBMITTED. Submit only after job-pfa-render has finished with exit 0 (the script checks and aborts).
 # SAM 3 on the phase-A trainval render, files: put_the_wine_bottle_on_the_rack_demo, push_the_plate_to_the_front_of_the_stove_demo, put_the_bowl_on_the_plate_demo
 # (the three shards are disjoint and together the ten files; raw-file sizes 2168 / 2110 / 2095 MB). Pins, flags from experiments/2026-10-19-feasibility-tally/extract-job.yaml
-# (transformers 5.18.0, fp16, batch 8, 1008 px). Estimate (speculative): about 1.7 h per shard at the 2080 Ti rate (5.5 images per second, about 5.1 GPU-h in total), cap 5 h.
+# (transformers 5.18.0, fp16, batch 8, 1008 px). Estimate (speculative): about 1.7 h per shard at the 2080 Ti rate (5.5 images per second, about 5.1 GPU-h in total), cap 3 h.
 # Each shard writes only its own files on the PVC (no file is written by two pods). Same staging path as the other extraction Jobs.
 apiVersion: batch/v1
 kind: Job
