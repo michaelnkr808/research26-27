@@ -132,7 +132,9 @@ def make_world(root, seed=0, flip=(), noise_scale=0.15, drop_last=True, cond_dro
     ref_test = {e: {c: np.concatenate(v) for c, v in cv.items()} for e, cv in ref_test.items()}
     n_tv = tr_len
     expected = {"train": n_files * 30 * n_tv, "val": n_files * 10 * n_tv, "test": n_files * 10 * (T - 1)}
-    return {"feats": feats_dir, "raw": raw_dir, "stored": stored_dir, "conds": cond_roots, "actions": true_actions,
+    # Reference metas in the smoke-report format (q23.details.<enc>.meta): the tally cache's, unpatched.
+    (root / "ref_meta.json").write_text(json.dumps({"q23": {"details": {e: {"meta": meta_for(e)} for e in DIMS}}}))
+    return {"feats": feats_dir, "raw": raw_dir, "stored": stored_dir, "ref_meta": root / "ref_meta.json", "conds": cond_roots, "actions": true_actions,
             "stems": stems, "ref_test": ref_test, "expected": expected, "T": T}
 
 
@@ -147,11 +149,14 @@ def gate_ref(v):
 
 
 def run_dev(w, out, **kw):
+    kw.setdefault("stored_root", w["stored"])
+    kw.setdefault("ref_meta_path", w["ref_meta"])
     return P.dev(w["feats"], w["raw"], SUITE, out, expected_frames=w["expected"], quiet=True, **kw)
 
 
 def run_final(w, out, report, n_boot=200, **kw):
     kw.setdefault("expected_frames", w["expected"])
+    kw.setdefault("ref_meta_path", w["ref_meta"])
     return P.run(w["feats"], w["raw"], SUITE, w["conds"], report, out, n_boot=n_boot, min_boot=100, quiet=True, **kw)
 
 
@@ -480,7 +485,7 @@ def test_gate():
                     assert cv["val_gain"][b] > 0.05, (config, view, b)   # partners carry extra information in this world
         assert set(rep["configs"]) == {"full", "matched"}
         # Optional references are skipped with a note when their input is absent.
-        assert rep["cross_value"] is None and "skipped" in rep["notes"]["cross_value"] and "skipped" in rep["notes"]["tally_reference"]
+        assert rep["lag_check"]["passed"] is True and rep["cross_value"] is not None and "skipped" in rep["notes"]["tally_reference"]
         # Failing dev run: CLI-level contract is gate.passed False with the report written.
         assert (t / "d_fail" / "dev-report.json").exists()
         # Cross value (re-render-trained D scored on stored val features) when a stored root is given.
@@ -539,7 +544,7 @@ def test_final_refuses_without_passing_dev():
 
         def final_with(report, trval=None, conds=None, out="o"):
             return P.run(trval or w["feats"], w["raw"], SUITE, conds or bad_conds, report, t / out, n_boot=100, min_boot=100,
-                         quiet=True, expected_frames=w["expected"])
+                         quiet=True, expected_frames=w["expected"], ref_meta_path=w["ref_meta"])
 
         # No report at all, or a file that is not a dev report.
         expect(lambda: final_with(t / "none.json"), P.GateError, "not found")
@@ -710,7 +715,8 @@ def test_alignment_meta_finite():
         w = make_world(t / "lag", seed=22, lag=True, n_files=2)
         with gate_ref(PASS_REF):
             expect(lambda: run_dev(w, t / "o2", stored_root=w["stored"]), ValueError, "alignment")
-            run_dev(w, t / "o2b")      # without a stored root the check is skipped with a note
+            expect(lambda: run_dev(w, t / "o2b", stored_root=None), ValueError, "stored-feature root")   # lag check is required
+            assert not (t / "o2b").exists()
         assert not (t / "o2").exists()
         rng = np.random.default_rng(0)
         st = rng.normal(size=(21, 6))
@@ -777,7 +783,7 @@ def test_input_errors():
             # A condition missing.
             conds = {c: v for c, v in w["conds"].items() if c != "light"}
             expect(lambda: P.run(w["feats"], w["raw"], SUITE, conds, dp, t / "o1", min_boot=100, n_boot=100, quiet=True,
-                                 expected_frames=w["expected"]), KeyError)
+                                 expected_frames=w["expected"], ref_meta_path=w["ref_meta"]), KeyError)
             assert not (t / "o1").exists(), "a refused run must not leave an output dir behind"
             # A condition whose frame count disagrees with the re-render.
             p = w["conds"]["camera"] / "sam3" / SUITE / "task0.h5"
@@ -802,6 +808,79 @@ def test_input_errors():
         print("input errors (missing condition, frame mismatch, declared sizes, n_boot floor) refused ok")
 
 
+def test_review_fixes():
+    """Fix round after the independent review: real tally JSONs, required lag check, tally-cache metas,
+    stale dev report, and the gate runs before any test label is read."""
+    here = Path(P.__file__).resolve().parent.parent
+    # 1. The real tally JSONs (result numbers only, no frames): the four DINOv3 val values differ in the 8th digit.
+    real = here / "experiments" / "2026-10-19-feasibility-tally" / "results"
+    got = P.reference_tally_val_gains(real, SUITE, "global")
+    assert set(got) == set("RLSG") and all(np.isfinite(v) for v in got.values()), got
+    # 3. The committed reference metas load for all five encoders and carry every META_KEYS key.
+    rm = P.load_reference_meta()
+    assert set(rm) == set(DIMS) and all(k in rm[e] for e in rm for k in P.META_KEYS)
+    assert P.REF_META_PATH.is_file() and "results/smoke/report.json" in str(P.REF_META_PATH)
+    with tempfile.TemporaryDirectory() as t:
+        t = Path(t)
+        w = make_world(t / "w", seed=41, n_files=2)
+        # 1b. A failing optional tally reference is recorded in the report; dev still writes it and keeps its outputs.
+        make_tally(t / "tally", {"R": 0.04, "G": 0.03, "S": 0.02, "L": 0.01}, other_suite=False)
+        f0 = t / "tally" / f"tally-{SUITE}-dinov3-sam3.json"
+        j = json.loads(f0.read_text())
+        j["probes"]["dinov3|global"]["val_r2_by_alpha"]["0.1"] += 0.1
+        f0.write_text(json.dumps(j))
+        expect(lambda: P.reference_tally_val_gains(t / "tally", SUITE, "global"), ValueError, "differs")
+        with gate_ref(PASS_REF):
+            rep = run_dev(w, t / "d", tally_dir=t / "tally")
+        assert (t / "d" / "dev-report.json").exists() and "failed" in rep["notes"]["tally_reference"] and "tally_reference" not in rep
+        # 3b. Metas: every re-rendered file of one encoder disagrees with the tally cache's reference -> dev and final fail.
+        for k_, v_ in [("resolution", 448), ("dtype", "bfloat16")]:
+            ref = json.loads(w["ref_meta"].read_text())
+            ref["q23"]["details"]["sam3"]["meta"][k_] = v_
+            bad = t / f"ref_{k_}.json"
+            bad.write_text(json.dumps(ref))
+            with gate_ref(PASS_REF):
+                expect(lambda: run_dev(w, t / f"dm_{k_}", ref_meta_path=bad), ValueError, f"'{k_}'")
+                expect(lambda: run_final(w, t / f"fm_{k_}", t / "d" / "dev-report.json", ref_meta_path=bad), ValueError, f"'{k_}'")
+        ref = json.loads(w["ref_meta"].read_text())
+        del ref["q23"]["details"]["siglip2"]
+        (t / "ref_missing.json").write_text(json.dumps(ref))
+        expect(lambda: P.load_reference_meta(t / "ref_missing.json"), KeyError, "siglip2")
+        # 2. The final run refuses a dev report without a passed lag check; dev refuses to run without a stored root.
+        with gate_ref(PASS_REF):
+            run_dev(w, t / "d_ok")
+        ok = t / "d_ok" / "dev-report.json"
+        good = json.loads(ok.read_text())
+        assert good["lag_check"]["passed"] is True
+
+        def write(name, mod):
+            jj = json.loads(json.dumps(good)); mod(jj)
+            p = t / name; p.write_text(json.dumps(jj)); return p
+        with gate_ref(PASS_REF):
+            expect(lambda: run_final(w, t / "f1", write("nolag.json", lambda x: x.update(lag_check=None))), P.GateError, "lag check")
+            expect(lambda: run_final(w, t / "f2", write("lagf.json", lambda x: x["lag_check"].update(passed=False))), P.GateError, "lag check")
+            # 4. Stale report: the curve differs from what the given features give (also under ftype=mean).
+            def stale(x):
+                x["gate"]["val_r2_by_alpha"] = {a: v + 0.01 for a, v in x["gate"]["val_r2_by_alpha"].items()}
+            sp = write("stale.json", stale)
+            expect(lambda: run_final(w, t / "f3", sp), P.GateError, "stale")
+            expect(lambda: run_final(w, t / "f4", sp, ftype="mean"), P.GateError, "stale")
+            # 5. check_dev_report runs before any test label is read: with test-label reading rigged to blow up,
+            # a bad report still gives the gate error, and a good one reaches the rigged reader.
+            old = P.load_test_layout
+            def boom(*a, **k):
+                raise AssertionError("test labels read")
+            P.load_test_layout = boom
+            try:
+                expect(lambda: run_final(w, t / "f5", t / "nonexistent.json"), P.GateError, "not found")
+                expect(lambda: run_final(w, t / "f6", sp), P.GateError, "stale")
+                expect(lambda: run_final(w, t / "f7", write("nolag2.json", lambda x: x.update(lag_check=None))), P.GateError)
+                expect(lambda: run_final(w, t / "f8", ok), AssertionError, "test labels read")
+            finally:
+                P.load_test_layout = old
+    print("review fixes: real tally JSONs, tally failure recorded, lag required, tally-cache metas, stale report, gate before labels ok")
+
+
 def main():
     test_rules_unit()
     test_quantities_known()
@@ -817,6 +896,7 @@ def main():
     test_alignment_meta_finite()
     test_misc_switches()
     test_input_errors()
+    test_review_fixes()
     print("all ok")
 
 

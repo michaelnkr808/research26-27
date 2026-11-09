@@ -41,9 +41,12 @@ the raw file and must give val = demo_30..demo_39 and train = demo_0..demo_29 be
 (diagnostics.load would silently give a 24/8/8 split on a file holding only the 40 train+val demos).
 Expected frames per camera: 38,164 train, 12,316 val, 12,748 test.
 
-Optional, report-only references (never gating, skipped with a note when their input is absent): the
-frame-alignment (lag) check and the cross value against a stored-feature root (train and val demos only, never
-test), and the tally's val gains beside ours.
+Required: the frame-alignment (lag) check of the re-rendered train and val features against a stored-feature
+root (--stored-feats, train and val demos only, never test; check_lag raises if it fails; the final run refuses
+a dev report in which it did not run and pass), and the extraction-metadata check: every re-rendered file must match
+the tally cache's metas (META_KEYS) read from the committed smoke report (REF_META_PATH).
+Optional, report-only references (never gating; a failure in one is recorded in the report, it does not abort the
+run): the cross value against the stored val features, and the tally's val gains beside ours.
 
 Never overwrites: the output dir must not exist.
 """
@@ -85,6 +88,12 @@ TRAIN_DEMOS = [f"demo_{i}" for i in range(30)]
 VAL_DEMOS = [f"demo_{i}" for i in range(30, 40)]
 DEV_PHASES = ("train", "val")   # the development entry reads these and nothing else
 DEV_KIND = "pf-dev-report"
+# Reference extraction metadata of the tally cache (all five encoders, read from the cached h5 files by the smoke Job):
+# results/smoke/report.json, key q23.details.<encoder>.meta. PLAN: "extraction metadata identical to the clean cache".
+REF_META_PATH = (Path(__file__).resolve().parent.parent / "experiments" / "2026-11-06-perturbed-frames"
+                 / "results" / "smoke" / "report.json")
+GATE_CURVE_ATOL = 1e-5   # final run: recomputed gate curve must equal the dev report's (float32 solves on one machine agree far closer)
+TALLY_VAL_ATOL = 1e-6    # the tally's four files agree on the DINOv3 val R2 only to ~2e-8 (real JSONs differ in the 8th digit)
 
 
 class NoTestAccessError(RuntimeError):
@@ -144,6 +153,20 @@ def check_meta(f, clean_meta, label):
             raise ValueError(f"{label}: meta '{k}' is {m[k]!r}, the clean cache has {clean_meta[k]!r}")
 
 
+def load_reference_meta(path=REF_META_PATH, encoders=None):
+    """{encoder: meta} of the tally cache from the smoke report (q23.details.<encoder>.meta); every META_KEYS key must exist."""
+    det = json.loads(Path(path).read_text())["q23"]["details"]
+    out = {}
+    for e in (encoders or [DINO] + list(PARTNERS.values())):
+        if e not in det or "meta" not in det[e]:
+            raise KeyError(f"{path}: no q23.details.{e}.meta")
+        miss = [k for k in META_KEYS if k not in det[e]["meta"]]
+        if miss:
+            raise KeyError(f"{path}: reference meta of {e} lacks {miss}")
+        out[e] = det[e]["meta"]
+    return out
+
+
 def _read_meta(f, label):
     if "meta" not in f.attrs:
         raise ValueError(f"{label}: no attrs['meta']")
@@ -151,13 +174,14 @@ def _read_meta(f, label):
 
 
 def load_rendered(root, raw_dir, suite, encoders, ftypes, phases=DEV_PHASES, allow_test=False,
-                  expected_frames=EXPECTED_FRAMES):
+                  expected_frames=EXPECTED_FRAMES, ref_meta=None):
     """Re-rendered clean features of the demos in `phases`, with labels actions[:n-1] from the raw HDF5.
 
     Order of work: (1) the split of every raw file is computed from all its demo names and checked
     (val = demo_30..39, train = demo_0..29); (2) only then are features and labels read, and only for demos in
     `phases`. A test demo is never opened unless allow_test=True (the development entry never sets it).
-    Every feature file must hold exactly n-1 frames per demo and its meta must match the first file's.
+    Every feature file must hold exactly n-1 frames per demo and its meta must match ref_meta[enc] (the tally
+    cache's, see load_reference_meta) on META_KEYS; without ref_meta (low-level use) it must match the first file's.
 
     Returns a namespace: feats[enc][ftype][cam] (rows in file order, demo order), actions, split (per frame),
     index [(stem, demo, T, part)], meta[enc], files, counts {part: frames per camera}.
@@ -189,7 +213,7 @@ def load_rendered(root, raw_dir, suite, encoders, ftypes, phases=DEV_PHASES, all
         try:
             for e, f in fe.items():
                 m = _read_meta(f, f"{root}/{e}/{raw.stem}")
-                meta.setdefault(e, m)
+                meta.setdefault(e, ref_meta[e] if ref_meta is not None else m)
                 check_meta(f, meta[e], f"{root}/{e}/{raw.stem}")
             with h5py.File(raw, "r") as fr:
                 for d in names:
@@ -359,7 +383,7 @@ def lag_check_stored(tr, stored_root, suite, ftype, whiten):
         for i, (stem, d, t, part) in enumerate(tr.index):
             check_lag(tf.standardize(tr.feats[DINO][ftype][cam][off[i]:off[i + 1]]), tf.standardize(st[cam][i]),
                       f"{stem}/{d}/{cam}")
-    return {"demos_checked": len(tr.index), "parts": sorted({p for *_, p in tr.index})}
+    return {"passed": True, "demos_checked": len(tr.index), "parts": sorted({p for *_, p in tr.index})}
 
 
 def reference_tally_val_gains(results_dir, suite, ftype):
@@ -378,8 +402,8 @@ def reference_tally_val_gains(results_dir, suite, ftype):
             at = [s for a_, s in ((float(a), s) for a, s in v["val_r2_by_alpha"].items()) if np.isclose(a_, v["alpha"])]
             if len(at) != 1:
                 raise ValueError(f"{f.name}: {k}: alpha {v['alpha']} not found once in val_r2_by_alpha")
-            if k in val and val[k] != at[0]:
-                raise ValueError(f"val R2 for {k} differs between tally files")
+            if k in val and not np.isclose(val[k], at[0], rtol=0, atol=TALLY_VAL_ATOL):
+                raise ValueError(f"val R2 for {k} differs between tally files by more than {TALLY_VAL_ATOL}")
             val[k] = at[0]
     base = val.get(f"{DINO}|{ftype}")
     if base is None:
@@ -628,38 +652,54 @@ def _claim(out_dir):
     return out_dir
 
 
+def gate_fit(tr, whiten):
+    """Gate, check A: train-only DINOv3 fit, combined view, global features, best alpha on the tally grid.
+
+    Returns (transforms per cam, probe inputs, alpha, {alpha: val R2}); the scored value is curve[alpha].
+    """
+    train = tr.split == "train"
+    tfs = {c: CamTransform(tr.feats[DINO]["global"][c][train], None, whiten) for c in CAMS}
+    x = np.concatenate([tfs[c](tr.feats[DINO]["global"][c]) for c in CAMS], 1)
+    alpha, curve = tune_alpha(x, tr.actions, tr.split)
+    return tfs, x, alpha, curve
+
+
 def dev(trval_root, raw_dir, suite, out_dir, ftype="global", sizes=None, stored_root=None, tally_dir=None,
-        pca_whiten=PCA_WHITEN, expected_frames=EXPECTED_FRAMES, quiet=False):
+        pca_whiten=PCA_WHITEN, expected_frames=EXPECTED_FRAMES, quiet=False, ref_meta_path=REF_META_PATH):
     """Development phase: reads re-rendered train and val features only. Writes <out_dir>/dev-report.json.
+
+    stored_root is required (the lag check against stored train/val features is part of the phase-A checks).
 
     The dir is claimed up front and removed again if the run fails. A failed gate is not an exception here: the
     report is written with gate.passed = False (the CLI then exits non-zero) and the final run refuses it.
     """
+    if stored_root is None:
+        raise ValueError("dev needs a stored-feature root (--stored-feats): the lag check on train and val is required")
     out_dir = _claim(out_dir)
     try:
         return _dev(trval_root, raw_dir, suite, out_dir, ftype, sizes, stored_root, tally_dir, pca_whiten,
-                    expected_frames, quiet)
+                    expected_frames, quiet, ref_meta_path)
     except BaseException:
         shutil.rmtree(out_dir, ignore_errors=True)
         raise
 
 
-def _dev(trval_root, raw_dir, suite, out_dir, ftype, sizes, stored_root, tally_dir, pca_whiten, expected_frames, quiet):
+def _dev(trval_root, raw_dir, suite, out_dir, ftype, sizes, stored_root, tally_dir, pca_whiten, expected_frames, quiet,
+         ref_meta_path):
     t0 = time.time()
     log = (lambda *a: None) if quiet else (lambda *a: print("[pf-dev]", *a, flush=True))
     encoders = [DINO] + list(PARTNERS.values())
     ftypes = sorted({"global", ftype})
+    ref_meta = load_reference_meta(ref_meta_path, encoders)
     tr = load_rendered(trval_root, raw_dir, suite, encoders, ftypes, phases=DEV_PHASES, allow_test=False,
-                       expected_frames=expected_frames)
+                       expected_frames=expected_frames, ref_meta=ref_meta)
     log(f"train+val: {tr.counts} frames per camera, {len(tr.index)} demos")
     train, val = tr.split == "train", tr.split == "val"
     notes = {}
 
     # Gate, check A: train-only DINOv3 fit, combined view, global features, best alpha on the tally grid;
     # the scored value is the tune_alpha curve value at that alpha (val R2), not the train+val refit.
-    tfs_g = {c: CamTransform(tr.feats[DINO]["global"][c][train], None, pca_whiten) for c in CAMS}
-    xg = np.concatenate([tfs_g[c](tr.feats[DINO]["global"][c]) for c in CAMS], 1)
-    g_alpha, g_curve = tune_alpha(xg, tr.actions, tr.split)
+    tfs_g, xg, g_alpha, g_curve = gate_fit(tr, pca_whiten)
     g_score = float(g_curve[g_alpha])
     thr = gate_threshold()
     gate = {"check": "A (PLAN Amendment 2026-11-09 section 4)",
@@ -672,12 +712,10 @@ def _dev(trval_root, raw_dir, suite, out_dir, ftype, sizes, stored_root, tally_d
             "threshold": thr, "passed": bool(g_score >= thr)}
     log(f"gate A: score {g_score:.4f}, threshold {thr:.4f}, passed {gate['passed']}")
 
-    # Optional references, report only.
-    if stored_root is None:
-        notes["lag_check"] = notes["cross_value"] = "skipped: no stored-feature root given"
-        lag = cross = None
-    else:
-        lag = lag_check_stored(tr, stored_root, suite, "global", pca_whiten)
+    # Required: lag check (train and val demos only); raises if the frames are off by one.
+    lag = lag_check_stored(tr, stored_root, suite, "global", pca_whiten)
+    # Optional, report only: a failure here is recorded and does not abort the run.
+    try:
         w_tr, b_tr = D.ridge_fit(xg[train], tr.actions[train], g_alpha)
         vidx = [e for e in tr.index if e[3] == "val"]
         sv = load_stored(stored_root, suite, DINO, "global", vidx, tr.meta[DINO])
@@ -685,6 +723,11 @@ def _dev(trval_root, raw_dir, suite, out_dir, ftype, sizes, stored_root, tally_d
         cross = {"val_r2_stored_features": float(D.r2(tr.actions[val], xs @ w_tr + b_tr).mean()),
                  "val_r2_rerender_features": g_score, "alpha": g_alpha,
                  "note": "re-render-trained DINOv3 probe (train-only fit at the gate's alpha) scored on stored val features, n-1 frames per demo; report only"}
+    except NoTestAccessError:
+        raise
+    except Exception as ex:
+        cross = None
+        notes["cross_value"] = f"failed (report only, not gating): {type(ex).__name__}: {ex}"
     dims = per_camera_sizes(tr.feats, ftype)
     target, reduced = matched_plan(dims, sizes)
     log(f"per-camera sizes {dims}; matched target {target}, reduced {reduced}")
@@ -693,7 +736,7 @@ def _dev(trval_root, raw_dir, suite, out_dir, ftype, sizes, stored_root, tally_d
               "raw_dir": str(raw_dir), "files": tr.files, "git_commit": D.git_commit(), "pca_whiten": pca_whiten,
               "n_frames": tr.counts, "n_demos": len(tr.index), "expected_frames": expected_frames,
               "encoders": {e: tr.meta[e] for e in encoders}, "alphas_grid": D.ALPHAS, "gate": gate,
-              "lag_check": lag, "cross_value": cross, "per_camera_sizes": dims,
+              "lag_check": lag, "cross_value": cross, "ref_meta_path": str(ref_meta_path), "per_camera_sizes": dims,
               "matched": {"target": target, "reduced": reduced, "declared_sizes": sizes}, "configs": {}, "notes": notes}
     if not reduced:
         report["matched"]["note"] = "all encoders already have the smallest size; the matched row would equal the full row and is skipped"
@@ -711,12 +754,15 @@ def _dev(trval_root, raw_dir, suite, out_dir, ftype, sizes, stored_root, tally_d
     if tally_dir is None:
         notes["tally_reference"] = "skipped: no tally dir given"
     else:
-        tg = reference_tally_val_gains(tally_dir, suite, ftype)
-        ours = report["configs"]["full"]["combined"]["val_gain"]
-        report["tally_reference"] = {"tally_val_gain": tg, "ours_val_gain": ours,
-                                     "tally_order": sorted(tg, key=lambda b: -tg[b]),
-                                     "ours_order": report["configs"]["full"]["combined"]["val_gain_order"],
-                                     "note": "report only (PLAN T-a, words only); stored-trained tally vs re-render-trained ours; no test, no pass mark"}
+        try:
+            tg = reference_tally_val_gains(tally_dir, suite, ftype)
+            ours = report["configs"]["full"]["combined"]["val_gain"]
+            report["tally_reference"] = {"tally_val_gain": tg, "ours_val_gain": ours,
+                                         "tally_order": sorted(tg, key=lambda b: -tg[b]),
+                                         "ours_order": report["configs"]["full"]["combined"]["val_gain_order"],
+                                         "note": "report only (PLAN T-a, words only); stored-trained tally vs re-render-trained ours; no test, no pass mark"}
+        except Exception as ex:
+            notes["tally_reference"] = f"failed (report only, not gating): {type(ex).__name__}: {ex}"
     report["seconds"] = time.time() - t0
     (out_dir / "dev-report.json").write_text(json.dumps(report, indent=1))
     log(f"wrote {out_dir / 'dev-report.json'} in {report['seconds']:.0f}s")
@@ -739,6 +785,9 @@ def check_dev_report(path, trval_root, suite, pca_whiten):
                         f"({GATE_REF}, {GATE_MARGIN})")
     if not isinstance(g.get("score"), float) or not g["score"] >= gate_threshold():
         raise GateError(f"{p}: gate score {g.get('score')} is below the threshold {gate_threshold()}")
+    lc = rep.get("lag_check")
+    if not (isinstance(lc, dict) and lc.get("passed") is True):
+        raise GateError(f"{p}: the dev report has no passed lag check (lag_check = {lc!r})")
     if rep.get("trval_root") != str(Path(trval_root).resolve()):
         raise GateError(f"{p}: dev ran on train/val root {rep.get('trval_root')}, the final run was given {Path(trval_root).resolve()}")
     if rep.get("suite") != suite:
@@ -768,7 +817,7 @@ def run(trval_root, raw_dir, suite, cond_roots, dev_report, out_dir, *args, **kw
 
 def _run(trval_root, raw_dir, suite, cond_roots, dev_report, out_dir, ftype="global", n_boot=1000, seed=0,
          sizes=None, save_preds=True, min_boot=MIN_BOOT, quiet=False, pca_whiten=PCA_WHITEN,
-         expected_frames=EXPECTED_FRAMES, stored_root=None):
+         expected_frames=EXPECTED_FRAMES, stored_root=None, ref_meta_path=REF_META_PATH):
     t0 = time.time()
     if n_boot < min_boot:
         raise ValueError(f"n_boot={n_boot} < {min_boot}: the plan needs at least {MIN_BOOT} draws")
@@ -780,10 +829,20 @@ def _run(trval_root, raw_dir, suite, cond_roots, dev_report, out_dir, ftype="glo
     encoders = [DINO] + list(PARTNERS.values())
     log = (lambda *a: None) if quiet else (lambda *a: print("[pf]", *a, flush=True))
 
-    tr = load_rendered(trval_root, raw_dir, suite, encoders, [ftype], phases=("train", "val"), allow_test=False,
-                       expected_frames=expected_frames)
+    ref_meta = load_reference_meta(ref_meta_path, encoders)
+    tr = load_rendered(trval_root, raw_dir, suite, encoders, sorted({"global", ftype}), phases=("train", "val"),
+                       allow_test=False, expected_frames=expected_frames, ref_meta=ref_meta)
     if tr.counts != dev_rep["n_frames"]:
         raise GateError(f"train/val frame counts {tr.counts} differ from the dev report's {dev_rep['n_frames']}")
+    # Do not trust a stale dev report: recompute the gate curve (global features, whatever ftype) and compare.
+    _, _, g_alpha, g_curve = gate_fit(tr, pca_whiten)
+    want = dev_rep["gate"]["val_r2_by_alpha"]
+    if (g_alpha != dev_rep["gate"]["alpha"] or set(want) != {str(a) for a in g_curve}
+            or not all(np.isclose(g_curve[a], want[str(a)], rtol=0, atol=GATE_CURVE_ATOL) for a in g_curve)):
+        raise GateError(f"{dev_report}: stale dev report, the gate curve recomputed from the features given "
+                        f"(alpha {g_alpha}) differs from the report's (alpha {dev_rep['gate']['alpha']})")
+    if not g_curve[g_alpha] >= gate_threshold():
+        raise GateError(f"recomputed gate score {g_curve[g_alpha]} is below the threshold {gate_threshold()}")
     feats, meta, split = tr.feats, tr.meta, tr.split
     trva = np.ones(len(split), bool)                       # every row loaded is train or val
     lag = None if stored_root is None else lag_check_stored(tr, stored_root, suite, ftype, pca_whiten)
@@ -907,7 +966,9 @@ def main():
     common.add_argument("--sizes", default=None, help="declared per-camera sizes enc=dim,... (checked against the files)")
     common.add_argument("--pca-whiten", action="store_true", help="divide PCA scores by their axis std (default: unwhitened)")
     common.add_argument("--stored-feats", default=None,
-                        help="optional reference: stored feature root (train and val demos only are read): lag check, cross value")
+                        help="stored feature root (train and val demos only are read): lag check (required for dev), cross value")
+    common.add_argument("--ref-meta", default=str(REF_META_PATH),
+                        help="smoke report.json holding the tally cache's metas (q23.details.<enc>.meta)")
     d = sub.add_parser("dev", parents=[common], help="phase A: train and val only; tunes alphas, runs the gate")
     d.add_argument("--tally-results", default=None, help="optional reference: dir with tally-*.json (its val gains are shown beside ours)")
     f = sub.add_parser("final", parents=[common], help="phase B: needs a passing dev report")
@@ -920,7 +981,10 @@ def main():
     a = p.parse_args()
     sizes = {k: int(v) for k, v in (s.split("=") for s in a.sizes.split(","))} if a.sizes else None
     if a.cmd == "dev":
-        rep = dev(a.trval_feats, a.raw, a.suite, a.out, a.ftype, sizes, a.stored_feats, a.tally_results, a.pca_whiten)
+        if not a.stored_feats:
+            p.error("dev requires --stored-feats (lag check on train and val)")
+        rep = dev(a.trval_feats, a.raw, a.suite, a.out, a.ftype, sizes, a.stored_feats, a.tally_results, a.pca_whiten,
+                  ref_meta_path=a.ref_meta)
         if not rep["gate"]["passed"]:
             print(f"[pf-dev] GATE FAILED: score {rep['gate']['score']:.4f} < threshold {rep['gate']['threshold']:.4f}; "
                   "stop and return to the user (Q8 rule)", file=sys.stderr)
@@ -928,7 +992,7 @@ def main():
     else:
         roots = dict(s.split("=", 1) for s in a.cond)
         run(a.trval_feats, a.raw, a.suite, roots, a.dev_report, a.out, a.ftype, a.n_boot, a.seed, sizes,
-            not a.no_save_preds, pca_whiten=a.pca_whiten, stored_root=a.stored_feats)
+            not a.no_save_preds, pca_whiten=a.pca_whiten, stored_root=a.stored_feats, ref_meta_path=a.ref_meta)
 
 
 if __name__ == "__main__":
