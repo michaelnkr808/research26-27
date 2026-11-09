@@ -1434,3 +1434,19 @@ No operating rule changed.
 **Goal:** implement Amendment 2026-11-09 of the perturbed-frame test and run phase A on the user's go.
 **Did:** two Codex adversarial reviews run by the user (the second found an unguarded renderer change between phase A and phase B; the user chose "Add the check", recorded as experiment PLAN Amendment 2026-11-09 (b)). Three workers (render code, analysis code, phase-A Job files), each with one Codex review and independent review rounds; all merged (9d5c4a8, 50b4905, 765b011). Pre-flight passed; ConfigMap `stacking-encoders-pf-main-src` created; render and pilot Jobs submitted 07:34 UTC (detail: experiment LOG 2026-11-09 [agent, lead] phase A go). Proxy evals: 12 of 16 shards done, 4 Running (all four remaining shards now have GPUs).
 **Next:** stagger the extraction Jobs under the 8-GPU cap as evals finish, then the dev Job; bring the 0.025 gate result to the user. Then `lp_eval.py seednoise` once all 16 eval shards are done.
+
+## 2026-11-09 [agent, review] independent review of the direction (four audits + synthesis)
+**Goal:** an independent read-only review of the direction, approved by the user 2026-11-08. Four review workers each wrote a report; separate reviewers fact-checked and corrected each one; a fifth worker merged them.
+**Reviewed:** the five finished experiments and their code; novelty, the paper's starting fact and prior work per planned step; the multi-seed proxy replication (code, fidelity, statistics, compute); the perturbed-frames merge, `pf_analysis.py` and the direction docs. All four reports are written against main at `bde59a7`; the synthesis is written against main at `43c3b7d` (22 commits later; the perturbed-frame analysis code was rewritten in between, so its code review is partly out of date).
+**Calls per line (speculative, judgement):**
+- Cheap frozen-feature tests: stop adding more of the same; the results are weak evidence, not "the idea fails".
+- Proxy replication: keep going.
+- Perturbed-frame test: keep going.
+- Fusion-step suspects: not enough evidence (not designed).
+- Intermediate layers: rethink, reframe toward layers times pairs (LiLa-WAM and ReWAM already cover the single-encoder case).
+- Motion-alignment score: not enough evidence.
+- Main question: keep going, no positive evidence yet; publishable if the proxy reproduces the drop and a cheap measure flags it, otherwise a replication note.
+**Top three decisions for the user:** (1) confirm the seed-noise threshold and floor in words before the verdict is read (they were locked on silence); (2) whether the same-seed initialisation mismatch matters for the remaining runs; (3) reword the Key findings headline "the simplest form of the idea fails the cheap check", which the cheap tests could hardly have shown.
+**Also found:** no wrong number in Key findings or experiment READMEs; no data leakage found; several LOG lines were edited in place; `backoffLimit: 0` in the perturbed-frames Jobs; README and PLAN status still say 7 of 16 shards; no estimated-vs-actual compute table for the proxy round.
+**Where:** reports, the synthesis (verdicts, decisions, fix lists by owner) and an index are in `world-model-stacking-encoders/reviews/` (`README.md`, `2026-11-09-synthesis.md`). The four 2026-11-08 reports are on their review branches until merged. Nothing was run on the cluster.
+**Next:** the user answers the decisions; the implementation, planning and literature sessions take their fix lists; reports are not edited after their fix round.
