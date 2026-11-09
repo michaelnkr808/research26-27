@@ -242,3 +242,12 @@
 - A literature subagent found the redesign matches common practice (LIBERO demos are routinely redrawn, MuJoCo version is a known source of shift, robustness benchmarks keep one pipeline). Caveats for a write-up: our set-state route is less common than action replay, and the probe's sensitivity can inflate effects. Not independently reviewed.
 - No decisions; nothing run.
 - See: world-model-stacking-encoders/LOG.md (2026-11-09 planning entry), world-model-stacking-encoders/experiments/2026-11-06-perturbed-frames/PLAN.md
+
+## 2026-11-09: stacking-encoders implementation: perturbed-frames redesign built, phase A run, gate passed
+
+- Built the re-render redesign with five reviewed workers (render code, retrained-probe analysis, render-consistency check between phases, tolerance rule, phase A Job files); two Codex adversarial reviews shaped it.
+- Ran phase A on the cluster: our own re-render of the training and validation frames, all five encoders extracted, a perturbation timing pilot, and the gate check. Everything exited cleanly, about 10 GPU-hours.
+- Gate passed: a probe trained on our frames predicts actions slightly better than the original did on the original frames, so the re-render is a faithful stand-in. Phase B (test frames) waits for the user's go.
+- Proxy evals: all 16 shards done with zero errors; the seed-noise read waits for the user's go.
+- Decisions (user): render-consistency check added; deciding slice is full-size, global, both cameras; zero gain reported with rules unchanged; one-step pixel noise tolerated at one in a hundred thousand.
+- See: world-model-stacking-encoders/experiments/2026-11-06-perturbed-frames/LOG.md (2026-11-09 lead entries), .../PLAN.md (Amendments 2026-11-09 (b)-(d)), .../jobs/PHASE-A.md, world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/LOG.md (p)-(r)
