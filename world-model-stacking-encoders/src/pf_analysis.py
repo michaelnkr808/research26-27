@@ -1,34 +1,52 @@
-"""Analysis for the perturbed-frame experiment (experiments/2026-11-06-perturbed-frames/PLAN.md).
+"""Analysis for the perturbed-frame experiment (experiments/2026-11-06-perturbed-frames/PLAN.md,
+Amendment 2026-11-09: every reader is trained on our own clean re-rendered frames).
 
-Plain idea: train an action probe on clean frames, then see how much it loses when the same demo
-moments are re-rendered under four picture changes (camera, light, background, noise). The question
-is whether adding C-RADIOv4 (R) to DINOv3 (D) loses more than adding SigLIP 2 (L), SAM 3 (S) or
-VGGT-Omega (G). Nothing is trained on perturbed data.
+Plain idea: train an action probe (a ridge "reader") on clean frames that we re-rendered ourselves, then see
+how much it loses when the same demo moments are re-rendered under four picture changes (camera, light,
+background, noise). The question is whether adding C-RADIOv4 (R) to DINOv3 (D) loses more than adding
+SigLIP 2 (L), SAM 3 (S) or VGGT-Omega (G). Nothing is trained on perturbed data, and nothing is trained on the
+stored LIBERO frames.
 
-What this file does (all rules are the ones signed off in PLAN.md; see the section names in brackets):
-  1. Refit the clean probes from cached clean features: D alone and D+B for B in R, L, S, G (concatenated,
-     standardized with clean-train statistics), ridge alpha taken from the tally's result JSONs, fit on
-     train+val as diagnostics.py does ["Main measure: the probe", step 1]. Alpha and standardization are
-     never re-tuned on perturbed data.
+Two entries (subcommands), gate-first:
+  dev    Phase A. Reads re-rendered clean TRAIN and VAL features only (a code-level guard raises if a test
+         demo is opened). Tunes the ridge alpha of every probe on re-rendered val, writes a JSON report with
+         the val R2 of every probe and the clean val gains gain(B|D), and runs the gate the user chose
+         (Amendment 2026-11-09 section 4, check A): the val R2 (combined view, global features) of the
+         train-only DINOv3 fit at its best alpha must be at least GATE_REF - GATE_MARGIN, one-sided.
+  final  Phase B. Refuses to start unless it is given a dev report whose gate passed and whose train/val root
+         matches the one given. Then:
+  1. Refit the probes from re-rendered train+val features: D alone and D+B for B in R, L, S, G (concatenated,
+     standardized with re-rendered-train statistics). Alpha is tuned on re-rendered val for EVERY probe (the
+     tally's grid and procedure, tune_alpha), then the probe is refit on train+val ["Main measure: the probe",
+     step 1, as amended]. Alpha and standardization are never re-tuned on perturbed data. No tally alpha is
+     used anywhere on this path.
   2. Apply each fitted probe unchanged to the test features of every condition (clean re-render, camera,
-     light, background, noise; plus the stored clean features as a pipeline reference, not used by any rule).
-     Per-demo sufficient statistics (and, by default, the predictions) are saved so every rule and the
-     bootstrap can be recomputed later without refitting.
+     light, background, noise). Per-demo sufficient statistics (and, by default, the predictions) are saved so
+     every rule and the bootstrap can be recomputed later without refitting. No stored frame is read for test.
   3. R2_c(X), drop_c(X) = R2_rerender(X) - R2_c(X), e_c(B) = drop_c(D+B) - drop_c(D),
      gain_c(B|D) = R2_c(D+B) - R2_c(D); pooled e(B), g(B) = equal-weight mean over the four types.
   4. One demo-level paired bootstrap (the same draws for every probe, condition and view), seed recorded.
   5. Rule P (decides), rule B (reported only, three readings of its last clause), the ordering by e(B).
   6. Feature drift per encoder ["Secondary measure: feature drift"].
-  7. Matched-dimension control: PCA on clean-train frames only, applied unchanged to every condition;
-     only encoders larger than the smallest are reduced (global: C-RADIOv4 and VGGT-Omega to 1,024 per
-     camera). Reported as a separate "matched" config next to the "full" one.
+  7. Matched-dimension control: PCA on re-rendered clean-train frames only (unwhitened), applied unchanged to
+     every condition; only encoders larger than the smallest are reduced (global: C-RADIOv4 and VGGT-Omega to
+     1,024 per camera). Reported as a separate "matched" config next to the "full" one.
   8. Every number is computed for three views: combined (both cameras), agentview, wrist (Q12).
 
 Feature layout (same as diagnostics.py): <root>/<encoder>/<suite>/<file stem>.h5, with
-<demo_k>/<cam>/global|mean of shape (T, D). Each condition has its own root with the same layout and holds
-at least the test demos, and attrs["meta"] matching the clean cache. Every condition holds exactly T = n-1 frames
-per demo (PLAN Q14: image k pairs with state k+1, the last frame is dropped); actions[:T] are the labels. A lag
-check (re-render frame j closer to stored frame j than to j-1 or j+1) stops the run if the frames are off by one.
+<demo_k>/<cam>/global|mean of shape (T, D). Phase A (train+val) and phase B (clean test) sit in separate roots;
+the loader merges per demo. Every re-rendered demo holds exactly T = n-1 frames (PLAN Q14: image k pairs with
+state k+1, the last frame is dropped); actions[:T] are the labels. The split is computed from ALL demo names of
+the raw file and must give val = demo_30..demo_39 and train = demo_0..demo_29 before anything is read
+(diagnostics.load would silently give a 24/8/8 split on a file holding only the 40 train+val demos).
+Expected frames per camera: 38,164 train, 12,316 val, 12,748 test.
+
+Required: the frame-alignment (lag) check of the re-rendered train and val features against a stored-feature
+root (--stored-feats, train and val demos only, never test; check_lag raises if it fails; the final run refuses
+a dev report in which it did not run and pass), and the extraction-metadata check: every re-rendered file must match
+the tally cache's metas (META_KEYS) read from the committed smoke report (REF_META_PATH).
+Optional, report-only references (never gating; a failure in one is recorded in the report, it does not abort the
+run): the cross value against the stored val features, and the tally's val gains beside ours.
 
 Never overwrites: the output dir must not exist.
 """
@@ -36,8 +54,10 @@ Never overwrites: the output dir must not exist.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
+import sys
 import time
 import types
 from pathlib import Path
@@ -49,15 +69,44 @@ import diagnostics as D
 
 CAMS = D.CAMS
 REF = "clean_rerender"      # reference for every drop and every drift
-STORED = "clean_stored"     # stored clean features on the same frames: pipeline reference only
 TYPES = ["camera", "light", "background", "noise"]
 DINO = "dinov3"
 PARTNERS = {"R": "c-radiov4", "L": "siglip2", "S": "sam3", "G": "vggt-omega"}
 # Paper's pair deltas (D+B vs D, closed-loop success; PLAN "The stands out rule"): reported beside ours, no test.
 PAPER_DELTA = {"L": 1.83, "S": 0.49, "G": 0.40, "R": -5.41}
 PAPER_ORDER = sorted(PAPER_DELTA, key=lambda b: -PAPER_DELTA[b])
+LAST_PROBE = "D+" + list(PARTNERS)[-1]     # iter_probes yields D, then D+B for B in PARTNERS order
 VIEWS = {"combined": list(CAMS), "agentview": [CAMS[0]], "wrist": [CAMS[1]]}
 MIN_BOOT = 1000
+
+# Gate (Amendment 2026-11-09 section 4, check A; fixed before any re-render-trained result existed).
+GATE_REF = 0.6562       # experiments/2026-11-06-perturbed-frames/results/pf-val/20261108-181737/probe-report.json,
+                        # val_r2.combined.val_r2_stored: stored-trained DINOv3 probe, alpha 0.1, stored val frames
+GATE_MARGIN = 0.025     # user decision 2026-11-09 (AskUserQuestion label "0.025 (Recommended)")
+# Expected re-rendered frames per camera (n-1 per demo; PLAN Amendment 2026-11-09 section 1).
+EXPECTED_FRAMES = {"train": 38164, "val": 12316, "test": 12748}
+TRAIN_DEMOS = [f"demo_{i}" for i in range(30)]
+VAL_DEMOS = [f"demo_{i}" for i in range(30, 40)]
+DEV_PHASES = ("train", "val")   # the development entry reads these and nothing else
+DEV_KIND = "pf-dev-report"
+# Reference extraction metadata of the tally cache (all five encoders, read from the cached h5 files by the smoke Job):
+# results/smoke/report.json, key q23.details.<encoder>.meta. PLAN: "extraction metadata identical to the clean cache".
+REF_META_PATH = (Path(__file__).resolve().parent.parent / "experiments" / "2026-11-06-perturbed-frames"
+                 / "results" / "smoke" / "report.json")
+GATE_CURVE_ATOL = 1e-5   # final run: recomputed gate curve must equal the dev report's (float32 solves on one machine agree far closer)
+TALLY_VAL_ATOL = 1e-6    # the tally's four files agree on the DINOv3 val R2 only to ~2e-8 (real JSONs differ in the 8th digit)
+
+
+class NoTestAccessError(RuntimeError):
+    """A test demo was about to be opened where only train and val may be read."""
+
+
+class GateError(RuntimeError):
+    """The final run was started without a passing dev report that matches the given roots."""
+
+
+def gate_threshold():
+    return GATE_REF - GATE_MARGIN
 
 
 # ---------------------------------------------------------------------------
@@ -73,22 +122,24 @@ def assert_finite(x, label):
         raise ValueError(f"non-finite values in {label}")
 
 
-def load_clean(feats_root, raw_dir, suite, encoders, ftype):
-    """Clean stored features through diagnostics.load (same split, same frame order as the tally)."""
-    ns = types.SimpleNamespace(raw=str(raw_dir), feats=str(feats_root), suite=suite, encoders=list(encoders))
-    out = D.load(ns, types=(ftype,))
-    feats, actions = out[0], out[1]
-    assert_finite(actions, "clean actions")
-    for e in feats:
-        for c in CAMS:
-            assert_finite(feats[e][ftype][c], f"clean features {e}/{c}/{ftype}")
-    return out
+def _dnum(name):
+    return int(name.split("_")[-1])
 
 
-def layout_test_demos(index, split):
-    """Test demos: list of (stem, demo, n, start) in frame order."""
-    starts = np.concatenate([[0], np.cumsum([n for _, _, n in index])[:-1]]).astype(int)
-    return [(stem, d, n, int(s)) for (stem, d, n), s in zip(index, starts) if split[s] == "test"]
+def file_split(names, label):
+    """Split from ALL demo names of one raw file; val must be demo_30..39 and train demo_0..29, else raise.
+
+    Returns (names sorted by demo index, {demo: 'train'|'val'|'test'}). Nothing is read from any feature file here.
+    """
+    names = sorted(names, key=_dnum)
+    sp = D.demo_split(names)
+    val = [d for d in names if sp[d] == "val"]
+    train = [d for d in names if sp[d] == "train"]
+    if val != VAL_DEMOS or train != TRAIN_DEMOS:
+        raise ValueError(f"{label}: {len(names)} demos in the raw file give {len(train)} train demos "
+                         f"({train[:1] + train[-1:]}) and val demos {val}; expected train demo_0..demo_29 and "
+                         f"val demo_30..demo_39 (50 demos per file)")
+    return names, sp
 
 
 def check_meta(f, clean_meta, label):
@@ -101,6 +152,181 @@ def check_meta(f, clean_meta, label):
             raise ValueError(f"{label}: meta key '{k}' missing (condition has it: {k in m}, clean cache has it: {k in clean_meta})")
         if m[k] != clean_meta[k]:
             raise ValueError(f"{label}: meta '{k}' is {m[k]!r}, the clean cache has {clean_meta[k]!r}")
+
+
+def file_sha256(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(16 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def root_sources(root, encoders, suite, stems):
+    """{encoder: sorted source_file values} of a feature root: the rendered HDF5 each file was extracted from (meta only)."""
+    import h5py
+    out = {}
+    for e in encoders:
+        srcs = []
+        for stem in stems:
+            p = Path(root) / e / suite / (stem + ".h5")
+            if not p.exists():
+                raise FileNotFoundError(f"missing feature file {p}")
+            with h5py.File(p, "r") as f:
+                m = _read_meta(f, str(p))
+            if "source_file" not in m:
+                raise ValueError(f"{p}: meta has no 'source_file' (needed to tell which render a root came from)")
+            srcs.append(m["source_file"])
+        out[e] = sorted(srcs)
+    return out
+
+
+def check_roots_distinct(named_sources):
+    """named_sources: {root name: {encoder: [source files]}}. No two roots may share a source-file set for an encoder."""
+    names = list(named_sources)
+    for i, a in enumerate(names):
+        for b in names[i + 1:]:
+            for e in named_sources[a]:
+                if named_sources[a][e] == named_sources[b][e]:
+                    raise ValueError(f"roots '{a}' and '{b}' have the same source files for {e} "
+                                     f"({named_sources[a][e][:2]}...): a swapped or duplicated feature root")
+
+
+def load_reference_meta(path=REF_META_PATH, encoders=None):
+    """{encoder: meta} of the tally cache from the smoke report (q23.details.<encoder>.meta); every META_KEYS key must exist."""
+    if not Path(path).is_file():
+        raise FileNotFoundError(f"reference-meta file {path} not found; pass --ref-meta <smoke report.json> "
+                                "(the default path exists only in a repo checkout)")
+    det = json.loads(Path(path).read_text())["q23"]["details"]
+    out = {}
+    for e in (encoders or [DINO] + list(PARTNERS.values())):
+        if e not in det or "meta" not in det[e]:
+            raise KeyError(f"{path}: no q23.details.{e}.meta")
+        miss = [k for k in META_KEYS if k not in det[e]["meta"]]
+        if miss:
+            raise KeyError(f"{path}: reference meta of {e} lacks {miss}")
+        out[e] = det[e]["meta"]
+    return out
+
+
+def _read_meta(f, label):
+    if "meta" not in f.attrs:
+        raise ValueError(f"{label}: no attrs['meta']")
+    return json.loads(f.attrs["meta"])
+
+
+def load_rendered(root, raw_dir, suite, encoders, ftypes, phases=DEV_PHASES, allow_test=False,
+                  expected_frames=EXPECTED_FRAMES, ref_meta=None, hash_files=False):
+    """Re-rendered clean features of the demos in `phases`, with labels actions[:n-1] from the raw HDF5.
+
+    Order of work: (1) the split of every raw file is computed from all its demo names and checked
+    (val = demo_30..39, train = demo_0..29); (2) only then are features and labels read, and only for demos in
+    `phases`. A test demo is never opened unless allow_test=True (the development entry never sets it).
+    Every feature file must hold exactly n-1 frames per demo and its meta must match ref_meta[enc] (the tally
+    cache's, see load_reference_meta) on META_KEYS; without ref_meta (low-level use) it must match the first file's.
+    The returned meta[enc] is the encoder's OWN first-file meta (provenance); check_meta[enc] is what files are checked
+    against. hash_files=True also returns sha256[<enc>/<file>] of every feature file used.
+
+    Returns a namespace: feats[enc][ftype][cam] (rows in file order, demo order), actions, split (per frame),
+    index [(stem, demo, T, part)], meta[enc], files, counts {part: frames per camera}.
+    """
+    import h5py
+    phases = tuple(phases)
+    ftypes = tuple(ftypes)
+    unknown = set(phases) - {"train", "val", "test"}
+    if unknown:
+        raise ValueError(f"unknown phases {sorted(unknown)}")
+    if "test" in phases and not allow_test:
+        raise NoTestAccessError("phase 'test' requested but test access is not allowed here")
+    raw_files = sorted(Path(raw_dir).glob("*.hdf5"))
+    assert raw_files, f"no LIBERO files in {raw_dir}"
+    plans = []
+    for raw in raw_files:                      # pass 1: names only
+        with h5py.File(raw, "r") as fr:
+            names, sp = file_split(list(fr["data"].keys()), raw.name)
+        plans.append((raw, names, sp))
+    feats = {e: {t: {c: [] for c in CAMS} for t in ftypes} for e in encoders}
+    actions, split, index, meta = [], [], [], {}
+    for raw, names, sp in plans:               # pass 2: features and labels of the allowed demos
+        fe = {}
+        for e in encoders:
+            p = Path(root) / e / suite / (raw.stem + ".h5")
+            if not p.exists():
+                raise FileNotFoundError(f"missing re-rendered feature file {p}")
+            fe[e] = h5py.File(p, "r")
+        try:
+            for e, f in fe.items():
+                m = _read_meta(f, f"{root}/{e}/{raw.stem}")
+                meta.setdefault(e, m)
+                check_meta(f, ref_meta[e] if ref_meta is not None else meta[e], f"{root}/{e}/{raw.stem}")
+            with h5py.File(raw, "r") as fr:
+                for d in names:
+                    if sp[d] not in phases:
+                        continue
+                    if sp[d] == "test" and not allow_test:
+                        raise NoTestAccessError(f"{raw.name} {d}: refusing to open a test demo")
+                    a = fr["data"][d]["actions"][:]
+                    t = len(a) - 1
+                    if t < 1:
+                        raise ValueError(f"{raw.name} {d}: {len(a)} actions")
+                    for e, f in fe.items():
+                        if d not in f:
+                            raise KeyError(f"{root}/{e}/{raw.stem}.h5 has no {d}")
+                        for ft in ftypes:
+                            for c in CAMS:
+                                x = f[d][c][ft][:]
+                                if len(x) != t:
+                                    raise ValueError(f"{root} {e} {raw.stem}/{d}/{c}: {len(x)} frames, expected exactly n-1 = {t}")
+                                feats[e][ft][c].append(x)
+                    actions.append(a[:t])
+                    split += [sp[d]] * t
+                    index.append((raw.stem, d, t, sp[d]))
+        finally:
+            for f in fe.values():
+                f.close()
+    cat = lambda xs: np.concatenate(xs).astype(np.float32)
+    feats = {e: {t: {c: cat(v) for c, v in tv.items()} for t, tv in ev.items()} for e, ev in feats.items()}
+    actions, split = cat(actions), np.array(split)
+    assert_finite(actions, "re-rendered-demo actions")
+    for e in feats:
+        for ft in ftypes:
+            for c in CAMS:
+                assert_finite(feats[e][ft][c], f"re-rendered features {root}/{e}/{c}/{ft}")
+    counts = {p: int((split == p).sum()) for p in phases}
+    if expected_frames is not None:
+        for p in phases:
+            if counts[p] != expected_frames[p]:
+                raise ValueError(f"{p}: {counts[p]} re-rendered frames per camera, expected {expected_frames[p]}")
+    sha = None
+    if hash_files:
+        sha = {f"{e}/{r.stem}.h5": file_sha256(Path(root) / e / suite / (r.stem + ".h5"))
+               for e in encoders for r in raw_files}
+    return types.SimpleNamespace(feats=feats, actions=actions, split=split, index=index, meta=meta,
+                                 check_meta=ref_meta if ref_meta is not None else meta, sha256=sha,
+                                 files=[r.name for r in raw_files], counts=counts)
+
+
+def load_test_layout(raw_dir, expected_frames=EXPECTED_FRAMES):
+    """FINAL RUN ONLY. Test demos [(stem, demo, n, 0)] in frame order and their labels actions[:n-1].
+
+    Reads the test demos' actions from the raw files (the labels of the final scoring); the dev entry never calls this.
+    """
+    import h5py
+    demos, ys = [], []
+    for raw in sorted(Path(raw_dir).glob("*.hdf5")):
+        with h5py.File(raw, "r") as fr:
+            names, sp = file_split(list(fr["data"].keys()), raw.name)
+            for d in names:
+                if sp[d] == "test":
+                    a = fr["data"][d]["actions"][:]
+                    demos.append((raw.stem, d, len(a), 0))
+                    ys.append(a[:-1])
+    assert demos, f"no LIBERO files / test demos in {raw_dir}"
+    y = np.concatenate(ys).astype(np.float32)
+    assert_finite(y, "test actions")
+    if expected_frames is not None and len(y) != expected_frames["test"]:
+        raise ValueError(f"test: {len(y)} frames per camera, expected {expected_frames['test']}")
+    return demos, y
 
 
 def _open_cond(handles, root, enc, suite, stem, clean_meta):
@@ -164,7 +390,83 @@ def check_lag(z_rr, z_st, label):
 
 
 # ---------------------------------------------------------------------------
-# Standardization and PCA (clean-train only)
+# Optional reference path: stored LIBERO features (train and val demos only, never test) and the tally
+# ---------------------------------------------------------------------------
+
+def load_stored(stored_root, suite, enc, ftype, index, clean_meta):
+    """Stored features (n frames per demo) of the demos in `index` ([(stem, demo, T, part)]); never a test demo.
+
+    Returns {cam: [array (T+1, d) per demo]}. Reference use only (lag check, cross value).
+    """
+    import h5py
+    out, handles = {c: [] for c in CAMS}, {}
+    try:
+        for stem, d, t, part in index:
+            if part not in ("train", "val"):
+                raise NoTestAccessError(f"{stem}/{d}: refusing to read stored features of a {part} demo")
+            if stem not in handles:
+                p = Path(stored_root) / enc / suite / (stem + ".h5")
+                if not p.exists():
+                    raise FileNotFoundError(f"missing stored feature file {p}")
+                handles[stem] = h5py.File(p, "r")
+                check_meta(handles[stem], clean_meta, str(p))
+            for c in CAMS:
+                x = handles[stem][d][c][ftype][:]
+                if len(x) != t + 1:
+                    raise ValueError(f"{stored_root} {enc} {stem}/{d}/{c}: {len(x)} stored frames, expected n = {t + 1}")
+                assert_finite(x, f"stored {enc} {stem}/{d}/{c}")
+                out[c].append(x.astype(np.float32))
+    finally:
+        for h in handles.values():
+            h.close()
+    return out
+
+
+def lag_check_stored(tr, stored_root, suite, ftype, whiten):
+    """Lag check of the re-rendered DINOv3 features against the stored ones, train and val demos only."""
+    st = load_stored(stored_root, suite, DINO, ftype, tr.index, tr.check_meta[DINO])
+    off = np.concatenate([[0], np.cumsum([t for _, _, t, _ in tr.index])])
+    train = tr.split == "train"
+    for cam in CAMS:
+        tf = CamTransform(tr.feats[DINO][ftype][cam][train], whiten=whiten)
+        for i, (stem, d, t, part) in enumerate(tr.index):
+            check_lag(tf.standardize(tr.feats[DINO][ftype][cam][off[i]:off[i + 1]]), tf.standardize(st[cam][i]),
+                      f"{stem}/{d}/{cam}")
+    return {"passed": True, "demos_checked": len(tr.index), "parts": sorted({p for *_, p in tr.index})}
+
+
+def reference_tally_val_gains(results_dir, suite, ftype):
+    """Optional reference only. The tally's val gains gain(B|D) = val R2(D+B) - val R2(D), each at its own tuned alpha.
+
+    Read from the tally JSONs' val_r2_by_alpha (train-only fits, stored frames). Returns {partner: gain}.
+    """
+    val = {}
+    for f in sorted(Path(results_dir).glob("tally-*.json")):
+        j = json.loads(f.read_text())
+        if j.get("suite") != suite:
+            continue
+        for k, v in j["probes"].items():
+            if not k.endswith("|" + ftype) or "val_r2_by_alpha" not in v:
+                continue
+            at = [s for a_, s in ((float(a), s) for a, s in v["val_r2_by_alpha"].items()) if np.isclose(a_, v["alpha"])]
+            if len(at) != 1:
+                raise ValueError(f"{f.name}: {k}: alpha {v['alpha']} not found once in val_r2_by_alpha")
+            if k in val and not np.isclose(val[k], at[0], rtol=0, atol=TALLY_VAL_ATOL):
+                raise ValueError(f"val R2 for {k} differs between tally files by more than {TALLY_VAL_ATOL}")
+            val[k] = at[0]
+    base = val.get(f"{DINO}|{ftype}")
+    if base is None:
+        raise KeyError(f"no tally val curve for {DINO}|{ftype} (suite {suite}) in {results_dir}")
+    out = {}
+    for b, enc in PARTNERS.items():
+        key = f"{min(DINO, enc)}+{max(DINO, enc)}|{ftype}"
+        if key in val:
+            out[b] = float(val[key] - base)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Standardization and PCA (re-rendered clean-train only)
 # ---------------------------------------------------------------------------
 
 def fit_pca(z, k):
@@ -219,29 +521,11 @@ def matched_plan(dims, declared=None):
     return target, sorted(e for e, s in dims.items() if s > target)
 
 
-def read_tally(results_dir, suite, ftype):
-    """Tally JSONs of this suite: ({probe key: alpha}, {probe key: r2_mean}, [(file, n_frames, split_frames)])."""
-    alphas, r2m, sizes = {}, {}, []
-    for f in sorted(Path(results_dir).glob("tally-*.json")):
-        j = json.loads(f.read_text())
-        if j.get("suite") != suite:
-            continue
-        sizes.append((f.name, j.get("n_frames"), j.get("split_frames")))
-        for k, v in j["probes"].items():
-            if k.endswith("|" + ftype):
-                if k in alphas and alphas[k] != v["alpha"]:
-                    raise ValueError(f"alpha for {k} differs between tally files")
-                alphas[k] = v["alpha"]
-                r2m[k] = v.get("r2_mean")
-    if not sizes:
-        raise FileNotFoundError(f"no tally-*.json for suite {suite} in {results_dir}")
-    return alphas, r2m, sizes
-
-
 def tune_alpha(x, y, split):
     """Pick alpha on clean validation demos (train fit), as diagnostics.ridge_select does without the test step.
 
     Returns (alpha, {alpha: val R2}). The train gram matrix is formed once; the solve matches ridge_fit.
+    The score at the returned alpha is the val R2 of the train-only fit (the gate's scored value).
     """
     tr, va = split == "train", split == "val"
     xt, yt = x[tr], y[tr]
@@ -254,6 +538,54 @@ def tune_alpha(x, y, split):
         if best is None or s > best[0]:
             best = (s, a)
     return best[1], curve
+
+
+def config_plan(reduced):
+    """Configs to run: 'full' always, 'matched' (the reduced encoders) only if some encoder is larger than the smallest."""
+    configs = {"full": []}
+    if reduced:
+        configs["matched"] = reduced
+    return configs
+
+
+def iter_probes(feats, ftype, split, target, reduced, whiten):
+    """Yield (config, view, name, x, parts, pca_log) for D and D+B probes over train+val rows.
+
+    x: probe inputs on the train+val rows (standardized, optionally PCA-reduced; statistics and axes from the
+    train rows only). parts: [(encoder, {cam: CamTransform})], to transform other data unchanged.
+    pca_log is one dict per (config, view), filled as encoders are transformed.
+    """
+    train = split == "train"
+    for config, red in config_plan(reduced).items():
+        for view, cams in VIEWS.items():
+            pca_log = {}
+
+            def inputs(enc):
+                tfs = {c: CamTransform(feats[enc][ftype][c][train], target if enc in red else None, whiten) for c in cams}
+                for c, tf in tfs.items():
+                    if tf.pca is not None:
+                        pca_log.setdefault(enc, {})[c] = {"dim_in": tf.dim_in, "dim_out": tf.dim_out,
+                                                          "explained_variance_ratio": tf.evr}
+                return np.concatenate([tfs[c](feats[enc][ftype][c]) for c in cams], 1), tfs
+
+            xd, tfd = inputs(DINO)
+            for b in [None] + list(PARTNERS):
+                if b is None:
+                    yield config, view, "D", xd, [(DINO, tfd)], pca_log
+                else:
+                    xb, tfb = inputs(PARTNERS[b])
+                    yield config, view, "D+" + b, np.concatenate([xd, xb], 1), [(DINO, tfd), (PARTNERS[b], tfb)], pca_log
+                    del xb
+
+
+def per_camera_sizes(feats, ftype):
+    dims = {}
+    for e in feats:
+        ds = {feats[e][ftype][c].shape[1] for c in CAMS}
+        if len(ds) != 1:
+            raise ValueError(f"{e}: cameras have different feature sizes {ds}")
+        dims[e] = ds.pop()
+    return dims
 
 
 # ---------------------------------------------------------------------------
@@ -358,211 +690,324 @@ def drift_draws(num, den, W):
 
 
 # ---------------------------------------------------------------------------
-# Driver
+# Development entry (phase A): train and val only, tunes every alpha, runs the gate
 # ---------------------------------------------------------------------------
 
-def run(feats_root, raw_dir, suite, cond_roots, tally_dir, out_dir, *args, **kw):
-    """Run the whole analysis and write results.json, stats.npz (and preds.npz) under out_dir (must not exist).
-
-    The dir is claimed up front; if the run fails the (partial) dir is removed so a corrected retry can reuse the path.
-    Arguments after out_dir are those of _run.
-    """
+def _claim(out_dir):
     out_dir = Path(out_dir)
     if out_dir.exists():
         raise FileExistsError(f"{out_dir} exists; refusing to overwrite")
     out_dir.mkdir(parents=True, exist_ok=False)
+    return out_dir
+
+
+def gate_fit(tr, whiten):
+    """Gate, check A: train-only DINOv3 fit, combined view, global features, best alpha on the tally grid.
+
+    Returns (transforms per cam, probe inputs, alpha, {alpha: val R2}); the scored value is curve[alpha].
+    """
+    train = tr.split == "train"
+    tfs = {c: CamTransform(tr.feats[DINO]["global"][c][train], None, whiten) for c in CAMS}
+    x = np.concatenate([tfs[c](tr.feats[DINO]["global"][c]) for c in CAMS], 1)
+    alpha, curve = tune_alpha(x, tr.actions, tr.split)
+    return tfs, x, alpha, curve
+
+
+def dev(trval_root, raw_dir, suite, out_dir, ftype="global", sizes=None, stored_root=None, tally_dir=None,
+        pca_whiten=PCA_WHITEN, expected_frames=EXPECTED_FRAMES, quiet=False, ref_meta_path=REF_META_PATH):
+    """Development phase: reads re-rendered train and val features only. Writes <out_dir>/dev-report.json.
+
+    stored_root is required (the lag check against stored train/val features is part of the phase-A checks).
+
+    The dir is claimed up front and removed again if the run fails. A failed gate is not an exception here: the
+    report is written with gate.passed = False (the CLI then exits non-zero) and the final run refuses it.
+    """
+    if stored_root is None:
+        raise ValueError("dev needs a stored-feature root (--stored-feats): the lag check on train and val is required")
+    out_dir = _claim(out_dir)
     try:
-        return _run(feats_root, raw_dir, suite, cond_roots, tally_dir, out_dir, *args, **kw)
+        return _dev(trval_root, raw_dir, suite, out_dir, ftype, sizes, stored_root, tally_dir, pca_whiten,
+                    expected_frames, quiet, ref_meta_path)
     except BaseException:
         shutil.rmtree(out_dir, ignore_errors=True)
         raise
 
 
-def _run(feats_root, raw_dir, suite, cond_roots, tally_dir, out_dir, ftype="global", n_boot=1000, seed=0,
-         sizes=None, other_alpha="tune", save_preds=True, min_boot=MIN_BOOT, quiet=False,
-         pca_whiten=PCA_WHITEN, tally_tol=1e-6):
+def _dev(trval_root, raw_dir, suite, out_dir, ftype, sizes, stored_root, tally_dir, pca_whiten, expected_frames, quiet,
+         ref_meta_path):
+    t0 = time.time()
+    log = (lambda *a: None) if quiet else (lambda *a: print("[pf-dev]", *a, flush=True))
+    encoders = [DINO] + list(PARTNERS.values())
+    ftypes = sorted({"global", ftype})
+    ref_meta = load_reference_meta(ref_meta_path, encoders)
+    tr = load_rendered(trval_root, raw_dir, suite, encoders, ftypes, phases=DEV_PHASES, allow_test=False,
+                       expected_frames=expected_frames, ref_meta=ref_meta, hash_files=True)
+    log(f"train+val: {tr.counts} frames per camera, {len(tr.index)} demos")
+    train, val = tr.split == "train", tr.split == "val"
+    notes = {}
+
+    # Gate, check A: train-only DINOv3 fit, combined view, global features, best alpha on the tally grid;
+    # the scored value is the tune_alpha curve value at that alpha (val R2), not the train+val refit.
+    tfs_g, xg, g_alpha, g_curve = gate_fit(tr, pca_whiten)
+    g_score = float(g_curve[g_alpha])
+    thr = gate_threshold()
+    gate = {"check": "A (PLAN Amendment 2026-11-09 section 4)",
+            "scored": "val R2 (mean of 7 action dims) of the train-only DINOv3 fit at its best alpha on the tally grid, "
+                      "combined view, global features, re-rendered train and val (the tune_alpha curve value, not the train+val refit)",
+            "score": g_score, "alpha": g_alpha, "val_r2_by_alpha": {str(a): v for a, v in g_curve.items()},
+            "reference": GATE_REF,
+            "reference_source": "results/pf-val/20261108-181737/probe-report.json, val_r2.combined.val_r2_stored",
+            "margin": GATE_MARGIN, "margin_source": "user decision 2026-11-09 (0.025, one-sided)",
+            "threshold": thr, "passed": bool(g_score >= thr)}
+    log(f"gate A: score {g_score:.4f}, threshold {thr:.4f}, passed {gate['passed']}")
+
+    # Required: lag check (train and val demos only); raises if the frames are off by one.
+    lag = lag_check_stored(tr, stored_root, suite, "global", pca_whiten)
+    # Optional, report only: a failure here is recorded and does not abort the run.
+    try:
+        w_tr, b_tr = D.ridge_fit(xg[train], tr.actions[train], g_alpha)
+        vidx = [e for e in tr.index if e[3] == "val"]
+        sv = load_stored(stored_root, suite, DINO, "global", vidx, tr.check_meta[DINO])
+        xs = np.concatenate([tfs_g[c](np.concatenate([a[:-1] for a in sv[c]])) for c in CAMS], 1)
+        cross = {"val_r2_stored_features": float(D.r2(tr.actions[val], xs @ w_tr + b_tr).mean()),
+                 "val_r2_rerender_features": g_score, "alpha": g_alpha,
+                 "note": "re-render-trained DINOv3 probe (train-only fit at the gate's alpha) scored on stored val features, n-1 frames per demo; report only"}
+    except NoTestAccessError:
+        raise
+    except Exception as ex:
+        cross = None
+        notes["cross_value"] = f"failed (report only, not gating): {type(ex).__name__}: {ex}"
+    dims = per_camera_sizes(tr.feats, ftype)
+    target, reduced = matched_plan(dims, sizes)
+    log(f"per-camera sizes {dims}; matched target {target}, reduced {reduced}")
+
+    report = {"kind": DEV_KIND, "suite": suite, "ftype": ftype, "trval_root": str(Path(trval_root).resolve()),
+              "raw_dir": str(raw_dir), "files": tr.files, "git_commit": D.git_commit(), "pca_whiten": pca_whiten,
+              "n_frames": tr.counts, "n_demos": len(tr.index), "expected_frames": expected_frames,
+              "encoders": {e: tr.meta[e] for e in encoders}, "alphas_grid": D.ALPHAS, "gate": gate,
+              "lag_check": lag, "cross_value": cross, "ref_meta_path": str(ref_meta_path),
+              "ref_meta_sha256": file_sha256(ref_meta_path), "feature_sha256": tr.sha256,
+              "source_files": {"trval": root_sources(trval_root, encoders, suite, [Path(f).stem for f in tr.files])}, "per_camera_sizes": dims,
+              "matched": {"target": target, "reduced": reduced, "declared_sizes": sizes}, "configs": {}, "notes": notes}
+    if not reduced:
+        report["matched"]["note"] = "all encoders already have the smallest size; the matched row would equal the full row and is skipped"
+    for config, view, name, x, parts, pca_log in iter_probes(tr.feats, ftype, tr.split, target, reduced, pca_whiten):
+        cv = report["configs"].setdefault(config, {}).setdefault(view, {"probes": {}, "pca_explained_variance": pca_log})
+        alpha, curve = tune_alpha(x, tr.actions, tr.split)
+        cv["probes"][name] = {"dim": int(x.shape[1]), "alpha": alpha, "alpha_source": "tuned-on-rerendered-val",
+                              "val_r2": float(curve[alpha]), "val_r2_by_alpha": {str(a): v for a, v in curve.items()}}
+        log(f"{config}/{view}/{name}: dim {x.shape[1]}, alpha {alpha}, val R2 {curve[alpha]:.3f}")
+    for config, views in report["configs"].items():
+        for view, cv in views.items():
+            pr = cv["probes"]
+            cv["val_gain"] = {b: pr["D+" + b]["val_r2"] - pr["D"]["val_r2"] for b in PARTNERS}
+            cv["val_gain_order"] = sorted(PARTNERS, key=lambda b: -cv["val_gain"][b])
+    if tally_dir is None:
+        notes["tally_reference"] = "skipped: no tally dir given"
+    else:
+        try:
+            tg = reference_tally_val_gains(tally_dir, suite, ftype)
+            ours = report["configs"]["full"]["combined"]["val_gain"]
+            report["tally_reference"] = {"tally_val_gain": tg, "ours_val_gain": ours,
+                                         "tally_order": sorted(tg, key=lambda b: -tg[b]),
+                                         "ours_order": report["configs"]["full"]["combined"]["val_gain_order"],
+                                         "note": "report only (PLAN T-a, words only); stored-trained tally vs re-render-trained ours; no test, no pass mark"}
+        except Exception as ex:
+            notes["tally_reference"] = f"failed (report only, not gating): {type(ex).__name__}: {ex}"
+    report["seconds"] = time.time() - t0
+    (out_dir / "dev-report.json").write_text(json.dumps(report, indent=1))
+    log(f"wrote {out_dir / 'dev-report.json'} in {report['seconds']:.0f}s")
+    return report
+
+
+def check_dev_report(path, trval_root, suite, pca_whiten):
+    """The final run's gate: a dev report whose gate passed, for the same train/val root, suite and PCA setting."""
+    p = Path(path)
+    if not p.is_file():
+        raise GateError(f"dev report {p} not found; the final run needs a passing dev report")
+    rep = json.loads(p.read_text())
+    g = rep.get("gate") or {}
+    if rep.get("kind") != DEV_KIND:
+        raise GateError(f"{p} is not a dev report")
+    if g.get("passed") is not True:
+        raise GateError(f"{p}: the gate did not pass (score {g.get('score')}, threshold {g.get('threshold')})")
+    if g.get("reference") != GATE_REF or g.get("margin") != GATE_MARGIN:
+        raise GateError(f"{p}: gate constants ({g.get('reference')}, {g.get('margin')}) differ from this code's "
+                        f"({GATE_REF}, {GATE_MARGIN})")
+    if not isinstance(g.get("score"), float) or not g["score"] >= gate_threshold():
+        raise GateError(f"{p}: gate score {g.get('score')} is below the threshold {gate_threshold()}")
+    lc = rep.get("lag_check")
+    if not (isinstance(lc, dict) and lc.get("passed") is True):
+        raise GateError(f"{p}: the dev report has no passed lag check (lag_check = {lc!r})")
+    if rep.get("trval_root") != str(Path(trval_root).resolve()):
+        raise GateError(f"{p}: dev ran on train/val root {rep.get('trval_root')}, the final run was given {Path(trval_root).resolve()}")
+    if rep.get("suite") != suite:
+        raise GateError(f"{p}: dev suite {rep.get('suite')} != {suite}")
+    if rep.get("pca_whiten") != pca_whiten:
+        raise GateError(f"{p}: dev pca_whiten {rep.get('pca_whiten')} != {pca_whiten}")
+    return rep
+
+
+# ---------------------------------------------------------------------------
+# Final run (phase B)
+# ---------------------------------------------------------------------------
+
+def run(trval_root, raw_dir, suite, cond_roots, dev_report, out_dir, *args, **kw):
+    """Run the whole analysis and write results.json, stats.npz (and preds.npz) under out_dir (must not exist).
+
+    Refuses to start without a passing dev report for this train/val root. The dir is claimed up front; if the
+    run fails the (partial) dir is removed so a corrected retry can reuse the path. Arguments after out_dir are those of _run.
+    """
+    out_dir = _claim(out_dir)
+    try:
+        return _run(trval_root, raw_dir, suite, cond_roots, dev_report, out_dir, *args, **kw)
+    except BaseException:
+        shutil.rmtree(out_dir, ignore_errors=True)
+        raise
+
+
+def _run(trval_root, raw_dir, suite, cond_roots, dev_report, out_dir, ftype="global", n_boot=1000, seed=0,
+         sizes=None, save_preds=True, min_boot=MIN_BOOT, quiet=False, pca_whiten=PCA_WHITEN,
+         expected_frames=EXPECTED_FRAMES, stored_root=None, ref_meta_path=REF_META_PATH):
     t0 = time.time()
     if n_boot < min_boot:
         raise ValueError(f"n_boot={n_boot} < {min_boot}: the plan needs at least {MIN_BOOT} draws")
-    if other_alpha not in ("tune", "reuse"):
-        raise ValueError("other_alpha must be 'tune' or 'reuse'")
+    dev_rep = check_dev_report(dev_report, trval_root, suite, pca_whiten)     # before anything is read
     need = [REF] + TYPES
     missing = [c for c in need if c not in cond_roots]
     if missing:
         raise KeyError(f"cond_roots missing {missing}")
     encoders = [DINO] + list(PARTNERS.values())
-    alphas, tally_r2, tally_sizes = read_tally(tally_dir, suite, ftype)
-    pair_key = lambda b: f"{min(DINO, PARTNERS[b])}+{max(DINO, PARTNERS[b])}|{ftype}"
-    for key in [f"{DINO}|{ftype}"] + [pair_key(b) for b in PARTNERS]:
-        if key not in alphas:
-            raise KeyError(f"tally alpha for {key} not found in {tally_dir}")
     log = (lambda *a: None) if quiet else (lambda *a: print("[pf]", *a, flush=True))
 
-    feats, actions, _, split, index, meta, files = load_clean(feats_root, raw_dir, suite, encoders, ftype)
-    train, trva, test_mask = split == "train", split != "test", split == "test"
-    split_frames = {s_: int((split == s_).sum()) for s_ in ("train", "val", "test")}
-    for fname, nf, sf in tally_sizes:
-        if nf != len(actions) or sf != split_frames:
-            raise ValueError(f"{fname}: tally has n_frames={nf}, split_frames={sf}; the clean load has "
-                             f"{len(actions)} and {split_frames}")
-    demos = layout_test_demos(index, split)
-    lengths = cond_demo_lengths(cond_roots[REF], DINO, suite, ftype, demos, meta[DINO])
-    test_sel = np.concatenate([s + np.arange(t) for (_, _, _, s), t in zip(demos, lengths)])
+    ref_meta = load_reference_meta(ref_meta_path, encoders)
+    tr = load_rendered(trval_root, raw_dir, suite, encoders, sorted({"global", ftype}), phases=("train", "val"),
+                       allow_test=False, expected_frames=expected_frames, ref_meta=ref_meta, hash_files=True)
+    if file_sha256(ref_meta_path) != dev_rep.get("ref_meta_sha256"):
+        raise GateError(f"{dev_report}: the dev run used a different reference-meta file than {ref_meta_path}; "
+                        "pass the same --ref-meta as dev")
+    changed = sorted(k for k in set(tr.sha256) | set(dev_rep.get("feature_sha256") or {})
+                     if tr.sha256.get(k) != (dev_rep.get("feature_sha256") or {}).get(k))
+    if changed:
+        raise GateError(f"{dev_report}: train/val feature files changed since the dev run (re-extracted in place?): {changed[:5]}")
+    if tr.counts != dev_rep["n_frames"]:
+        raise GateError(f"train/val frame counts {tr.counts} differ from the dev report's {dev_rep['n_frames']}")
+    # Do not trust a stale dev report: recompute the gate curve (global features, whatever ftype) and compare.
+    _, _, g_alpha, g_curve = gate_fit(tr, pca_whiten)
+    want = dev_rep["gate"]["val_r2_by_alpha"]
+    if (g_alpha != dev_rep["gate"]["alpha"] or set(want) != {str(a) for a in g_curve}
+            or not all(np.isclose(g_curve[a], want[str(a)], rtol=0, atol=GATE_CURVE_ATOL) for a in g_curve)):
+        raise GateError(f"{dev_report}: stale dev report, the gate curve recomputed from the features given "
+                        f"(alpha {g_alpha}) differs from the report's (alpha {dev_rep['gate']['alpha']})")
+    if not g_curve[g_alpha] >= gate_threshold():
+        raise GateError(f"recomputed gate score {g_curve[g_alpha]} is below the threshold {gate_threshold()}")
+    feats, meta, split = tr.feats, tr.check_meta, tr.split
+    stems = [Path(f).stem for f in tr.files]
+    sources = {"trval": root_sources(trval_root, encoders, suite, stems)}
+    for c in [REF] + TYPES:
+        sources[c] = root_sources(cond_roots[c], encoders, suite, stems)
+    check_roots_distinct(sources)       # before any test label or test feature is read
+    trva = np.ones(len(split), bool)                       # every row loaded is train or val
+    lag = None if stored_root is None else lag_check_stored(tr, stored_root, suite, ftype, pca_whiten)
+    demos, y_test = load_test_layout(raw_dir, expected_frames)      # first read of test labels
+    lengths = [n - 1 for _, _, n, _ in demos]
     groups = np.repeat(np.arange(len(demos)), lengths)
     k = len(demos)
-    y_test = actions[test_sel]
-    log(f"{k} test demos, {len(test_sel)} frames per condition")
+    log(f"{k} test demos, {len(y_test)} frames per condition")
 
-    # Condition features, test frames only: cond[c][enc][cam]; the stored clean ones come from the clean load.
-    conds = [STORED, REF] + TYPES
-    cond = {STORED: {e: {c: feats[e][ftype][c][test_sel] for c in CAMS} for e in encoders}}
-    for c in [REF] + TYPES:
+    # Condition features, test frames only: cond[c][enc][cam]. Every file must hold exactly n-1 frames per demo.
+    conds = [REF] + TYPES
+    cond = {}
+    for c in conds:
         cond[c] = {}
         for e in encoders:
-            if c != REF or e != DINO:
-                if cond_demo_lengths(cond_roots[c], e, suite, ftype, demos, meta[e]) != lengths:
-                    raise ValueError(f"condition {c} / {e}: frame counts differ from the clean re-render")
+            if cond_demo_lengths(cond_roots[c], e, suite, ftype, demos, meta[e]) != lengths:
+                raise ValueError(f"condition {c} / {e}: frame counts differ from n-1")
             cond[c][e] = load_condition(cond_roots[c], e, suite, ftype, demos, lengths, meta[e])
-            if c == REF and e == DINO:
-                # Frame alignment (Q14), per test demo and camera, on clean-train-standardized DINOv3 features.
-                off = np.concatenate([[0], np.cumsum(lengths)])
-                for cam in CAMS:
-                    tf = CamTransform(feats[DINO][ftype][cam][train], whiten=pca_whiten)
-                    for i, (stem, d, n, s0) in enumerate(demos):
-                        check_lag(tf.standardize(cond[REF][DINO][cam][off[i]:off[i + 1]]),
-                                  tf.standardize(feats[DINO][ftype][cam][s0:s0 + n]), f"{stem}/{d}/{cam}")
-    dims = {}
-    for e in encoders:
-        ds = {feats[e][ftype][c].shape[1] for c in CAMS}
-        if len(ds) != 1:
-            raise ValueError(f"{e}: cameras have different feature sizes {ds}")
-        dims[e] = ds.pop()
+    dims = per_camera_sizes(feats, ftype)
     target, reduced = matched_plan(dims, sizes)
     log(f"per-camera sizes {dims}; matched target {target}, reduced {reduced}")
 
     W = make_weights(k, n_boot, seed)
-    results = {"suite": suite, "ftype": ftype, "files": files, "encoders": {e: meta[e] for e in encoders},
+    results = {"suite": suite, "ftype": ftype, "files": tr.files, "encoders": {e: tr.meta[e] for e in encoders},
+               "feature_sha256": tr.sha256, "ref_meta_sha256": file_sha256(ref_meta_path), "source_files": sources,
                "git_commit": D.git_commit(), "seed": seed, "n_boot": n_boot, "n_test_demos": k,
-               "n_test_frames": int(len(test_sel)), "frames_per_demo_dropped_last": [int(n - t) for (_, _, n, _), t in zip(demos, lengths)], "pca_whiten": pca_whiten,
-               "tally_check_tol": tally_tol, "pca_explained_variance": {},
-               "tally_dir": str(tally_dir), "tally_alphas": alphas, "cond_roots": {c: str(v) for c, v in cond_roots.items()},
+               "n_test_frames": int(len(y_test)), "n_trainval_frames": tr.counts,
+               "frames_per_demo_dropped_last": [int(n - t) for (_, _, n, _), t in zip(demos, lengths)],
+               "pca_whiten": pca_whiten, "pca_explained_variance": {},
+               "trval_root": str(Path(trval_root).resolve()), "dev_report": str(dev_report), "dev_gate": dev_rep["gate"],
+               "lag_check": lag if lag is not None else "skipped: no stored-feature root given",
+               "cond_roots": {c: str(v) for c, v in cond_roots.items()},
                "per_camera_sizes": dims, "matched": {"target": target, "reduced": reduced, "declared_sizes": sizes},
-               "other_alpha": other_alpha, "alphas_grid": D.ALPHAS, "configs": {}, "drift": {}, "drift_pipeline_reference": {}}
+               "alphas_grid": D.ALPHAS, "configs": {}, "drift": {}}
     stats_out = {"test_demos": np.array([f"{s}/{d}" for s, d, _, _ in demos]), "frames_per_demo": np.array(lengths),
                  "boot_weights": W.astype(np.int16)}
     preds_out = {"y_test": y_test.astype(np.float32)}
-
-    configs = {"full": []}
-    if reduced:
-        configs["matched"] = reduced
-    else:
+    if not reduced:
         results["matched"]["note"] = "all encoders already have the smallest size; the matched row would equal the full row and is skipped"
 
-    for config, red in configs.items():
-        results["configs"][config] = {}
-        results["pca_explained_variance"][config] = {}
-        for view, cams in VIEWS.items():
-            pca_log = results["pca_explained_variance"][config][view] = {}
-
-            def inputs(enc, reduce_enc):
-                """Probe inputs for one encoder: clean all-frames matrix and each condition's test matrix."""
-                tfs = {c: CamTransform(feats[enc][ftype][c][train], target if reduce_enc else None, pca_whiten) for c in cams}
-                for c, tf in tfs.items():
-                    if tf.pca is not None:
-                        pca_log.setdefault(enc, {})[c] = {"dim_in": tf.dim_in, "dim_out": tf.dim_out, "explained_variance_ratio": tf.evr}
-                allx = np.concatenate([tfs[c](feats[enc][ftype][c]) for c in cams], 1)
-                tests = {cn: np.concatenate([tfs[c](cond[cn][enc][c]) for c in cams], 1) for cn in conds}
-                return allx, tests, sum(tf.dim_out for tf in tfs.values()), tfs
-
-            probe_info, st = {}, {c: {} for c in conds}
-            xd = inputs(DINO, DINO in red)
-            for b in [None] + list(PARTNERS):
-                name = "D" if b is None else "D+" + b
-                if b is None:
-                    allx, tests, dim = xd[0], xd[1], xd[2]
-                    in_red = DINO in red
-                    tkey = f"{DINO}|{ftype}"
-                else:
-                    xb = inputs(PARTNERS[b], PARTNERS[b] in red)
-                    allx = np.concatenate([xd[0], xb[0]], 1)
-                    tests = {cn: np.concatenate([xd[1][cn], xb[1][cn]], 1) for cn in conds}
-                    dim = xd[2] + xb[2]
-                    in_red = (DINO in red) or (PARTNERS[b] in red)
-                    tkey = pair_key(b)
-                    del xb
-                same_as_tally = view == "combined" and not in_red
-                if config == "full" and view == "combined" and not same_as_tally:
-                    raise AssertionError("full combined probe must use the tally alpha")
-                if same_as_tally or other_alpha == "reuse":
-                    alpha, src = alphas[tkey], ("tally" if same_as_tally else "tally-reused-on-changed-input")
-                else:
-                    alpha, curve = tune_alpha(allx, actions, split)
-                    src = "tuned-on-clean-val"
-                w, bias = D.ridge_fit(allx[trva], actions[trva], alpha)
-                probe_info[name] = {"dim": int(dim), "alpha": alpha, "alpha_source": src}
-                if src == "tuned-on-clean-val":
-                    probe_info[name]["val_r2_by_alpha"] = {str(a_): v_ for a_, v_ in curve.items()}
-                if config == "full" and view == "combined":
-                    # The same fitted probe on all stored clean test frames must reproduce the tally's test R^2.
-                    got = float(D.r2(actions[test_mask], allx[test_mask] @ w + bias).mean())
-                    want = tally_r2.get(tkey)
-                    probe_info[name]["stored_clean_full_test_r2"] = got
-                    probe_info[name]["tally_r2_mean"] = want
-                    if want is None or abs(got - want) > tally_tol:
-                        raise ValueError(f"stored-clean test R2 of {name} is {got!r}, the tally's r2_mean is {want!r} "
-                                         f"(tolerance {tally_tol})")
-                for cn in conds:
-                    yhat = tests[cn] @ w + bias
-                    st[cn][name] = D.demo_stats(y_test, yhat, groups)
-                    if save_preds:
-                        preds_out[f"{config}/{view}/{cn}/{name}"] = yhat.astype(np.float32)
-                log(f"{config}/{view}/{name}: dim {dim}, alpha {alpha} ({src}), "
-                    f"R2 rerender {float(D.r2_from_stats(W[:1], *st[REF][name])[0]):.3f}")
-                del allx, tests
+    st_all, alpha_mismatch = {}, []   # st_all[(config, view)][condition][probe] = per-demo stats
+    for config, view, name, x, parts, pca_log in iter_probes(feats, ftype, split, target, reduced, pca_whiten):
+        cams = VIEWS[view]
+        results["pca_explained_variance"].setdefault(config, {})[view] = pca_log
+        res_cv = results["configs"].setdefault(config, {}).setdefault(view, {"probes": {}})
+        alpha, curve = tune_alpha(x, tr.actions, split)
+        w, bias = D.ridge_fit(x[trva], tr.actions[trva], alpha)
+        res_cv["probes"][name] = {"dim": int(x.shape[1]), "alpha": alpha, "alpha_source": "tuned-on-rerendered-val",
+                                  "val_r2_by_alpha": {str(a_): v_ for a_, v_ in curve.items()}}
+        if dev_rep["ftype"] == ftype:
+            want = dev_rep["configs"].get(config, {}).get(view, {}).get("probes", {}).get(name, {}).get("alpha")
+            if want != alpha:
+                alpha_mismatch.append(f"{config}/{view}/{name}: dev {want}, final {alpha}")
+        st = st_all.setdefault((config, view), {c: {} for c in conds})
+        for cn in conds:
+            xt = np.concatenate([np.concatenate([tfs[c](cond[cn][e][c]) for c in cams], 1) for e, tfs in parts], 1)
+            yhat = xt @ w + bias
+            st[cn][name] = D.demo_stats(y_test, yhat, groups)
+            if save_preds:
+                preds_out[f"{config}/{view}/{cn}/{name}"] = yhat.astype(np.float32)
+        log(f"{config}/{view}/{name}: dim {x.shape[1]}, alpha {alpha}, R2 rerender {float(D.r2_from_stats(W[:1], *st[REF][name])[0]):.3f}")
+        if name == LAST_PROBE:      # last probe of this (config, view): fold the statistics into the quantities
             for cn, ps in st.items():
                 for p, (n_, sy, syy, sres) in ps.items():
                     for nm, arr in zip(("n", "sy", "syy", "sres"), (n_, sy, syy, sres)):
                         stats_out[f"{config}/{view}/{cn}/{p}/{nm}"] = arr
-
-            q = quantities({c: st[c] for c in conds}, W)
-            res = {"probes": probe_info,
-                   "r2": {c: {p: stat(a) for p, a in ps.items()} for c, ps in q["r2"].items()},
-                   "drop": {c: {p: stat(a) for p, a in ps.items()} for c, ps in q["drop"].items()},
-                   "e": {c: {b: stat(a) for b, a in bs.items()} for c, bs in q["e"].items()},
-                   "gain": {c: {b: stat(a) for b, a in bs.items()} for c, bs in q["g"].items()},
-                   "pooled_e": {b: stat(a) for b, a in q["pooled_e"].items()},
-                   "pooled_g": {b: stat(a) for b, a in q["pooled_g"].items()},
-                   "rule_P": rule_p(q["pooled_e"]), "rule_B": rule_b(q["pooled_g"]),
-                   "ordering": ordering(q["pooled_e"])}
-            results["configs"][config][view] = res
+            q = quantities(st, W)
+            res_cv.update({
+                "r2": {c: {p: stat(a) for p, a in ps.items()} for c, ps in q["r2"].items()},
+                "drop": {c: {p: stat(a) for p, a in ps.items()} for c, ps in q["drop"].items()},
+                "e": {c: {b: stat(a) for b, a in bs.items()} for c, bs in q["e"].items()},
+                "gain": {c: {b: stat(a) for b, a in bs.items()} for c, bs in q["g"].items()},
+                "pooled_e": {b: stat(a) for b, a in q["pooled_e"].items()},
+                "pooled_g": {b: stat(a) for b, a in q["pooled_g"].items()},
+                "rule_P": rule_p(q["pooled_e"]), "rule_B": rule_b(q["pooled_g"]),
+                "ordering": ordering(q["pooled_e"])})
+    results["alphas_match_dev"] = (alpha_mismatch == [] if dev_rep["ftype"] == ftype else
+                                   "not compared: dev ran on ftype " + dev_rep["ftype"])
+    if alpha_mismatch:
+        results["alphas_differ_from_dev"] = alpha_mismatch
+        log("WARNING alphas differ from the dev report:", alpha_mismatch)
 
     # Drift (PLAN: global features only), single encoder, full-size standardized features (no PCA), clean re-render
-    # as the reference. Not defined in the PLAN for the mean features, so it is skipped under ftype=mean.
+    # as the reference, statistics from the re-rendered clean-train frames. Not defined in the PLAN for the mean
+    # features, so it is skipped under ftype=mean.
     if ftype != "global":
         results["drift_note"] = "drift is defined in the PLAN for global features only; skipped for ftype=" + ftype
     else:
+        train = split == "train"
         for view, cams in VIEWS.items():
-            results["drift"][view], results["drift_pipeline_reference"][view] = {}, {}
+            results["drift"][view] = {}
             for e in encoders:
                 tfs = {c: CamTransform(feats[e][ftype][c][train]) for c in cams}
                 z = {cn: np.concatenate([tfs[c].standardize(cond[cn][e][c]) for c in cams], 1) for cn in conds}
-                row, ref = {}, {}
+                row = {}
                 for cn in TYPES:
                     num, den = drift_parts(z[REF], z[cn], groups, k)
                     stats_out[f"drift/{view}/{e}/{cn}/num"], stats_out[f"drift/{view}/{e}/{cn}/den"] = num, den
                     row[cn] = stat(drift_draws(num, den, W))
-                # Pipeline references, outside the PLAN: the stored clean frame as x' (x = re-render), and the
-                # re-render as x' (x = stored frame). Both show how far the re-render sits from the stored frame.
-                num, den = drift_parts(z[REF], z[STORED], groups, k)
-                stats_out[f"drift_ref/{view}/{e}/stored_vs_rerender/num"], stats_out[f"drift_ref/{view}/{e}/stored_vs_rerender/den"] = num, den
-                ref["stored_vs_rerender"] = stat(drift_draws(num, den, W))
-                num, den = drift_parts(z[STORED], z[REF], groups, k)
-                stats_out[f"drift_ref/{view}/{e}/rerender_vs_stored/num"], stats_out[f"drift_ref/{view}/{e}/rerender_vs_stored/den"] = num, den
-                ref["rerender_vs_stored"] = stat(drift_draws(num, den, W))
-                results["drift"][view][e], results["drift_pipeline_reference"][view][e] = row, ref
+                results["drift"][view][e] = row
         results["drift_note"] = ("drift_c(E) = mean ||f(x')-f(x)||^2 / mean ||f(x)-mean(f)||^2 over test frames, x = clean re-render, "
-                                 "mean(f) = mean over the test frames, clean-train-standardized features. "
-                                 "drift_pipeline_reference holds extra rows that are not in the PLAN (pipeline checks only).")
+                                 "mean(f) = mean over the test frames, features standardized with re-rendered clean-train statistics.")
 
     results["seconds"] = time.time() - t0
     np.savez_compressed(out_dir / "stats.npz", **stats_out)
@@ -575,27 +1020,43 @@ def _run(feats_root, raw_dir, suite, cond_roots, tally_dir, out_dir, ftype="glob
 
 def main():
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    p.add_argument("--feats", required=True, help="clean feature root (extract_features.py --out)")
-    p.add_argument("--raw", required=True, help="dir with the suite's LIBERO HDF5 files (actions, split)")
-    p.add_argument("--suite", required=True)
-    p.add_argument("--cond", action="append", required=True, metavar="NAME=ROOT",
-                   help=f"feature root per condition; names: {REF} {' '.join(TYPES)} (repeat)")
-    p.add_argument("--tally-results", required=True, help="dir with the tally-*.json result files")
-    p.add_argument("--out", required=True, help="new output dir (refused if it exists)")
-    p.add_argument("--ftype", default="global", choices=["global", "mean"])
-    p.add_argument("--n-boot", type=int, default=1000)
-    p.add_argument("--seed", type=int, default=0)
-    p.add_argument("--sizes", default=None, help="declared per-camera sizes enc=dim,... (checked against the files)")
-    p.add_argument("--other-alpha", default="tune", choices=["tune", "reuse"],
-                   help="alpha for probes whose input is not identical to a tally probe (matched control, single-camera views)")
-    p.add_argument("--no-save-preds", action="store_true")
-    p.add_argument("--pca-whiten", action="store_true", help="divide PCA scores by their axis std (default: unwhitened)")
-    p.add_argument("--tally-tol", type=float, default=1e-6, help="tolerance for the stored-clean R2 vs tally r2_mean check")
+    sub = p.add_subparsers(dest="cmd", required=True)
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--trval-feats", required=True, help="re-rendered clean train+val feature root (phase A)")
+    common.add_argument("--raw", required=True, help="dir with the suite's LIBERO HDF5 files (actions, split)")
+    common.add_argument("--suite", required=True)
+    common.add_argument("--out", required=True, help="new output dir (refused if it exists)")
+    common.add_argument("--ftype", default="global", choices=["global", "mean"])
+    common.add_argument("--sizes", default=None, help="declared per-camera sizes enc=dim,... (checked against the files)")
+    common.add_argument("--pca-whiten", action="store_true", help="divide PCA scores by their axis std (default: unwhitened)")
+    common.add_argument("--stored-feats", default=None,
+                        help="stored feature root (train and val demos only are read): lag check (required for dev), cross value")
+    common.add_argument("--ref-meta", default=str(REF_META_PATH),
+                        help="smoke report.json holding the tally cache's metas (q23.details.<enc>.meta)")
+    d = sub.add_parser("dev", parents=[common], help="phase A: train and val only; tunes alphas, runs the gate")
+    d.add_argument("--tally-results", default=None, help="optional reference: dir with tally-*.json (its val gains are shown beside ours)")
+    f = sub.add_parser("final", parents=[common], help="phase B: needs a passing dev report")
+    f.add_argument("--cond", action="append", required=True, metavar="NAME=ROOT",
+                   help=f"test feature root per condition; names: {REF} {' '.join(TYPES)} (repeat)")
+    f.add_argument("--dev-report", required=True, help="dev-report.json of a dev run whose gate passed (same --trval-feats)")
+    f.add_argument("--n-boot", type=int, default=1000)
+    f.add_argument("--seed", type=int, default=0)
+    f.add_argument("--no-save-preds", action="store_true")
     a = p.parse_args()
-    roots = dict(s.split("=", 1) for s in a.cond)
     sizes = {k: int(v) for k, v in (s.split("=") for s in a.sizes.split(","))} if a.sizes else None
-    run(a.feats, a.raw, a.suite, roots, a.tally_results, a.out, a.ftype, a.n_boot, a.seed, sizes, a.other_alpha,
-        not a.no_save_preds, pca_whiten=a.pca_whiten, tally_tol=a.tally_tol)
+    if a.cmd == "dev":
+        if not a.stored_feats:
+            p.error("dev requires --stored-feats (lag check on train and val)")
+        rep = dev(a.trval_feats, a.raw, a.suite, a.out, a.ftype, sizes, a.stored_feats, a.tally_results, a.pca_whiten,
+                  ref_meta_path=a.ref_meta)
+        if not rep["gate"]["passed"]:
+            print(f"[pf-dev] GATE FAILED: score {rep['gate']['score']:.4f} < threshold {rep['gate']['threshold']:.4f}; "
+                  "stop and return to the user (Q8 rule)", file=sys.stderr)
+            sys.exit(1)
+    else:
+        roots = dict(s.split("=", 1) for s in a.cond)
+        run(a.trval_feats, a.raw, a.suite, roots, a.dev_report, a.out, a.ftype, a.n_boot, a.seed, sizes,
+            not a.no_save_preds, pca_whiten=a.pca_whiten, stored_root=a.stored_feats, ref_meta_path=a.ref_meta)
 
 
 if __name__ == "__main__":
