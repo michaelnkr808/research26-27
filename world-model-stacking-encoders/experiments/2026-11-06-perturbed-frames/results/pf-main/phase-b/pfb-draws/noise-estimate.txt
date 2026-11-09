@@ -1,0 +1,79 @@
+draws: 100 noise draws (expected 100), 39 distinct codes; frames per demo assumed 127.5 (12750 frames in all)
+pilot: 1226 frames, noise function cost measured for codes [3, 8, 16, 17, 18, 39, 41, 46]; base render+loop 6.3 ms per frame; env build+prepare 0.89 s per demo
+code  demos  s/frame   est. seconds  source
+   3      1   0.0699             9  measured in the pilot
+   4      1   0.0867            11  NOT measured: mean of the pilot's motion codes [3, 8]
+   5      2   0.0867            22  NOT measured: mean of the pilot's motion codes [3, 8]
+   6      2   0.0867            22  NOT measured: mean of the pilot's motion codes [3, 8]
+   8      2   0.1035            26  measured in the pilot
+   9      1   0.0867            11  NOT measured: mean of the pilot's motion codes [3, 8]
+  10      1   0.0867            11  NOT measured: mean of the pilot's motion codes [3, 8]
+  11      4   0.0065             3  NOT measured: mean of the pilot's gaussian codes [16, 17, 18]
+  13      2   0.0065             2  NOT measured: mean of the pilot's gaussian codes [16, 17, 18]
+  14      3   0.0065             2  NOT measured: mean of the pilot's gaussian codes [16, 17, 18]
+  15      1   0.0065             1  NOT measured: mean of the pilot's gaussian codes [16, 17, 18]
+  16      3   0.0057             2  measured in the pilot
+  17      2   0.0065             2  measured in the pilot
+  18      2   0.0074             2  measured in the pilot
+  19      5   0.0065             4  NOT measured: mean of the pilot's gaussian codes [16, 17, 18]
+  20      3   0.0065             2  NOT measured: mean of the pilot's gaussian codes [16, 17, 18]
+  21      1   0.9973           127  NOT measured and no measured code in the zoom family: the largest measured cost 0.997 s/frame (pessimistic)
+  23      2   0.9973           254  NOT measured and no measured code in the zoom family: the largest measured cost 0.997 s/frame (pessimistic)
+  24      2   0.9973           254  NOT measured and no measured code in the zoom family: the largest measured cost 0.997 s/frame (pessimistic)
+  25      1   0.9973           127  NOT measured and no measured code in the zoom family: the largest measured cost 0.997 s/frame (pessimistic)
+  26      3   0.9973           381  NOT measured and no measured code in the zoom family: the largest measured cost 0.997 s/frame (pessimistic)
+  28      4   0.9973           509  NOT measured and no measured code in the zoom family: the largest measured cost 0.997 s/frame (pessimistic)
+  29      2   0.9973           254  NOT measured and no measured code in the zoom family: the largest measured cost 0.997 s/frame (pessimistic)
+  30      8   0.9973          1017  NOT measured and no measured code in the zoom family: the largest measured cost 0.997 s/frame (pessimistic)
+  32      1   0.0021             0  NOT measured: mean of the pilot's fog codes [39]
+  33      1   0.0021             0  NOT measured: mean of the pilot's fog codes [39]
+  35      1   0.0021             0  NOT measured: mean of the pilot's fog codes [39]
+  36      4   0.0021             1  NOT measured: mean of the pilot's fog codes [39]
+  37      4   0.0021             1  NOT measured: mean of the pilot's fog codes [39]
+  38      2   0.0021             1  NOT measured: mean of the pilot's fog codes [39]
+  40      2   0.0021             1  NOT measured: mean of the pilot's fog codes [39]
+  43      4   0.8302           423  NOT measured: mean of the pilot's glass codes [41, 46]
+  44      1   0.8302           106  NOT measured: mean of the pilot's glass codes [41, 46]
+  45      6   0.8302           635  NOT measured: mean of the pilot's glass codes [41, 46]
+  46      1   0.6630            85  measured in the pilot
+  47      3   0.8302           318  NOT measured: mean of the pilot's glass codes [41, 46]
+  48      3   0.8302           318  NOT measured: mean of the pilot's glass codes [41, 46]
+  49      4   0.8302           423  NOT measured: mean of the pilot's glass codes [41, 46]
+  50      5   0.8302           529  NOT measured: mean of the pilot's glass codes [41, 46]
+NOTE: code 4 (1 demos): NOT measured: mean of the pilot's motion codes [3, 8]
+NOTE: code 5 (2 demos): NOT measured: mean of the pilot's motion codes [3, 8]
+NOTE: code 6 (2 demos): NOT measured: mean of the pilot's motion codes [3, 8]
+NOTE: code 9 (1 demos): NOT measured: mean of the pilot's motion codes [3, 8]
+NOTE: code 10 (1 demos): NOT measured: mean of the pilot's motion codes [3, 8]
+NOTE: code 11 (4 demos): NOT measured: mean of the pilot's gaussian codes [16, 17, 18]
+NOTE: code 13 (2 demos): NOT measured: mean of the pilot's gaussian codes [16, 17, 18]
+NOTE: code 14 (3 demos): NOT measured: mean of the pilot's gaussian codes [16, 17, 18]
+NOTE: code 15 (1 demos): NOT measured: mean of the pilot's gaussian codes [16, 17, 18]
+NOTE: code 19 (5 demos): NOT measured: mean of the pilot's gaussian codes [16, 17, 18]
+NOTE: code 20 (3 demos): NOT measured: mean of the pilot's gaussian codes [16, 17, 18]
+NOTE: code 21 (1 demos): NOT measured and no measured code in the zoom family: the largest measured cost 0.997 s/frame (pessimistic)
+NOTE: code 23 (2 demos): NOT measured and no measured code in the zoom family: the largest measured cost 0.997 s/frame (pessimistic)
+NOTE: code 24 (2 demos): NOT measured and no measured code in the zoom family: the largest measured cost 0.997 s/frame (pessimistic)
+NOTE: code 25 (1 demos): NOT measured and no measured code in the zoom family: the largest measured cost 0.997 s/frame (pessimistic)
+NOTE: code 26 (3 demos): NOT measured and no measured code in the zoom family: the largest measured cost 0.997 s/frame (pessimistic)
+NOTE: code 28 (4 demos): NOT measured and no measured code in the zoom family: the largest measured cost 0.997 s/frame (pessimistic)
+NOTE: code 29 (2 demos): NOT measured and no measured code in the zoom family: the largest measured cost 0.997 s/frame (pessimistic)
+NOTE: code 30 (8 demos): NOT measured and no measured code in the zoom family: the largest measured cost 0.997 s/frame (pessimistic)
+NOTE: code 32 (1 demos): NOT measured: mean of the pilot's fog codes [39]
+NOTE: code 33 (1 demos): NOT measured: mean of the pilot's fog codes [39]
+NOTE: code 35 (1 demos): NOT measured: mean of the pilot's fog codes [39]
+NOTE: code 36 (4 demos): NOT measured: mean of the pilot's fog codes [39]
+NOTE: code 37 (4 demos): NOT measured: mean of the pilot's fog codes [39]
+NOTE: code 38 (2 demos): NOT measured: mean of the pilot's fog codes [39]
+NOTE: code 40 (2 demos): NOT measured: mean of the pilot's fog codes [39]
+NOTE: code 43 (4 demos): NOT measured: mean of the pilot's glass codes [41, 46]
+NOTE: code 44 (1 demos): NOT measured: mean of the pilot's glass codes [41, 46]
+NOTE: code 45 (6 demos): NOT measured: mean of the pilot's glass codes [41, 46]
+NOTE: code 47 (3 demos): NOT measured: mean of the pilot's glass codes [41, 46]
+NOTE: code 48 (3 demos): NOT measured: mean of the pilot's glass codes [41, 46]
+NOTE: code 49 (4 demos): NOT measured: mean of the pilot's glass codes [41, 46]
+NOTE: code 50 (5 demos): NOT measured: mean of the pilot's glass codes [41, 46]
+noise function: 5899 s; base render and loop: 80 s; env build and prepare: 89 s
+ESTIMATED noise render time: 6068 s = 1.69 h (not counting the consistency check, about 1 to 2 min, nor the publish copy)
+suggested NOISE_CAP: 10800   (1.5 x estimate + 1200 s, rounded up to 600 s, at least 3600; set it at the top of job-pfb-render.yaml's script)
+GPU-idle note: the render holds the GPU at low use; if the estimate is above about 3 h (busy 2.7 h / (2.7 h + 0.75 h setup and light renders + X) < 0.4 when X > 3.3 h), the pod's hours-long GPU average may fall under 40 percent (_standards/08), see PHASE-B.md section 6.

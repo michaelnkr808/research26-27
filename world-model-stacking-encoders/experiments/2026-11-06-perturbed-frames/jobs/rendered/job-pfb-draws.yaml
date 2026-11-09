@@ -1,0 +1,116 @@
+# PHASE B, job 1 of 9 (pfb-draws), CPU only. NOT SUBMITTED; written 2026-11-09 by the implementation worker pfb-jobs; the user gives the separate phase-B go (jobs/PHASE-B.md).
+# Writes the perturbation draws (one per test demo and type from the config seed, 400 entries) with `pf_rerender.py draws`. It opens no demo group, only the test demo NAMES.
+# The lead commits the printed file as config/draws.json; the render Job then gets it from the ConfigMap as /pf/draws.json and passes it as --expect-draws.
+# Environment choice: pf_rerender.py imports h5py, numpy, PIL, diagnostics, pf_render and pf_smoke at module level (none needs the simulator), but `draws` without --classification
+# reads LIBERO-Plus's own task_classification.json through `libero.libero.get_libero_path`, so the Job restores the same env bundle as the render Job (restore tested on a CPU pod in
+# env-build4: the bundle restore does not need a GPU). That way the draws come from the same classification file the render uses; the render re-computes the draws and refuses on any difference.
+# Follows _standards/08: Job, real command that exits, no waiting loops, nothing that tolerates a taint, no GPU (anti-affinity to GPU nodes), limits within 20% of requests, backoffLimit 0.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-pfb-draws
+  namespace: aria-world
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 172800        # 48 h from creation, queue included (phase A precedent); the work itself is capped stage by stage inside
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}   # CPU-only: keep off GPU nodes (_standards/08)
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch@sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2   # pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime, pinned by digest (phase A)
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          case "${SRC_GIT_COMMIT:-}" in FILL*|"") echo "ABORT: SRC_GIT_COMMIT not filled in (render the manifest with sed at submit time, see PHASE-B.md)"; exit 11;; esac
+          R=/mnt/proxy; PB=$R/pf-main/phase-b; STAMP=$(date +%Y%m%d-%H%M%S); OUT=/work/out; JOB=pfb-draws
+          export PB OUT
+          # per-stage caps: every long-running command (downloads, hashing, copies on CephFS, the draws) runs under `timeout <seconds>` (exit 124 on expiry = a failed stage);
+          # only the sourced environment restore and small file operations do not
+          cap() { _s=$1; shift; timeout -k 60 "$_s" "$@"; }
+          WORST=0; LAST=0
+          stage() { _n=$1; shift; "$@"; LAST=$?; echo "=== $_n exit code $LAST"; date -u; if [ $LAST -gt $WORST ]; then WORST=$LAST; fi; return 0; }
+          mkdir -p $R/logs $PB $OUT /work/hf
+          exec > >(tee -a $R/logs/$JOB-$STAMP.log) 2>&1
+          echo "=== $JOB $STAMP src $SRC_GIT_COMMIT"; nproc; date -u; df -h /mnt/proxy | tail -1
+          FREE_GB=$(df -BG --output=avail /mnt/proxy | tail -1 | tr -dc 0-9)
+          if [ "$FREE_GB" -lt 100 ]; then echo "ABORT: only ${FREE_GB}G free on the proxy PVC, need >= 100G"; exit 12; fi
+          [ ! -e $PB/draws ] || { echo "ABORT: $PB/draws already exists (never overwritten)"; exit 14; }
+          BKEY=$(cat /src/setup_env.sh /src/setup_sim.sh /src/env_bundle.sh | sha256sum | cut -c1-12)
+          [ -f $R/env/env-$BKEY.tar ] || { echo "ABORT: no env bundle $R/env/env-$BKEY.tar for the scripts in /src"; exit 13; }
+          . /src/env_bundle.sh restore    # prebuilt venv + debs + LIBERO-Plus (task_classification.json). (Sourcing it turns `set -e` on again.)
+          cap 1800 python - <<'PY'
+          from huggingface_hub import snapshot_download
+          snapshot_download("yifengzhu-hf/LIBERO-datasets", repo_type="dataset", revision="f13aa24a3da8c43c7225569f28c562979fa0e35a",
+                            allow_patterns=["libero_goal/*.hdf5"], local_dir="/work/data")
+          PY
+          ls -la /work/data/libero_goal; date -u
+          set +e
+          # the raw files must be the ones the config lists (the draws read demo names only, but the file set must be the same as the render's)
+          stage raw-sha256 cap 900 bash -c "awk '/^  [a-z_]+_demo:/ {gsub(\":\",\"\",\$1); print \$2\"  /work/data/libero_goal/\"\$1\".hdf5\"}' /pf/phase-a.yaml | sha256sum -c -"
+          if [ $LAST -eq 0 ]; then
+            mkdir -p /work/draws
+            # --classification is not passed: the default is LIBERO-Plus's own file via LIBERO_CONFIG_PATH (exported by the restore), the same one the render uses
+            stage draws cap 900 python /pf/pf_rerender.py draws --raw /work/data/libero_goal --config /pf/phase-a.yaml --out /work/draws/draws.json
+            if [ $LAST -eq 0 ]; then
+              cp /work/draws/draws.json $OUT/draws.json
+              sha256sum /work/draws/draws.json | tee $OUT/draws.json.sha256
+              wc -c /work/draws/draws.json
+              python - <<'PY'
+          import json
+          d = json.load(open("/work/draws/draws.json"))
+          dr = d["draws"]
+          by_type = {}
+          for k in dr:
+              by_type[k.rsplit("/", 1)[1]] = by_type.get(k.rsplit("/", 1)[1], 0) + 1
+          demos = sorted({k.split("/")[1] for k in dr})
+          print("draws summary: seed_draw", d["seed_draw"], "entries", len(dr), "per type", by_type, "demo names", demos[0], "to", demos[-1], "count", len(demos))
+          assert len(dr) == 400 and all(v == 100 for v in by_type.values()), (len(dr), by_type)
+          assert demos == [f"demo_{i}" for i in range(40, 50)], demos
+          PY
+              if [ $? -ne 0 ]; then WORST=16; fi
+              # never overwrite: the PVC copy is written once, through a temporary name
+              mkdir -p $PB/draws && cp /work/draws/draws.json $PB/draws/draws-$STAMP.json.partial && mv $PB/draws/draws-$STAMP.json.partial $PB/draws/draws-$STAMP.json && echo "copied to $PB/draws/draws-$STAMP.json" || { echo "DRAWS COPY FAILED"; if [ $WORST -eq 0 ]; then WORST=15; fi; }
+              echo "=== BEGIN DRAWS_JSON"; cat /work/draws/draws.json; echo; echo "=== END DRAWS_JSON"
+            fi
+          fi
+          echo "=== exit codes: worst $WORST"; date -u
+          REP=$PB/reports/$JOB-$STAMP
+          mkdir -p $REP && cp -r $OUT/. $REP/ && echo "copied reports to $REP" || { echo "REPORT COPY FAILED"; if [ $WORST -eq 0 ]; then WORST=15; fi; }
+          echo "=== done; exiting with $WORST (0 only if every stage passed)"
+          exit $WORST
+        env:
+        - {name: SRC_GIT_COMMIT, value: 366763d8d772480ff4b1498e459742ae578d5f26}   # sed at submit time (PHASE-B.md); the script aborts if it is still FILL_AT_SUBMIT
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: "/pf:/src"}
+        - {name: SIM_DIR, value: /work/sim}
+        resources:
+          requests: {cpu: "2", memory: 2Gi, ephemeral-storage: 30Gi}
+          limits:   {cpu: "2400m", memory: 2400Mi, ephemeral-storage: 36Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: pf, mountPath: /pf, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 36Gi}
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: pf
+        configMap: {name: stacking-encoders-pf-main-src-b}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
