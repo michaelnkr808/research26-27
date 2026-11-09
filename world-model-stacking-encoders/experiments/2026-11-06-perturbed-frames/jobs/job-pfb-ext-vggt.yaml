@@ -49,12 +49,19 @@ spec:
           FREE_GB=$(df -BG --output=avail /mnt/proxy | tail -1 | tr -dc 0-9)
           if [ "$FREE_GB" -lt 100 ]; then echo "ABORT: only ${FREE_GB}G free on the proxy PVC, need >= 100G (expected use about 60G in all of phase B)"; exit 12; fi
           # --- inputs: the published test renders of this Job's conditions (fail fast if one is not there or not intact)
+          feats_done() { [ -d "$1" ] && [ "$(ls $1/*.h5 2>/dev/null | wc -l)" -eq 10 ] && ! ls $1 | grep -q partial; }   # feats_done <dir>: 10 feature files, no .partial
+          TODO=""     # the conditions still to extract: one whose 10 feature files are already on the PVC (complete) is skipped, so a retry after a failure at condition k redoes only the rest
           for c in $CONDS; do
             [ -f $PB/render/$c/RENDER_COMPLETE ] || { echo "ABORT: $PB/render/$c/RENDER_COMPLETE missing: submit this Job only after job-pfb-render has published condition $c"; exit 20; }
             [ -f $PB/render/$c/render-sha256.txt ] || { echo "ABORT: no $PB/render/$c/render-sha256.txt"; exit 20; }
             [ $(ls $PB/render/$c/libero_goal/*.hdf5 | wc -l) -eq 10 ] || { echo "ABORT: $PB/render/$c/libero_goal does not hold 10 files"; exit 20; }
-            for s in $(ls $PB/render/$c/libero_goal/ | sed s/.hdf5$//); do [ ! -e $PB/feats/$c/$ENC/libero_goal/$s.h5 ] || { echo "ABORT: $PB/feats/$c/$ENC/libero_goal/$s.h5 already exists (never overwritten)"; exit 22; }; done
+            if [ -e $PB/feats/$c/$ENC ]; then
+              if feats_done $PB/feats/$c/$ENC/libero_goal; then echo "SKIP: $PB/feats/$c/$ENC is complete (10 files, no .partial)"; continue; else echo "ABORT: $PB/feats/$c/$ENC exists but is incomplete (never overwritten)"; exit 22; fi
+            fi
+            TODO="$TODO $c"
           done
+          [ -n "$TODO" ] || { echo "nothing to do: every condition is already extracted"; exit 0; }
+          echo "conditions to extract:$TODO"
           EXT=$(sha256sum /src/extract_features.py | cut -c1-12)
           [ "$EXT" = "03734ba84a86" ] || { echo "ABORT: /src/extract_features.py sha256 prefix is $EXT, expected 03734ba84a86 (the tally/pf-val extractor)"; exit 21; }
           cap 1800 pip install --no-cache-dir -q torch==2.7.1 torchvision==0.22.1 \
@@ -72,7 +79,7 @@ spec:
           # the whole copy from CephFS and the hash check run under one cap (a CephFS stall must not leave the GPU idle for hours); failure aborts the Job (set -e)
           stage_in() {
             set -e
-            for c in $CONDS; do
+            for c in $TODO; do
               mkdir -p /work/pfb-test-$c/libero_goal
               for s in $(ls $PB/render/$c/libero_goal/ | sed s/.hdf5$//); do
                 grep "  $s.hdf5\$" $PB/render/$c/render-sha256.txt >> /work/sha-$c.txt
@@ -84,7 +91,7 @@ spec:
             done
           }
           export -f stage_in
-          export CONDS
+          export CONDS TODO
           cap 3600 bash -c stage_in
           date -u
           python -c "import transformers, numpy; print('transformers', transformers.__version__, 'numpy', numpy.__version__)"
@@ -130,7 +137,7 @@ spec:
             ls -la $_d
           }
           export -f copy_feats
-          for c in $CONDS; do
+          for c in $TODO; do
             stage extract-$ENC-$c cap 5400 python /src/extract_features.py --encoder $ENC --dtype float16 --batch-size 16 --out /work/feats/$c --hdf5 /work/pfb-test-$c/libero_goal/*.hdf5
             if [ $LAST -eq 0 ]; then
               stage meta-$ENC-$c cap 900 python /work/meta_check.py $ENC $c /work/feats/$c

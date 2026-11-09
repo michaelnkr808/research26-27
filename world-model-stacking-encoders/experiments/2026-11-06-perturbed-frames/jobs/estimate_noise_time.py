@@ -100,7 +100,7 @@ def main(argv=None):
     print(f"ESTIMATED noise render time: {total:.0f} s = {total / 3600:.2f} h (not counting the consistency check, about 1 to 2 min, nor the publish copy)")
     cap = max(3600, int(math.ceil((1.5 * total + 1200) / 600.0) * 600))
     print(f"suggested NOISE_CAP: {cap}   (1.5 x estimate + 1200 s, rounded up to 600 s, at least 3600; set it at the top of job-pfb-render.yaml's script)")
-    print("GPU-idle note: the render holds the GPU at low use; if the estimate is above about 2 h, the pod's hours-long GPU average may fall under 40 percent (_standards/08), see PHASE-B.md section 6.")
+    print("GPU-idle note: the render holds the GPU at low use; if the estimate is above about 3 h (busy 2.7 h / (2.7 h + 0.75 h setup and light renders + X) < 0.4 when X > 3.3 h), the pod's hours-long GPU average may fall under 40 percent (_standards/08), see PHASE-B.md section 6.")
 
 
 if __name__ == "__main__":

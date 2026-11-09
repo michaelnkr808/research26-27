@@ -197,8 +197,12 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
             msgs.append(f"render conditions {seen}")
         if "PA=$R/pf-main/phase-a" not in script or "R=/mnt/proxy" not in script:
             msgs.append("PA is not /mnt/proxy/pf-main/phase-a")
-        if not re.search(r"^NOISE_CAP=\d+\s", script, re.M) and not re.search(r"^NOISE_CAP=\d+$", script, re.M):
-            msgs.append("NOISE_CAP variable missing")
+        if not re.search(r"^ *NOISE_CAP=FILL_AT_SUBMIT$", script, re.M):
+            msgs.append("NOISE_CAP variable missing or not the FILL_AT_SUBMIT placeholder")
+        if "case \"$NOISE_CAP\" in" not in script or "exit 11" not in script.split("case \"$NOISE_CAP\" in", 1)[-1][:300]:
+            msgs.append("no NOISE_CAP abort guard (exit 11)")
+        if not re.search(r"^ *CONDS=\"clean camera light background noise\"$", script, re.M):
+            msgs.append("render CONDS default is not all five conditions")
         if "cap $NOISE_CAP python /pf/pf_rerender.py render" not in script:
             msgs.append("the noise render does not use cap $NOISE_CAP")
         if "ea8dc28" not in script or SIGLIP2_SHA not in script:

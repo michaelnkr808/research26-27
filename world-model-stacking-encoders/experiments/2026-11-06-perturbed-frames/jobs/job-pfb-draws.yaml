@@ -98,8 +98,8 @@ spec:
         - {name: PYTHONPATH, value: "/pf:/src"}
         - {name: SIM_DIR, value: /work/sim}
         resources:
-          requests: {cpu: "2", memory: 4Gi, ephemeral-storage: 30Gi}
-          limits:   {cpu: "2400m", memory: 4800Mi, ephemeral-storage: 36Gi}
+          requests: {cpu: "2", memory: 2Gi, ephemeral-storage: 30Gi}
+          limits:   {cpu: "2400m", memory: 2400Mi, ephemeral-storage: 36Gi}
         volumeMounts:
         - {name: work, mountPath: /work}
         - {name: src, mountPath: /src, readOnly: true}

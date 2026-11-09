@@ -102,13 +102,13 @@ spec:
             stage final-global cap 21600 env PYTHONPATH=/work/extlib:/pf:/src python /pf/pf_analysis.py final --trval-feats $PA/feats --raw /work/data/libero_goal --suite libero_goal --ref-meta /pf/smoke-report.json --dev-report $DEV_REPORT --ftype global --n-boot 1000 --seed 0 --cond clean_rerender=$PB/feats/clean --cond camera=$PB/feats/camera --cond light=$PB/feats/light --cond background=$PB/feats/background --cond noise=$PB/feats/noise --out /work/final-global
             RC_G=$LAST
             if [ $RC_G -eq 0 ]; then
-              env PYTHONPATH=/work/extlib python /work/summary.py /work/final-global > $OUT/summary-global.json
+              stage summary-global cap 300 bash -c 'python /work/summary.py /work/final-global > $OUT/summary-global.json'
               echo "=== BEGIN PFB_SUMMARY_GLOBAL"; cat $OUT/summary-global.json; echo "=== END PFB_SUMMARY_GLOBAL"
             fi
             stage final-mean cap 21600 env PYTHONPATH=/work/extlib:/pf:/src python /pf/pf_analysis.py final --trval-feats $PA/feats --raw /work/data/libero_goal --suite libero_goal --ref-meta /pf/smoke-report.json --dev-report $DEV_REPORT --ftype mean --n-boot 1000 --seed 0 --cond clean_rerender=$PB/feats/clean --cond camera=$PB/feats/camera --cond light=$PB/feats/light --cond background=$PB/feats/background --cond noise=$PB/feats/noise --out /work/final-mean
             RC_M=$LAST
             if [ $RC_M -eq 0 ]; then
-              env PYTHONPATH=/work/extlib python /work/summary.py /work/final-mean > $OUT/summary-mean.json
+              stage summary-mean cap 300 bash -c 'python /work/summary.py /work/final-mean > $OUT/summary-mean.json'
               echo "=== BEGIN PFB_SUMMARY_MEAN"; cat $OUT/summary-mean.json; echo "=== END PFB_SUMMARY_MEAN"
             fi
             # copy whatever finished to the PVC (never overwrites: the stamp directory is new)

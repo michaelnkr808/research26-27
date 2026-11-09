@@ -45,7 +45,13 @@ spec:
           R=/mnt/proxy; PA=$R/pf-main/phase-a; PB=$R/pf-main/phase-b; STAMP=$(date +%Y%m%d-%H%M%S); OUT=/work/out; JOB=pfb-render
           # Stage cap of the noise render, in seconds. THE LEAD SETS THIS before submitting from `python jobs/estimate_noise_time.py config/draws.json <pilot-noise-render-report.json>`
           # (its "suggested NOISE_CAP" line); the default is a placeholder. The noise cost depends on the drawn LIBERO-Plus noise codes (codes 41 and 46 cost 0.7 to 1.0 s per frame).
-          NOISE_CAP=14400
+          NOISE_CAP=FILL_AT_SUBMIT
+          # The conditions this run handles (renders, "already exists" checks, extraction). Default all five. A retry of one condition (for example CONDS="noise" after a noise exit 124) edits this line in the
+          # rendered copy; it never touches the conditions that are already published (PHASE-B.md section 7, retry recipe).
+          CONDS="clean camera light background noise"
+          want() { case " $CONDS " in *" $1 "*) return 0;; esac; return 1; }
+          feats_done() { [ -d "$1" ] && [ "$(ls $1/*.h5 2>/dev/null | wc -l)" -eq 10 ] && ! ls $1 | grep -q partial; }   # feats_done <dir>: 10 feature files, no .partial
+          case "$NOISE_CAP" in ''|*[!0-9]*) echo "ABORT: NOISE_CAP is '$NOISE_CAP' (render the manifest with sed at submit time, see PHASE-B.md section 3)"; exit 11;; esac
           # SigLIP 2 revision that phase A extracted with: `main` at that time, from results/pf-main/phase-a/pfa-ext-siglip2-cradio/revisions.txt (line "revision google/siglip2-large-patch16-384 <sha>")
           SIGLIP2_SHA=1b426889ea62b5a72bf9839009a1b184bfc9c178
           export PA PB OUT SIGLIP2_SHA
@@ -62,9 +68,13 @@ spec:
           [ -f $PA/render/RENDER_COMPLETE ] && [ -f $PA/render/render-report.json ] || { echo "ABORT: the phase-A render $PA/render (the --consistency-ref) is not complete"; exit 20; }
           [ -f /pf/draws.json ] || { echo "ABORT: /pf/draws.json missing (ConfigMap key draws.json; run job-pfb-draws first and commit config/draws.json)"; exit 20; }
           sha256sum /pf/draws.json /pf/phase-a.yaml /pf/smoke-report.json /pf/pf_render.py /pf/pf_rerender.py /pf/pf_smoke.py /pf/pf_analysis.py /pf/diagnostics.py
-          for c in clean camera light background noise; do
+          for c in $CONDS; do
             [ ! -e $PB/render/$c ] && [ ! -e $PB/render/$c.part ] || { echo "ABORT: $PB/render/$c or $c.part already exists (never overwritten)"; exit 14; }
-            for e in dinov3 siglip2 c-radiov4; do [ ! -e $PB/feats/$c/$e ] || { echo "ABORT: $PB/feats/$c/$e already exists (never overwritten)"; exit 22; }; done
+            for e in dinov3 siglip2 c-radiov4; do
+              if [ -e $PB/feats/$c/$e ]; then
+                if feats_done $PB/feats/$c/$e/libero_goal; then echo "NOTE: $PB/feats/$c/$e is complete, its extraction will be skipped"; else echo "ABORT: $PB/feats/$c/$e exists but is incomplete (never overwritten)"; exit 22; fi
+              fi
+            done
           done
           EXT=$(sha256sum /src/extract_features.py | cut -c1-12)
           [ "$EXT" = "03734ba84a86" ] || { echo "ABORT: /src/extract_features.py sha256 prefix is $EXT, expected 03734ba84a86 (the tally/pf-val extractor)"; exit 21; }
@@ -195,6 +205,8 @@ spec:
           }
           extract_one() {   # extract_one <encoder> <condition>: extract, meta check, copy, then free the local features
             _e=$1; _c=$2
+            if ! want $_c; then return 0; fi
+            if feats_done $PB/feats/$_c/$_e/libero_goal; then echo "=== SKIP $_e on $_c: its 10 feature files already exist on the PVC (complete, no .partial)"; return 0; fi
             if [ "${OK[$_c]:-0}" != 1 ]; then echo "=== SKIP $_e on $_c: no published render"; return 0; fi
             case $_e in
               dinov3)    _py="env PYTHONPATH=/work/extlib:$PYTHONPATH python"; _a="--encoder dinov3 --dtype float32 --batch-size 64"; _t=1800;;
@@ -214,24 +226,24 @@ spec:
           GO=0
           if [ $LAST -eq 0 ]; then GO=1; fi
           # 1. clean re-render: the consistency check against the phase-A render runs first inside this command (exit 5 and no test frame drawn if it fails); if this stage fails nothing else is rendered
-          if [ $GO -eq 1 ]; then
+          if [ $GO -eq 1 ] && want clean; then
             stage render-clean cap 3600 python /pf/pf_rerender.py render --raw /work/data/libero_goal --config /pf/phase-a.yaml --out /work/render/clean --split test --condition clean --consistency-ref $PA/render --env-scripts-dir /src
             finish_render clean $LAST
             if [ "${OK[clean]:-0}" != 1 ]; then GO=0; fi
           fi
           # 2. camera, light, background: new environment per demo (about 2 s each) and about 5 ms per frame (pilot), plus the consistency check each time; --expect-draws makes the render refuse on any draw difference
           if [ $GO -eq 1 ]; then
-            stage render-camera cap 3600 python /pf/pf_rerender.py render --raw /work/data/libero_goal --config /pf/phase-a.yaml --out /work/render/camera --split test --condition camera --consistency-ref $PA/render --env-scripts-dir /src --expect-draws /pf/draws.json
-            finish_render camera $LAST
-            stage render-light cap 3600 python /pf/pf_rerender.py render --raw /work/data/libero_goal --config /pf/phase-a.yaml --out /work/render/light --split test --condition light --consistency-ref $PA/render --env-scripts-dir /src --expect-draws /pf/draws.json
-            finish_render light $LAST
-            stage render-background cap 3600 python /pf/pf_rerender.py render --raw /work/data/libero_goal --config /pf/phase-a.yaml --out /work/render/background --split test --condition background --consistency-ref $PA/render --env-scripts-dir /src --expect-draws /pf/draws.json
-            finish_render background $LAST
+            if want camera; then stage render-camera cap 3600 python /pf/pf_rerender.py render --raw /work/data/libero_goal --config /pf/phase-a.yaml --out /work/render/camera --split test --condition camera --consistency-ref $PA/render --env-scripts-dir /src --expect-draws /pf/draws.json
+            finish_render camera $LAST; fi
+            if want light; then stage render-light cap 3600 python /pf/pf_rerender.py render --raw /work/data/libero_goal --config /pf/phase-a.yaml --out /work/render/light --split test --condition light --consistency-ref $PA/render --env-scripts-dir /src --expect-draws /pf/draws.json
+            finish_render light $LAST; fi
+            if want background; then stage render-background cap 3600 python /pf/pf_rerender.py render --raw /work/data/libero_goal --config /pf/phase-a.yaml --out /work/render/background --split test --condition background --consistency-ref $PA/render --env-scripts-dir /src --expect-draws /pf/draws.json
+            finish_render background $LAST; fi
           fi
           # 3. the three encoders on the four conditions rendered so far (GPU-bound: about 100,000 images per encoder)
           for e in dinov3 siglip2 c-radiov4; do for c in clean camera light background; do extract_one $e $c; done; done
           # 4. noise: the long pole (cost depends on the drawn noise codes). Its cap is NOISE_CAP, set by the lead from estimate_noise_time.py.
-          if [ $GO -eq 1 ]; then
+          if [ $GO -eq 1 ] && want noise; then
             stage render-noise cap $NOISE_CAP python /pf/pf_rerender.py render --raw /work/data/libero_goal --config /pf/phase-a.yaml --out /work/render/noise --split test --condition noise --consistency-ref $PA/render --env-scripts-dir /src --expect-draws /pf/draws.json
             finish_render noise $LAST
           fi
