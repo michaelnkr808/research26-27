@@ -508,6 +508,96 @@ def test_provenance_and_frames():
           "driver/GPU difference only recorded; empty or incomplete reference stops")
 
 
+def test_tolerance():
+    """PLAN Amendment 2026-11-09 (d): pass if every differing value is off by at most 1 and fewer than 1e-5 of an array's values differ."""
+    assert R.MAX_ABS_DIFF_TOL == 1 and R.FRACTION_TOL == 1e-5
+    # boundaries of the rule itself: strictly fewer than 1e-5 of the values, at most one step
+    assert not R.within_tolerance(1, 100000, 1), "exactly 1e-5 must fail (strict <)"
+    assert R.within_tolerance(1, 100001, 1)
+    assert not R.within_tolerance(1, 10**7, 2), "a step of 2 fails whatever the fraction"
+    assert R.within_tolerance(0, 10, 0)
+    n_frames = 24                                     # 24 * 128 * 128 * 3 = 1,179,648 values: one differing value is 8.5e-7 < 1e-5
+    rng = np.random.default_rng(5)
+    a = rng.integers(2, 250, (n_frames, 128, 128, 3), dtype=np.uint8)
+    w = rng.integers(2, 250, (n_frames, 128, 128, 3), dtype=np.uint8)
+
+    def write(p, arr_a, arr_w, demos=("demo_30", "demo_31")):
+        with h5py.File(p, "w") as f:
+            g = f.create_group("data")
+            for d in demos:
+                o = g.create_group(d).create_group("obs")
+                o.create_dataset("agentview_rgb", data=arr_a)
+                o.create_dataset("eye_in_hand_rgb", data=arr_w)
+
+    with tempfile.TemporaryDirectory() as t:
+        t = Path(t)
+        write(t / "ref.h5", a, w)
+        write(t / "same.h5", a.copy(), w.copy())
+        r = R.compare_frames(t / "ref.h5", t / "same.h5")
+        assert r["verdict"] == "identical" and r["identical"] and r["within_tolerance"]
+        assert r["demos"]["demo_30"]["eye_in_hand_rgb"]["within_tolerance"]
+        # one value of one frame off by one: within tolerance, reported
+        w1 = w.copy(); w1[7, 40, 50, 2] += 1
+        write(t / "one.h5", a, w1)
+        r = R.compare_frames(t / "ref.h5", t / "one.h5")
+        c = r["demos"]["demo_30"]["eye_in_hand_rgb"]
+        assert r["verdict"] == "within_tolerance" and not r["identical"] and r["within_tolerance"], r
+        assert c["n_different"] == 1 and c["max_abs_diff"] == 1 and c["n_frames_different"] == 1 and c["within_tolerance"] and not c["identical"]
+        assert 0 < c["fraction_different"] < 1e-5 and c["n_values"] == n_frames * 128 * 128 * 3
+        assert r["demos"]["demo_30"]["agentview_rgb"]["identical"] and r["tolerance"] == {"max_abs_diff": 1, "fraction": 1e-5}
+        # off by 2: fails
+        w2 = w.copy(); w2[7, 40, 50, 2] += 2
+        write(t / "two.h5", a, w2)
+        r = R.compare_frames(t / "ref.h5", t / "two.h5")
+        c = r["demos"]["demo_30"]["eye_in_hand_rgb"]
+        assert r["verdict"] == "exceeds_tolerance" and not r["within_tolerance"] and c["max_abs_diff"] == 2 and not c["within_tolerance"]
+        # two values off by one (1.7e-6, above the first version's 1e-6) now pass; 13 values (1.1e-5, above 1e-5) fail
+        w3 = w.copy(); w3[7, 40, 50, 2] += 1; w3[8, 41, 50, 2] += 1
+        write(t / "two_px.h5", a, w3)
+        assert R.compare_frames(t / "ref.h5", t / "two_px.h5")["verdict"] == "within_tolerance"
+        w3 = w.copy()
+        for k in range(13):
+            w3[k, 40, 50, 2] += 1
+        write(t / "many.h5", a, w3)
+        r = R.compare_frames(t / "ref.h5", t / "many.h5")
+        c = r["demos"]["demo_30"]["eye_in_hand_rgb"]
+        assert r["verdict"] == "exceeds_tolerance" and c["max_abs_diff"] == 1 and c["fraction_different"] > 1e-5 and not c["within_tolerance"]
+        # a failing array anywhere fails the whole file, a within-tolerance one next to it does not rescue it
+        w4 = w1.copy(); w4[0, 0, 0, 0] ^= 128
+        write(t / "mixed.h5", a, w4)
+        assert R.compare_frames(t / "ref.h5", t / "mixed.h5")["verdict"] == "exceeds_tolerance"
+        # shape, dtype, missing demo: never covered by the tolerance
+        write(t / "shape.h5", a[:23], w[:23])
+        r = R.compare_frames(t / "ref.h5", t / "shape.h5")
+        assert r["verdict"] == "exceeds_tolerance" and not r["demos"]["demo_30"]["agentview_rgb"]["within_tolerance"]
+        write(t / "dtype.h5", a.astype(np.int16), w.astype(np.int16))
+        r = R.compare_frames(t / "ref.h5", t / "dtype.h5")
+        assert r["verdict"] == "exceeds_tolerance" and not r["demos"]["demo_30"]["agentview_rgb"]["within_tolerance"]
+        write(t / "one_demo.h5", a, w, demos=("demo_30",))
+        for x, y in (("ref.h5", "one_demo.h5"), ("one_demo.h5", "ref.h5")):
+            r = R.compare_frames(t / x, t / y)
+            assert r["verdict"] == "exceeds_tolerance" and r["missing"] == ["demo_31"] and not r["within_tolerance"]
+        with h5py.File(t / "nokey.h5", "w") as f:
+            o = f.create_group("data").create_group("demo_30").create_group("obs")
+            o.create_dataset("agentview_rgb", data=a)
+        with h5py.File(t / "ref1.h5", "w") as f:
+            o = f.create_group("data").create_group("demo_30").create_group("obs")
+            o.create_dataset("agentview_rgb", data=a)
+            o.create_dataset("eye_in_hand_rgb", data=w)
+        expect(KeyError, R.compare_frames, t / "ref1.h5", t / "nokey.h5")
+        # file-level verdict
+        ok = {"f1": {"verdict": "identical"}, "f2": {"verdict": "within_tolerance"}}
+        assert PR.pixel_verdict(ok) == "within_tolerance" and PR.pixel_verdict({"f1": {"verdict": "identical"}}) == "identical"
+        assert PR.pixel_verdict({**ok, "f3": {"verdict": "exceeds_tolerance"}}) == "exceeds_tolerance" and PR.pixel_verdict({}) == "exceeds_tolerance"
+        assert PR.pixel_comparison(t, t / "nowhere", "libero_goal", ["x"])["x"]["verdict"] == "exceeds_tolerance"
+    # code hashes: recorded, never a stop; they are not part of the environment record that compare_provenance reads
+    d = PR.code_hash_differences({"pf_render.py": "aa", "pf_rerender.py": "bb"}, {"pf_render.py": "aa", "pf_rerender.py": "cc"})
+    assert len(d) == 1 and "pf_rerender.py" in d[0] and not PR.code_hash_differences({"a": "1"}, {"a": "1"})
+    assert not R.compare_provenance({**env_info(), "code_sha256": {"x": "1"}}, {**env_info(), "code_sha256": {"x": "2"}}, strict=True)["stop"]
+    print("tolerance: identical; one value off by one in 1.18 M values passes as within_tolerance and is reported; off by 2, off by one in "
+          "more than 1e-5 of the values, shape, dtype, missing demo, missing camera key fail; code-hash difference recorded, not a stop")
+
+
 def read_frames(root, stem, d, cam):
     with h5py.File(Path(root) / "libero_goal" / (stem + ".hdf5"), "r") as f:
         return f["data"][d]["obs"][cam][:]
@@ -716,6 +806,41 @@ def test_consistency_end_to_end():
             assert rc == PR.RC_CONSISTENCY
             rep = json.loads((t / "c2/consistency-report.json").read_text())
             assert not rep["identical"] and "pixels differ" in rep["failure"]
+            # tolerance end to end: with a looser fraction (the stub's frames are small) one value off by one per frame passes as
+            # within_tolerance, the report names the verdict and the per-array flags; with the real constants it fails (c2 above)
+            old_frac = R.FRACTION_TOL
+            R.FRACTION_TOL = 1e-3
+            try:
+                with Stub(shift=1):
+                    rc = PR.main(["check-consistency", "--raw", str(raw), "--config", str(cfgp), "--consistency-ref", str(t / "phaseA"),
+                                  "--out", str(t / "c2b")])
+            finally:
+                R.FRACTION_TOL = old_frac
+            rep = json.loads((t / "c2b/consistency-report.json").read_text())
+            assert rc == PR.RC_OK and rep["verdict"] == "within_tolerance" and not rep["identical"] and rep["within_tolerance"], rep.get("failure")
+            assert rep["tolerance"] == {"max_abs_diff": 1, "fraction": 1e-3}
+            assert all(c["within_tolerance"] and c["max_abs_diff"] == 1 for r in rep["pixels"].values() for c in r["demos"]["demo_30"].values())
+            assert json.loads((t / "c1/consistency-report.json").read_text())["verdict"] == "identical"
+            assert json.loads((t / "c2/consistency-report.json").read_text())["verdict"] == "exceeds_tolerance"
+            # a code-hash difference (phase B runs newer code than phase A) is recorded, not a stop, in strict mode
+            shutil.copytree(t / "phaseA", t / "phaseA_code")
+            rp = t / "phaseA_code/render-report.json"
+            rj = json.loads(rp.read_text())
+            rj["code_sha256"]["pf_rerender.py"] = "0" * 64
+            rp.write_text(json.dumps(rj))
+            with Stub():
+                rc = PR.main(["check-consistency", "--raw", str(raw), "--config", str(cfgp), "--consistency-ref", str(t / "phaseA_code"),
+                              "--out", str(t / "c2c")])
+            rep = json.loads((t / "c2c/consistency-report.json").read_text())
+            assert rc == PR.RC_OK and rep["verdict"] == "identical" and any("pf_rerender.py" in x for x in rep["code_differences_recorded"])
+            # the config settings hash must match the reference's: a different config stops before any render
+            rj["config_sha256"] = "f" * 64
+            rp.write_text(json.dumps(rj))
+            with Stub() as stub:
+                rc = PR.main(["check-consistency", "--raw", str(raw), "--config", str(cfgp), "--consistency-ref", str(t / "phaseA_code"),
+                              "--out", str(t / "c2d")])
+            assert rc == PR.RC_CONSISTENCY and stub.log["make"] == []
+            assert "config settings hash" in json.loads((t / "c2d/consistency-report.json").read_text())["failure"]
             # library version differs -> stops before rendering anything
             cur["env"] = env_info(lib_robosuite="1.4.1")
             with Stub() as stub:
@@ -936,6 +1061,7 @@ def main():
     test_split_guard_synthetic()
     test_scene_file_check()
     test_provenance_and_frames()
+    test_tolerance()
     test_render_contract_and_resume()
     test_first_failure_stops()
     test_camera_override_and_perturbed_conditions()

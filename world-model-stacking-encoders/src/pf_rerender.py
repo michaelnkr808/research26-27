@@ -533,11 +533,32 @@ def render_run(raw_dir, out_root, split, condition, cfg, classification, env_inf
 # consistency check (PLAN Amendment 2026-11-09 (b))
 # ---------------------------------------------------------------------------
 
-def load_ref_environment(ref_root):
+def load_ref_report(ref_root):
     p = Path(ref_root) / "render-report.json"
     if not p.exists():
         raise ConsistencyFailure(f"no render-report.json in the reference {ref_root}")
-    return json.loads(p.read_text()).get("environment") or {}
+    return json.loads(p.read_text())
+
+
+def load_ref_environment(ref_root):
+    return load_ref_report(ref_root).get("environment") or {}
+
+
+def code_hash_differences(ref_hashes, new_hashes):
+    """Differences of the code fingerprints (code_sha256 of the render report), RECORDED only (PLAN Amendment 2026-11-09 (d)): phase B
+    necessarily runs newer code than phase A. They never enter R.compare_provenance, which sees the environment record only."""
+    ref_hashes, new_hashes = ref_hashes or {}, new_hashes or {}
+    return [f"code {k}: reference {ref_hashes.get(k)!r} vs now {new_hashes.get(k)!r}"
+            for k in sorted(set(ref_hashes) | set(new_hashes)) if ref_hashes.get(k) != new_hashes.get(k)]
+
+
+def pixel_verdict(pix):
+    """Overall verdict over the per-file results of pixel_comparison: "identical", "within_tolerance" or "exceeds_tolerance"
+    (also for an empty result, a missing file, a missing demo, a shape or dtype difference)."""
+    if not pix:
+        return "exceeds_tolerance"
+    vs = [r.get("verdict", "exceeds_tolerance") for r in pix.values()]
+    return "exceeds_tolerance" if "exceeds_tolerance" in vs else "within_tolerance" if "within_tolerance" in vs else "identical"
 
 
 def pixel_comparison(ref_root, new_root, suite, stems, demos_by_stem=None):
@@ -545,7 +566,7 @@ def pixel_comparison(ref_root, new_root, suite, stems, demos_by_stem=None):
     for stem in stems:
         a, b = Path(ref_root) / suite / (stem + ".hdf5"), Path(new_root) / suite / (stem + ".hdf5")
         if not a.exists() or not b.exists():
-            out[stem] = {"identical": False, "missing_file": [str(p) for p in (a, b) if not p.exists()]}
+            out[stem] = {"identical": False, "within_tolerance": False, "verdict": "exceeds_tolerance", "missing_file": [str(p) for p in (a, b) if not p.exists()]}
             continue
         out[stem] = R.compare_frames(a, b, None if demos_by_stem is None else demos_by_stem[stem])
     return out
@@ -553,15 +574,24 @@ def pixel_comparison(ref_root, new_root, suite, stems, demos_by_stem=None):
 
 def run_consistency(raw_dir, ref_root, out_root, cfg, env_info, *, render=render_run):
     """Software comparison first (stops before anything is rendered), then re-render demo_30 of each task (clean, all frames, both
-    cameras) and compare the uint8 output byte for byte with the reference run. Writes consistency-report.json in out_root and
-    raises ConsistencyFailure on any software difference or any differing value."""
+    cameras) and compare the uint8 output with the reference run: identical, or within the tolerance of PLAN Amendment 2026-11-09 (d)
+    (every differing value off by at most R.MAX_ABS_DIFF_TOL and fewer than R.FRACTION_TOL of an array's values differing). Writes
+    consistency-report.json in out_root (per-array numbers and flags, overall "verdict") and raises ConsistencyFailure on any software
+    difference, a config-settings hash difference, or any array outside the tolerance. Code-hash differences are recorded only."""
     out_root = Path(out_root)
     out_root.mkdir(parents=True, exist_ok=True)
     rep = {"reference": str(ref_root), "demo": cfg["consistency_demo"], "started_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
            "environment": env_info}
     path = out_root / "consistency-report.json"
     try:
-        ref_env = load_ref_environment(ref_root)
+        ref_rep = load_ref_report(ref_root)
+        ref_env = ref_rep.get("environment") or {}
+        rep["tolerance"] = {"max_abs_diff": R.MAX_ABS_DIFF_TOL, "fraction": R.FRACTION_TOL}
+        rep["code_differences_recorded"] = code_hash_differences(ref_rep.get("code_sha256"), code_hashes())
+        rep["config_sha256"] = {"reference": ref_rep.get("config_sha256"), "now": digest(cfg)}
+        if ref_rep.get("config_sha256") != digest(cfg):
+            raise ConsistencyFailure(f"config settings hash differs from the reference run (reference {ref_rep.get('config_sha256')!r}, "
+                                     f"now {digest(cfg)!r}); phase B must use the same config as phase A")
         rep["provenance_comparison"] = cmp = R.compare_provenance(ref_env, env_info, strict=True)
         if cmp["stop"]:
             raise ConsistencyFailure("software environment differs from the reference run: " + "; ".join(cmp["stop"]))
@@ -572,13 +602,18 @@ def run_consistency(raw_dir, ref_root, out_root, cfg, env_info, *, render=render
         rep["pixels"] = pix = pixel_comparison(ref_root, sub, cfg["suite"], stems, only)
         rep["provenance_comparison"] = R.compare_provenance(ref_env, env_info)     # again: the GL strings exist now (recorded only)
         rep["hardware_differences_recorded"] = rep["provenance_comparison"]["recorded"]
-        bad = [s for s, r in pix.items() if not r["identical"]]
-        rep["identical"] = not bad
-        if bad:
-            raise ConsistencyFailure(f"pixels differ from the reference in {len(bad)} of {len(stems)} files: {bad}")
+        bad = [s for s, r in pix.items() if not r.get("within_tolerance")]
+        rep["verdict"] = pixel_verdict(pix)
+        rep["identical"] = rep["verdict"] == "identical"
+        rep["within_tolerance"] = rep["verdict"] in ("identical", "within_tolerance")
+        if bad or not pix:
+            raise ConsistencyFailure(f"pixels differ from the reference beyond the tolerance (max abs diff {R.MAX_ABS_DIFF_TOL}, fraction "
+                                     f"< {R.FRACTION_TOL}) in {len(bad)} of {len(stems)} files: {bad}")
         return rep
     except BaseException as e:
         rep.setdefault("identical", False)
+        rep.setdefault("within_tolerance", False)
+        rep.setdefault("verdict", "exceeds_tolerance")
         rep["failure"] = f"{type(e).__name__}: {e}"[:2000]
         raise
     finally:
@@ -617,6 +652,11 @@ def compare_dirs(ref_dir, new_dir, ref_report=None, new_report=None, suite=SUITE
     out["pixels"] = pixel_comparison(ref_dir, new_dir, suite, common, None if demos is None else {s: demos for s in common})
     out["identical"] = bool(out["pixels"]) and all(r["identical"] for r in out["pixels"].values()) and not out["files_only_in_reference"] \
         and not out["files_only_in_new"]
+    ok = bool(out["pixels"]) and all(r.get("within_tolerance") for r in out["pixels"].values()) and not out["files_only_in_reference"] \
+        and not out["files_only_in_new"]
+    out["within_tolerance"] = ok
+    out["verdict"] = "identical" if out["identical"] else "within_tolerance" if ok else "exceeds_tolerance"
+    out["tolerance"] = {"max_abs_diff": R.MAX_ABS_DIFF_TOL, "fraction": R.FRACTION_TOL}
     return out
 
 
@@ -683,7 +723,7 @@ def cmd_check(args):
     except Exception as e:
         print(f"[consistency] FAILED: {type(e).__name__}: {e}", flush=True)
         return RC_CONSISTENCY
-    print("[consistency] every value identical", flush=True)
+    print("[consistency] passed (identical, or every difference within the tolerance; see consistency-report.json)", flush=True)
     return RC_OK
 
 
@@ -693,11 +733,12 @@ def cmd_compare(args):
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     write_json(args.out, out)
     n_bad = sum(1 for r in out["pixels"].values() if not r["identical"])
-    print(f"[compare] files compared {len(out['pixels'])}, with differences {n_bad}, software differences "
+    n_out = sum(1 for r in out["pixels"].values() if not r.get("within_tolerance"))
+    print(f"[compare] verdict {out['verdict']}, files compared {len(out['pixels'])}, with differences {n_bad}, beyond tolerance {n_out}, software differences "
           f"{len(out['provenance_comparison']['stop'])}, hardware differences {len(out['provenance_comparison']['recorded'])}", flush=True)
     if args.report_only:
         return RC_OK
-    return RC_OK if out["identical"] and not out["provenance_comparison"]["stop"] else RC_CONSISTENCY
+    return RC_OK if out["within_tolerance"] and not out["provenance_comparison"]["stop"] else RC_CONSISTENCY
 
 
 def cmd_draws(args):
