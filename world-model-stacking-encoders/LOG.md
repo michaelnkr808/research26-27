@@ -1477,3 +1477,19 @@ Reviews were read-only; findings reported by subagents, spot-checked by the lead
 **Found:** the new paper claim has parts at different evidence levels: that D+R is reported harmful (verified, paper Table 10); that no multi-seed check of a composition table exists (speculative, literature leads only); that the frozen-feature measures miss it on clean frames (verified, n = 4 pairs). The multi-seed result and the perturbed-frames result do not exist yet. The verification gate in `_standards/05` (changing the research question) was passed by the user's decision in chat.
 **Next:** mention the reframe to the mentor (the user decides when). Running experiments continue under their locked rules; the proxy verdict and the perturbed-frames phase B decide what the case study says. The predictor and the motion-alignment score wait for a confirmed effect.
 **Open questions:** whether the mentor accepts the narrower framing. Whether Yardi et al. 2025 and Chun et al. 2026 are as close as the leads suggest (needs the literature session or the user to read them).
+
+## 2026-11-09 [agent, review] independent review of the direction (four audits + synthesis)
+**Goal:** an independent read-only review of the direction, approved by the user 2026-11-08. Four review workers each wrote a report; separate reviewers fact-checked and corrected each one; a fifth worker merged them.
+**Reviewed (verified from the reports; "12 of 16 shards" and "22 commits" come from the preceding direction LOG entry and git, not from the reports):** the five finished experiments and their code; novelty, the paper's starting fact and prior work per planned step; the multi-seed proxy replication (code, fidelity, statistics, compute); the perturbed-frames merge, `pf_analysis.py` and the direction docs. All four reports are written against main at `bde59a7`; the synthesis is written against main at `43c3b7d` (22 commits later; the perturbed-frame analysis code was rewritten in between, so its code review is partly out of date).
+**Calls per line (speculative, judgement):**
+- Cheap frozen-feature tests: stop adding more of the same; the results are weak evidence, not "the idea fails".
+- Proxy replication: keep going.
+- Perturbed-frame test: keep going.
+- Fusion-step suspects: not enough evidence (not designed).
+- Intermediate layers: rethink, reframe toward layers times pairs (LiLa-WAM and ReWAM already cover the single-encoder case).
+- Motion-alignment score: not enough evidence.
+- Main question: keep going, no positive evidence yet; publishable if the proxy reproduces the drop and a cheap measure flags it, otherwise a replication note.
+**Top three decisions for the user:** (1) confirm the seed-noise threshold and floor in words before the verdict is read (they were locked on silence); (2) whether the same-seed initialisation mismatch matters for the remaining runs; (3) reword the Key findings headline "the simplest form of the idea fails the cheap check", which the cheap tests could hardly have shown.
+**Also found (verified in the reports):** no wrong number in Key findings or experiment READMEs; no data leakage found; several LOG lines were edited in place; `backoffLimit: 0` in the perturbed-frames Jobs; README and PLAN status still say 7 of 16 shards; no estimated-vs-actual compute table for the proxy round.
+**Where:** reports, the synthesis (verdicts, decisions, fix lists by owner) and an index are in `world-model-stacking-encoders/reviews/` (`README.md`, `2026-11-09-synthesis.md`). The four 2026-11-08 reports are on their review branches until merged. Nothing was run on the cluster.
+**Next:** the user answers the decisions; the implementation, planning and literature sessions take their fix lists; reports are not edited after their fix round.
