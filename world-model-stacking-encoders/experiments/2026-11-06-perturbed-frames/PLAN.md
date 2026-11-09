@@ -4,7 +4,10 @@
 
 Signed off by the user 2026-11-07 ("yeah i sign off on it"); from here on, changes go through dated amendments only (_standards/04).
 
+[2026-11-09: signed off; decisions recorded in the amendment; phase A submitted]
+
 Written 2026-11-06 by a planning agent from docs and source reading only. Labels: `verified` (checked in a repo file this session), `recalled` (from memory, not checked), `speculative` (a guess or a proposal). Direction agenda item: `../../PLAN.md` Next 3. The Feasibility section was filled from a read of the LIBERO-Plus source at `4976dc3` (2026-11-06); the design was signed off 2026-11-07.
+[Note 2026-11-09: the item "Next 3" moved to Now in `../../PLAN.md`; read "Next 3" here as that Now item.]
 
 ## Question
 Under the picture changes that LIBERO-Plus applies, does adding C-RADIOv4 (R) to DINOv3 (D) help less, or hurt more, than adding SigLIP 2 (L), SAM 3 (S) or VGGT-Ω (G)? The paper's D+R drop is measured under LIBERO-Plus perturbations (`literature/liu2026what-table10-composition.csv`; `../../README.md`, Key findings), while our frozen-feature tests used clean frames only (verified, `../2026-10-19-feasibility-tally/README.md`). On clean frames R adds the most action information on top of D (gain +0.037 vs +0.014 to +0.033 for the others; verified, tally README). This test asks whether that changes under perturbation. [Note 2026-11-09: those clean gains are the tally's, measured with stored frames; they become a separate reference and our clean gains are re-measured, Amendment 2026-11-09 sections 2 and 3.]
@@ -17,6 +20,7 @@ Why look at the pair and not each encoder alone: C-RADIOv4 alone holds up about 
   - Main: an action probe trained on clean frames and tested on perturbed re-renders of the same demo moments. The demo's recorded action stays the correct label because the robot state is unchanged. This mirrors the paper: train on clean LIBERO, evaluate on LIBERO-Plus.
   - Secondary sanity check: feature drift, meaning how far each encoder's features move between the clean and the perturbed version of the same frame, on a scale that can be compared across encoders.
 - Context the lead gave the user: C-RADIOv4 alone holds up about as well as DINOv3 per category (above), so the test looks at the pair. With only 4 partners, D+R ranking last by chance is 1 in 4, so a hit is a hint, not proof (`../../PLAN.md` Next 3 says the same).
+[Note 2026-11-09: the item "Next 3" moved to Now in `../../PLAN.md`; read "Next 3" here as that Now item.]
 
 Decided later (2026-11-06/07, same chat):
 - **Data: the libero_goal HDF5 demos, same train/val/test split as the tally.** User: "yeah lets just use the same LIBERO-Goal demos but dont we also need to add in the 4 picture pertubations". The lead clarified that the demos are only the starting moments: the clean frames train the probe, and the same moments are re-rendered under the four types for testing. Nothing about the design changes from that.
@@ -94,6 +98,7 @@ Reported alongside, not deciding:
 - **A**: not used (it was a looser per-type version of P; the user dropped it).
 - **B (reported only)**: sign-based, on the level of the gain under perturbation. Pooled gain g(B) = the mean over the four types of gain_c(B|D). B fires if g(R) < 0 with the upper end of its 95% paired-bootstrap CI below 0, and g(B) is not below 0 for the other three partners, meaning each other partner's point estimate is at or above 0 (decided 2026-11-07, Q21: both readings are reported, the point-estimate reading as written and the stricter CI-based reading, and both are fixed here before any test-set result is seen. This applies to the clause "the other three partners are not below 0" only; R's own clause is already CI-based). B tests the gain level under perturbation, which is closest to the paper's delta (D+B vs D under perturbation). P and A test the change from clean. They ask different questions, so they can disagree.
 Also reported either way: the full ordering of the four pairs by e(B) beside the paper's ordering L (+1.83) > S (+0.49) > G (+0.40) > R (−5.41) (verified, tally README), with no significance claim. With 4 partners, "R is largest" has a 1 in 4 chance by chance (arithmetic). That figure covers only the ranking part: rule P also has its CI condition and rule B is a sign test, so their chance rates are not 1 in 4 and are not computed here. A hit is a hint (`../../PLAN.md` Next 3).
+[Note 2026-11-09: the item "Next 3" moved to Now in `../../PLAN.md`; read "Next 3" here as that Now item.]
 Note a mismatch to keep in mind: the paper's number per pair is closed-loop success under perturbation; ours is frame-level action regression from a linear probe. They differ in kind (`../../README.md`, Key findings).
 
 ### Caveat: probe capacity differs between pairs
@@ -309,6 +314,8 @@ After the source read (Feasibility above). Answered from the source, untested (u
 
 ### Amendment 2026-11-09: probes are retrained on our own re-renders; the tally becomes a separate reference (DRAFT for the user's sign-off and a fresh review; no re-render-trained result of any kind exists)
 
+[Note 2026-11-09: signed off by the user (Q1 to Q8 decided below, Q9 go decided); the "DRAFT" in the heading above is historical. Phase A was submitted 07:34 UTC 2026-11-09.]
+
 Drafted 2026-11-09 by an implementation worker from docs and source reading only (no cluster, no compute, no code changed). Labels: `verified` (read or run in a repo file, the file named), `recalled` (memory, unchecked), `speculative` (a guess or proposal). Everything marked "proposal" or in "For the user to decide" is not a decision until the user makes it. Earlier text is kept; items it replaces carry a bracketed "Superseded 2026-11-09" note pointing here.
 
 **Why (verified).** The Q2 validation Job `pf-val` (stamp 20261108-181737, `results/pf-val/20261108-181737/probe-report.json`) failed its 0.01 gate: the DINOv3 probe trained on stored frames scores val R2 0.6562 on stored val frames and 0.6053 on our clean re-renders of the same moments (difference 0.0509). The reviewed diagnosis (`results/pf-val-diagnosis/README.md`) found a fine-detail rendering difference present in all ten tasks and in 95 of 100 val demos; no colour, brightness, position or timing difference. Our renderer is MuJoCo 3.3.2 with robosuite 1.4.0 (verified, pf-val pod log), the same MuJoCo version Fast-WAM used to regenerate its LIBERO data (verified, `../../data/README.md` section 3).
@@ -471,6 +478,7 @@ Answers to AskUserQuestion in the lead session (verbatim labels and option text)
 7. **[DECIDED 2026-11-09: dropped] Keep reading stored test data for references?** (section 7, `src/pf_analysis.py:417-436`). The stored-test lag check and the stored-clean reference rows read the stored test features, a new use of stored test data. Options: (a) drop them in the final run and run the lag check on train and val only; (b) keep the lag check on test demos but nothing else; (c) keep all reference rows and log the read. Recommendation: (a), since the lag check on all 100 val demos already passed in pf-val and the reference rows are optional (and T-c is not recommended).
 8. **[DECIDED 2026-11-09: compare scene files] The other-bodies check** (section 7). Replaced: instead of a sim-side check, compare the test demos' `model_file` text against the train/val demos with `differing_bodies` (`src/pf_render.py:61-77`); fail and stop (Q8 rule) if a body outside the fixture list differs, or if the sets of body names differ. Reads inputs only. No sim-side body check, because jointed bodies take their placement from the state, and their `model_file` values may differ between the LIBERO-Plus XML and the dataset author's XML, so a sim-side comparison could trip on objects that move. Reads the test demos' `model_file` text only, never results.
 9. **Go-ahead (STILL OPEN).** Order: code changes first, then a review, then the user's separate "go" before any ConfigMap or Job is prepared or submitted. Nothing is prepared now.
+   [Decided 2026-11-09: "Merge and go (Recommended)" for phase A, with the pilot (LOG 2026-11-09 [agent, lead] phase A go). Phase B needs a separate go from the user.]
 
 ### Amendment 2026-11-09 (b): render-consistency check between phase A and phase B (user decision)
 
@@ -500,3 +508,29 @@ Written 2026-11-09 by an implementation worker (pf-render). Labels: `verified` (
 **Timing (fixed before any result).** This is recorded before any test frame is drawn and before any re-render-trained result exists: as of this entry no probe has been fit on re-rendered frames, the new code has not run in a simulator, and no test demo has been read.
 
 **Code.** `src/pf_validate.py` and `src/pf_smoke.py` stay unchanged: they are the record of what the pf-val and smoke Jobs ran. `src/pf_rerender.py` (new; it imports `maybe_override_camera` and `sha256` from `pf_smoke.py`) replaces the `render()` generalisation that section 7 listed under `src/pf_validate.py` (including the shared `prepare()`). The new draw functions `pf_render.draw_episode` and `pf_render.draw_all` replace the `pick_names` change that section 7 listed under `src/pf_smoke.py:384-390`. A `--pilot` option allows camera, light, background or noise on val demos only (needs `--max-demos`, refuses a root with main-run output, report marked `pilot: true, not_for_training: true`, seconds per frame per condition and per noise code recorded) so the perturbed paths and the noise cost can be tried in the development phase; whether phase A runs it is decided with the Job plan. The other `src/pf_render.py` items of section 7 (per-frame noise seed with the RNG restored; the scene-file comparison of item 8, `pf_render.scene_file_check`) are in `src/pf_render.py`. Tests are in `src/test_pf_render.py` (logic tests against a stub simulator; nothing in them is a render).
+
+
+### Amendment 2026-11-09 (c): the one slice that decides rule P; reading rule for a zero or negative clean gain (user decisions)
+
+Written 2026-11-09 by an implementation worker (pf-plan-slice). Labels: `verified` (read in a repo file this session), `recalled`, `speculative`. Docs only; no cluster, no run. It changes nothing else in Amendment 2026-11-09 or (b).
+
+**Source (verified).** The planning session's independent methods review (2026-11-09) found that `src/pf_analysis.py` computes rule P in twelve slices: full-size or matched-dimension, times combined, agentview or wrist, times global or mean (`VIEWS` at `pf_analysis.py:79`, `iter_probes`, `_run`). This PLAN names full-size (lines near the top and in "Caveat: probe capacity") and global (in "Main measure") as primary but never says which view decides. "Report agentview and wrist separately" is a reporting rule, not a deciding one. A writer could therefore pick a slice after seeing results.
+
+**User decision 1, 2026-11-09 about 07:45 UTC (lead session, AskUserQuestion), verbatim.** Label: "Full-size, global, both cameras (Recommended)". Option text: "The probe uses all of each encoder's features, the global (CLS-style) vector, and both camera views together. The most natural reading of the current PLAN, which already names full-size and global as primary. The other eleven variants are reported as robustness checks."
+
+**User decision 2, same time and place, verbatim.** Label: "Report it, rules unchanged (Recommended)". Option text: "The report states plainly that the clean gain differs from the tally for that partner; rule P (the drop under perturbation relative to DINOv3 alone) still runs for every pair, with that pair flagged. No pair is dropped or re-tuned because of it."
+
+**What this fixes.**
+1. The deciding slice is full-size features, global pooling, combined view (both cameras). Rule P's verdict and both readings of rule B are taken from that slice only.
+2. The other eleven slices (matched-dimension, agentview, wrist, mean pooling) are reported beside it as robustness checks. They carry no decision weight: if they disagree with the deciding slice, the report says so and the verdict stays what the deciding slice gives.
+3. Zero or negative clean gain: where our re-measured clean gain for a partner differs from the tally (including zero or negative), the report states that plainly for that partner and flags the pair. Rule P still runs for every pair. No pair is dropped and nothing is re-tuned because of it.
+
+**Timing (fixed before any result).** Both rules are fixed before any test frame is rendered and before any re-render-trained result exists. As of this entry no dev report exists: phase A was submitted at 07:34 UTC 2026-11-09 (lead LOG, phase A go) and nothing has finished.
+
+**Accepted risk (verified from LOG 2026-11-08 reviewer notes and Q20).** The scene-XML diff gate for light and background variants is not implemented. Draws are uniform over all 279 light and 281 background names, so an undrawn variant that changes more than light or table texture would be caught only where it touches fixture bodies (Q20). Recorded as an accepted risk; re-examined if phase B's pilot or render reports show anything odd.
+
+**Information only (relayed by planning, direction LOG 2026-11-09 [agent, planning]; not decisions, and not re-checked here).**
+- Restoring saved states is the less common LIBERO re-render route; the robomimic dataset-conversion scripts replay actions instead (recalled; the precedent is why Q14-style checks matter, no change made).
+- A ridge probe reacts to imperceptible rendering changes (recalled), which could inflate perturbation effects. Rule P compares each pair against DINOv3 alone under the same renders, which should partly cancel a sensitivity shared by both (speculative).
+
+**Code touched (not behaviour).** `src/pf_analysis.py`: the module docstring said "three readings" of rule B (code and PLAN have two); the `ordering` output gains a note that ours is listed by e(B) descending and the paper's by delta descending, so a perfect match is the reversed list. Enforcing "decision from the deciding slice only" in the report text is left to the writer of the final report and a later review.
