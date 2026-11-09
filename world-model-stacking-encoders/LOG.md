@@ -1429,3 +1429,8 @@ No operating rule changed.
 - Lead's check (verified, experiment `PLAN.md`, "Frames: which data"): Fast-WAM's dataset carries no simulator states, so it cannot replace the libero_goal HDF5 as the source of re-rendered moments, even though all five encoders now run on fresh frames.
 **Test-set use (`_standards/07`):** none.
 **Next:** the user decides whether to pass concerns (1) and (3) to the implementation session for the eventual write-up. The design does not wait on this: the 2026-11-09 amendment and the render and analysis code are already merged (9d5c4a8, 50b4905). If these sources get cited anywhere, a reviewer checks them first.
+
+## 2026-11-09 [agent, lead, implementation] (perturbed-frame redesign coded, reviewed, merged; phase A submitted)
+**Goal:** implement Amendment 2026-11-09 of the perturbed-frame test and run phase A on the user's go.
+**Did:** two Codex adversarial reviews run by the user (the second found an unguarded renderer change between phase A and phase B; the user chose "Add the check", recorded as experiment PLAN Amendment 2026-11-09 (b)). Three workers (render code, analysis code, phase-A Job files), each with one Codex review and independent review rounds; all merged (9d5c4a8, 50b4905, 765b011). Pre-flight passed; ConfigMap `stacking-encoders-pf-main-src` created; render and pilot Jobs submitted 07:34 UTC (detail: experiment LOG 2026-11-09 [agent, lead] phase A go). Proxy evals: 12 of 16 shards done, 4 Running (all four remaining shards now have GPUs).
+**Next:** stagger the extraction Jobs under the 8-GPU cap as evals finish, then the dev Job; bring the 0.025 gate result to the user. Then `lp_eval.py seednoise` once all 16 eval shards are done.
