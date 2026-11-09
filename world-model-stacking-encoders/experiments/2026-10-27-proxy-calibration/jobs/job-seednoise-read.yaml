@@ -1,0 +1,99 @@
+# Seed-noise read Job (task "seednoise", written 2026-11-09, NOT yet submitted). CPU only, read-only PVC mount, no writes to the PVC.
+# What it does: runs the unit tests, checks the full subset sha256, prints sha256 and line counts of all 16 eval record files, runs
+# `lp_eval.py seednoise` (A = train seed 1 dir, B = train seed 0 dir, config dinov3, locked rule in PLAN "Seed-noise rule (locked
+# 2026-11-06)"), prints its JSON between BEGIN/END markers, then prints every record file as gzip+base64 so the lead can recover them.
+# Needs the ConfigMap stacking-encoders-proxy-lpeval (lp_eval.py + test_lp_eval.py from the repo); see jobs/SEEDNOISE.md for the command.
+# The old ConfigMap stacking-encoders-proxy-src holds an lp_eval.py without the seednoise command, so it is not used here.
+# User go: 2026-11-09 in chat, "run the seednoise". Follows _standards/08: Job, real command that exits, no wait loops, no taint overrides,
+# limits <= 1.2x requests, deadline, ttl, us-west, CPU-only via anti-affinity on NVIDIA PCI present.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-proxy-seednoise-read
+  namespace: aria-world
+spec:
+  completions: 1
+  backoffLimit: 0
+  activeDeadlineSeconds: 14400        # counts from Job creation, queue time included; the work itself takes minutes
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}
+      containers:
+      - name: main
+        image: pytorch/pytorch@sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2   # pytorch 2.7.1 cuda12.8 runtime, has numpy
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -uo pipefail
+          WORST=0
+          note() { echo "=== stage $1 exit $2"; if [ "$2" -gt "$WORST" ]; then WORST=$2; fi; }
+          A=/mnt/proxy/rollouts/eval-dinov3-s1
+          B=/mnt/proxy/rollouts/eval-dinov3-s0
+          mkdir -p /work
+          # 1
+          date -u; sha256sum /lp/lp_eval.py /lp/test_lp_eval.py; nproc
+          note 1 $?
+          # 2
+          echo "=== unit tests"
+          timeout 600 python /lp/test_lp_eval.py
+          note 2 $?
+          # 3
+          echo "=== subset"
+          gunzip -c /subset/full-subset.json.gz > /work/full-subset.json
+          echo "9f4baa42a971bdfad148e19629c08ce74443aa4f2fe0b1512b512ec4649177b2  /work/full-subset.json" | sha256sum -c -
+          note 3 $?
+          # 4
+          echo "=== record files"
+          ls -l $A $B
+          for f in $A/*of8.jsonl $B/*of8.jsonl; do
+            echo "SHA256 $(sha256sum "$f" | cut -d' ' -f1) $f"
+            echo "LINES $(wc -l < "$f") $f"
+          done
+          for f in $A/*.errors.jsonl $B/*.errors.jsonl; do
+            if [ -e "$f" ]; then echo "ERRORS_FILE $f lines $(wc -l < "$f")"; fi
+          done
+          note 4 0
+          # 5
+          echo "=== seednoise"
+          timeout 1800 python /lp/lp_eval.py seednoise --a-dir $A --b-dir $B --subset /work/full-subset.json --json-out /work/seednoise.json
+          note 5 $?
+          echo "=== BEGIN SEEDNOISE_JSON"
+          cat /work/seednoise.json
+          echo
+          echo "=== END SEEDNOISE_JSON"
+          # 6
+          for f in $A/*of8.jsonl $B/*of8.jsonl; do
+            n=$(basename "$f")
+            echo "BEGIN_GZ_B64 $n"
+            timeout 900 sh -c 'gzip -9 -n -c "$1" | base64' _ "$f"
+            echo "END_GZ_B64 $n"
+          done
+          note 6 0
+          # 7
+          echo "=== done worst $WORST"
+          exit $WORST
+        resources:
+          requests: {cpu: "1", memory: 2Gi}
+          limits:   {cpu: "1200m", memory: 2400Mi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: lp, mountPath: /lp, readOnly: true}
+        - {name: subset, mountPath: /subset, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy, readOnly: true}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 2Gi}
+      - name: lp
+        configMap: {name: stacking-encoders-proxy-lpeval}
+      - name: subset
+        configMap: {name: stacking-encoders-proxy-subset-full}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
