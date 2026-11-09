@@ -1,0 +1,57 @@
+=== pfa-ext-sam3-3 20261109-130304 src 765b011dd94dd8bdc204bb88a625b4142790a26e
+GPU 0: NVIDIA GeForce RTX 2080 Ti (UUID: GPU-379e18a6-2b1b-149e-db19-4dc492cd185f)
+80
+Mon Nov  9 13:03:04 UTC 2026
+csi-cephfs-node@90a5afad-c313-4e49-9b5f-317100c6930e.nautilusfs=/volumes/csi/csi-vol-9fc6b0fe-e947-4528-a5c5-c5e80fc7d70d/9f0765b7-9592-498f-ae6c-7f42cf4c5f62  1.0T  763G  262G  75% /mnt/proxy
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+revision facebook/sam3 3c879f39826c281e95690f02c7821c4de09afae7 required prefix 3c879f3
+put_the_bowl_on_the_stove_demo.hdf5: OK
+put_the_bowl_on_top_of_the_cabinet_demo.hdf5: OK
+put_the_cream_cheese_in_the_bowl_demo.hdf5: OK
+put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: OK
+total 1577736
+drwxr-xr-x 2 root root      4096 Nov  9 13:04 .
+drwxr-xr-x 3 root root      4096 Nov  9 13:03 ..
+-rw-r--r-- 1 root root 394014624 Nov  9 13:03 put_the_bowl_on_the_stove_demo.hdf5
+-rw-r--r-- 1 root root 394801056 Nov  9 13:03 put_the_bowl_on_top_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root 412495776 Nov  9 13:04 put_the_cream_cheese_in_the_bowl_demo.hdf5
+-rw-r--r-- 1 root root 414265248 Nov  9 13:04 put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5
+Mon Nov  9 13:04:22 UTC 2026
+transformers 5.18.0 numpy 2.2.6
+Loading weights:   0%|          | 0/1468 [00:00<?, ?it/s]Loading weights:  19%|█▉        | 281/1468 [00:00<00:00, 2805.26it/s]Loading weights:  38%|███▊      | 562/1468 [00:00<00:00, 1060.19it/s]Loading weights:  49%|████▉     | 721/1468 [00:01<00:02, 304.83it/s] Loading weights:  55%|█████▌    | 813/1468 [00:02<00:03, 215.83it/s]Loading weights:  59%|█████▉    | 873/1468 [00:03<00:02, 200.64it/s]Loading weights:  62%|██████▏   | 917/1468 [00:03<00:03, 182.48it/s]Loading weights:  65%|██████▍   | 950/1468 [00:03<00:02, 176.52it/s]Loading weights:  67%|██████▋   | 977/1468 [00:03<00:02, 169.27it/s]Loading weights:  68%|██████▊   | 1000/1468 [00:04<00:03, 143.76it/s]Loading weights:  69%|██████▉   | 1018/1468 [00:06<00:10, 42.70it/s] Loading weights:  71%|███████   | 1041/1468 [00:06<00:08, 50.58it/s]Loading weights:  72%|███████▏  | 1060/1468 [00:06<00:06, 58.85it/s]Loading weights:  74%|███████▍  | 1091/1468 [00:06<00:05, 67.73it/s]Loading weights:  75%|███████▌  | 1108/1468 [00:07<00:04, 75.33it/s]Loading weights:  76%|███████▋  | 1123/1468 [00:07<00:04, 81.13it/s]Loading weights:  78%|███████▊  | 1138/1468 [00:07<00:03, 83.95it/s]Loading weights:  79%|███████▊  | 1153/1468 [00:07<00:03, 92.12it/s]Loading weights:  79%|███████▉  | 1166/1468 [00:07<00:04, 68.76it/s]Loading weights:  81%|████████  | 1182/1468 [00:08<00:04, 63.65it/s]Loading weights:  81%|████████  | 1191/1468 [00:08<00:04, 66.13it/s]Loading weights:  82%|████████▏ | 1202/1468 [00:08<00:04, 63.20it/s]Loading weights:  82%|████████▏ | 1210/1468 [00:08<00:04, 61.96it/s]Loading weights:  83%|████████▎ | 1219/1468 [00:08<00:04, 58.66it/s]Loading weights:  84%|████████▎ | 1226/1468 [00:08<00:04, 51.28it/s]Loading weights:  84%|████████▍ | 1234/1468 [00:09<00:04, 55.02it/s]Loading weights:  84%|████████▍ | 1240/1468 [00:09<00:05, 42.11it/s]Loading weights:  85%|████████▍ | 1245/1468 [00:09<00:05, 41.79it/s]Loading weights:  85%|████████▌ | 1252/1468 [00:09<00:05, 39.05it/s]Loading weights:  86%|████████▌ | 1263/1468 [00:09<00:04, 43.79it/s]Loading weights:  86%|████████▋ | 1268/1468 [00:09<00:04, 44.40it/s]Loading weights:  87%|████████▋ | 1274/1468 [00:10<00:06, 31.32it/s]Loading weights:  88%|████████▊ | 1294/1468 [00:10<00:04, 42.86it/s]Loading weights:  89%|████████▉ | 1308/1468 [00:10<00:03, 49.97it/s]Loading weights:  90%|████████▉ | 1316/1468 [00:11<00:03, 47.13it/s]Loading weights:  90%|████████▉ | 1321/1468 [00:11<00:03, 42.58it/s]Loading weights:  90%|█████████ | 1326/1468 [00:11<00:03, 37.41it/s]Loading weights:  91%|█████████ | 1336/1468 [00:11<00:03, 39.67it/s]Loading weights:  92%|█████████▏| 1346/1468 [00:11<00:02, 48.69it/s]Loading weights:  93%|█████████▎| 1358/1468 [00:11<00:01, 60.30it/s]Loading weights:  93%|█████████▎| 1365/1468 [00:12<00:02, 47.93it/s]Loading weights:  93%|█████████▎| 1371/1468 [00:12<00:02, 35.37it/s]Loading weights:  94%|█████████▍| 1382/1468 [00:12<00:01, 46.96it/s]Loading weights:  95%|█████████▍| 1390/1468 [00:12<00:02, 38.48it/s]Loading weights:  96%|█████████▌| 1404/1468 [00:13<00:01, 36.55it/s]Loading weights:  97%|█████████▋| 1422/1468 [00:13<00:01, 40.51it/s]Loading weights:  97%|█████████▋| 1428/1468 [00:13<00:00, 42.33it/s]Loading weights:  98%|█████████▊| 1436/1468 [00:13<00:00, 42.73it/s]Loading weights:  98%|█████████▊| 1441/1468 [00:14<00:00, 37.12it/s]Loading weights:  99%|█████████▊| 1446/1468 [00:14<00:00, 34.01it/s]Loading weights: 100%|██████████| 1468/1468 [00:14<00:00, 101.58it/s]
+[extract] encoder=sam3 hf_id=facebook/sam3 res=1008 device=cuda
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 8014 frames in 1401.8s (5.7 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 8030 frames in 1405.7s (5.7 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 8390 frames in 1468.8s (5.7 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 8426 frames in 1475.3s (5.7 frames/s)
+=== extract-sam3 exit code 0
+Mon Nov  9 14:41:04 UTC 2026
+meta ok: sam3 4 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams']
+=== meta-sam3 exit code 0
+Mon Nov  9 14:41:05 UTC 2026
+total 3636515
+drwxr-xr-x 2 root root        10 Nov  9 14:41 .
+drwxr-xr-x 3 root root         1 Nov  9 11:22 ..
+-rw-r--r-- 1 root root 416320904 Nov  9 11:22 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 599977352 Nov  9 11:22 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 451046792 Nov  9 14:35 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root 270855560 Nov  9 14:35 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root 295628168 Nov  9 14:41 put_the_bowl_on_the_stove_demo.h5
+-rw-r--r-- 1 root root 296217992 Nov  9 14:41 put_the_bowl_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 309489032 Nov  9 14:41 put_the_cream_cheese_in_the_bowl_demo.h5
+-rw-r--r-- 1 root root 514821512 Nov  9 14:35 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root 310816136 Nov  9 14:41 put_the_wine_bottle_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 258616712 Nov  9 11:22 turn_on_the_stove_demo.h5
+=== copy-sam3 exit code 0
+Mon Nov  9 14:41:08 UTC 2026
+=== exit codes: worst 0
+Mon Nov  9 14:41:08 UTC 2026
+copied reports to /mnt/proxy/pf-main/phase-a/reports/pfa-ext-sam3-3-20261109-130304
+-rw-r--r-- 1 root root 217 Nov  9 14:41 /work/pfa-ext-sam3-3.tgz
+=== BEGIN PFA_TGZ_B64
+H4sIAAAAAAAAA+3RTWrDMBAFYK17Cp3AlkaSxzqOKktgSqJWtkOOHzdgCIEkK1NK3reZQT8ww2ta
+sTu1YueudXVfr712xNZYIuL1nJm0kG7/0YRYpjlUKUUtZX727tX9P9W0NZ3GaSzHqZnP+2z4G3Bn
+7cP8tbnJf+2VJtuxkGqXae68ef5b+jKHmD5L+WqncDDSxJ59Nr6nLlKvk3edV1lR5J50tENSPuSQ
+WNb0s4w1DfK7pjyet48ff70XAAAAAAAAAAAAAAAAAAAAAMA7uABwHCTWACgAAA==
+=== END PFA_TGZ_B64
+=== done; exiting with 0 (0 only if every stage passed)

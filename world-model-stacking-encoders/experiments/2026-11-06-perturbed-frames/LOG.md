@@ -388,3 +388,10 @@ Merged main into `pf-smoke` (c3deaab; has `src/pf_analysis.py`, PLAN amendment 8
 **Shard 3 (verified, pod log at 14:39 UTC):** on the RTX 2080 Ti at 5.7 frames/s; three of its four files done (8,014 + 8,030 + 8,390 frames), the fourth (put_the_wine_bottle_on_top_of_the_cabinet, 8,426 frames) in progress.
 **Test-set use:** none.
 **Next:** shard 3 exit, then submit `jobs/rendered/job-pfa-dev.yaml` (CPU only); bring the gate result to the user.
+
+## 2026-11-09 [agent, lead] phase A: SAM 3 shard 3 complete (exit 0); all extractions done; pfa-dev submitted
+**Verified (`results/pf-main/phase-a/pfa-ext-sam3-3/pod-log.txt`, `revisions.txt`):** `pfa-ext-sam3-3` ran on an RTX 2080 Ti (k8s-haosu-17), pod started 13:03:04, exited 0 at 14:41:08 UTC (about 1.6 h). Revision check passed; four files (put_the_bowl_on_the_stove, put_the_bowl_on_top_of_the_cabinet, put_the_cream_cheese_in_the_bowl, put_the_wine_bottle_on_top_of_the_cabinet; 32,860 frames) at 5.7 frames/s, 5,752 s of extraction, under the cap; meta check passed for 4 files; features copied. SAM 3 phase A total: 10 files, 100,960 frames, matching VGGT-Omega's count.
+**Phase A extraction complete:** render + DINOv3, SigLIP 2, C-RADIOv4, VGGT-Omega, SAM 3 (3 shards), pilot, all exit 0. GPU wall-clock held, from pod logs (verified): render 0.8 h, SigLIP 2 + C-RADIOv4 0.9 h, VGGT-Omega 2.4 h, SAM 3 2.5 + 1.6 + 1.6 h, pilot 0.2 h, about 10 GPU-hours in all.
+**Submitted (14:42:22 UTC):** `jobs/rendered/job-pfa-dev.yaml` (CPU only, no GPU; `SRC_GIT_COMMIT=765b011`), covered by the user's phase A go ("Merge and go", 2026-11-09). It runs `pf_analysis.py dev` on train and val only (loader raises on test access), tunes every alpha on re-rendered val, runs gate A (train-only DINOv3 val R2 >= 0.6562 - 0.025) and the lag check; exit 1 if the gate fails, after the report is written.
+**Test-set use:** none.
+**Next:** when `pfa-dev` exits, save `dev-report.json` and the pod log, bring the gate verdict to the user. Nothing in phase B before the user's separate go.
