@@ -1,0 +1,964 @@
+{
+ "kind": "pf-dev-report",
+ "suite": "libero_goal",
+ "ftype": "global",
+ "trval_root": "/mnt/proxy/pf-main/phase-a/feats",
+ "raw_dir": "/work/data/libero_goal",
+ "files": [
+  "open_the_middle_drawer_of_the_cabinet_demo.hdf5",
+  "open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5",
+  "push_the_plate_to_the_front_of_the_stove_demo.hdf5",
+  "put_the_bowl_on_the_plate_demo.hdf5",
+  "put_the_bowl_on_the_stove_demo.hdf5",
+  "put_the_bowl_on_top_of_the_cabinet_demo.hdf5",
+  "put_the_cream_cheese_in_the_bowl_demo.hdf5",
+  "put_the_wine_bottle_on_the_rack_demo.hdf5",
+  "put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5",
+  "turn_on_the_stove_demo.hdf5"
+ ],
+ "git_commit": "765b011dd94dd8bdc204bb88a625b4142790a26e",
+ "pca_whiten": false,
+ "n_frames": {
+  "train": 38164,
+  "val": 12316
+ },
+ "n_demos": 400,
+ "expected_frames": {
+  "train": 38164,
+  "val": 12316,
+  "test": 12748
+ },
+ "encoders": {
+  "dinov3": {
+   "source_file": "/work/pfa-trainval/libero_goal/open_the_middle_drawer_of_the_cabinet_demo.hdf5",
+   "encoder": "dinov3",
+   "hf_id": "facebook/dinov3-vitl16-pretrain-lvd1689m",
+   "resolution": 224,
+   "cams": [
+    "agentview_rgb",
+    "eye_in_hand_rgb"
+   ],
+   "frame_stride": 1,
+   "rotate180": true,
+   "grid": 4,
+   "dtype": "float32",
+   "n_demos": 40,
+   "git_commit": "765b011dd94dd8bdc204bb88a625b4142790a26e"
+  },
+  "c-radiov4": {
+   "source_file": "/work/pfa-trainval/libero_goal/open_the_middle_drawer_of_the_cabinet_demo.hdf5",
+   "encoder": "c-radiov4",
+   "hf_id": "nvidia/C-RADIOv4-SO400M",
+   "resolution": 448,
+   "cams": [
+    "agentview_rgb",
+    "eye_in_hand_rgb"
+   ],
+   "frame_stride": 1,
+   "rotate180": true,
+   "grid": 4,
+   "dtype": "float16",
+   "n_demos": 40,
+   "git_commit": "765b011dd94dd8bdc204bb88a625b4142790a26e"
+  },
+  "siglip2": {
+   "source_file": "/work/pfa-trainval/libero_goal/open_the_middle_drawer_of_the_cabinet_demo.hdf5",
+   "encoder": "siglip2",
+   "hf_id": "google/siglip2-large-patch16-384",
+   "resolution": 384,
+   "cams": [
+    "agentview_rgb",
+    "eye_in_hand_rgb"
+   ],
+   "frame_stride": 1,
+   "rotate180": true,
+   "grid": 4,
+   "dtype": "float16",
+   "n_demos": 40,
+   "git_commit": "765b011dd94dd8bdc204bb88a625b4142790a26e"
+  },
+  "sam3": {
+   "source_file": "/work/pfa-trainval/libero_goal/open_the_middle_drawer_of_the_cabinet_demo.hdf5",
+   "encoder": "sam3",
+   "hf_id": "facebook/sam3",
+   "resolution": 1008,
+   "cams": [
+    "agentview_rgb",
+    "eye_in_hand_rgb"
+   ],
+   "frame_stride": 1,
+   "rotate180": true,
+   "grid": 4,
+   "dtype": "float16",
+   "n_demos": 40,
+   "git_commit": "765b011dd94dd8bdc204bb88a625b4142790a26e"
+  },
+  "vggt-omega": {
+   "source_file": "/work/pfa-trainval/libero_goal/open_the_middle_drawer_of_the_cabinet_demo.hdf5",
+   "encoder": "vggt-omega",
+   "hf_id": "facebook/VGGT-Omega/vggt_omega_1b_512.pt",
+   "resolution": 512,
+   "cams": [
+    "agentview_rgb",
+    "eye_in_hand_rgb"
+   ],
+   "frame_stride": 1,
+   "rotate180": true,
+   "grid": 4,
+   "dtype": "float16",
+   "n_demos": 40,
+   "git_commit": "765b011dd94dd8bdc204bb88a625b4142790a26e"
+  }
+ },
+ "alphas_grid": [
+  0.01,
+  0.1,
+  1,
+  10,
+  100.0,
+  1000.0,
+  10000.0,
+  100000.0
+ ],
+ "gate": {
+  "check": "A (PLAN Amendment 2026-11-09 section 4)",
+  "scored": "val R2 (mean of 7 action dims) of the train-only DINOv3 fit at its best alpha on the tally grid, combined view, global features, re-rendered train and val (the tune_alpha curve value, not the train+val refit)",
+  "score": 0.6640167832374573,
+  "alpha": 0.1,
+  "val_r2_by_alpha": {
+   "0.01": 0.6593557000160217,
+   "0.1": 0.6640167832374573,
+   "1": 0.618705153465271,
+   "10": 0.4868663251399994,
+   "100.0": 0.2599540650844574,
+   "1000.0": 0.061938073486089706,
+   "10000.0": 0.007269740104675293,
+   "100000.0": 0.0005515302764251828
+  },
+  "reference": 0.6562,
+  "reference_source": "results/pf-val/20261108-181737/probe-report.json, val_r2.combined.val_r2_stored",
+  "margin": 0.025,
+  "margin_source": "user decision 2026-11-09 (0.025, one-sided)",
+  "threshold": 0.6312,
+  "passed": true
+ },
+ "lag_check": {
+  "passed": true,
+  "demos_checked": 400,
+  "parts": [
+   "train",
+   "val"
+  ]
+ },
+ "cross_value": {
+  "val_r2_stored_features": 0.6048387174569108,
+  "val_r2_rerender_features": 0.6640167832374573,
+  "alpha": 0.1,
+  "note": "re-render-trained DINOv3 probe (train-only fit at the gate's alpha) scored on stored val features, n-1 frames per demo; report only"
+ },
+ "ref_meta_path": "/pf/smoke-report.json",
+ "ref_meta_sha256": "2a877d8ed888bb34709559d27a9fe146a7a57397f3ca056b4704813df4c7a023",
+ "feature_sha256": {
+  "dinov3/open_the_middle_drawer_of_the_cabinet_demo.h5": "6540ff3f72b48d00347806d3d2c81013a1c5092a0adfd2b060856c2209a2d555",
+  "dinov3/open_the_top_drawer_and_put_the_bowl_inside_demo.h5": "3e32abeb3d57ec9e383d4ce4d286d68eb070cfd5ec0d6314d1a78f974f00900c",
+  "dinov3/push_the_plate_to_the_front_of_the_stove_demo.h5": "cdfd310f2531575ae4dab8c33526f11e2c6b90cedc4b8731140e8565094ff983",
+  "dinov3/put_the_bowl_on_the_plate_demo.h5": "ff7aae734063d0f53be4100d7ebfb041a8b629eda0872f8daf145e70070af5d3",
+  "dinov3/put_the_bowl_on_the_stove_demo.h5": "703a090f661563c43b634e184833a550b2062dc12facb15e002839a1b313be96",
+  "dinov3/put_the_bowl_on_top_of_the_cabinet_demo.h5": "ef6715a9d5213fbabdf31ff087f6dd4d0f6c40323588d638ef6159b761224f10",
+  "dinov3/put_the_cream_cheese_in_the_bowl_demo.h5": "dc0820f646abde815901e63eccf912d601fd6f85b4291267336ca41779c46b13",
+  "dinov3/put_the_wine_bottle_on_the_rack_demo.h5": "1f10f44f658045521314dc7718fda0acdc64aa7904ea0afa14fa59a4b4fa0412",
+  "dinov3/put_the_wine_bottle_on_top_of_the_cabinet_demo.h5": "9d17431204a9a306e8bb6e3fddae0c00188c6c1c103544047e3a3551756f2fe2",
+  "dinov3/turn_on_the_stove_demo.h5": "82341b9ea0a06e8668f73525fb275698b1e6ca77179d95bc7cf3f46b27c2ae59",
+  "c-radiov4/open_the_middle_drawer_of_the_cabinet_demo.h5": "dbc94af9efd97704702f113deb187ad9a8db7c77810fce19ef92004bd6008e0d",
+  "c-radiov4/open_the_top_drawer_and_put_the_bowl_inside_demo.h5": "3739d2719be4391cdc05e1ec09f75dc3af7ecf5e0ba32515ea7ce9b7e6c1792d",
+  "c-radiov4/push_the_plate_to_the_front_of_the_stove_demo.h5": "280b56aae92bee3ba9ea4cff4668c0b5485921e72d4b9bae7e823615944a36ef",
+  "c-radiov4/put_the_bowl_on_the_plate_demo.h5": "94b7c308d82ab773946f2e8b3714de5b442f27c66d540009bbee06ecce4c84ff",
+  "c-radiov4/put_the_bowl_on_the_stove_demo.h5": "e0a5b066edcf42e25867f137df80486b236ff3046953e047a0d8ec3c3887e346",
+  "c-radiov4/put_the_bowl_on_top_of_the_cabinet_demo.h5": "f2bbed5d1ebb241e179307f5cadd34c56a146e2dd5fff3f84444632f32280b30",
+  "c-radiov4/put_the_cream_cheese_in_the_bowl_demo.h5": "4469c1a1f91d3f0150eb7e35cd17e0152379193ef3add174c77d453bfb863db1",
+  "c-radiov4/put_the_wine_bottle_on_the_rack_demo.h5": "9b1c308b0086c7de20f9b84396d82f32a75e0b3c50fdd6f97325ee69594ed94c",
+  "c-radiov4/put_the_wine_bottle_on_top_of_the_cabinet_demo.h5": "eb0e84d36393c36429b063f32859c1eab99c8d27cebb5afcb8599361c6427c08",
+  "c-radiov4/turn_on_the_stove_demo.h5": "5d369ce5061d62480ef15793b1ac49b329307a8b8cb21885174efa1826d5a825",
+  "siglip2/open_the_middle_drawer_of_the_cabinet_demo.h5": "0a1ea4bed233a1ca5ad994aa089ca67a3d2b341a888afb52dc654975f2d37aa8",
+  "siglip2/open_the_top_drawer_and_put_the_bowl_inside_demo.h5": "01a76a431420fcfb8b334eea49f8ae106364d21734630f2ac05f8dfbef96df0f",
+  "siglip2/push_the_plate_to_the_front_of_the_stove_demo.h5": "dddaa05557da84ef025e21cc16526c76d2ad19c4094039bdd6446ba2288e00ed",
+  "siglip2/put_the_bowl_on_the_plate_demo.h5": "2f728e000d0fa4a774f16d1238f8476cdae9bb733f3ba7a6f7ae64cc7a471e45",
+  "siglip2/put_the_bowl_on_the_stove_demo.h5": "7c5464a39f308232150b3b3b739be68027df0a613bbbc980b820acb96d4a51b4",
+  "siglip2/put_the_bowl_on_top_of_the_cabinet_demo.h5": "f2f5a89f3325053575a124ae5922f446009661e3f6d4197746405b4addbdbedb",
+  "siglip2/put_the_cream_cheese_in_the_bowl_demo.h5": "fb7e6e0630b2836ed27e1cf490e5be21897d7298e14d56b6d9faf9cfc4d06dfb",
+  "siglip2/put_the_wine_bottle_on_the_rack_demo.h5": "01275ac795175bea3ca5f3bb261c4b337e3577dbe64a73b6d552a1aac379436e",
+  "siglip2/put_the_wine_bottle_on_top_of_the_cabinet_demo.h5": "d8b8f552752567c64b9bd3c728cea8301b8a613b0f2e930fbbdc9596d9ade5a2",
+  "siglip2/turn_on_the_stove_demo.h5": "e39c14b9f976029c246301c02a106106b543a31d87def46403ee6006759b8b21",
+  "sam3/open_the_middle_drawer_of_the_cabinet_demo.h5": "a6ed6572868e4265ea2269f34b26e98b75fde843bb38e67e1d0079e2dd592262",
+  "sam3/open_the_top_drawer_and_put_the_bowl_inside_demo.h5": "f04cd8c8cb727653a83c9d670e1b6631b87fb01281f7a3f52773aa7698e164a1",
+  "sam3/push_the_plate_to_the_front_of_the_stove_demo.h5": "d33a4b10156717adb85115cb630629bba18d715ccff731e63f32fb905cc32925",
+  "sam3/put_the_bowl_on_the_plate_demo.h5": "32ca06218924670b14ce5c7f96cb4475e750e00dddbd4c551cbe0f3b8253ba9c",
+  "sam3/put_the_bowl_on_the_stove_demo.h5": "2fb40e69dfcbed87c8bde96703d43edaae94941e8237bc03a44e9ffeddd0c4f6",
+  "sam3/put_the_bowl_on_top_of_the_cabinet_demo.h5": "07c9cdb4713375be2c9784b74ec6f66c80c6b388b63d5c5d26e1ae4dc2de73f3",
+  "sam3/put_the_cream_cheese_in_the_bowl_demo.h5": "a02dd3e2a0d7a34569d7a0a66476a9bc8a3bd92f84a2136d94b8b094dedcaa4b",
+  "sam3/put_the_wine_bottle_on_the_rack_demo.h5": "d5c4bcb3f0bf7c985ca05df67397d31d963ccdc1911b9c351de77ee7ca7f9ed7",
+  "sam3/put_the_wine_bottle_on_top_of_the_cabinet_demo.h5": "7d8f6964e90583aef0aa8aaf3915b5751d0d0a4ae19ff5690d2e69d44e0a1586",
+  "sam3/turn_on_the_stove_demo.h5": "bdea1d818bd3c0698efac9149bb3493fe8b5ffb26e3c3c980604c70e4daa1ac8",
+  "vggt-omega/open_the_middle_drawer_of_the_cabinet_demo.h5": "c48a3b83ba999dd145b504a31c56e57b65ae6666d57a2fbfc5831ae41d4b4519",
+  "vggt-omega/open_the_top_drawer_and_put_the_bowl_inside_demo.h5": "3aed58b5d962339d51bacdc8c2c1b8cf4dc3d50006ee78d331f2349f7e0b365a",
+  "vggt-omega/push_the_plate_to_the_front_of_the_stove_demo.h5": "9a8c0b1c212df9ff9569d1ae4dc056b57de4360cabfc31bb17f2974677157f80",
+  "vggt-omega/put_the_bowl_on_the_plate_demo.h5": "c84daf5b54a68689f8b665ae032e1bf8b5fbc9ea7b817e1ad8f37fdb1c1004f8",
+  "vggt-omega/put_the_bowl_on_the_stove_demo.h5": "c73c78d6314a54be229ad0f9cf07d6ea1724230cf1135ccc573bec54c916cf0e",
+  "vggt-omega/put_the_bowl_on_top_of_the_cabinet_demo.h5": "4dc4a16989987f04d1e354146a2011f78c973a0eb3859e18b4f20cb643806848",
+  "vggt-omega/put_the_cream_cheese_in_the_bowl_demo.h5": "57bba4e9ac487aa20cce86da63a9d1e4abd0e1345dcc016cb8add1a4996109f9",
+  "vggt-omega/put_the_wine_bottle_on_the_rack_demo.h5": "70e1df40c029da3f4f7594b87900fa75411dfe2abe94c51dcbf3fd3b7f2a075e",
+  "vggt-omega/put_the_wine_bottle_on_top_of_the_cabinet_demo.h5": "3192cad781d38693400224df785d68488b210a798f040b6110ce52defea73ddf",
+  "vggt-omega/turn_on_the_stove_demo.h5": "4773c9f3c3a4920771b51004200d984f8b56870fd541812b29f40963be3d3c4c"
+ },
+ "source_files": {
+  "trval": {
+   "dinov3": [
+    "/work/pfa-trainval/libero_goal/open_the_middle_drawer_of_the_cabinet_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/push_the_plate_to_the_front_of_the_stove_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_bowl_on_the_plate_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_bowl_on_the_stove_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_bowl_on_top_of_the_cabinet_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_cream_cheese_in_the_bowl_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_wine_bottle_on_the_rack_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/turn_on_the_stove_demo.hdf5"
+   ],
+   "c-radiov4": [
+    "/work/pfa-trainval/libero_goal/open_the_middle_drawer_of_the_cabinet_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/push_the_plate_to_the_front_of_the_stove_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_bowl_on_the_plate_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_bowl_on_the_stove_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_bowl_on_top_of_the_cabinet_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_cream_cheese_in_the_bowl_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_wine_bottle_on_the_rack_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/turn_on_the_stove_demo.hdf5"
+   ],
+   "siglip2": [
+    "/work/pfa-trainval/libero_goal/open_the_middle_drawer_of_the_cabinet_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/push_the_plate_to_the_front_of_the_stove_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_bowl_on_the_plate_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_bowl_on_the_stove_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_bowl_on_top_of_the_cabinet_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_cream_cheese_in_the_bowl_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_wine_bottle_on_the_rack_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/turn_on_the_stove_demo.hdf5"
+   ],
+   "sam3": [
+    "/work/pfa-trainval/libero_goal/open_the_middle_drawer_of_the_cabinet_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/push_the_plate_to_the_front_of_the_stove_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_bowl_on_the_plate_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_bowl_on_the_stove_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_bowl_on_top_of_the_cabinet_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_cream_cheese_in_the_bowl_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_wine_bottle_on_the_rack_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/turn_on_the_stove_demo.hdf5"
+   ],
+   "vggt-omega": [
+    "/work/pfa-trainval/libero_goal/open_the_middle_drawer_of_the_cabinet_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/push_the_plate_to_the_front_of_the_stove_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_bowl_on_the_plate_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_bowl_on_the_stove_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_bowl_on_top_of_the_cabinet_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_cream_cheese_in_the_bowl_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_wine_bottle_on_the_rack_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5",
+    "/work/pfa-trainval/libero_goal/turn_on_the_stove_demo.hdf5"
+   ]
+  }
+ },
+ "per_camera_sizes": {
+  "dinov3": 1024,
+  "c-radiov4": 2304,
+  "siglip2": 1024,
+  "sam3": 1024,
+  "vggt-omega": 2048
+ },
+ "matched": {
+  "target": 1024,
+  "reduced": [
+   "c-radiov4",
+   "vggt-omega"
+  ],
+  "declared_sizes": null
+ },
+ "configs": {
+  "full": {
+   "combined": {
+    "probes": {
+     "D": {
+      "dim": 2048,
+      "alpha": 0.1,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6640167832374573,
+      "val_r2_by_alpha": {
+       "0.01": 0.6593557000160217,
+       "0.1": 0.6640167832374573,
+       "1": 0.618705153465271,
+       "10": 0.4868663251399994,
+       "100.0": 0.2599540650844574,
+       "1000.0": 0.061938073486089706,
+       "10000.0": 0.007269740104675293,
+       "100000.0": 0.0005515302764251828
+      }
+     },
+     "D+R": {
+      "dim": 6656,
+      "alpha": 0.1,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6989087462425232,
+      "val_r2_by_alpha": {
+       "0.01": 0.679966390132904,
+       "0.1": 0.6989087462425232,
+       "1": 0.6726290583610535,
+       "10": 0.573674201965332,
+       "100.0": 0.38700070977211,
+       "1000.0": 0.15070827305316925,
+       "10000.0": 0.026411550119519234,
+       "100000.0": 0.0027212330605834723
+      }
+     },
+     "D+L": {
+      "dim": 4096,
+      "alpha": 0.1,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6798065304756165,
+      "val_r2_by_alpha": {
+       "0.01": 0.6648601293563843,
+       "0.1": 0.6798065304756165,
+       "1": 0.6524974703788757,
+       "10": 0.5419626832008362,
+       "100.0": 0.3328719735145569,
+       "1000.0": 0.10452435165643692,
+       "10000.0": 0.014644188806414604,
+       "100000.0": 0.0013444082578644156
+      }
+     },
+     "D+S": {
+      "dim": 4096,
+      "alpha": 0.1,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6913002729415894,
+      "val_r2_by_alpha": {
+       "0.01": 0.6701217293739319,
+       "0.1": 0.6913002729415894,
+       "1": 0.662169873714447,
+       "10": 0.553996741771698,
+       "100.0": 0.3475790023803711,
+       "1000.0": 0.11344021558761597,
+       "10000.0": 0.015783855691552162,
+       "100000.0": 0.001458261744119227
+      }
+     },
+     "D+G": {
+      "dim": 6144,
+      "alpha": 0.1,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6771456003189087,
+      "val_r2_by_alpha": {
+       "0.01": 0.6693834662437439,
+       "0.1": 0.6771456003189087,
+       "1": 0.6393316388130188,
+       "10": 0.5225504040718079,
+       "100.0": 0.3283366560935974,
+       "1000.0": 0.11775428801774979,
+       "10000.0": 0.017507603392004967,
+       "100000.0": 0.0016600489616394043
+      }
+     }
+    },
+    "pca_explained_variance": {},
+    "val_gain": {
+     "R": 0.03489196300506592,
+     "L": 0.01578974723815918,
+     "S": 0.02728348970413208,
+     "G": 0.013128817081451416
+    },
+    "val_gain_order": [
+     "R",
+     "S",
+     "L",
+     "G"
+    ]
+   },
+   "agentview": {
+    "probes": {
+     "D": {
+      "dim": 1024,
+      "alpha": 0.01,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.563908576965332,
+      "val_r2_by_alpha": {
+       "0.01": 0.563908576965332,
+       "0.1": 0.5508214235305786,
+       "1": 0.47941023111343384,
+       "10": 0.32903042435646057,
+       "100.0": 0.13643556833267212,
+       "1000.0": 0.025680499151349068,
+       "10000.0": 0.00268559786491096,
+       "100000.0": 8.331026037922129e-05
+      }
+     },
+     "D+R": {
+      "dim": 3328,
+      "alpha": 0.01,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.623344898223877,
+      "val_r2_by_alpha": {
+       "0.01": 0.623344898223877,
+       "0.1": 0.6190676093101501,
+       "1": 0.5553902983665466,
+       "10": 0.4133831858634949,
+       "100.0": 0.2236691564321518,
+       "1000.0": 0.07264900207519531,
+       "10000.0": 0.011681999079883099,
+       "100000.0": 0.001076042652130127
+      }
+     },
+     "D+L": {
+      "dim": 2048,
+      "alpha": 0.01,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.5898038744926453,
+      "val_r2_by_alpha": {
+       "0.01": 0.5898038744926453,
+       "0.1": 0.5848687887191772,
+       "1": 0.5217955708503723,
+       "10": 0.3801131248474121,
+       "100.0": 0.18669451773166656,
+       "1000.0": 0.049571361392736435,
+       "10000.0": 0.006304408889263868,
+       "100000.0": 0.0004609056923072785
+      }
+     },
+     "D+S": {
+      "dim": 2048,
+      "alpha": 0.1,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.598013699054718,
+      "val_r2_by_alpha": {
+       "0.01": 0.5922756195068359,
+       "0.1": 0.598013699054718,
+       "1": 0.5392395853996277,
+       "10": 0.39891883730888367,
+       "100.0": 0.20221856236457825,
+       "1000.0": 0.05285164341330528,
+       "10000.0": 0.006498047150671482,
+       "100000.0": 0.0004780122253578156
+      }
+     },
+     "D+G": {
+      "dim": 3072,
+      "alpha": 0.01,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.5811187624931335,
+      "val_r2_by_alpha": {
+       "0.01": 0.5811187624931335,
+       "0.1": 0.5708471536636353,
+       "1": 0.5044099688529968,
+       "10": 0.3623257279396057,
+       "100.0": 0.1750892698764801,
+       "1000.0": 0.045492734760046005,
+       "10000.0": 0.005743120331317186,
+       "100000.0": 0.0004062567313667387
+      }
+     }
+    },
+    "pca_explained_variance": {},
+    "val_gain": {
+     "R": 0.05943632125854492,
+     "L": 0.025895297527313232,
+     "S": 0.034105122089385986,
+     "G": 0.017210185527801514
+    },
+    "val_gain_order": [
+     "R",
+     "S",
+     "L",
+     "G"
+    ]
+   },
+   "wrist": {
+    "probes": {
+     "D": {
+      "dim": 1024,
+      "alpha": 0.01,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6358479857444763,
+      "val_r2_by_alpha": {
+       "0.01": 0.6358479857444763,
+       "0.1": 0.6271279454231262,
+       "1": 0.5612173080444336,
+       "10": 0.4132501184940338,
+       "100.0": 0.19921517372131348,
+       "1000.0": 0.040773648768663406,
+       "10000.0": 0.004440554417669773,
+       "100000.0": 0.00026082139811478555
+      }
+     },
+     "D+R": {
+      "dim": 3328,
+      "alpha": 0.01,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6804944276809692,
+      "val_r2_by_alpha": {
+       "0.01": 0.6804944276809692,
+       "0.1": 0.67727130651474,
+       "1": 0.6292434930801392,
+       "10": 0.5131437182426453,
+       "100.0": 0.3230727016925812,
+       "1000.0": 0.10851975530385971,
+       "10000.0": 0.015583276748657227,
+       "100000.0": 0.0014473625924438238
+      }
+     },
+     "D+L": {
+      "dim": 2048,
+      "alpha": 0.1,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6532459259033203,
+      "val_r2_by_alpha": {
+       "0.01": 0.6519614458084106,
+       "0.1": 0.6532459259033203,
+       "1": 0.6075932383537292,
+       "10": 0.4777713418006897,
+       "100.0": 0.26773956418037415,
+       "1000.0": 0.06956708431243896,
+       "10000.0": 0.008429969660937786,
+       "100000.0": 0.000672706519253552
+      }
+     },
+     "D+S": {
+      "dim": 2048,
+      "alpha": 0.01,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6730033159255981,
+      "val_r2_by_alpha": {
+       "0.01": 0.6730033159255981,
+       "0.1": 0.6721946597099304,
+       "1": 0.6190037131309509,
+       "10": 0.4895348846912384,
+       "100.0": 0.28034499287605286,
+       "1000.0": 0.07634412497282028,
+       "10000.0": 0.009388880804181099,
+       "100000.0": 0.0007744005997665226
+      }
+     },
+     "D+G": {
+      "dim": 3072,
+      "alpha": 0.01,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6614102125167847,
+      "val_r2_by_alpha": {
+       "0.01": 0.6614102125167847,
+       "0.1": 0.6502507328987122,
+       "1": 0.5877915620803833,
+       "10": 0.44992828369140625,
+       "100.0": 0.2643115222454071,
+       "1000.0": 0.08551975339651108,
+       "10000.0": 0.011833727359771729,
+       "100000.0": 0.0010475516319274902
+      }
+     }
+    },
+    "pca_explained_variance": {},
+    "val_gain": {
+     "R": 0.04464644193649292,
+     "L": 0.017397940158843994,
+     "S": 0.037155330181121826,
+     "G": 0.02556222677230835
+    },
+    "val_gain_order": [
+     "R",
+     "S",
+     "G",
+     "L"
+    ]
+   }
+  },
+  "matched": {
+   "combined": {
+    "probes": {
+     "D": {
+      "dim": 2048,
+      "alpha": 0.1,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6640167832374573,
+      "val_r2_by_alpha": {
+       "0.01": 0.6593557000160217,
+       "0.1": 0.6640167832374573,
+       "1": 0.618705153465271,
+       "10": 0.4868663251399994,
+       "100.0": 0.2599540650844574,
+       "1000.0": 0.061938073486089706,
+       "10000.0": 0.007269740104675293,
+       "100000.0": 0.0005515302764251828
+      }
+     },
+     "D+R": {
+      "dim": 4096,
+      "alpha": 0.1,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6971192955970764,
+      "val_r2_by_alpha": {
+       "0.01": 0.67259281873703,
+       "0.1": 0.6971192955970764,
+       "1": 0.6723471283912659,
+       "10": 0.5736307501792908,
+       "100.0": 0.3869948983192444,
+       "1000.0": 0.15070761740207672,
+       "10000.0": 0.026411542668938637,
+       "100000.0": 0.0027212160639464855
+      }
+     },
+     "D+L": {
+      "dim": 4096,
+      "alpha": 0.1,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6798065304756165,
+      "val_r2_by_alpha": {
+       "0.01": 0.6648601293563843,
+       "0.1": 0.6798065304756165,
+       "1": 0.6524974703788757,
+       "10": 0.5419626832008362,
+       "100.0": 0.3328719735145569,
+       "1000.0": 0.10452435165643692,
+       "10000.0": 0.014644188806414604,
+       "100000.0": 0.0013444082578644156
+      }
+     },
+     "D+S": {
+      "dim": 4096,
+      "alpha": 0.1,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6913002729415894,
+      "val_r2_by_alpha": {
+       "0.01": 0.6701217293739319,
+       "0.1": 0.6913002729415894,
+       "1": 0.662169873714447,
+       "10": 0.553996741771698,
+       "100.0": 0.3475790023803711,
+       "1000.0": 0.11344021558761597,
+       "10000.0": 0.015783855691552162,
+       "100000.0": 0.001458261744119227
+      }
+     },
+     "D+G": {
+      "dim": 4096,
+      "alpha": 0.1,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6771436929702759,
+      "val_r2_by_alpha": {
+       "0.01": 0.6693446040153503,
+       "0.1": 0.6771436929702759,
+       "1": 0.6393315196037292,
+       "10": 0.5225505232810974,
+       "100.0": 0.328336626291275,
+       "1000.0": 0.11775431782007217,
+       "10000.0": 0.01750751957297325,
+       "100000.0": 0.0016600574599578977
+      }
+     }
+    },
+    "pca_explained_variance": {
+     "c-radiov4": {
+      "agentview_rgb": {
+       "dim_in": 2304,
+       "dim_out": 1024,
+       "explained_variance_ratio": 0.9981790359267416
+      },
+      "eye_in_hand_rgb": {
+       "dim_in": 2304,
+       "dim_out": 1024,
+       "explained_variance_ratio": 0.9971618357622136
+      }
+     },
+     "vggt-omega": {
+      "agentview_rgb": {
+       "dim_in": 2048,
+       "dim_out": 1024,
+       "explained_variance_ratio": 0.9999857999232314
+      },
+      "eye_in_hand_rgb": {
+       "dim_in": 2048,
+       "dim_out": 1024,
+       "explained_variance_ratio": 0.9999924433777645
+      }
+     }
+    },
+    "val_gain": {
+     "R": 0.03310251235961914,
+     "L": 0.01578974723815918,
+     "S": 0.02728348970413208,
+     "G": 0.013126909732818604
+    },
+    "val_gain_order": [
+     "R",
+     "S",
+     "L",
+     "G"
+    ]
+   },
+   "agentview": {
+    "probes": {
+     "D": {
+      "dim": 1024,
+      "alpha": 0.01,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.563908576965332,
+      "val_r2_by_alpha": {
+       "0.01": 0.563908576965332,
+       "0.1": 0.5508214235305786,
+       "1": 0.47941023111343384,
+       "10": 0.32903042435646057,
+       "100.0": 0.13643556833267212,
+       "1000.0": 0.025680499151349068,
+       "10000.0": 0.00268559786491096,
+       "100000.0": 8.331026037922129e-05
+      }
+     },
+     "D+R": {
+      "dim": 2048,
+      "alpha": 0.1,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6171776056289673,
+      "val_r2_by_alpha": {
+       "0.01": 0.6148086786270142,
+       "0.1": 0.6171776056289673,
+       "1": 0.5551334023475647,
+       "10": 0.4133525490760803,
+       "100.0": 0.2236662656068802,
+       "1000.0": 0.07264875620603561,
+       "10000.0": 0.011681957170367241,
+       "100000.0": 0.001076042652130127
+      }
+     },
+     "D+L": {
+      "dim": 2048,
+      "alpha": 0.01,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.5898038744926453,
+      "val_r2_by_alpha": {
+       "0.01": 0.5898038744926453,
+       "0.1": 0.5848687887191772,
+       "1": 0.5217955708503723,
+       "10": 0.3801131248474121,
+       "100.0": 0.18669451773166656,
+       "1000.0": 0.049571361392736435,
+       "10000.0": 0.006304408889263868,
+       "100000.0": 0.0004609056923072785
+      }
+     },
+     "D+S": {
+      "dim": 2048,
+      "alpha": 0.1,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.598013699054718,
+      "val_r2_by_alpha": {
+       "0.01": 0.5922756195068359,
+       "0.1": 0.598013699054718,
+       "1": 0.5392395853996277,
+       "10": 0.39891883730888367,
+       "100.0": 0.20221856236457825,
+       "1000.0": 0.05285164341330528,
+       "10000.0": 0.006498047150671482,
+       "100000.0": 0.0004780122253578156
+      }
+     },
+     "D+G": {
+      "dim": 2048,
+      "alpha": 0.01,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.5811023712158203,
+      "val_r2_by_alpha": {
+       "0.01": 0.5811023712158203,
+       "0.1": 0.570849597454071,
+       "1": 0.5044111609458923,
+       "10": 0.3623258173465729,
+       "100.0": 0.17508959770202637,
+       "1000.0": 0.04549264907836914,
+       "10000.0": 0.005743120331317186,
+       "100000.0": 0.0004062737862113863
+      }
+     }
+    },
+    "pca_explained_variance": {
+     "c-radiov4": {
+      "agentview_rgb": {
+       "dim_in": 2304,
+       "dim_out": 1024,
+       "explained_variance_ratio": 0.9981790359267416
+      }
+     },
+     "vggt-omega": {
+      "agentview_rgb": {
+       "dim_in": 2048,
+       "dim_out": 1024,
+       "explained_variance_ratio": 0.9999857999232314
+      }
+     }
+    },
+    "val_gain": {
+     "R": 0.053269028663635254,
+     "L": 0.025895297527313232,
+     "S": 0.034105122089385986,
+     "G": 0.01719379425048828
+    },
+    "val_gain_order": [
+     "R",
+     "S",
+     "L",
+     "G"
+    ]
+   },
+   "wrist": {
+    "probes": {
+     "D": {
+      "dim": 1024,
+      "alpha": 0.01,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6358479857444763,
+      "val_r2_by_alpha": {
+       "0.01": 0.6358479857444763,
+       "0.1": 0.6271279454231262,
+       "1": 0.5612173080444336,
+       "10": 0.4132501184940338,
+       "100.0": 0.19921517372131348,
+       "1000.0": 0.040773648768663406,
+       "10000.0": 0.004440554417669773,
+       "100000.0": 0.00026082139811478555
+      }
+     },
+     "D+R": {
+      "dim": 2048,
+      "alpha": 0.1,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6752041578292847,
+      "val_r2_by_alpha": {
+       "0.01": 0.6728072762489319,
+       "0.1": 0.6752041578292847,
+       "1": 0.6289628148078918,
+       "10": 0.5131111741065979,
+       "100.0": 0.3230692446231842,
+       "1000.0": 0.10851938277482986,
+       "10000.0": 0.01558320876210928,
+       "100000.0": 0.0014473540941253304
+      }
+     },
+     "D+L": {
+      "dim": 2048,
+      "alpha": 0.1,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6532459259033203,
+      "val_r2_by_alpha": {
+       "0.01": 0.6519614458084106,
+       "0.1": 0.6532459259033203,
+       "1": 0.6075932383537292,
+       "10": 0.4777713418006897,
+       "100.0": 0.26773956418037415,
+       "1000.0": 0.06956708431243896,
+       "10000.0": 0.008429969660937786,
+       "100000.0": 0.000672706519253552
+      }
+     },
+     "D+S": {
+      "dim": 2048,
+      "alpha": 0.01,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6730033159255981,
+      "val_r2_by_alpha": {
+       "0.01": 0.6730033159255981,
+       "0.1": 0.6721946597099304,
+       "1": 0.6190037131309509,
+       "10": 0.4895348846912384,
+       "100.0": 0.28034499287605286,
+       "1000.0": 0.07634412497282028,
+       "10000.0": 0.009388880804181099,
+       "100000.0": 0.0007744005997665226
+      }
+     },
+     "D+G": {
+      "dim": 2048,
+      "alpha": 0.01,
+      "alpha_source": "tuned-on-rerendered-val",
+      "val_r2": 0.6613535284996033,
+      "val_r2_by_alpha": {
+       "0.01": 0.6613535284996033,
+       "0.1": 0.6502436399459839,
+       "1": 0.5877903699874878,
+       "10": 0.4499281346797943,
+       "100.0": 0.2643115222454071,
+       "1000.0": 0.08551973849534988,
+       "10000.0": 0.011833727359771729,
+       "100000.0": 0.0010475516319274902
+      }
+     }
+    },
+    "pca_explained_variance": {
+     "c-radiov4": {
+      "eye_in_hand_rgb": {
+       "dim_in": 2304,
+       "dim_out": 1024,
+       "explained_variance_ratio": 0.9971618357622136
+      }
+     },
+     "vggt-omega": {
+      "eye_in_hand_rgb": {
+       "dim_in": 2048,
+       "dim_out": 1024,
+       "explained_variance_ratio": 0.9999924433777645
+      }
+     }
+    },
+    "val_gain": {
+     "R": 0.03935617208480835,
+     "L": 0.017397940158843994,
+     "S": 0.037155330181121826,
+     "G": 0.025505542755126953
+    },
+    "val_gain_order": [
+     "R",
+     "S",
+     "G",
+     "L"
+    ]
+   }
+  }
+ },
+ "notes": {},
+ "tally_reference": {
+  "tally_val_gain": {
+   "R": 0.03320160428531671,
+   "L": 0.015877869365903408,
+   "S": 0.02805505023926025,
+   "G": 0.01189273650416578
+  },
+  "ours_val_gain": {
+   "R": 0.03489196300506592,
+   "L": 0.01578974723815918,
+   "S": 0.02728348970413208,
+   "G": 0.013128817081451416
+  },
+  "tally_order": [
+   "R",
+   "S",
+   "L",
+   "G"
+  ],
+  "ours_order": [
+   "R",
+   "S",
+   "L",
+   "G"
+  ],
+  "note": "report only (PLAN T-a, words only); stored-trained tally vs re-render-trained ours; no test, no pass mark"
+ },
+ "seconds": 2552.312919855118
+}

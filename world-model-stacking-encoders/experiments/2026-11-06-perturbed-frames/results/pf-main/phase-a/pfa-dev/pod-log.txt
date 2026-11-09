@@ -1,0 +1,204 @@
+=== pfa-dev 20261109-144404 src 765b011dd94dd8bdc204bb88a625b4142790a26e
+4
+Mon Nov  9 14:44:04 UTC 2026
+137.164.28.178:6789,171.66.4.15:6789,67.58.50.67:6789,137.164.28.138:6789,132.249.252.91:6789:/volumes/csi/csi-vol-9fc6b0fe-e947-4528-a5c5-c5e80fc7d70d/9f0765b7-9592-498f-ae6c-7f42cf4c5f62  1.0T  766G  259G  75% /mnt/proxy
+all 50 phase-A feature files present
+/pf/tally-libero_goal-dinov3-c-radiov4.json
+/pf/tally-libero_goal-dinov3-sam3.json
+/pf/tally-libero_goal-dinov3-siglip2.json
+/pf/tally-libero_goal-dinov3-vggt-omega.json
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+Fetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]Fetching 10 files:  10%|█         | 1/10 [00:03<00:33,  3.78s/it]Fetching 10 files:  20%|██        | 2/10 [00:06<00:24,  3.04s/it]Fetching 10 files:  30%|███       | 3/10 [00:07<00:14,  2.06s/it]Fetching 10 files:  40%|████      | 4/10 [00:08<00:11,  1.94s/it]Fetching 10 files:  50%|█████     | 5/10 [00:09<00:06,  1.38s/it]Fetching 10 files:  60%|██████    | 6/10 [00:09<00:04,  1.05s/it]Fetching 10 files:  70%|███████   | 7/10 [00:11<00:03,  1.16s/it]Fetching 10 files:  80%|████████  | 8/10 [00:11<00:02,  1.06s/it]Fetching 10 files:  90%|█████████ | 9/10 [00:12<00:00,  1.28it/s]Fetching 10 files: 100%|██████████| 10/10 [00:12<00:00,  1.32it/s]Fetching 10 files: 100%|██████████| 10/10 [00:12<00:00,  1.29s/it]
+total 6223804
+drwxr-xr-x 2 root root       4096 Nov  9 14:44 .
+drwxr-xr-x 4 root root       4096 Nov  9 14:44 ..
+-rw-r--r-- 1 root root  702223367 Nov  9 14:44 open_the_middle_drawer_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root 1017886342 Nov  9 14:44 open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5
+-rw-r--r-- 1 root root  762855139 Nov  9 14:44 push_the_plate_to_the_front_of_the_stove_demo.hdf5
+-rw-r--r-- 1 root root  468246288 Nov  9 14:44 put_the_bowl_on_the_plate_demo.hdf5
+-rw-r--r-- 1 root root  509123820 Nov  9 14:44 put_the_bowl_on_the_stove_demo.hdf5
+-rw-r--r-- 1 root root  510414285 Nov  9 14:44 put_the_bowl_on_top_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root  535715512 Nov  9 14:44 put_the_cream_cheese_in_the_bowl_demo.hdf5
+-rw-r--r-- 1 root root  878958730 Nov  9 14:44 put_the_wine_bottle_on_the_rack_demo.hdf5
+-rw-r--r-- 1 root root  540179470 Nov  9 14:44 put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root  447509922 Nov  9 14:44 turn_on_the_stove_demo.hdf5
+Mon Nov  9 14:44:24 UTC 2026
+/work/data/libero_goal/open_the_middle_drawer_of_the_cabinet_demo.hdf5: OK
+/work/data/libero_goal/open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: OK
+/work/data/libero_goal/push_the_plate_to_the_front_of_the_stove_demo.hdf5: OK
+/work/data/libero_goal/put_the_bowl_on_the_plate_demo.hdf5: OK
+/work/data/libero_goal/put_the_bowl_on_the_stove_demo.hdf5: OK
+/work/data/libero_goal/put_the_bowl_on_top_of_the_cabinet_demo.hdf5: OK
+/work/data/libero_goal/put_the_cream_cheese_in_the_bowl_demo.hdf5: OK
+/work/data/libero_goal/put_the_wine_bottle_on_the_rack_demo.hdf5: OK
+/work/data/libero_goal/put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: OK
+/work/data/libero_goal/turn_on_the_stove_demo.hdf5: OK
+=== raw-sha256 exit code 0
+Mon Nov  9 14:44:50 UTC 2026
+[pf-dev] train+val: {'train': 38164, 'val': 12316} frames per camera, 400 demos
+[pf-dev] gate A: score 0.6640, threshold 0.6312, passed True
+[pf-dev] per-camera sizes {'dinov3': 1024, 'c-radiov4': 2304, 'siglip2': 1024, 'sam3': 1024, 'vggt-omega': 2048}; matched target 1024, reduced ['c-radiov4', 'vggt-omega']
+[pf-dev] full/combined/D: dim 2048, alpha 0.1, val R2 0.664
+[pf-dev] full/combined/D+R: dim 6656, alpha 0.1, val R2 0.699
+[pf-dev] full/combined/D+L: dim 4096, alpha 0.1, val R2 0.680
+[pf-dev] full/combined/D+S: dim 4096, alpha 0.1, val R2 0.691
+[pf-dev] full/combined/D+G: dim 6144, alpha 0.1, val R2 0.677
+[pf-dev] full/agentview/D: dim 1024, alpha 0.01, val R2 0.564
+[pf-dev] full/agentview/D+R: dim 3328, alpha 0.01, val R2 0.623
+[pf-dev] full/agentview/D+L: dim 2048, alpha 0.01, val R2 0.590
+[pf-dev] full/agentview/D+S: dim 2048, alpha 0.1, val R2 0.598
+[pf-dev] full/agentview/D+G: dim 3072, alpha 0.01, val R2 0.581
+[pf-dev] full/wrist/D: dim 1024, alpha 0.01, val R2 0.636
+[pf-dev] full/wrist/D+R: dim 3328, alpha 0.01, val R2 0.680
+[pf-dev] full/wrist/D+L: dim 2048, alpha 0.1, val R2 0.653
+[pf-dev] full/wrist/D+S: dim 2048, alpha 0.01, val R2 0.673
+[pf-dev] full/wrist/D+G: dim 3072, alpha 0.01, val R2 0.661
+[pf-dev] matched/combined/D: dim 2048, alpha 0.1, val R2 0.664
+[pf-dev] matched/combined/D+R: dim 4096, alpha 0.1, val R2 0.697
+[pf-dev] matched/combined/D+L: dim 4096, alpha 0.1, val R2 0.680
+[pf-dev] matched/combined/D+S: dim 4096, alpha 0.1, val R2 0.691
+[pf-dev] matched/combined/D+G: dim 4096, alpha 0.1, val R2 0.677
+[pf-dev] matched/agentview/D: dim 1024, alpha 0.01, val R2 0.564
+[pf-dev] matched/agentview/D+R: dim 2048, alpha 0.1, val R2 0.617
+[pf-dev] matched/agentview/D+L: dim 2048, alpha 0.01, val R2 0.590
+[pf-dev] matched/agentview/D+S: dim 2048, alpha 0.1, val R2 0.598
+[pf-dev] matched/agentview/D+G: dim 2048, alpha 0.01, val R2 0.581
+[pf-dev] matched/wrist/D: dim 1024, alpha 0.01, val R2 0.636
+[pf-dev] matched/wrist/D+R: dim 2048, alpha 0.1, val R2 0.675
+[pf-dev] matched/wrist/D+L: dim 2048, alpha 0.1, val R2 0.653
+[pf-dev] matched/wrist/D+S: dim 2048, alpha 0.01, val R2 0.673
+[pf-dev] matched/wrist/D+G: dim 2048, alpha 0.01, val R2 0.661
+[pf-dev] wrote /work/dev-out/dev-report.json in 2552s
+=== dev exit code 0
+Mon Nov  9 15:27:23 UTC 2026
+copied dev output to /mnt/proxy/pf-main/phase-a/dev/20261109-144404
+=== exit codes: worst 0
+Mon Nov  9 15:27:23 UTC 2026
+copied reports to /mnt/proxy/pf-main/phase-a/reports/pfa-dev-20261109-144404
+-rw-r--r-- 1 root root 6955 Nov  9 15:27 /work/pfa-dev.tgz
+=== BEGIN PFA_TGZ_B64
+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
+AA==
+=== END PFA_TGZ_B64
+=== done; exiting with 0 (0 only if every stage passed)
