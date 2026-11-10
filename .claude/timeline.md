@@ -267,3 +267,10 @@
 - Planning handoff received: a CPU-only control-partners run (PR #9) joins the queue after phase B's GPU work. Order now: render, then SAM 3 / VGGT / final analysis, then control partners, then the 16-layer DINOv3 proxy retrain. Each cluster step waits for the user's go here; nothing proxy-side submitted.
 - Lesson kept in memory: read the FailedScheduling event's "didn't match affinity" count early; a two-node pool is a rule problem, not a queue.
 - See: world-model-stacking-encoders/experiments/2026-11-06-perturbed-frames/LOG.md (2026-11-10 entry), .../jobs/PHASE-B.md (note 2026-11-10), world-model-stacking-encoders/LOG.md (2026-11-10 implementation lead), world-model-stacking-encoders/experiments/2026-11-09-control-partners/PLAN.md
+
+## 2026-11-09 — literature: novelty check for planning, PR-rule replan
+
+- Answered the planning session's three-question novelty check (search agent, independent reviewer, lead spot-check of the reviewer's new claims). No robot or WAM paper scores encoder pairs or a conditional gain before training. No multi-seed replication of composition results was found. Nothing ranks the paper's encoders under perturbation. Suggested narrowing: a conditional score for robot or WAM stacking.
+- The review caught a withdrawn paper and several overreaches before the reply went out. Planning recorded the answer in writing/2026-11-09-plan-validity-review.md section 3.
+- Replanned the unmerged Hewitt bookkeeping for the new PR rule. It and two new leads (Yardi 2025, Chun 2026) wait on the user's OK in this window, plus a question about pushing main after direct merges.
+- See: world-model-stacking-encoders/LOG.md (2026-11-09 [agent, literature]), world-model-stacking-encoders/writing/2026-11-09-plan-validity-review.md
