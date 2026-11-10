@@ -268,7 +268,14 @@
 - Lesson kept in memory: read the FailedScheduling event's "didn't match affinity" count early; a two-node pool is a rule problem, not a queue.
 - See: world-model-stacking-encoders/experiments/2026-11-06-perturbed-frames/LOG.md (2026-11-10 entry), .../jobs/PHASE-B.md (note 2026-11-10), world-model-stacking-encoders/LOG.md (2026-11-10 implementation lead), world-model-stacking-encoders/experiments/2026-11-09-control-partners/PLAN.md
 
-## 2026-11-09 — literature: novelty check for planning, PR-rule replan
+## 2026-11-09: stacking-encoders slides lead: deck checked, weekend changes summarized, 11/11 slide lines drafted
+
+- Read the user's latest deck export and checked the 11/11 section against the repo; flagged a stale status line, the "best partner" wording (best of our four, not the paper's best), a few typos and the "same way the paper did it" line.
+- Summarized what changed since the last deck edit: the case-study reframe (not yet told to the mentor), the perturbed-frames redesign and passed gate, the papers the user read, the review, and the seed-noise verdict (go ahead by the rule, but the proxy scores about a tenth of the paper, hence the amendment).
+- Wrote paste-ready lines for a new Updated Question slide, a Noise Check result slide, the Disturbed Scenes rewrite, Related Works and Moving Forward. Two figures offered via the new PR route; the user had not picked yet.
+- See: world-model-stacking-encoders/LOG.md (2026-11-09 [agent, slides]), world-model-stacking-encoders/decisions/004-paper-framing-case-study.md, world-model-stacking-encoders/experiments/2026-10-27-proxy-calibration/LOG.md (t)
+
+## 2026-11-09: stacking-encoders literature: novelty check for planning, PR-rule replan
 
 - Answered the planning session's three-question novelty check (search agent, independent reviewer, lead spot-check of the reviewer's new claims). No robot or WAM paper scores encoder pairs or a conditional gain before training. No multi-seed replication of composition results was found. Nothing ranks the paper's encoders under perturbation. Suggested narrowing: a conditional score for robot or WAM stacking.
 - The review caught a withdrawn paper and several overreaches before the reply went out. Planning recorded the answer in writing/2026-11-09-plan-validity-review.md section 3.
