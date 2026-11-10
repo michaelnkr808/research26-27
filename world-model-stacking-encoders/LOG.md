@@ -1661,3 +1661,10 @@ Reviews were read-only; findings reported by subagents, spot-checked by the lead
 **Found:** nothing new in the key findings.
 **GPU-hours:** none finished for the phase B twin; 0 for the CPU Jobs.
 **Next:** stage 2 end (save log, decode, collect, per-seed agreement), then the user decides whether the README headline finding is re-worded; phase B: GPU-use check, Violations page, then the SAM 3, VGGT-Omega and final Jobs each on the user's go; feature-overlap and the proxy retrain wait.
+
+## 2026-11-10 [agent, slides] (slides lead restarted after /clear; status refresh only)
+**Goal:** resume as the slides lead for the user's 11/11/26 mentor deck section.
+**Did (verified, read-only):** read the standards, README, PLAN and recent LOG entries; checked `~/Downloads` (newest export still `Research Proposal-10.pdf`, 2026-11-07) and that local main matches origin/main. Told the user in plain words what changed since the last slides session: perturbed-frames phase B render resubmitted 2026-11-10 with a wider GPU rule (no output yet; experiment LOG 2026-11-10); proxy Amendment (c) retrain (16-layer DINOv3) not submitted (proxy LOG (v)); decision 004 not yet told to the mentor. No slide lines, figures, workers or cluster calls.
+**PR:** direct.
+**Next:** the user picks: refreshed Noise Check and Disturbed Scenes lines (re-read the two experiment LOGs first), the two optional figures (worker plus reviewer, PR route, Desktop copy), or a review of a new deck export.
+**Open questions:** none new.
