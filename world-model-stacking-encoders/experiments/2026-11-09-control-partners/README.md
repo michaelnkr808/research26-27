@@ -1,4 +1,4 @@
-# 2026-11-09 — Control partners for the input-side and target-side cheap tests
+# 2026-11-09 control partners for the input-side and target-side cheap tests
 
 **Status:** designed, not run. No results yet.
 
