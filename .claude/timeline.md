@@ -305,3 +305,12 @@
 - No slide lines, figures, workers or cluster work this session.
 - Open loops: the user picks what to do next for the 11/11 meeting (refreshed Noise Check and Disturbed Scenes lines, the two optional figures, or a check of a new deck export).
 - See: world-model-stacking-encoders/LOG.md (2026-11-09 [agent, slides] and 2026-11-10 [agent, slides])
+
+## 2026-11-10: stacking-encoders planning: path-to-paper memo, author email, feature-overlap design signed off
+
+- Wrote and merged a path-to-paper memo (PR #11): three possible endings, milestones, and a speculative calendar (full result set around early December at the measured two-GPU pace). The user said the mentor's target is a CVPR workshop paper and that a measure of whether an encoder pair will be bad is the contribution the user wants.
+- Un-parked two items at the user's request: a retrospective check against all of the paper's Table 10 compositions (needs three encoders we have not extracted, checkpoints unknown) and an email to the authors, which the user sent to two corresponding authors with the first authors copied.
+- Designed a feature-overlap score on the four pairs already extracted (PR #14, merged after three review rounds). Decision: the user fixed the headline score as "rebuild the partner from DINOv3" and signed off; the lead had recommended the other direction. Handed to the implementation session as direction only.
+- Wrote a dated note on decision 004 (PR #16). The reviewer caught two overstatements, now fixed; the note leaves open whether the pair-harm measure becomes the paper's headline.
+- Open loops: PR #16 is open and waits on the user's "merge" (then pull, remove worktree agent-a63dd9603a5fb2949). This session's closing chore merge is on local main, not pushed. Ask the mentor on 2026-11-11 whether the pair-harm measure is in this paper and whether it is the headline. The overlap code and CPU Job need the user's go in the implementation window. The full Table 10 design waits a few days for the authors' reply.
+- See: world-model-stacking-encoders/writing/2026-11-09-path-to-paper.md, world-model-stacking-encoders/experiments/2026-11-10-feature-overlap/PLAN.md, world-model-stacking-encoders/PLAN.md (Next 5, Next 6), world-model-stacking-encoders/LOG.md (2026-11-10 [agent, lead, planning] entries), https://github.com/michaelnkr808/research26-27/pull/16

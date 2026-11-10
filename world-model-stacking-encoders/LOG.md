@@ -1668,3 +1668,15 @@ Reviews were read-only; findings reported by subagents, spot-checked by the lead
 **PR:** direct.
 **Next:** the user picks: refreshed Noise Check and Disturbed Scenes lines (re-read the two experiment LOGs first), the two optional figures (worker plus reviewer, PR route, Desktop copy), or a review of a new deck export.
 **Open questions:** none new.
+
+## 2026-11-10 [agent, lead, planning] (session close: decisions/004 note in PR #16, open; overlap design handed off)
+**Goal:** finish the loose ends of the feature-overlap sign-off and close the planning session.
+**Did (verified):**
+- Handed the feature-overlap design to the implementation session (`vis-implementation-agent`) as direction only: code and tests by PR, a local timing and memory measurement of the largest pair, then one CPU Job, each on the user's own go in that window. The message was delivered to that session's inbox; no reply was asked for.
+- A worker wrote the dated note on `decisions/004-paper-framing-case-study.md` (additions only, commits 0a083f6 and a912b65). A fresh read-only reviewer fact-checked it against LOG, PLAN, the experiment PLAN and the path memo and found two overstatements: the note said decision 004 names three endings (they are in `writing/2026-11-09-path-to-paper.md`, a memo that decides nothing), and it said the case study "stays the paper's core", which no source records. The fix cites the memo, removes the "core" sentence, and adds a "Still open" bullet: whether PLAN Next 5 comes into this paper, and whether a pair-harm measure becomes the headline, is a gate for the user and the mentor. The lead read the fixed diff; it did not go back to the reviewer for a second pass.
+- The user chose in chat (2026-11-10) to leave PR #16 open at session close.
+**PR:** #16 (open, review posted as a PR comment, waiting on the user's merge OK); this entry and the PLAN line: direct (chore branch merged locally at the user's choice; not pushed by this session, the close skill does not push).
+**Found:** nothing; no result, no number.
+**Test-set use:** none.
+**Next:** on the user's "merge" in a planning session's chat: `gh pr merge 16 --merge --delete-branch`, pull main, remove the worker worktree `.claude/worktrees/agent-a63dd9603a5fb2949`, record the merge here. Push main (this chore merge is local only). After the 2026-11-11 mentor meeting, record the answer to the open gate (is the pair-harm measure in this paper, and is it the headline). The full Table 10 design (PLAN Next 5) waits a few days for the authors' reply (PLAN Next 6).
+**Open questions:** the mentor gate above; whether the authors reply; older items still waiting on the user's say-so: dated correction notes for "L is the paper's best pair" (tally README, hypotheses draft, decision 003), Kornblith et al. 2019 for `references.bib` (literature session's area), the README headline re-read after the control-partners results, rerun of `power_seeds.py` after the 16-layer retrain.
