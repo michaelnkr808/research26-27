@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""pfb-jobs done-check helper: parse every job-pfb-*.yaml (nine expected), extract the container script, run bash -n, check the resource, policy and phase-B rules.
+"""pfb-jobs done-check helper: parse every job-pfb-*.yaml (nine expected, plus the optional RTX A6000 twin of the render Job, job-pfb-render-a6000.yaml), extract the container script, run bash -n, check the resource, policy and phase-B rules.
 Usage: check-pfb-jobs.py <jobs dir> <scratch dir> [<src dir>]    (src dir default: ../../../src of this file; used to cross-check the CLI flags the scripts pass)
 Started from check-pfa-jobs.py (same checks), plus the phase-B specifics: pinned digest in every Job and IMAGE_DIGEST equal to it in the render Job; per-condition staging paths;
 --consistency-ref on every test render and --expect-draws on every perturbed one; --config /pf/phase-a.yaml everywhere; revision asserts; no sleep/while/until; CPU Jobs without GPU."""
@@ -134,6 +134,8 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
         msgs.append("no us-west")
     req_terms = pod["affinity"]["nodeAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"]
     req_exprs = [me for t in req_terms for me in t.get("matchExpressions", [])]
+    if is_render and len(req_terms) != 1:
+        msgs.append(f"render manifest must have exactly one required nodeSelectorTerm (terms are ORed), found {len(req_terms)}")
     has_req_region = any(me.get("key") == "topology.kubernetes.io/region" for me in req_exprs)
     if is_twin:
         # twin: no gpu.product, no required region, driver rule and excluded hosts kept, soft us-west preference weight 100
@@ -339,6 +341,25 @@ if TWIN in docs_by_name and ORIGINAL in docs_by_name:
     a, b = docs_by_name[ORIGINAL], docs_by_name[TWIN]
     ca, cb = a["spec"]["template"]["spec"]["containers"][0], b["spec"]["template"]["spec"]["containers"][0]
     tmsgs = []
+    def norm_pod(d_):
+        """The whole pod spec without the affinity and without the GPU resource key, for the twin comparison."""
+        import copy
+        ps = copy.deepcopy(d_["spec"]["template"]["spec"])
+        ps.pop("affinity", None)
+        for sect in ("requests", "limits"):
+            for k in ("nvidia.com/gpu", TWIN_RESOURCE):
+                ps["containers"][0]["resources"][sect].pop(k, None)
+        return ps
+    if norm_pod(a) != norm_pod(b):
+        tmsgs.append("pod spec differs beyond affinity and the GPU resource key (for example a pod-level nodeSelector or priorityClassName)")
+    if a["spec"]["template"].get("metadata") != b["spec"]["template"].get("metadata"):
+        tmsgs.append("pod template metadata differs")
+
+    def hosts(d_):
+        t = d_["spec"]["template"]["spec"]["affinity"]["nodeAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"]
+        return sorted(v for term in t for me in term.get("matchExpressions", []) if me.get("key") == "kubernetes.io/hostname" and me.get("operator") == "NotIn" for v in me["values"])
+    if hosts(a) != hosts(b):
+        tmsgs.append(f"excluded hosts differ: original {hosts(a)}, twin {hosts(b)}")
     if ca["args"] != cb["args"]:
         tmsgs.append("script differs from the original")
     if ca["env"] != cb["env"] or ca["image"] != cb["image"] or ca["command"] != cb["command"] or ca["volumeMounts"] != cb["volumeMounts"]:
@@ -354,6 +375,6 @@ if TWIN in docs_by_name and ORIGINAL in docs_by_name:
         tmsgs.append("Job spec (deadline, ttl, backoff) differs")
     print("twin vs original:", "identical apart from name, GPU resource name and affinity" if not tmsgs else "PROBLEMS: " + "; ".join(tmsgs))
     bad += bool(tmsgs)
-print(f"Jobs: {len(names)}; GPUs if all ran at once: {total_gpu} (the A6000 twin is not counted: it races the original and the loser is deleted, so at most one of the pair runs)")
+print(f"Jobs: {len(names)}; GPUs if all ran at once: {total_gpu}" + (" (the A6000 twin is not counted: it races the original and the loser is deleted, so at most one of the pair runs)" if TWIN in docs_by_name else ""))
 print("TOTAL problems:", bad)
 sys.exit(1 if bad else 0)
