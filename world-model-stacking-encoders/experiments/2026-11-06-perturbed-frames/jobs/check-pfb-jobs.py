@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """pfb-jobs done-check helper: parse every job-pfb-*.yaml (nine expected, plus the optional RTX A6000 twin of the render Job, job-pfb-render-a6000.yaml, plus the recovery Job job-pfb-recover.yaml), extract the container script, run bash -n, check the resource, policy and phase-B rules.
-Usage: check-pfb-jobs.py <jobs dir> <scratch dir> [<src dir>]    (src dir default: ../../../src of this file; used to cross-check the CLI flags the scripts pass)
+Usage: check-pfb-jobs.py [--rendered] <jobs dir> <scratch dir> [<src dir>]    (src dir default: ../../../src of this file; used to cross-check the CLI flags the scripts pass)
+With --rendered a manifest may be a submit-time copy: SRC_GIT_COMMIT must then be 40 hex characters and NOISE_CAP (render-type Jobs) digits, with no FILL_AT_SUBMIT left in a value; a manifest that still has the placeholders is checked as before.
 Started from check-pfa-jobs.py (same checks), plus the phase-B specifics: pinned digest in every Job and IMAGE_DIGEST equal to it in the render Job; per-condition staging paths;
 --consistency-ref on every test render and --expect-draws on every perturbed one; --config /pf/phase-a.yaml everywhere; revision asserts; no sleep/while/until; CPU Jobs without GPU."""
 import glob
@@ -11,6 +12,8 @@ from pathlib import Path
 
 import yaml
 
+RENDERED = "--rendered" in sys.argv
+sys.argv = [a for a in sys.argv if a != "--rendered"]
 jobs = Path(sys.argv[1])
 scratch = Path(sys.argv[2])
 scratch.mkdir(parents=True, exist_ok=True)
@@ -103,7 +106,11 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
         msgs.append("IMAGE_DIGEST env differs from the image")
     if is_render and envd.get("IMAGE_DIGEST") != DIGEST:
         msgs.append("IMAGE_DIGEST is not the pinned digest")
-    if envd.get("SRC_GIT_COMMIT") != "FILL_AT_SUBMIT":
+    filled = RENDERED and envd.get("SRC_GIT_COMMIT") != "FILL_AT_SUBMIT"    # a submit-time copy (comments may still say FILL_AT_SUBMIT; values must not)
+    if filled:
+        if not re.fullmatch(r"[0-9a-f]{40}", str(envd.get("SRC_GIT_COMMIT"))):
+            msgs.append(f"rendered: SRC_GIT_COMMIT env {envd.get('SRC_GIT_COMMIT')!r} is not 40 hex characters")
+    elif envd.get("SRC_GIT_COMMIT") != "FILL_AT_SUBMIT":
         msgs.append("SRC_GIT_COMMIT env is not FILL_AT_SUBMIT")
     if envd.get("PYTHONPATH") != "/pf:/src":
         msgs.append(f"PYTHONPATH env {envd.get('PYTHONPATH')!r}")
@@ -170,6 +177,8 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
     if spec.get("ttlSecondsAfterFinished") is None or not spec.get("activeDeadlineSeconds"):
         msgs.append("ttl or deadline missing")
     script = c["args"][0]
+    if filled and re.search(r"=FILL_AT_SUBMIT\b|value: FILL_AT_SUBMIT", script + str(c["env"])):
+        msgs.append("rendered: a FILL_AT_SUBMIT placeholder is still used as a value")
     sp = scratch / (Path(f).stem + ".sh")
     sp.write_text(script)
     r = subprocess.run(["bash", "-n", str(sp)], capture_output=True, text=True)
@@ -237,8 +246,8 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
             msgs.append(f"render conditions {seen}" + (" (the recovery Job may render noise only)" if is_recover else ""))
         if "PA=$R/pf-main/phase-a" not in script or "R=/mnt/proxy" not in script:
             msgs.append("PA is not /mnt/proxy/pf-main/phase-a")
-        if not re.search(r"^ *NOISE_CAP=FILL_AT_SUBMIT$", script, re.M):
-            msgs.append("NOISE_CAP variable missing or not the FILL_AT_SUBMIT placeholder")
+        if not re.search(r"^ *NOISE_CAP=" + (r"[0-9]+" if filled else "FILL_AT_SUBMIT") + "$", script, re.M):
+            msgs.append("NOISE_CAP variable missing or not " + ("a number (rendered copy)" if filled else "the FILL_AT_SUBMIT placeholder"))
         if "case \"$NOISE_CAP\" in" not in script or "exit 11" not in script.split("case \"$NOISE_CAP\" in", 1)[-1][:300]:
             msgs.append("no NOISE_CAP abort guard (exit 11)")
         if not re.search(r"^ *CONDS=\"clean camera light background noise\"$", script, re.M):
@@ -413,6 +422,9 @@ if RECOVER in docs_by_name and ORIGINAL in docs_by_name:
         d2 = copy.deepcopy(d_)
         d2["metadata"].pop("name")
         d2["spec"]["template"]["spec"]["containers"][0].pop("args")
+        for e_ in d2["spec"]["template"]["spec"]["containers"][0]["env"]:
+            if e_["name"] == "SRC_GIT_COMMIT":
+                e_["value"] = None    # a submit-time copy carries the filled commit (checked above)
         return d2
     if norm(a) != norm(b):
         rmsgs.append("manifest differs from the render Job beyond name and script (node rule, resources, env, volumes, deadline or ttl)")
