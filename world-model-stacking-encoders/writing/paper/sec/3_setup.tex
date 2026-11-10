@@ -1,0 +1,16 @@
+% Owner: the draft session drafts; the user edits. State: mostly ready; the proxy's final depth waits on the retrain (M3).
+% Sources: literature/ (paper note, Table 1 and 10 CSVs, encoder-weights.md), data/README.md,
+% decisions/002 and 003, experiments/2026-10-27-proxy-calibration/PLAN.md ("Framing", "Choice" lines, "Step 1 findings").
+% About 1 page.
+\section{Setup}
+\label{sec:setup}
+
+\TODO{The source paper: its WAM, how it stacks encoders (channel-wise at matching latent grid locations), its Table 1 and Table 10 numbers for our four partners.}
+
+\TODO{Encoders: DINOv3, C-RADIOv4, SigLIP 2, SAM 3, VGGT-Omega; checkpoints and licenses. Spell names out; one-letter codes only inside tables.}
+
+\TODO{Data: LIBERO-Goal demos for the frozen-feature tests; the four LIBERO suites for proxy training; LIBERO-Plus for evaluation.}
+
+\TODO{Our proxy and how it differs from the paper: built on Fast-WAM; Wan 2.2 VAE latents; T5 text encoder; flow matching; no pretrained video prior; smaller; per-source z-scoring and grid resizing where the paper is silent. Final depth after Amendment (c) waits on the retrain.}
+
+\TODO{Pre-registration: every decision rule was fixed before its results; the dated trail is in the supplement.}
