@@ -104,9 +104,9 @@ On S2 (primary), C-RADIOv4 is the highest of the four partners, by a margin larg
 
 ### Outcome rule (on S2, fold 1, global features, 2,000 paired draws; applied word for word)
 Gates first (controls, above). Then, for the four real partners:
-- **Flags D+R:** C-RADIOv4 has the highest S2; the paired difference S2(R) minus S2(second highest) has a 95% interval whose lower end is above 0; C-RADIOv4 is also highest in point value in folds 2 and 3; and C-RADIOv4 is also highest on the headroom score (S2 minus the trivial-structure baseline, fold 1, point value).
-- **Does not flag:** some other partner X has the paired difference S2(X) minus S2(R) with a 95% interval whose lower end is above 0 (the redundancy score puts a different partner clearly ahead of C-RADIOv4).
-- **Unresolved:** anything else (C-RADIOv4 first only in point value, an interval on its margin that contains 0, or first in fold 1 but not in folds 2 or 3 or on headroom).
+- **Flags D+R:** C-RADIOv4 has the highest S2; in every one of the 2,000 paired draws take the smallest of the three differences S2(R) minus S2(X), X over the other three partners; the 2.5th percentile of that smallest difference is above 0 (this accounts for the runner-up being picked from the same data; a plain 95% interval on the margin to the observed second place would be too optimistic); C-RADIOv4 is also highest in point value in folds 2 and 3; and C-RADIOv4 is also highest on the headroom score (S2 minus the trivial-structure baseline, fold 1, point value).
+- **Does not flag:** for some other partner X, the paired difference S2(X) minus S2(R) has a 98.3% interval (95% corrected for the three comparisons) whose lower end is above 0 (the redundancy score puts a different partner clearly ahead of C-RADIOv4).
+- **Unresolved:** anything else (C-RADIOv4 first only in point value, a margin interval that contains 0, or first in fold 1 but not in folds 2 or 3 or on headroom).
 
 Chance: if the score were random, C-RADIOv4 would be the highest of four 1 time in 4; the interval and fold requirements make a chance "flags" rarer, by an amount not computed here. With four partners and one harmful label, even "flags" is a tally entry.
 
