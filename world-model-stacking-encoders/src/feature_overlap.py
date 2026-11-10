@@ -43,6 +43,8 @@ diagnostics.load (noise:4608, dup:dinov3, randproj:dinov3:4608, shuffle:dinov3),
 import argparse
 import itertools
 import json
+import resource
+import sys
 import time
 from pathlib import Path
 
@@ -347,6 +349,8 @@ def main():
     res["alpha_edge_hits"] = [f"{t}|{k}|{what}" for t, r in res["types"].items() for k, dr in r["directions"].items()
                               for what, hit in dr["alpha_at_grid_edge"].items() if hit]
     res["seconds"] = time.time() - t0
+    # ru_maxrss is bytes on macOS and KiB on Linux; macOS undercounts a Linux run (project memory), so this is a floor
+    res["peak_rss_gib"] = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (2 ** 30 if sys.platform == "darwin" else 2 ** 20)
     log(f"alpha at grid edge: {res['alpha_edge_hits'] or 'none'}; test evaluations {n_eval}")
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     if args.save_draws:
