@@ -28,7 +28,7 @@ From camera frames, the robot state and T5-encoded instructions~\TODO{cite}, the
 Each encoder's final-layer token features are aligned to the VAE latent grid and concatenated with the VAE latents along the channel dimension.
 The features enter twice: features of the current frame as clean inputs, and features of future frames as noised targets that the model learns to predict.
 Each encoder has its own flow-matching loss~\TODO{cite} on its future features, and these losses are summed, by default with weight 1.0.
-The model is trained once on 1,712 LIBERO episodes~\TODO{cite LIBERO} and scored on the 10,030 episodes of LIBERO-Plus~\TODO{cite LIBERO-Plus}, which change the camera, the robot's initial state, the instruction, the lighting, the background, the sensor noise or the object layout, under three evaluation seeds.
+The model is trained once on 1,712 LIBERO episodes~\cite{liu2023libero} and scored on the 10,030 episodes of LIBERO-Plus~\cite{fei2025liberoplus}, which change the camera, the robot's initial state, the instruction, the lighting, the background, the sensor noise or the object layout, under three evaluation seeds.
 Each configuration is one trained checkpoint; the three seeds vary only the evaluation.
 In the paper, DINOv3 alone reaches 84.0\% total success on LIBERO-Plus and C-RADIOv4 alone 83.5\%, but the two stacked together reach 78.6\%: below either one alone, and the only one of the seven DINOv3 pairs that falls below DINOv3 alone.
 The paper explains its composition results qualitatively, by overlap in pretraining objectives, and notes that C-RADIOv4 distills DINOv3, SigLIP~2 and SAM~3~\cite{liu2026what,ranzinger2026cradiov4}.
@@ -61,7 +61,7 @@ All encoders stay frozen. Model revisions and licenses are listed in the supplem
 % split"; 1,712 processed LIBERO episodes) and App. C.2 (50 rollouts per task); our proxy holds out no validation
 % episodes (PR #20 reviewer, src/fastwam_data.py and proxy_wam.py).
 \paragraph{Data.}
-The frozen-feature tests use the LIBERO-Goal demonstrations~\TODO{cite LIBERO}: 10 tasks, 500 demonstrations and 63,728 time steps, each step with an agent-view and a wrist image at 128$\times$128 pixels and the 7-dimensional action the human teleoperator recorded.
+The frozen-feature tests use the LIBERO-Goal demonstrations~\cite{liu2023libero}: 10 tasks, 500 demonstrations and 63,728 time steps, each step with an agent-view and a wrist image at 128$\times$128 pixels and the 7-dimensional action the human teleoperator recorded.
 We split by demonstration within each task (the last 20\% for testing, the 20\% before that for validation, the rest for training; 100 test demonstrations), so no demonstration is split across sets.
 The proxy trains on all 1,712 episodes of Fast-WAM's regenerated release of the four LIBERO suites~\TODO{cite Fast-WAM}, the set the paper reports, at 224$\times$224 pixels per camera.
 The paper counts these episodes before a validation split; we hold none out.
@@ -123,8 +123,10 @@ Rollouts follow Fast-WAM's LIBERO evaluation and the paper's composition setting
 % line 18. Amendment (c) also fixed the level target 27 and the secondary 6A reading after the first full-length
 % means were read (proxy PLAN 338, 385); the retrain has not run (PLAN.md line 11). Render tolerance: perturbed
 % PLAN Amendment 2026-11-09 (d), line 542 on. Stove test-demo load: perturbed LOG line 204 (no output saved).
-% Left to the user (see the TODO): the seed-noise threshold and floor were locked on the user's silence
-% (reviews/2026-11-09-synthesis.md decision 1, open); proxy LOG 2026-11-06 line 438.
+% Not in the main text (user, 2026-11-10: supplement only): the seed-noise threshold and floor were locked on the
+% user's silence (reviews/2026-11-09-synthesis.md decision 1, open); proxy LOG 2026-11-06 line 438.
+% LIBERO and LIBERO-Plus cited: the user, 2026-11-10, "I read both, cite them" (resolves the bib note vs LOG line 413
+% conflict; the bib note fields are the literature session's to update).
 \paragraph{Rules fixed in advance.}
 For each test with a decision rule (the target-side test, the perturbed-frame test, the control partners and the proxy replication), the rule was committed to our repository before the data it decides were read.
 The input-side test fixed its design in advance but had no decision rule.
@@ -140,4 +142,4 @@ How much our re-rendered frames may differ between two rendering runs was also s
 Both changes came before any test-set result.
 Before a loader fix, an early script loaded one task's test demonstrations into memory and began encoding them; it was stopped and no output was saved.
 The control-partner margins were set from the real partners' values, which were already known.
-\TODO{Whether to disclose here, in the supplement only, or not at all: the seed-noise threshold and floor were fixed before the two DINOv3 runs were compared, but the approval was not recorded in words (user's call).}
+% Seed-noise approval record: supplement only (user, 2026-11-10, "Supplement only"); see sec/X_suppl.tex.
