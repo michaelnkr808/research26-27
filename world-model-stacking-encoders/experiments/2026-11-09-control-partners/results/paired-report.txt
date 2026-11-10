@@ -96,8 +96,27 @@
   (c) dup:dinov3 is the same features as DINOv3, so its probe predictions equal DINOv3's and R2(D) - R2(X) must be 0 in every draw:
       dup:dinov3: max abs q 0.000e+00
   [pass] dup:dinov3 R2(D) - R2(X) is exactly 0 in every draw (shows the two probes inside that run saw the same weights; not a cross-run test)
-  What is not shown by the files alone: that the weights of the c-radiov4 and randproj runs equal the others' draw by draw. It rests on (a), the code, and the identical
-  recorded seed, n_boot and test-demo count; (a) is the supporting evidence (a bootstrap CI matching to the last digit would not be expected under different weights; an expectation, not a proof).
+      The thresholds in (b) (corr > 0.9999, ratio < 0.01) were chosen after seeing the data.
+  (d) Data-level test for all ten arrays. Rebuild the weights exactly as bootstrap_r2 does (one default_rng(0), one multinomial(100, 1/100, size=1000) call).
+      Each saved array is a smooth function of the weights of its own draw, so a linear regression of the array on the weight matrix, fitted on the first 700
+      draws and scored (out-of-sample R2) on the last 300, should predict well in generator order and not when the draw order is scrambled.
+      Criterion, written down before this script's own output was looked at but after the reviewer's numbers were known (in-order 0.942 to 0.988; best of 20
+      permutations -0.08 or worse; shifted -0.15): in-order score above 0.8, and every one of 20 permuted orders (permutation seeds 0..19) and the shift-by-one below 0.2.
+      control                array                             in order  best of 20 permuted  shifted by 1
+      noise:4608             dinov3|noise:4608|global            0.9412              -0.0565       -0.1052
+      noise:4608             noise:4608|dinov3|global            0.9658              -0.0990       -0.1998
+      dup:dinov3             dinov3|dup:dinov3|global            0.9664              -0.0479       -0.2087
+      dup:dinov3             dup:dinov3|dinov3|global            0.9664              -0.0479       -0.2087
+      randproj:dinov3:4608   dinov3|randproj:dinov3:4608|global    0.9558              -0.0769       -0.1145
+      randproj:dinov3:4608   randproj:dinov3:4608|dinov3|global    0.9885              -0.0799       -0.2779
+      shuffle:dinov3         dinov3|shuffle:dinov3|global        0.9539              -0.0688       -0.1316
+      shuffle:dinov3         shuffle:dinov3|dinov3|global        0.9696              -0.0903       -0.2037
+      c-radiov4              dinov3|c-radiov4|global             0.9860              -0.0651       -0.1331
+      c-radiov4              c-radiov4|dinov3|global             0.9870              -0.0352       -0.1472
+  [pass] all ten arrays: in-order out-of-sample R2 above 0.8 and permuted/shifted below 0.2
+      Limit: this is statistical, not bit-exact per draw. Bit-exact identity rests on the code: one generator, one multinomial call, nothing partner-dependent
+      drawing from it, the same demo order (all five JSONs record the same frames, split, files and 100 test demos), and the same NumPy and source version in one pod.
+  With (a) to (d), pairing follows from the code and is confirmed at data level for all five files; (a) to (c) are the weaker earlier checks.
 
 4. Paired difference gain(C-RADIOv4|DINOv3) minus gain(control|DINOv3), per draw (95% interval: same np.quantile method)
   gain(C-RADIOv4|DINOv3): point +0.037096 (rerun JSON), CI from draws [+0.032483, +0.042330]
@@ -106,6 +125,7 @@
   dup:dinov3                       +0.002794          +0.034302         [+0.029634, +0.039448]      +0.034509               1.000
   randproj:dinov3:4608             +0.001104          +0.035993         [+0.031451, +0.041356]      +0.036240               1.000
   shuffle:dinov3                   -0.003106          +0.040202         [+0.035454, +0.045579]      +0.040393               1.000
+  For scale only (not a result): scrambling the draw order of the noise array (permutation seed 777) gives an interval [+0.058857, +0.070606] against the paired [+0.058410, +0.070880].
 
   PLAN note (Predictions, input side, 'below -0.005 with CI under 0'): R's +0.037 is information on top of a width penalty (paired difference larger than +0.037).
   paired difference against noise:4608: point +0.063996, interval [+0.058410, +0.070880];

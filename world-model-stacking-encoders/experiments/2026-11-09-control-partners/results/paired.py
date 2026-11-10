@@ -98,7 +98,7 @@ for c, (npz, jf) in CONTROLS.items():
     z = np.load(NPZDIR / npz)
     draws[c] = {k: z[k] for k in z.files}
     js[c] = json.loads((HERE / jf).read_text())
-    expect = {f"dinov3|{('c-radiov4' if c == 'c-radiov4' else c)}|global", f"{('c-radiov4' if c == 'c-radiov4' else c)}|dinov3|global"}
+    expect = {f"dinov3|{c}|global", f"{c}|dinov3|global"}
     check(set(draws[c]) == expect and all(v.shape == (N_BOOT,) and v.dtype == np.float64 for v in draws[c].values()),
           f"{npz}: keys {sorted(draws[c])}, each float64 x {N_BOOT}")
     check(js[c]["n_boot"] == N_BOOT and js[c]["seed"] == SEED and js[c]["n_test_demos"] == N_TEST_DEMOS,
@@ -117,7 +117,7 @@ for c in CONTROLS:
         diff = max(abs(got[0] - pr["gain_ci95"][0]), abs(got[1] - pr["gain_ci95"][1]))
         say(f"  {c:22s} {k:28s} [{pr['gain_ci95'][0]:+.6f}, {pr['gain_ci95'][1]:+.6f}] [{got[0]:+.6f}, {got[1]:+.6f}] {diff:.2e}")
         check(diff < tol, f"{c}: CI of {k} from draws equals the JSON gain_ci95 (diff {diff:.2e} < {tol:g})")
-    # the JSON also holds asym_ci95 = CI of draws[X|t] - draws[D|t] = R2(X) - R2(D) = g(D|... ) difference of the two gains
+    # the JSON also holds asym_ci95 = CI of R2(X) - R2(D), which equals the CI of (gain(X|D) draws - gain(D|X) draws)
     g1 = draws[c][f"dinov3|{c}|global"]
     g2 = draws[c][f"{c}|dinov3|global"]
     ac = ci(g1 - g2)
@@ -166,8 +166,36 @@ say("  (c) dup:dinov3 is the same features as DINOv3, so its probe predictions e
 dq = q["dup:dinov3"]
 say(f"      dup:dinov3: max abs q {np.abs(dq).max():.3e}")
 check(np.abs(dq).max() == 0.0, "dup:dinov3 R2(D) - R2(X) is exactly 0 in every draw (shows the two probes inside that run saw the same weights; not a cross-run test)")
-say("  What is not shown by the files alone: that the weights of the c-radiov4 and randproj runs equal the others' draw by draw. It rests on (a), the code, and the identical")
-say("  recorded seed, n_boot and test-demo count; (a) is the supporting evidence (a bootstrap CI matching to the last digit would not be expected under different weights; an expectation, not a proof).")
+say("      The thresholds in (b) (corr > 0.9999, ratio < 0.01) were chosen after seeing the data.")
+say("  (d) Data-level test for all ten arrays. Rebuild the weights exactly as bootstrap_r2 does (one default_rng(0), one multinomial(100, 1/100, size=1000) call).")
+say("      Each saved array is a smooth function of the weights of its own draw, so a linear regression of the array on the weight matrix, fitted on the first 700")
+say("      draws and scored (out-of-sample R2) on the last 300, should predict well in generator order and not when the draw order is scrambled.")
+say("      Criterion, written down before this script's own output was looked at but after the reviewer's numbers were known (in-order 0.942 to 0.988; best of 20")
+say("      permutations -0.08 or worse; shifted -0.15): in-order score above 0.8, and every one of 20 permuted orders (permutation seeds 0..19) and the shift-by-one below 0.2.")
+IN_MIN, PERM_MAX, N_PERM = 0.8, 0.2, 20
+tr, te = np.arange(0, 700), np.arange(700, 1000)
+XW = np.column_stack([np.ones(N_BOOT), w])
+
+
+def oos_r2(y):
+    beta = np.linalg.lstsq(XW[tr], y[tr], rcond=None)[0]
+    res = y[te] - XW[te] @ beta
+    return 1 - (res ** 2).sum() / ((y[te] - y[te].mean()) ** 2).sum()
+
+
+say(f"      {'control':22s} {'array':32s} {'in order':>9s} {'best of 20 permuted':>20s} {'shifted by 1':>13s}")
+all_ok = True
+for c in CONTROLS:
+    for k, y in draws[c].items():
+        r_in = oos_r2(y)
+        r_perm = max(oos_r2(y[np.random.default_rng(i).permutation(N_BOOT)]) for i in range(N_PERM))
+        r_sh = oos_r2(np.roll(y, 1))
+        all_ok &= bool(r_in > IN_MIN and r_perm < PERM_MAX and r_sh < PERM_MAX)
+        say(f"      {c:22s} {k:32s} {r_in:9.4f} {r_perm:20.4f} {r_sh:13.4f}")
+check(all_ok, f"all ten arrays: in-order out-of-sample R2 above {IN_MIN} and permuted/shifted below {PERM_MAX}")
+say("      Limit: this is statistical, not bit-exact per draw. Bit-exact identity rests on the code: one generator, one multinomial call, nothing partner-dependent")
+say("      drawing from it, the same demo order (all five JSONs record the same frames, split, files and 100 test demos), and the same NumPy and source version in one pod.")
+say("  With (a) to (d), pairing follows from the code and is confirmed at data level for all five files; (a) to (c) are the weaker earlier checks.")
 if fails:
     say("PAIRING CHECK FAILED: no paired interval computed.")
     sys.exit(1)
@@ -188,6 +216,9 @@ for c in ["noise:4608", "dup:dinov3", "randproj:dinov3:4608", "shuffle:dinov3"]:
     lo, hi = ci(d)
     res[c] = (pc, pR - pc, lo, hi)
     say(f"  {c:22s} {pc:+19.6f} {pR - pc:+18.6f} {'[%+.6f, %+.6f]' % (lo, hi):>30s} {d.mean():+14.6f} {(d > 0).mean():19.3f}")
+perm0 = np.random.default_rng(777).permutation(N_BOOT)
+dsc = gR - draws["noise:4608"]["dinov3|noise:4608|global"][perm0]
+say(f"  For scale only (not a result): scrambling the draw order of the noise array (permutation seed 777) gives an interval [{ci(dsc)[0]:+.6f}, {ci(dsc)[1]:+.6f}] against the paired [{res['noise:4608'][2]:+.6f}, {res['noise:4608'][3]:+.6f}].")
 say()
 lo = res["noise:4608"][2]
 say(f"  PLAN note (Predictions, input side, 'below -0.005 with CI under 0'): R's +0.037 is information on top of a width penalty (paired difference larger than +0.037).")
