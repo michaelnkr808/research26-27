@@ -1630,3 +1630,12 @@ Reviews were read-only; findings reported by subagents, spot-checked by the lead
 **PR:** #12, #13 (merged); this entry and the PLAN line: direct.
 **Test-set use:** none.
 **Next:** draft `writing/paper/sec/3_setup.tex` on a new branch, fresh fact-check reviewer, PR.
+
+## 2026-11-10 [agent, lead, planning] (feature-overlap design merged)
+**Goal:** design the one-way overlap score on the four pairs already extracted (the user: "yeah sure go for it"), as groundwork for PLAN Next 5.
+**Did (verified):** a worker wrote `experiments/2026-11-10-feature-overlap/PLAN.md` (design only); three rounds of fresh read-only review, all posted on PR #14, fixes as new commits. The user chose the primary score and signed off in chat, 2026-11-10: "sure rebuild the partner from DINOv3 and I sign-off on the merge". So P = S2 = C(B in D); S1 and S3 are reported with no decision weight. The lead had recommended S1; the choice is the user's. Commit 695814b records the decision and its consequences (headroom baseline applies, no width-matched runs, 26 invocations); the lead read that diff and it changes no gate, threshold or rule. Merged PR #14 (5612534), pulled main, removed the worker's worktree.
+**PR:** #14 (merged); this entry, the PLAN lines and the README key-files line: direct.
+**Found:** nothing; no code, no Job, no result. Blindness (as the design states it): no tally result JSON and no stored `pred_A_to_B_r2` value was opened by the lead, worker or reviewers during the design; the design notes that a crude all-dimensions DINOv3-to-partner order is already in this LOG (entry 2026-10-21 (i)) and that S2's crude ordering is therefore not unseen in the record.
+**Test-set use:** none.
+**Next:** hand the design to the implementation session (direction only): code and tests by PR, a local timing and memory measurement, then one CPU Job on the user's own go in that window, after the control-partners work. Still open from this session: the dated note on decisions/004 (by PR); the full Table 10 design waits on the authors' reply.
+**Open questions:** design open questions 2 to 5 (see the experiment PLAN "Open questions for the user at sign-off") if any were left unanswered at sign-off; the prior-art check and Kornblith et al. 2019 for `references.bib` (literature session's area).
