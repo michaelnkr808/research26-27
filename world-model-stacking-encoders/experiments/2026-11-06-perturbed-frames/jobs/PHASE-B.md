@@ -16,6 +16,8 @@ Test-set use (`_standards/07`): **phase B is the first read of test demos.** The
 
 Config: `../config/phase-a.yaml`, **unchanged** (the consistency check compares its hash with phase A's report and stops if it differs). Helper scripts: `check-pfb-jobs.py` (static checks), `estimate_noise_time.py` (noise render estimate).
 
+**Note 2026-11-10:** the render Job (`job-pfb-render.yaml`) node rule was widened from L4 only to the five 24 GB cards (L4, A10, RTX A5000, RTX 3090, RTX 4090) after the first submission waited 7 h in Pending for an L4 (only two L4 nodes matched). The per-encoder extraction rates quoted for L4 in this file may differ on the other cards.
+
 **Jobs counted for the 20-Job gate** (`../../../STANDARDS.md`): phase B is **9 manifests**; phase A was 8 (the pilot ran), so **17 in all**, 3 under the gate. A rerun of any Job counts again (whether the smoke test and pf-val count toward the same sweep is not decided; with them the total would pass 20, so the lead should ask the user before submitting if the count matters). **Peak GPUs of ours: 7** (render + five SAM 3 + VGGT all at once), at most 7 under the 8-GPU cap only if no eval pod holds a GPU; see section 4.
 
 ## 2. ConfigMap (not created; run by the lead after the user's go)
