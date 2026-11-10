@@ -41,6 +41,7 @@ diagnostics.load (noise:4608, dup:dinov3, randproj:dinov3:4608, shuffle:dinov3),
 """
 
 import argparse
+import hashlib
 import itertools
 import json
 import resource
@@ -71,6 +72,8 @@ def fold_blocks(n, fold):
     tb, vb = FOLDS[fold]
     ts = n - n_test if tb == 5 else (tb - 1) * n_test
     vs = n - n_test - n_val if vb == 4 else (vb - 1) * n_val
+    if fold == 3:  # block 4 starts at n - n_test - n_val, which reaches into test block 3 when n is not a multiple of 5
+        vs = max(vs, ts + n_test)
     te, va = range(ts, ts + n_test), range(vs, vs + n_val)
     assert 0 <= ts and ts + n_test <= n and 0 <= vs and vs + n_val <= n and not set(te) & set(va), (n, fold, te, va)
     return te, va
@@ -265,7 +268,9 @@ def aux_features(index, proprio):
     return np.concatenate([task, frac, proprio.astype(np.float32)], axis=1)
 
 
-def run_type(feats, split, index, groups, aux, base, partner, t, m, n_boot, seed, log):
+def run_type(feats, split, index, groups, aux, base, partner, t, m, n_boot, seed, log, show_scores=True):
+    """show_scores False (real partners): the log gets timing, alpha, grid-edge flags and coverage only, no scores
+    (PLAN blindness: controls are read before any real-pair number is seen). The result JSON is the same either way."""
     x = {e: np.concatenate([feats[e][t][c] for c in D.CAMS], axis=1) for e in (base, partner)}
     te_groups = np.unique(groups[split == "test"])
     w = boot_weights(len(te_groups), n_boot, seed)
@@ -276,9 +281,14 @@ def run_type(feats, split, index, groups, aux, base, partner, t, m, n_boot, seed
         r["source"], r["target"], r["seconds"] = src, tgt, time.time() - tl
         out["directions"][f"{src}->{tgt}"] = r
         draws.update({f"{t}|{src}->{tgt}|{k}": v for k, v in d.items()})
-        log(f"{t} C({tgt} in {src}): score {r['score']['value']:+.4f} CI95 {r['score']['ci95'][0]:+.4f}..{r['score']['ci95'][1]:+.4f} "
-            f"pooled {r['score_pooled']['value']:+.4f} alldims {r['alldims']['value']:+.4f} baseline {r['baseline']['value']:+.4f} "
-            f"coverage {r['coverage']:.3f} alpha {r['alpha']['primary']} ({time.time() - tl:.0f}s)")
+        edges = [k for k, hit in r["alpha_at_grid_edge"].items() if hit]
+        if show_scores:
+            log(f"{t} C({tgt} in {src}): score {r['score']['value']:+.4f} CI95 {r['score']['ci95'][0]:+.4f}..{r['score']['ci95'][1]:+.4f} "
+                f"pooled {r['score_pooled']['value']:+.4f} alldims {r['alldims']['value']:+.4f} baseline {r['baseline']['value']:+.4f} "
+                f"coverage {r['coverage']:.3f} alpha {r['alpha']['primary']} ({time.time() - tl:.0f}s)")
+        else:
+            log(f"{t} C({tgt} in {src}): scores withheld from the log; coverage {r['coverage']:.3f} alpha {r['alpha']} "
+                f"grid-edge {edges or 'none'} ({time.time() - tl:.0f}s)")
     s2, s1 = f"{base}->{partner}", f"{partner}->{base}"
     sc = {"S2": out["directions"][s2]["score"]["value"], "S1": out["directions"][s1]["score"]["value"]}
     s3_draws = draws[f"{t}|{s2}|score"] - draws[f"{t}|{s1}|score"]
@@ -289,9 +299,22 @@ def run_type(feats, split, index, groups, aux, base, partner, t, m, n_boot, seed
                  "ci95": out["directions"][s2]["score"]["ci95"]}
     out["S3"] = {"definition": "S2 - S1", "value": sc["S3"], "ci95": D.ci(s3_draws)}
     draws[f"{t}|S3|score"] = s3_draws
+    if base != "dinov3":
+        out["note"] = f"context pair: the base {base} is not DINOv3, so no primary score P applies; S1/S2/S3 are relative to {base}"
     out["test_evaluations"] = sum(d["test_evaluations"] for d in out["directions"].values())
-    log(f"{t} S1 {sc['S1']:+.4f} S2 {sc['S2']:+.4f} S3 {sc['S3']:+.4f} (CI95 S3 {out['S3']['ci95'][0]:+.4f}..{out['S3']['ci95'][1]:+.4f})")
+    if show_scores:
+        log(f"{t} S1 {sc['S1']:+.4f} S2 {sc['S2']:+.4f} S3 {sc['S3']:+.4f} (CI95 S3 {out['S3']['ci95'][0]:+.4f}..{out['S3']['ci95'][1]:+.4f})")
     return out, draws
+
+
+def test_demos(index, split):
+    """Ordered ids of the test demos (file/demo) and the sha256 of that ordered list, to check two runs share a test set."""
+    ids, start = [], 0
+    for stem, d, n in index:
+        if split[start] == "test":
+            ids.append(f"{stem}/{d}")
+        start += n
+    return {"ids": ids, "sha256": hashlib.sha256("\n".join(ids).encode()).hexdigest()}
 
 
 def main():
@@ -330,17 +353,18 @@ def main():
             log(f"{len(fsplit)} frames, {len(index)} demos from {len(files)} files, fold {args.fold}, split {counts}")
             res = {"suite": args.suite, "files": files, "base": args.base, "partner": args.partner,
                    "encoders": {e: meta[e] for e in args.encoders}, "git_commit": D.git_commit(),
-                   "config": {"plan": "experiments/2026-11-10-feature-overlap/PLAN.md", "primary": "S2 = C(partner in base)",
+                   "config": {"plan": "experiments/2026-11-10-feature-overlap/PLAN.md", "primary": ("S2 = C(partner in base)" if args.base == "dinov3" else
+                                          "none: the base is not DINOv3 (context pair), no primary score P applies"),
                               "fold": args.fold, "fold_blocks (test, val)": FOLDS[args.fold], "m": args.m,
                               "types": args.types, "primary_type": args.types[0], "alphas": D.ALPHAS, "seed": args.seed,
                               "synth_seed": args.synth_seed, "n_boot": args.n_boot, "n_boot_meets_standard": args.n_boot >= N_BOOT_MIN,
                               "feature_source": "both cameras concatenated, standardized on train frames"},
-                   "n_frames": len(fsplit), "split_frames": counts, "n_test_demos": int(len(np.unique(groups[fsplit == "test"]))),
+                   "test_demos": test_demos(index, fsplit), "n_frames": len(fsplit), "split_frames": counts, "n_test_demos": int(len(np.unique(groups[fsplit == "test"]))),
                    "types": {}}
             split0, index0 = fsplit, index
         assert np.array_equal(fsplit, split0) and index == index0, f"{t}: demo index differs between loads"
         res["types"][t], d = run_type(feats, fsplit, index, groups, aux_features(index, proprio), args.base, args.partner,
-                                      t, args.m, args.n_boot, args.seed, log)
+                                      t, args.m, args.n_boot, args.seed, log, show_scores=D.is_synthetic(args.partner))
         all_draws.update(d)
         n_eval += res["types"][t]["test_evaluations"]
         del feats

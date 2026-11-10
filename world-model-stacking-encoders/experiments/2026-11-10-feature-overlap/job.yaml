@@ -29,6 +29,9 @@ metadata:
   name: stacking-encoders-feature-overlap
   namespace: aria-world
 spec:
+  # NOT set: `priorityClassName: opportunistic`. _standards/08 line 81 says to use it for large CPU jobs, but it allows preemption
+  # at any time and this Job has no checkpointing, so a preemption would lose hours of work. DEVIATION from _standards/08 line 81,
+  # on purpose (the lead's decision, PR #21 review).
   # backoffLimit 0 as stage 2 of the control-partners experiment: a retry would hit the non-empty-output-folder abort and run
   # nothing, so a node loss means resubmitting under a new name and folder (03). DEVIATES from _standards/08 line 31.
   backoffLimit: 0
@@ -114,7 +117,7 @@ spec:
           echo "=== CONTEXT PAIRS (6 invocations, fold 1, global): the six pairs among the four partners, DINOv3 unstaged"
           unstage dinov3
           PARTNERS=(siglip2 sam3 vggt-omega c-radiov4)
-          for I in 0 1 2 3; do
+          for I in 0 1 2; do   # the last partner (c-radiov4) only appears as a Y; staging it as an X would pair it with nothing
             X=${PARTNERS[$I]}
             stage $X
             for J in 0 1 2 3; do
@@ -125,11 +128,17 @@ spec:
             unstage $X
           done
           echo "=== $(ls $OUT/overlap-*.json | wc -l) result JSON files (expected 26)"
-          for F in $OUT/overlap-*.json; do echo "=== result json $F"; cat $F; echo; done
+          # Blindness (PLAN, review of PR #21): only the four control JSONs are printed to the log. The real-pair and context
+          # JSONs are not printed anywhere in the log; they stay on the volume and come back in the tarball below.
+          echo "=== CONTROL result JSONs (controls are read first)"
+          for F in $OUT/overlap-libero_goal-dinov3-dup-*.json $OUT/overlap-libero_goal-dinov3-randproj-*.json \
+                   $OUT/overlap-libero_goal-dinov3-noise-*.json $OUT/overlap-libero_goal-dinov3-shuffle-*.json; do
+            echo "=== result json $F"; cat $F; echo
+          done
           echo "=== sha256 of every output file (regular files only)"; ls -l $OUT
           (cd $OUT && find . -maxdepth 1 -type f -exec sha256sum {} + | sort -k2)
-          echo "=== draws npz tarball"
-          find $OUT -maxdepth 1 -name 'draws-*.npz' -printf '%f\n' | sort > /work/npz.list
+          echo "=== results tarball (draws npz and ALL result JSONs; base64 below is not read until the controls are)"
+          find $OUT -maxdepth 1 \( -name 'draws-*.npz' -o -name 'overlap-*.json' \) -printf '%f\n' | sort > /work/npz.list
           echo "npz files: $(wc -l < /work/npz.list)"
           tar -C $OUT -czf /work/draws.tgz -T /work/npz.list
           TARBYTES=$(stat -c %s /work/draws.tgz)

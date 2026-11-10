@@ -30,6 +30,15 @@ and is not changed to make a test pass (a failing test means a code or test-data
  13. dup and noise partners through main() on a small stationary fixture, fold 1: dup S1 and S2 >= 0.98 and |S3| <= 0.02;
      noise S1 and S2 in [-0.03, +0.01] and |S3| <= 0.04; split counts equal diagnostics.demo_split's; test demos 4;
      test evaluations 6 per type; saved draws have n_boot entries and S3 draws = S2 draws - S1 draws; folds 2 and 3 run.
+ PR #21 review fixes (thresholds written before the run):
+ 14. run_type on planted lopsided two-camera data (A = [shared 4, extra 4] per camera, B = shared W): out["S2"] >= 0.95,
+     out["S1"] <= 0.80, S3 >= +0.15, and the S2 definition names the base as source ("source A, target B"); this test must
+     fail when S1 and S2 are swapped in run_type (checked by hand once).
+ 15. fold_blocks at every n from 10 to 120 and fold 1, 2, 3: test and validation positions inside [0, n), disjoint, sizes
+     round(0.2 n) each, and fold 1 test = last round(0.2 n) demos; explicitly n = 44 and 53 (where the old fold 3 overlapped).
+ 16. with show_scores False the log lines contain no score ("S1", "S2", "score") and name coverage, alpha, grid-edge only.
+ 17. the result JSON stores the ordered test demo ids and their sha256; dup and noise runs of fold 1 give the same hash,
+     fold 2 a different one; a context pair (base not dinov3) says no primary score applies.
 """
 
 import json
@@ -309,6 +318,62 @@ def test_control_partners_hit_gates_through_main(tmp_path):
         r, _ = run_main(tmp_path, feats, raw, "dup:dinov3", fold=fold)
         assert r["config"]["fold"] == fold and r["split_frames"] == ref_split and r["n_test_demos"] == 4
         assert r["types"]["global"]["S2"]["value"] >= 0.98
+
+
+# 14, 16
+def lopsided_feats(n_demo=50, length=20, seed=11):
+    rng = np.random.default_rng(seed)
+    index = make_index(n_demo=n_demo, length=length)
+    n = n_demo * length
+    a, b = {}, {}
+    for c in D.CAMS:
+        shared = rng.normal(size=(n, 4))
+        a[c] = np.concatenate([shared, rng.normal(size=(n, 4))], 1).astype(np.float32)
+        b[c] = (shared @ rng.normal(size=(4, 4))).astype(np.float32)
+    feats = {"A": {"global": a}, "B": {"global": b}}
+    return feats, index, F.fold_split(index, 1), groups_of(index), rng.normal(size=(n, 3)).astype(np.float32)
+
+
+def test_s1_s2_labels_not_swapped():
+    feats, index, split, g, aux = lopsided_feats()
+    out, _ = F.run_type(feats, split, index, g, aux, "A", "B", "global", 8, 50, 0, lambda msg: None)
+    assert out["S2"]["value"] >= 0.95 and out["S1"]["value"] <= 0.80 and out["S3"]["value"] >= 0.15, (out["S1"], out["S2"])
+    assert "source A, target B" in out["S2"]["definition"] and "source B, target A" in out["S1"]["definition"]
+    assert "no primary score" in out["note"]  # base A is not dinov3
+
+
+def test_log_withholds_scores_for_real_partners():
+    feats, index, split, g, aux = lopsided_feats()
+    lines = []
+    F.run_type(feats, split, index, g, aux, "A", "B", "global", 8, 50, 0, lines.append, show_scores=False)
+    assert lines and all("S1" not in m and "S2" not in m and "score:" not in m and "pooled" not in m for m in lines), lines
+    assert all("coverage" in m and "alpha" in m and "grid-edge" in m for m in lines if "withheld" in m)
+    shown = []
+    F.run_type(feats, split, index, g, aux, "A", "B", "global", 8, 50, 0, shown.append)
+    assert any("S2" in m for m in shown)
+
+
+# 15
+def test_fold_blocks_never_overlap_any_demo_count():
+    for n in list(range(10, 121)) + [44, 53]:
+        n_t = max(1, round(n * 0.2))
+        for fold in (1, 2, 3):
+            te, va = F.fold_blocks(n, fold)
+            assert len(te) == n_t and len(va) == n_t and not set(te) & set(va), (n, fold)
+            assert min(te) >= 0 and max(te) < n and min(va) >= 0 and max(va) < n, (n, fold)
+        assert list(F.fold_blocks(n, 1)[0]) == list(range(n - n_t, n))
+    assert F.fold_blocks(50, 3) == (range(20, 30), range(30, 40))  # the real file size is unchanged
+
+
+# 17
+def test_test_demo_ids_in_result_json(tmp_path):
+    feats, raw = make_fixture(tmp_path)
+    r1, _ = run_main(tmp_path, feats, raw, "dup:dinov3")
+    r2, _ = run_main(tmp_path, feats, raw, "noise:32")
+    r3, _ = run_main(tmp_path, feats, raw, "dup:dinov3", fold=2)
+    assert len(r1["test_demos"]["ids"]) == 4 and r1["test_demos"]["ids"][0].startswith("task0_demo/demo_")
+    assert r1["test_demos"] == r2["test_demos"] and r1["test_demos"]["sha256"] != r3["test_demos"]["sha256"]
+    assert "no primary score" not in r1["config"]["primary"]
 
 
 if __name__ == "__main__":
