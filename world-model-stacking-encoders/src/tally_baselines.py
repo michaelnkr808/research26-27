@@ -124,4 +124,5 @@ def main():
           f"  rho vs paper = {rho:+.2f} (label has ties; average ranks)   {place(rho)}")
 
 
-main()
+if __name__ == "__main__":
+    main()

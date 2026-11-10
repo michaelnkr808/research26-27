@@ -6,20 +6,21 @@ Written by an agent for the user, 2026-11-09, before any D+R proxy result exists
 
 **What "blind" means here, plainly.** The label (part A) is written before any D+R proxy-policy result exists, so it cannot be bent toward our own ground truth. It is not blind to the paper: the Table 10 numbers (D+R = 78.59, the lowest of the seven D+X pairs) were already known to the user and to us, and the paper's prose in §4.4 was written after the authors saw those numbers (verified: the prose cites them). So the label tests whether the paper's explanation, applied mechanically, reproduces the paper's own ordering. It says nothing about whether the explanation is true.
 
-Scope and units: partners L = SigLIP 2, S = SAM 3, G = VGGT-Omega, R = C-RADIOv4, all paired with DINOv3 (D). V = V-JEPA 2.1, U = UniTok, H = HRP appear only in part A (no tally run for them). The paper's order of the four tally partners, from `literature/liu2026what-table10-composition.csv` (verified): L (+1.83) > S (+0.49) > G (+0.40) > R (-5.41), as change in LIBERO-Plus success over D alone (84.0).
+Scope and units: partners L = SigLIP 2, S = SAM 3, G = VGGT-Omega, R = C-RADIOv4, all paired with DINOv3 (D). V = V-JEPA 2.1, U = UniTok, H = HRP appear only in part A (no tally run for them). The paper's order of the four tally partners, from `literature/liu2026what-table10-composition.csv` (Table 10 means; verified): L (+1.83) > S (+0.49) > G (+0.40) > R (-5.41), as change in LIBERO-Plus success over D alone (84.0, DINOv3's LIBERO-Plus total from Table 1, `literature/liu2026what-table1-single-source.csv`; the Table 10 CSV has no D-alone row).
 
 ## A. Overlap label
 
 ### Rule (stated before labelling; derived only from the paper's reasoning)
 
-The sentences relied on, copied from the fetched arXiv HTML v1 (https://arxiv.org/html/2610.13024v1), section numbers as the paper numbers them. Numbers inside the paper's sentences were stripped by my text extraction, so they are replaced with "...":
+The sentences relied on, copied from the fetched arXiv HTML v1 (https://arxiv.org/html/2610.13024v1), section numbers as the paper numbers them. Numbers inside the paper's §4.4 sentences were stripped by my text extraction, so they are replaced with "..."; the "..." in the §3.2 quotes stand for citations and omitted words, not numbers:
 
 - §4.4 (RQ3): "The composition results suggest that overlap in pretraining objectives can limit complementary gains."
 - §4.4: "Spatial capabilities similarly overlap: DINOv3 already provides dense features supporting segmentation and depth estimation, while VGGT-Omega uses a DINOv3-initialized visual encoder." (the HTML writes VGGT with the Omega glyph dropped in extraction)
 - §4.4: "Adding VGGT-Omega or SAM 3 to DINOv3 produces little change, although both improve some larger combinations."
-- §4.4: "A direct teacher-student relationship occurs with C-RADIOv4, which distills DINOv3, SigLIP 2, and SAM 3: combining it with DINOv3 reduces LP success to ..."
+- §4.4: "A direct teacher–student relationship occurs with C-RADIOv4, which distills DINOv3, SigLIP 2, and SAM 3: combining it with DINOv3 reduces LP success to ..."
+- §4.4: "Both UniTok and SigLIP 2 learn language-aligned visual representations."
 - §4.4: "Adding SigLIP 2 improves DINOv3 by ... percentage points, but reduces success by ... points once UniTok is included" (the paper's SigLIP 2 overlap is with UniTok, not with DINOv3).
-- §4.4: "adding V-JEPA 2.1 to DINOv3 and UniTok improves performance, consistent with its video-based predictive pretraining providing complementary cues."
+- §4.4: "Meanwhile, adding V-JEPA 2.1 to DINOv3 and UniTok improves performance, consistent with its video-based predictive pretraining providing complementary cues."
 - §4.4, Takeaway 3: "When choosing additional sources, consider which task-relevant information they may contribute beyond the existing features, accounting for overlap in pretraining objectives and teacher models."
 - §3.2: "DINOv3 ... uses self-distillation to learn semantic and dense spatial features"; "C-RADIOv4 ... distills DINOv3, SigLIP 2, and SAM 3."
 
@@ -27,8 +28,8 @@ The idea in words: a second encoder helps when it brings something the first one
 
 Rule, applied to a pair D+B, first clause that fires wins:
 
-1. **Harmful** if B is a distilled student of D (direct teacher-student relationship, §4.4).
-2. **Neutral** if B's pretraining capability is one the paper says D already provides, or B is built on a DINOv3-initialised encoder (§4.4: segmentation, depth, spatial structure).
+1. **Harmful** if B is a distilled student of D (direct teacher–student relationship, §4.4).
+2. **Neutral** if B's pretraining capability is one the paper says D already provides, or B is built on a DINOv3-initialised encoder (§4.4: "dense features supporting segmentation and depth estimation"; "DINOv3-initialized visual encoder"). An explicit §4.4 statement that B is complementary to a set containing D overrides this clause; this is what keeps V-JEPA 2.1 (§3.2: learns "spatial and temporal relationships") out of clause 2. The four tally-partner labels (L, S, G, R) do not depend on this override and are unchanged.
 3. **Helpful** otherwise: no overlap with D is flagged by the paper, so B adds information beyond D (Takeaway 3). "Helpful" here means "no overlap flagged", not "the paper shows a gain".
 
 This is a three-level scheme. The paper's reasoning gives no basis for ordering within a level, so ties stay ties. Inputs used to apply the rule: only B's identity and the §3.2/§4.4 descriptions above. The Table 10 deltas were not consulted while labelling.
@@ -59,7 +60,7 @@ This is a three-level scheme. The paper's reasoning gives no basis for ordering 
 
 Reading it: the label gets the sign direction of the one harmful pair and puts all four "helpful" pairs above all "neutral" pairs except D+H, which sits at the same size as D+S (+0.48 vs +0.49) and well inside the evaluation-seed SD (0.74). The SD is across three evaluation seeds of one trained checkpoint, not across training runs (recalled from the repo note, verified there against App. C.2 and E.3), so it understates real run-to-run noise. On the four tally partners, labels L=helpful, S=neutral, G=neutral, R=harmful give a Spearman rho of +0.95 against the paper order (ties use average ranks, so this is not directly comparable to the strict-ordering distribution in part B; it is above all 24 strict orderings except the perfect one, speculative as a placement).
 
-Limit specific to this label: I chose to call "no overlap flagged" helpful. A stricter reader could call L, U, H "neutral" and only V helpful. Under that alternative the four-partner label becomes L=S=G=neutral, R=harmful, which still puts R last but cannot order L, S, G (speculative; not computed).
+Limit specific to this label: I chose to call "no overlap flagged" helpful. A stricter reader could call L, U, H "neutral" (concrete basis: §3.2 describes SigLIP 2 as learning "semantic and dense visual features", almost the same words as DINOv3's "semantic and dense spatial features") and only V helpful. Under that alternative the four-partner label becomes L=S=G=neutral, R=harmful, which still puts R last but cannot order L, S, G (speculative; not computed).
 
 ## B. Random-ranking baseline (n = 4 partners)
 
@@ -105,7 +106,7 @@ Higher = predicted better partner, except CKA, where lower CKA(D, B) is read as 
 | gain(D given B) | 0.031 | 0.024 | 0.031 | 0.011 | G > L > S > R | +0.4 | 4 | 19/24 / 9/24 |
 | CKA, agentview (lower better) | 0.672 | 0.665 | 0.268 | 0.766 | G > S > L > R | +0.2 | 4 | 15/24 / 11/24 |
 | CKA, wrist (lower better) | 0.782 | 0.665 | 0.399 | 0.863 | G > S > L > R | +0.2 | 4 | 15/24 / 11/24 |
-| CKA, mean of both cams | 0.727 | 0.665 | 0.334 | 0.815 | G > S > L > R | +0.2 | 4 | 15/24 / 11/24 |
+| CKA, mean of both cams | 0.727 | 0.665 | 0.334 | 0.814 | G > S > L > R | +0.2 | 4 | 15/24 / 11/24 |
 
 Notes, each verified from the script output unless marked:
 

@@ -105,7 +105,7 @@ The paper orders these 4 pairs L (+1.83) > S (+0.49) > G (+0.40) > R (−5.41).
 - **Variants:**
   - Our variants may differ from the paper's (e.g. SAM 3 pre-neck patch mean, VGGT-Ω camera token).
   - D is fp32 while L, R, S and G are fp16. This deviates from the pre-registration, because fp16 DINOv3 overflowed (LOG (f)).
-- **STANDARDS baselines (added 2026-11-09):** B's solo score, the objective-overlap label and a random ranking were not computed when the tally ran. They were computed 2026-11-09, before any D+R proxy result; see `../../writing/2026-11-09-blind-baselines.md` and `../../src/tally_baselines.py`.
+- **STANDARDS baselines (added 2026-11-09):** B's solo score, the objective-overlap label and a random ranking were not computed when the tally ran. They were computed 2026-11-09, before any D+R proxy result; see `../../writing/2026-11-09-blind-baselines.md` and `../../src/tally_baselines.py`. A control partner (noise, duplicate, dimension-matched) is still not run.
 
 ## Skipped encoders
 - **V-JEPA 2.1:** only third-party HF conversions exist. The official weights need the repo's code and a choice of how to feed single frames to a video model.
