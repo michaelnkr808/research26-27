@@ -530,3 +530,11 @@ Everything below was done and verified by the implementation lead (`vis-implemen
 **PR:** the lead pushes the branch `stacking-encoders-pfb-recover-job` and opens the PR.
 **Found:** nothing for the key findings.
 **Next:** the lead's review and PR; the user's go; submit; check the first extraction stage's GPU use 15 minutes in.
+
+## 2026-11-10 [agent, worker] pfb-recover: review fixes (PR #22 review comment), noise first
+**Review fixes to `jobs/job-pfb-recover.yaml`, `jobs/check-pfb-jobs.py`, `jobs/PHASE-B.md` section 11 (verified; manifest-only, no `src/` or ConfigMap file changed):**
+- Dead-GPU fail-fast: `gpu_check` (nvidia-smi plus a tiny CUDA op in the stage's own python) before every extraction stage and after a failed one; a failure ends the Job with exit 30 after copying the reports. Extraction is run with `--device cuda` (flag already in `extract_features.py`) and its log is checked for `device=cpu` (exit 31). Tested with stubs and with broken scratch copies of the manifest.
+- Order changed to noise first (the user's decision 2026-11-10): noise render with the consistency check and publish, then extraction of the three encoders on all five conditions; exit 5 or 3 of the noise render ends the Job before any extraction. GPU-busy total unchanged.
+- Section 11: retry recipes say stop and tell the user for exit 5 and 3, and stop and ask for a publish that died between the rename and the marker and for a failed read-only verify of an existing feature folder; the Job count says the gate is already passed (23 per this LOG after the four SAM 3 submissions, plus the two SAM 3 resubmits, so this Job is about the 26th); one card note (clean DINOv3 from the A6000, the rest from another card, rounding-level differences expected, the noise consistency check is the mitigation).
+- Checker nits: the recovery script is compared with the render Job as text (encoder arms, meta and copy lines, the noise render line, the extraction command); the never-matching pattern removed; a write-toward-`render/` rule replaces the pattern lists; `--rendered` requires the A6000 copy's commit and `NOISE_CAP` unless `--any-values`; the pre-flight for an already published noise render requires `render-report.json`.
+**Not done (as instructed):** no background overlap of the noise render with extraction. Not submitted, not pushed.
