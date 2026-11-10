@@ -31,6 +31,7 @@ Each experiment folder has its own `PLAN.md` (the design, written before running
 - Retrospective check of our diagnostics against the paper's 16 composition results (reviewer, 2026-10-28; suggestive only).
 
 ## Recently done
+- 2026-11-09: path-to-paper memo, the roadmap from today's state to a submitted paper with the three possible endings, milestones, a speculative calendar and the user's decision points (PR #11, merge abf868f, `writing/2026-11-09-path-to-paper.md`; LOG 2026-11-09 [agent, lead, planning] path to paper).
 - 2026-11-09: PR rule condensed (PR #6); blind baselines for the tally, the STANDARDS baselines never computed (PR #7, `writing/2026-11-09-blind-baselines.md`); detection-power memo for the 3-seed rule from the first seed pair (PR #8, `writing/2026-11-09-seed-power.md`); control-partners design merged and signed off, now in Now (PR #9); motion score deferred (LOG 2026-11-09 [agent, lead, planning] PR rule condensed).
 - 2026-11-09: pull-request workflow adopted for conclusion-feeding changes (PR #1, merge 7bfb568; `_standards/05` Git section, `_standards/04` LOG template, `STANDARDS.md` Conventions; LOG 2026-11-09 [agent, lead, planning] PR workflow).
 - 2026-11-09: paper framing decided, a case study of the reported D+R drop with the predictor as follow-up (`decisions/004-paper-framing-case-study.md`; LOG 2026-11-09 [agent, planning] direction reframed).
