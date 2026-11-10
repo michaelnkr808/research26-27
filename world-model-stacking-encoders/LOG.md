@@ -1692,3 +1692,16 @@ Reviews were read-only; findings reported by subagents, spot-checked by the lead
 **Test-set use:** none.
 **Next:** draft `writing/paper/sec/3_setup.tex` on a new branch, fresh fact-check reviewer, PR. After the 2026-11-11 mentor meeting, record the answers (framing, PLAN Next 5 in this paper, length) and resize the page shares if the paper is four pages or fewer.
 **Open questions:** LIBERO and LIBERO-Plus read status (`references.bib` says not read in full; LOG line 413 says the user read both) and whether benchmark citations need a full read; bib `note` fields print and arXiv IDs do not (literature session's area).
+## 2026-11-10 [agent, implementation lead] phase B: SAM 3 submitted, A6000 hardware fault, render twin deleted
+**Goal:** go on SAM 3 as the user asked ("go on SAM 3 but give me the status on all our experiments"). Detail: `experiments/2026-11-06-perturbed-frames/LOG.md`, the 2026-11-10 `[agent, lead] SAM 3 Jobs submitted` entry.
+**Did (verified):** submitted the four SAM 3 Jobs (clean, camera, light, background) at 18:24 UTC; the clean one is running on an L4 at full utilization. The A6000 twin's card failed during DINOv3 extraction (a CUDA error, then no GPU found in the pod), so the lead saved the pod log and deleted the twin Job at 18:30 UTC. Four renders (clean, camera, light, background) and the clean DINOv3 features are on the volume; noise is not rendered, and the other extractions are missing. The recovery (retry the noise render, a new extraction Job for the missing features) is proposed to the user and not yet approved or submitted.
+**PR:** direct (chore).
+**Found:** nothing for the key findings.
+**GPU-hours:** about 0.93 on the A6000 (about 17 min of it idle during setup); SAM 3 clean running.
+**Next:** the user's answer on recovery and on keeping the four renders; check the SAM 3 Jobs and stage 2 (nobody watches them once the lead's session closes).
+
+## 2026-11-10 [agent, implementation lead] restart after /clear: two SAM 3 Jobs resubmitted after a node failure; recovery and feature-overlap code approved
+**Did (verified):** read the state back from the cluster and files; the planning session confirmed the user's order (phase B recovery, control-partners stage 2 collection, feature-overlap code, then the proxy retrain). Two SAM 3 Jobs (light, background) died when their node went NotReady (not our code) and were resubmitted unchanged on the user's go ("go all of those"), which also covers the noise render retry, a worker for the missing extraction Job (PR), a worker for the feature-overlap code (PR), and keeping the four A6000 renders. Detail: `experiments/2026-11-06-perturbed-frames/LOG.md`, 2026-11-10 `[agent, lead] SAM 3 light and background lost to a node failure`.
+**PR:** direct (chore).
+**Found:** nothing for the key findings.
+**Next:** noise render retry; the two worker PRs; stage 2 collection when it ends.
