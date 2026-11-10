@@ -109,7 +109,7 @@ p(f"  sha256 {sha}")
 p(f"  expected {LOG_SHA256}: {'ok' if sha == LOG_SHA256 else 'MISMATCH'}")
 if len(raw) != LOG_BYTES or sha != LOG_SHA256:
     p("STOP: log does not match the recorded size/hash.")
-    print("\n".join(out))
+    print("\n".join(l.rstrip() for l in out))
     sys.exit(1)
 
 lines = raw.decode("utf-8").split("\n")
@@ -133,7 +133,7 @@ missing = [n for n in EXPECTED_JSONS if n not in J]
 extra = [n for n in J if n not in EXPECTED_JSONS]
 if missing or extra or len(heads) != 10:
     p(f"STOP: expected the ten names; missing {missing}, extra {extra}")
-    print("\n".join(out))
+    print("\n".join(l.rstrip() for l in out))
     sys.exit(1)
 
 # ---- recorded real values from the repo JSONs the PLAN names ----
@@ -280,7 +280,7 @@ p()
 p("ALL GATES PASS" if gates_ok else "GATE FAILURE: " + "; ".join(fails))
 if not gates_ok:
     p("Per the PLAN, no decision-rule verdict is read when a gate fails: debug and amend, do not interpret.")
-    print("\n".join(out))
+    print("\n".join(l.rstrip() for l in out))
     sys.exit(1)
 
 # =========================================================== 3. numbers the rule uses
@@ -331,6 +331,19 @@ p("  Also recorded for each control (k-mean, global): T1a R2 of the control targ
 for spec in TG:
     km = J[TG[spec]]["types"]["global"]["k_mean"]
     p(f"    {spec:<21} T1a R2 {km['t1a']['r2']:.4f}   T1b gain {fx(km['t1b_gain']['value'], 5)} {cis(km['t1b_gain']['ci95'], 5)}")
+p("  Reference R2_D (DINOv3's target alone, same inputs; r = 64, a', k-mean) per control, next to the recorded real partners' range:")
+refs = {s_: J[TG[s_]]["types"]["global"]["k_mean"]["t2"]["a_prime"]["64"]["r2_D_ref"] for s_ in TG}
+p("    " + "; ".join(f"{s_} {v:.4f}" for s_, v in refs.items()))
+rr_ = [tgt_real[l]["types"]["global"]["k_mean"]["t2"]["a_prime"]["64"]["r2_D_ref"] for l, _, _ in REAL]
+p(f"    recorded real partners: {min(rr_):.4f} to {max(rr_):.4f}")
+p("  By k (4 / 16 / 32), r = 64, interference and alpha (reference alpha -> alpha with the control), for the two controls with alpha changes at the primary cell:")
+for s_ in ("noise:4608", "shuffle:dinov3"):
+    bk = J[TG[s_]]["types"]["global"]["by_k"]
+    for sc in SCALINGS:
+        p(f"    {s_:<15} {SCALING_NAME[sc]:<3} " + "; ".join(f"k={k} {bk[k]['t2']['with_B'][sc]['64']['interference']:+.5f} (alpha {bk[k]['t2']['reference']['64']['alpha']:g} -> {bk[k]['t2']['with_B'][sc]['64']['alpha']:g})" for k in KS))
+p("  Largest recorded real value per scaling (r = 64, k-mean): " + "; ".join(f"{SCALING_NAME[sc]} {max(real_tgt(l, sc)[0] for l, _, _ in REAL):+.5f}" for sc in SCALINGS)
+  + "; shuffle:dinov3 k-mean: " + "; ".join(f"{SCALING_NAME[sc]} {tgt_k('shuffle:dinov3', sc)[0]:+.5f}" for sc in SCALINGS))
+p("  T1b gain(B|D) on D's future from adding the control as input (k-mean; NOT used by the rule): " + "; ".join(f"{s_} {J[TG[s_]]['types']['global']['k_mean']['t1b_gain']['value']:+.5f}" for s_ in ("noise:4608", "noise:4608:0.3", "shuffle:dinov3")))
 p("  Secondary (not used by the rule), a' by rank, k-mean:")
 for spec in TG:
     cells = []
@@ -553,7 +566,7 @@ for spec in IN:
     ckey = combo_key(d, spec)
     p(f"  {spec:<21} {d['probes']['dinov3|global']['alpha']:>13g}  {d['probes'][spec + '|global']['alpha']:>19g}  {d['probes'][ckey]['alpha']:>15g}")
 p(f"  {'C-RADIOv4 (rerun)':<21} {rr['probes']['dinov3|global']['alpha']:>13g}  {rr['probes']['c-radiov4|global']['alpha']:>19g}  {rr['probes'][rr_combo]['alpha']:>15g}")
-p("Target side, T2 reduced-rank fits (alpha for D's prediction alone 'ref' versus with the control as co-target under a' / b / a''); primary rank r = 64, then every cell where they differ:")
+p("Target side, T2 reduced-rank fits (alpha for DINOv3's target alone, same inputs (the inputs still include the control), 'ref', versus with the control as co-target under a' / b / a''); primary rank r = 64, then every cell where they differ:")
 for spec in TG:
     p(f"  {spec}")
     jj = J[TG[spec]]["types"]["global"]["by_k"]
@@ -610,7 +623,7 @@ p("  Paired difference gain(C-RADIOv4|DINOv3) minus gain(control|DINOv3) with a 
 p("  /mnt/features/stacking-encoders/control-partners/), which are not in this repo or on this machine. They would have to be copied off the volume. No unpaired interval is substituted for it.")
 p("  Which rule clauses need it: only the 'Capacity floor above zero' re-reading (every real partner as gain minus matched-width noise gain, paired CI)"
   + (": that clause did not fire." if not pos_hits else ": that clause fired.") + " The prediction note that R's +0.037 is 'information on top of a width penalty (paired difference larger than +0.037)' cannot be checked without it.")
-p("  Memory: UNKNOWN. No RSS reading was taken during the run (the lead's LOG entry says RSS was not checked) and the pod log holds no memory figure, so nothing is inferred about peak memory against the 14Gi request.")
+p("  Memory: UNKNOWN. No RSS reading was taken during the run (the lead's LOG entry says RSS was not checked) and the pod log prints only the node's MemTotal and MemFree, no pod memory figure, so nothing is inferred about peak memory against the 14Gi request.")
 p("  Mean-type features and grid CKA for controls: out of scope in the PLAN. The input JSONs do carry mean-type CKA (printed above for sanity); no mean-type probes or targets were run.")
 p("  Stage 2 (seeds 1 and 2) and the noise-matrix variation in the CIs: not run (the bootstrap CIs hold the noise draw fixed; PLAN 'Seeds').")
 
@@ -632,4 +645,4 @@ strict = re.compile(r"traceback|killed|oom|\bnan\b|exception|error", re.I)
 sh = [q + 1 for q, l in enumerate(lines) if q not in body_lines and strict.search(l)]
 p("  Lines matching traceback/killed/oom/nan/exception/error outside the JSON bodies: " + (", ".join(map(str, sh)) if sh else "none"))
 
-print("\n".join(out))
+print("\n".join(l.rstrip() for l in out))
