@@ -4,7 +4,7 @@
 # Amendment (b)/(d) runs first inside every render command; it re-renders demo_30 of each task, so it is repeated five times) and, for the four perturbed ones, `--expect-draws /pf/draws.json`.
 # Publishes each condition to /mnt/proxy/pf-main/phase-b/render/<c>/ (sha list, verified copy, RENDER_COMPLETE marker, through <c>.part), then extracts DINOv3, SigLIP 2 and C-RADIOv4 on each condition
 # (one invocation per encoder and condition; each condition staged at its OWN local path /work/pfb-test-<c>/libero_goal/ , PHASE-A.md staging-path rule), meta check against the smoke-report reference, copy to
-# /mnt/proxy/pf-main/phase-b/feats/<c>/<encoder>/libero_goal/ . L4 only (user decision 2026-11-09). Stage order (keeps the GPU busy; PHASE-B.md section 4):
+# /mnt/proxy/pf-main/phase-b/feats/<c>/<encoder>/libero_goal/ . L4 only (user decision 2026-11-09); widened 2026-11-10 after a 7 h Pending wait (only two L4 nodes matched): L4, A10, RTX A5000, RTX 3090, RTX 4090, all 24 GB. Stage order (keeps the GPU busy; PHASE-B.md section 4):
 #   clean + camera + light + background renders and publishes, then the three encoders on those four, then the noise render and publish, then the three encoders on noise.
 # Environments: the simulator venv from the env bundle renders (nothing is pip-installed into it, so the render report's library versions equal phase A's). DINOv3 runs in the simulator venv with the
 # transformers 5.18.0 pins in /work/extlib on PYTHONPATH (phase A, pfa-render). SigLIP 2 and C-RADIOv4 run in a second venv /work/venv457 (system-site-packages of the image, so torch 2.7.1 stays the image's)
@@ -30,7 +30,7 @@ spec:
             - matchExpressions:
               - key: nvidia.com/gpu.product
                 operator: In
-                values: [NVIDIA-L4]
+                values: [NVIDIA-L4, NVIDIA-A10, NVIDIA-RTX-A5000, NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090]
               - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
               - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
               - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net, ry-gpu-08.sdsc.optiputer.net]}  # GPU faults, 2026-11-03
