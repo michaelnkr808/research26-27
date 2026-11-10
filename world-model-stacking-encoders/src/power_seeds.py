@@ -10,7 +10,7 @@ Plain version of what this does:
   2. Turns the one between-seed gap into a point estimate of the training-seed sd (gap / sqrt 2), and shows how
      wide the plausible range is (one degree of freedom: very wide).
   3. Simulates the D+R vs D rule: per training seed, delta_s = -true_drop + training noise + episode-sampling noise;
-     applies the rule's branch logic (same as lp_eval.verdict, lines 246-252); prints branch probabilities.
+     applies the rule's branch logic (same as lp_eval.verdict, lines 249-252); prints branch probabilities.
 
 It imports lp_eval.py (importable without side effects: its main() is under __main__) for the thresholds, the record
 reader and the seed-noise check. Run with:  python -I world-model-stacking-encoders/src/power_seeds.py [--selftest]
@@ -37,6 +37,7 @@ import lp_eval as L                     # noqa: E402
 EXP = HERE.parent / "experiments" / "2026-10-27-proxy-calibration" / "results" / "full-benchmark"
 RNG_SEED = 20261109
 DROPS = (5.41, 2.7, 1.35, 0.0)          # paper's D+R - D drop, the locked harm line, the calibration margin, none
+HIGH_MULTS = (8.0, 16.0, 32.0)           # extra rows, 3 seeds, paper-size drop only
 MULTS = (0.25, 0.5, 1.0, 2.0, 4.0)      # grid on the training-seed sd, relative to the one-pair estimate
 SEED_COUNTS = (3, 5)
 N_SIM = 200_000
@@ -47,7 +48,7 @@ B_MEAN_SHORT = "no effect (all < 0, mean above -2.7)"
 
 
 # ---------------------------------------------------------------------------
-# The locked D+R vs D branch logic, mirrored from lp_eval.verdict (lines 246-252):
+# The locked D+R vs D branch logic, mirrored from lp_eval.verdict (lines 249-252):
 #   elif all(x < 0 for x in exact["DR-D"][0]) and exact["DR-D"][1] <= HARM_MAX_MEAN: V_EFFECT   else V_NO_EFFECT
 # The two "no effect" sub-branches are split here for information only; they are one rule branch in lp_eval.
 # ---------------------------------------------------------------------------
@@ -158,6 +159,22 @@ def power_table(est_sd, se_ep_mean, rho=0.0, n=N_SIM):
     return "\n".join(lines)
 
 
+def high_noise_table(est_sd, se_ep_mean, rho=0.0, n=N_SIM):
+    """3 seeds, paper-size drop only, at the upper part of the one-pair range (separate RNG stream, so the main
+    tables above do not change)."""
+    rng = np.random.default_rng(RNG_SEED + 1)
+    lines = [f"### 3 training seeds (locked rule), true drop {DROPS[0]:g}, noise further up the one-pair range; "
+             f"{n} simulated rounds per cell",
+             "| true drop (pts) | seed sd (pts) | multiple of estimate | P(effect) | P(no effect, some seed >= 0) "
+             "| P(no effect, all < 0 but mean above -2.7) |", "|---|---|---|---|---|---|"]
+    for mult in HIGH_MULTS:
+        sd = est_sd * mult
+        pe, pn, pm = branch_probs(simulate(DROPS[0], sd, se_ep_mean, 3, n, rng, rho))
+        lines.append(f"| {DROPS[0]:g} | {sd:.2f} | {mult:g}x | {pe:.3f} | {pn:.3f} | {pm:.3f} |")
+    lines.append("")
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # Self-test
 # ---------------------------------------------------------------------------
@@ -189,6 +206,12 @@ def selftest():
     delta = pairs[:, 0] - pairs[:, 1]
     est = math.sqrt(np.mean(delta ** 2) / 2)
     check("sd recovery from pairs (rms of delta/sqrt2)", abs(est - true_sd) / true_sd < 0.01, f"est {est:.3f} vs {true_sd}")
+
+    # 1b. a single draw of |gap|/sqrt2 usually lands below the true sd: its median is 0.6745 x sd
+    single = np.abs(delta) / math.sqrt(2)
+    check("median of a single-draw estimate is about 0.6745 x sd", abs(np.median(single) / true_sd - 0.6745) < 0.01,
+          f"{np.median(single) / true_sd:.4f}")
+    check("a single draw is below the true sd about 68% of the time", abs(np.mean(single < true_sd) - 0.6827) < 0.01)
 
     # 2. one-pair interval has nominal coverage
     est1, lo, hi = zip(*[sd_interval(x) for x in delta[:20000]])
@@ -247,10 +270,11 @@ def main():
     print()
     print(f"== Power table (rng seed {RNG_SEED}; seed sd grid = {MULTS} x {est:.3f} points; episode-sampling SE of one "
           f"mean = {se:.3f} points, of a paired gap sqrt2 x that = {math.sqrt(2) * se:.3f}; rho = {a.rho:g})")
-    print("Locked rule, D+R vs D (lp_eval.verdict lines 246-252): effect iff every seed's gap < 0 and mean gap <= -2.7;")
+    print("Locked rule, D+R vs D (lp_eval.verdict lines 249-252): effect iff every seed's gap < 0 and mean gap <= -2.7;")
     print("anything else is 'no substantial effect'. Calibration assumed passed.")
     print()
     print(power_table(est, se, a.rho, a.sims))
+    print(high_noise_table(est, se, a.rho, a.sims))
 
 
 if __name__ == "__main__":
