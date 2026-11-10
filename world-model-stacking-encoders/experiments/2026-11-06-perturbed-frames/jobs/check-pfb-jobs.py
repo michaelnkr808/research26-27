@@ -313,9 +313,10 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
                 msgs.append("recover: a touch that the render Job does not have: " + ln[:100])
         if not re.search(r'^ *PUBC="clean camera light background"$', script, re.M):
             msgs.append("recover: PUBC is not exactly the four published conditions")
+        pre = script.split("for c in $CONDS; do", 1)[-1].split("\ndone\n", 1)[0]    # the pre-flight loop only
         for x in ("exit 20", "exit 14", "exit 22"):
-            if x not in script:
-                msgs.append(f"recover: {x} refusal missing")
+            if x not in pre:
+                msgs.append(f"recover: {x} refusal missing from the pre-flight loop")
         pr_lines = [ln.strip() for ln in lines if "publish_render" in ln and not ln.strip().startswith("#")]
         if len(pr_lines) != 3 or not any(ln.startswith("publish_render()") for ln in pr_lines) or not any(ln.startswith("export -f publish_render") for ln in pr_lines) \
                 or not any(ln.startswith("stage publish-$_c cap 1800 bash -c 'publish_render") for ln in pr_lines):
@@ -331,13 +332,17 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
                 msgs.append("recover: rm on the volume: " + ln.strip()[:90])
         if "feats_done $PB/feats/$_c/$_e/libero_goal" not in script or "meta_check.py $_e $_c $PB/feats/$_c" not in script:
             msgs.append("recover: skipped complete features are not meta-checked")
-        # order: noise render first, then every extraction; a failed consistency check (5) or draws check (3) ends the Job before any extraction
+        # order (the user's decision 2026-11-10, after the idle-GPU analysis): extractions of the published conditions first, then the noise render, then the noise extractions; exit 5 / 3 of the noise render end the Job
+        i_pub = script.find('for e in dinov3 siglip2 c-radiov4; do for c in $CONDS; do if [ "${MODE[$c]}" = pub ]; then extract_one $e $c; fi; done; done')
         i_noise = script.find("stage render-noise")
-        i_ext = script.find("for e in dinov3 siglip2 c-radiov4; do for c in $CONDS; do extract_one $e $c; done; done")
-        if i_noise < 0 or i_ext < 0 or i_noise > i_ext:
-            msgs.append("recover: the noise render does not come before the extractions")
+        i_next = script.find('if [ "${MODE[noise]:-}" = new ]; then for e in dinov3 siglip2 c-radiov4; do extract_one $e noise; done; fi')
+        if min(i_pub, i_noise, i_next) < 0 or not (i_pub < i_noise < i_next):
+            msgs.append("recover: the order is not published extractions, then the noise render, then the noise extractions")
         if "[ $_nrc -eq 5 ] || [ $_nrc -eq 3 ]" not in script or 'abort_job $_nrc' not in script:
-            msgs.append("recover: exit 5 / 3 of the noise render do not end the Job before the extractions")
+            msgs.append("recover: exit 5 / 3 of the noise render do not end the Job")
+        ab = script.split("abort_job() {", 1)[-1].split("\n}", 1)[0]
+        if "BEGIN PFB_TGZ_B64" not in ab or "base64 -w 76" not in ab or "exit $1" not in ab:
+            msgs.append("recover: abort_job does not print the report tarball")
         # dead-GPU fail-fast: checked before every extraction stage, in the stage's own python; device=cpu ends the Job; extraction forced to cuda
         gc = script.split("gpu_check() {", 1)[-1][:700] if "gpu_check() {" in script else ""
         if "nvidia-smi -L" not in gc or "torch.cuda.is_available()" not in gc or "torch.ones(64, device=\"cuda\")" not in gc or "$_py -c" not in gc or "abort_job 30" not in gc:
@@ -348,8 +353,9 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
             msgs.append("recover: gpu_check is not called right before the extraction stage")
         if "grep -q 'device=cpu'" not in script or "abort_job 31" not in script:
             msgs.append("recover: a device=cpu log does not end the Job (exit 31)")
-        if "--device cuda" not in script.split("run_extract() {", 1)[-1][:400]:
-            msgs.append("recover: the extraction is not run with --device cuda")
+        ext_cmd = [ln for ln in rl if ln.startswith("cap $_t $_py /src/extract_features.py")]    # the actual command line, not a comment
+        if len(ext_cmd) != 1 or not re.search(r" --device cuda( |$)", ext_cmd[0]):
+            msgs.append("recover: the extraction command line itself does not carry --device cuda")
     if name.startswith("job-pfb-ext-") or is_render:
         # per-condition staging paths
         toks = re.findall(r"/work/pfb-test-([^/\s\"']*)/", code)

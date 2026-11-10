@@ -1,12 +1,13 @@
 # PHASE B RECOVERY Job (pfb-recover), written 2026-11-10 by the worker pfb-recover. NOT SUBMITTED; the lead fills SRC_GIT_COMMIT and NOISE_CAP, runs the server dry run and submits (jobs/PHASE-B.md section 11).
 # Derived from job-pfb-render.yaml (same image, node rule, resources, environments, caps, meta check, copy steps, ConfigMaps). Why: the render Job ran on an RTX A6000 that failed during DINOv3 on camera; it published four test
 # renders (clean, camera, light, background; each with RENDER_COMPLETE and a hash-verified copy) and the clean DINOv3 features, then was deleted. One combined GPU Job recovers the rest (the user's choice, 2026-11-10).
-# It does exactly two things, NOISE FIRST (the user's choice 2026-11-10: noise problems show up early, and SAM 3 noise and VGGT-Omega can start sooner; PHASE-B.md section 11):
-#   1. Renders NOISE with the consistency check and --expect-draws (the render Job's noise path, unchanged) and publishes it. A failed consistency check (exit 5) or draws mismatch (exit 3) ends the Job at once, before any
-#      extraction. If render/noise or render/noise.part exists without a complete publish: exit 14 (never overwritten). If render/noise is already published and complete (a retry) it is only read, like the other four.
-#   2. READS the four published renders from /mnt/proxy/pf-main/phase-b/render/<c>/ (never writes, renders or deletes there), stages each to /work/pfb-test-<c>/libero_goal/ (the same local path the render Job used, so the
-#      feature files' source_file meta matches), checks it against render-sha256.txt written by the publish step, and extracts DINOv3, SigLIP 2 and C-RADIOv4 on it and on noise. An (encoder, condition) whose feature folder
-#      is complete (10 .h5, no .partial; today clean/dinov3) is skipped after a read-only meta check; an incomplete folder is refused with exit 22, never deleted. A published render that is missing or incomplete is exit 20.
+# It does exactly two things, EXTRACTIONS FIRST (the user's decision 2026-11-10; noise-first was tried and reversed after the idle-GPU analysis: it puts the whole idle noise render at the start of the pod, PHASE-B.md section 11):
+#   1. READS the four published renders from /mnt/proxy/pf-main/phase-b/render/<c>/ (never writes, renders or deletes there), stages each to /work/pfb-test-<c>/libero_goal/ (the same local path the render Job used, so the
+#      feature files' source_file meta matches), checks it against render-sha256.txt written by the publish step, and extracts DINOv3, SigLIP 2 and C-RADIOv4 on it. An (encoder, condition) whose feature folder is complete
+#      (10 .h5, no .partial; today clean/dinov3) is skipped after a read-only meta check; an incomplete folder is refused with exit 22, never deleted. A published render that is missing or incomplete is exit 20.
+#   2. Then renders NOISE with the consistency check and --expect-draws (the render Job's noise path, unchanged), publishes it, extracts the three encoders on it. A failed consistency check (exit 5) or draws mismatch (exit 3)
+#      ends the Job with that code; a noise timeout or crash (124, 4) is the Job's exit code after everything else is done. If render/noise or render/noise.part exists without a complete publish: exit 14 (never overwritten).
+#      If render/noise is already published and complete (a retry) it is only read, like the other four, and extracted in step 1.
 #   Dead-GPU fail-fast: before every extraction stage (and the noise render) nvidia-smi and a tiny CUDA op run in the stage's own python; a failure ends the whole Job at once with exit 30 so the card is released. An
 #   extraction that logs device=cpu ends it with exit 31. Extraction is called with --device cuda, so it cannot fall back to the CPU silently.
 # SAM 3 and VGGT-Omega are other Jobs. L4, A10, RTX A5000, RTX 3090, RTX 4090 (24 GB, generic nvidia.com/gpu), us-west, driver > 569, the two excluded hosts: as job-pfb-render.yaml.
@@ -218,6 +219,8 @@ spec:
             echo "=== ABORT: $2 (exit $1)"; date -u
             REP=$PB/reports/$JOB-$STAMP
             mkdir -p $REP && cp -r $OUT/. $REP/ && echo "copied reports to $REP"
+            (cd $OUT && tar czf /work/$JOB.tgz .)
+            if [ $(du -k /work/$JOB.tgz | cut -f1) -lt 2048 ]; then echo "=== BEGIN PFB_TGZ_B64"; base64 -w 76 /work/$JOB.tgz; echo "=== END PFB_TGZ_B64"; fi
             exit $1
           }
           gpu_check() {   # gpu_check <what>: nvidia-smi AND a tiny CUDA op in the python the next stage uses ($_py); a dead card ends the Job (exit 30) so it is released at once
@@ -276,18 +279,21 @@ spec:
           stage raw-sha256 cap 900 bash -c "awk '/^  [a-z_]+_demo:/ {gsub(\":\",\"\",\$1); print \$2\"  /work/data/libero_goal/\"\$1\".hdf5\"}' /pf/phase-a.yaml | sha256sum -c -"
           GO=0
           if [ $LAST -eq 0 ]; then GO=1; fi
-          # 1. NOISE FIRST (the user's choice 2026-11-10): the only render this Job makes, the long pole (cost depends on the drawn noise codes). Its cap is NOISE_CAP, set by the lead from estimate_noise_time.py.
-          #    A failed consistency check (exit 5) or draws mismatch (exit 3) ends the Job here, before any extraction. Another failure (timeout 124, crash 4) loses only noise; the other four are still extracted.
+          # 1. the published renders (read only), first: stage each, then the three encoders on them (GPU-bound: about 100,000 images per encoder for four conditions; complete folders are skipped after a read-only meta check).
+          #    This order keeps the GPU busy from the start; the long idle noise render comes after about 2 h of extraction (PHASE-B.md section 11).
+          for c in $CONDS; do if [ "${MODE[$c]}" = pub ]; then stage_published $c; fi; done
+          for e in dinov3 siglip2 c-radiov4; do for c in $CONDS; do if [ "${MODE[$c]}" = pub ]; then extract_one $e $c; fi; done; done
+          # 2. noise: the only render this Job makes, the long pole (cost depends on the drawn noise codes). Its cap is NOISE_CAP, set by the lead from estimate_noise_time.py.
+          #    A failed consistency check (exit 5) or draws mismatch (exit 3) ends the Job with that code. A timeout or crash (124, 4) loses only noise and is the Job's exit code at the end (WORST).
           if [ $GO -eq 1 ] && want noise && [ "${MODE[noise]:-}" = new ]; then
             nvidia-smi -L > /dev/null 2>&1 || { nvidia-smi 2>&1 | head -20; abort_job 30 "GPU check failed before the noise render"; }
             stage render-noise cap $NOISE_CAP python /pf/pf_rerender.py render --raw /work/data/libero_goal --config /pf/phase-a.yaml --out /work/render/noise --split test --condition noise --consistency-ref $PA/render --env-scripts-dir /src --expect-draws /pf/draws.json
             _nrc=$LAST
             finish_render noise $_nrc
-            if [ $_nrc -eq 5 ] || [ $_nrc -eq 3 ]; then abort_job $_nrc "the noise render failed its consistency check (5) or draws check (3); nothing is extracted, tell the user"; fi
+            if [ $_nrc -eq 5 ] || [ $_nrc -eq 3 ]; then abort_job $_nrc "the noise render failed its consistency check (5) or draws check (3); tell the user"; fi
           fi
-          # 2. the published renders (read only): stage each, then the three encoders on all five conditions (GPU-bound: about 127,000 images per encoder; complete folders are skipped)
-          for c in $CONDS; do if [ "${MODE[$c]}" = pub ]; then stage_published $c; fi; done
-          for e in dinov3 siglip2 c-radiov4; do for c in $CONDS; do extract_one $e $c; done; done
+          # 3. the three encoders on noise
+          if [ "${MODE[noise]:-}" = new ]; then for e in dinov3 siglip2 c-radiov4; do extract_one $e noise; done; fi
           echo "=== exit codes: worst $WORST"; date -u
           REP=$PB/reports/$JOB-$STAMP
           mkdir -p $REP && cp -r $OUT/. $REP/ && echo "copied reports to $REP" || { echo "REPORT COPY FAILED"; if [ $WORST -eq 0 ]; then WORST=15; fi; }
