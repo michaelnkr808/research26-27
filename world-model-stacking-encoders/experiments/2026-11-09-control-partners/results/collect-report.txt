@@ -1,0 +1,320 @@
+CONTROL PARTNERS, STAGE 1: collection report
+============================================================
+Input log: results/control-partners-20261110.log
+  bytes 251089 (expected 251089): ok
+  sha256 bee6c0d9d06b5cce18b35574f21b0610bde0421ac02c060a2c7aa7676df56499
+  expected bee6c0d9d06b5cce18b35574f21b0610bde0421ac02c060a2c7aa7676df56499: ok
+
+Extracted result JSONs (written under their original file names, each parsed with json):
+  input-libero_goal-dinov3-c-radiov4-rerun.json: 5592 chars, parsed ok
+  input-libero_goal-dinov3-dup-dinov3.json: 5239 chars, parsed ok
+  input-libero_goal-dinov3-noise-4608-s0.json: 5714 chars, parsed ok
+  input-libero_goal-dinov3-randproj-dinov3-4608-s0.json: 5514 chars, parsed ok
+  input-libero_goal-dinov3-shuffle-dinov3-s0.json: 5613 chars, parsed ok
+  target-libero_goal-dinov3-dup-dinov3.json: 35865 chars, parsed ok
+  target-libero_goal-dinov3-noise-4608-0.3-s0.json: 36316 chars, parsed ok
+  target-libero_goal-dinov3-noise-4608-s0.json: 36181 chars, parsed ok
+  target-libero_goal-dinov3-randproj-dinov3-4608-s0.json: 36258 chars, parsed ok
+  target-libero_goal-dinov3-shuffle-dinov3-s0.json: 36125 chars, parsed ok
+
+============================================================
+GATES (PLAN: nothing is read unless all pass)
+Gate 1. Rerun D + C-RADIOv4 reproduces the tally JSON within 1e-5 (global probe R2s, gain, gain CI):
+      R2 dinov3|global: rerun 0.64987993  tally 0.64987991  |diff| 2.23e-08
+      R2 c-radiov4|global: rerun 0.66961947  tally 0.66961954  |diff| 6.82e-08
+      R2 c-radiov4+dinov3|global: rerun 0.68697630  tally 0.68697635  |diff| 5.09e-08
+      gain(R|D): rerun 0.03709637  tally 0.03709644  |diff| 7.32e-08
+      gain CI low: rerun 0.03248284  tally 0.03248287  |diff| 2.97e-08
+      gain CI high: rerun 0.04233032  tally 0.04233037  |diff| 5.32e-08
+  [pass] Gate 1 rerun vs tally: max |diff| 7.32e-08 (limit 1e-5)
+Gate 2. dup:dinov3:
+  [pass] Gate 2a CKA(D, dup) = 1.000 +/- 1e-6: max |CKA - 1| over global/mean, both cams, biased and debiased = 0.00e+00
+  [pass] Gate 2b input |gain(dup|D)| < 0.005: gain +0.00279 [+0.00164, +0.00398]
+  [pass] Gate 2c target |interference| < 1e-6 under every scaling: max |interference| over 36 cells (3 scalings x 3 ranks x (k-mean + k=4,16,32)) = 2.22e-16
+Gate 3. noise:4608 and shuffle:dinov3: |debiased CKA with DINOv3| < 0.02 (global and mean, both cams):
+  [pass] Gate 3 noise:4608: debiased global|agentview_rgb +0.00049, global|eye_in_hand_rgb +0.00004, mean|agentview_rgb +0.00015, mean|eye_in_hand_rgb -0.00016; max |.| 0.00049
+  [pass] Gate 3 shuffle:dinov3: debiased global|agentview_rgb -0.00042, global|eye_in_hand_rgb +0.00017, mean|agentview_rgb -0.00015, mean|eye_in_hand_rgb +0.00001; max |.| 0.00042
+Gate 4. Split counts equal the tally's (38,464 / 12,416 / 12,848) and 100 test demos:
+      tally split_frames (read from the tally JSON): {'train': 38464, 'val': 12416, 'test': 12848}
+      input-libero_goal-dinov3-c-radiov4-rerun.json: split 38464/12416/12848, test demos 100: ok
+      input-libero_goal-dinov3-dup-dinov3.json: split 38464/12416/12848, test demos 100: ok
+      input-libero_goal-dinov3-noise-4608-s0.json: split 38464/12416/12848, test demos 100: ok
+      input-libero_goal-dinov3-randproj-dinov3-4608-s0.json: split 38464/12416/12848, test demos 100: ok
+      input-libero_goal-dinov3-shuffle-dinov3-s0.json: split 38464/12416/12848, test demos 100: ok
+      target-libero_goal-dinov3-dup-dinov3.json: split 38464/12416/12848, test demos 100/100/100 (k=4/16/32): ok
+      target-libero_goal-dinov3-noise-4608-0.3-s0.json: split 38464/12416/12848, test demos 100/100/100 (k=4/16/32): ok
+      target-libero_goal-dinov3-noise-4608-s0.json: split 38464/12416/12848, test demos 100/100/100 (k=4/16/32): ok
+      target-libero_goal-dinov3-randproj-dinov3-4608-s0.json: split 38464/12416/12848, test demos 100/100/100 (k=4/16/32): ok
+      target-libero_goal-dinov3-shuffle-dinov3-s0.json: split 38464/12416/12848, test demos 100/100/100 (k=4/16/32): ok
+  [pass] Gate 4 splits and demos: all ten JSONs
+
+ALL GATES PASS
+
+============================================================
+NUMBERS THE RULE USES (from the ten JSONs; real partners from the repo JSONs the PLAN names)
+
+Input side, global features, seed 0. gain(B|D) = R2(D+B) minus R2(D), 95% demo-level bootstrap CI
+  control               dims  gain(B|D) [CI]                 R2 D+B   R2 B alone  alpha D/B/D+B  CKA(D,B) debiased global ag/wrist, mean ag/wrist
+  dup:dinov3             2048  +0.0028 [+0.0016, +0.0040]   0.6527   +0.6499      0.1/0.1/0.1        +1.0000 +1.0000 +1.0000 +1.0000
+  noise:4608             4608  -0.0269 [-0.0302, -0.0246]   0.6230   -0.0002      0.1/1000/0.1        +0.0005 +0.0000 +0.0001 -0.0002
+  randproj:dinov3:4608   4608  +0.0011 [-0.0007, +0.0027]   0.6510   +0.6463      0.1/0.1/0.1        +0.9970 +0.9966 +0.9965 +0.9966
+  shuffle:dinov3         2048  -0.0031 [-0.0036, -0.0027]   0.6468   -0.0002      0.1/10000/0.1        -0.0004 +0.0002 -0.0001 +0.0000
+  C-RADIOv4 (rerun)      4608  +0.0371 [+0.0325, +0.0423]   0.6870   +0.6696      0.1/0.1/0.1
+  Recorded real partners (tally JSONs in the repo): gain(B|D) [CI]
+    G VGGT-Omega  +0.0138 [+0.0105, +0.0176]
+    R C-RADIOv4   +0.0371 [+0.0325, +0.0423]
+    L SigLIP 2    +0.0168 [+0.0130, +0.0208]
+    S SAM 3       +0.0326 [+0.0275, +0.0379]
+  Recorded R2 of DINOv3 alone (global) in the rerun: 0.6499 [+0.6230, +0.6709]
+
+Target side, interference of the control as co-target, global, r = 64 (primary), mean over k in {4, 16, 32}
+  Under a' (primary), b (equalized), a'' (pooled); 95% CI in brackets; B loss share under a' (T0)
+  control               a' [CI]                          b [CI]                           a'' [CI]                         share a'
+  dup:dinov3            -0.00000 [-0.00000, +0.00000]  -0.00000 [-0.00000, +0.00000]  -0.00000 [-0.00000, +0.00000]  0.500
+  noise:4608:0.3        +0.00071 [+0.00068, +0.00075]  +0.00074 [+0.00071, +0.00078]  +0.00196 [+0.00188, +0.00206]  0.408
+  noise:4608            +0.00469 [+0.00354, +0.00574]  +0.00073 [+0.00070, +0.00077]  +0.01472 [+0.01287, +0.01652]  0.684
+  randproj:dinov3:4608  +0.00076 [+0.00062, +0.00088]  +0.00076 [+0.00062, +0.00088]  +0.00126 [+0.00109, +0.00142]  0.499
+  shuffle:dinov3        +0.08844 [+0.08556, +0.09133]  +0.04869 [+0.04741, +0.05010]  +0.08844 [+0.08556, +0.09133]  0.684
+  Recorded real partners (target JSONs in the repo):
+    G VGGT-Omega  +0.03430 [+0.03322, +0.03542]  +0.02279 [+0.02180, +0.02381]  +0.04616 [+0.04493, +0.04749]  0.717
+    R C-RADIOv4   +0.01508 [+0.01465, +0.01555]  +0.02514 [+0.02456, +0.02574]  +0.02835 [+0.02774, +0.02900]  0.352
+    L SigLIP 2    +0.01413 [+0.01376, +0.01454]  +0.02880 [+0.02822, +0.02944]  +0.01413 [+0.01376, +0.01454]  0.288
+    S SAM 3       +0.00322 [+0.00299, +0.00349]  +0.02072 [+0.02018, +0.02129]  +0.00322 [+0.00299, +0.00349]  0.116
+  Also recorded for each control (k-mean, global): T1a R2 of the control target alone; T1b gain(B|D) on D's future from adding B as input
+    dup:dinov3            T1a R2 0.5050   T1b gain +0.00286 [+0.00222, +0.00357]
+    noise:4608:0.3        T1a R2 0.4398   T1b gain -0.04635 [-0.04775, -0.04506]
+    noise:4608            T1a R2 0.4398   T1b gain -0.04645 [-0.04794, -0.04508]
+    randproj:dinov3:4608  T1a R2 0.5071   T1b gain +0.00195 [+0.00151, +0.00234]
+    shuffle:dinov3        T1a R2 0.4777   T1b gain -0.00877 [-0.00985, -0.00752]
+  Secondary (not used by the rule), a' by rank, k-mean:
+    dup:dinov3            r=64 -0.00000   r=16 -0.00000   r=256 -0.00000
+    noise:4608:0.3        r=64 +0.00071   r=16 +0.00013   r=256 +0.01052
+    noise:4608            r=64 +0.00469   r=16 +0.00048   r=256 +0.04459
+    randproj:dinov3:4608  r=64 +0.00076   r=16 +0.00009   r=256 +0.00110
+    shuffle:dinov3        r=64 +0.08844   r=16 +0.10587   r=256 +0.05366
+
+============================================================
+DECISION RULE, applied word for word (PLAN.md 'Decision rule')
+Margins: input m = 0.005; target m_T = 0.003.
+
+INPUT SIDE on gain(control|D), global, seed 0 (controls: noise:4608, shuffle:dinov3, randproj:dinov3:4608; dup is a gate, not a verdict input)
+  Clause 'Can go negative: noise:4608 or shuffle:dinov3 has point value <= -0.005 and a CI whose upper end is below 0.'
+    noise:4608: point -0.02690 <= -0.005: True; CI upper -0.02463 < 0: True  -> FIRES
+  Clause 'Can go negative: noise:4608 or shuffle:dinov3 has point value <= -0.005 and a CI whose upper end is below 0.'
+    shuffle:dinov3: point -0.00311 <= -0.005: False; CI upper -0.00270 < 0: True  -> does not fire
+  Clause 'Capacity floor above zero: noise:4608, shuffle:dinov3 or randproj:dinov3:4608 has point value >= +0.005 and a CI whose lower end is above 0.'
+    noise:4608: point -0.02690 >= +0.005: False; CI lower -0.03023 > 0: False  -> does not fire
+  Clause 'Capacity floor above zero: noise:4608, shuffle:dinov3 or randproj:dinov3:4608 has point value >= +0.005 and a CI whose lower end is above 0.'
+    shuffle:dinov3: point -0.00311 >= +0.005: False; CI lower -0.00358 > 0: False  -> does not fire
+  Clause 'Capacity floor above zero: noise:4608, shuffle:dinov3 or randproj:dinov3:4608 has point value >= +0.005 and a CI whose lower end is above 0.'
+    randproj:dinov3:4608: point +0.00110 >= +0.005: False; CI lower -0.00072 > 0: False  -> does not fire
+  Clause 'Unresolved: a control whose CI contains -0.005 or +0.005 is assigned to neither side; stage 2 replicates it before any call that depends on it.'
+    noise:4608: CI [-0.03023, -0.02463] contains neither -0.005 nor +0.005
+  Clause 'Unresolved: a control whose CI contains -0.005 or +0.005 is assigned to neither side; stage 2 replicates it before any call that depends on it.'
+    shuffle:dinov3: CI [-0.00358, -0.00270] contains neither -0.005 nor +0.005
+  Clause 'Unresolved: a control whose CI contains -0.005 or +0.005 is assigned to neither side; stage 2 replicates it before any call that depends on it.'
+    randproj:dinov3:4608: CI [-0.00072, +0.00266] contains neither -0.005 nor +0.005
+  Clause 'Floor near zero: no control is unresolved and none meets either condition above (every point value within +/-0.005). The input test cannot flag harm.'
+    no control unresolved: True; none meets either condition: False; every point value within +/-0.005: False
+  Clause 'Both of the first two can fire ...; then report both and call the result mixed.'
+    can-go-negative fires: True; capacity-floor fires: False  -> mixed: False
+  INPUT-SIDE OUTCOME (PLAN's label): Can go negative (fired by noise:4608)
+  Clause needing the paired difference: under 'Capacity floor above zero' every real partner is re-read as gain minus the matched-width noise gain (paired CI). That clause did not fire, so the verdict does not depend on the paired CI.
+
+TARGET SIDE on interference under a' (r = 64, global, k-mean), seed 0
+  Clause 'Block size and loudness explain R: both noise:4608:0.3 and randproj:dinov3:4608 have interference >= 0.0100 (two thirds of R's 0.0151). Then the target test measures the size and loudness of the co-target block.'
+    noise:4608:0.3 +0.00071 >= 0.0100: False; randproj +0.00076 >= 0.0100: False  -> does not fire
+  Clause 'Partner-specific: both have interference <= 0.0050 (one third of R's) and dup is 0. Then the test sees something about the partner beyond block size and loudness; partners are above the floor only if their value exceeds 0.0050 (R, L, G yes; S no).'
+    noise:4608:0.3 +0.00071 <= 0.0050: True; randproj +0.00076 <= 0.0050: True; dup is 0 (|x| < 1e-6 everywhere): True  -> FIRES
+    Real partners against 'exceeds 0.0050' (values read from the repo target JSONs):
+      G VGGT-Omega: +0.03430 exceeds 0.0050: yes
+      R C-RADIOv4: +0.01508 exceeds 0.0050: yes
+      L SigLIP 2: +0.01413 exceeds 0.0050: yes
+      S SAM 3: +0.00322 exceeds 0.0050: no
+  Clause 'Mixed: anything else; report both numbers, no claim.'
+    TARGET-SIDE OUTCOME (PLAN's label, first part of the rule): Partner-specific
+  Clause 'Can go negative: any control with CI upper end below -0.003. Floor near zero: every control's CI lower end is at or above -0.003. Unresolved: a control whose CI contains -0.003.' (all five controls, a', r = 64, k-mean)
+    dup:dinov3            point -0.00000 CI [-0.000000, +0.000000]: upper < -0.003: False; lower >= -0.003: True; CI contains -0.003: False
+    noise:4608:0.3        point +0.00071 CI [+0.000680, +0.000746]: upper < -0.003: False; lower >= -0.003: True; CI contains -0.003: False
+    noise:4608            point +0.00469 CI [+0.003537, +0.005741]: upper < -0.003: False; lower >= -0.003: True; CI contains -0.003: False
+    randproj:dinov3:4608  point +0.00076 CI [+0.000621, +0.000881]: upper < -0.003: False; lower >= -0.003: True; CI contains -0.003: False
+    shuffle:dinov3        point +0.08844 CI [+0.085561, +0.091329]: upper < -0.003: False; lower >= -0.003: True; CI contains -0.003: False
+    NEGATIVITY OUTCOME (PLAN's label): Floor near zero
+  Clause 'Under b: if noise:4608 under b is within 0.003 of or above the smallest real value (>= 0.0177, SAM 3's 0.0207 minus 0.003), the b picture "every partner costs about 0.02" is the floor for any equal-weight co-target whose future is not predictable from the inputs; if it is <= 0.0104 (half of SAM 3's 0.0207) the b values are partner-specific; in between, mixed, no claim.'
+    noise:4608 under b (r = 64, k-mean): +0.00073 [+0.00070, +0.00077]; recorded SAM 3 under b 0.02072 (minus 0.003 = 0.0177, half = 0.0104; PLAN literals 0.0177 and 0.0104)
+    >= 0.0177: False; <= 0.0104: True  -> the b values are partner-specific
+
+STAGE 2 TRIGGER (PLAN: seeds 1 and 2 for any control whose stage 1 value is within 0.002 of one of the thresholds, or an 'unresolved' control)
+  Checked: each control's point value against the thresholds the rule applies to that control; and, where the rule compares a CI end, that CI end too. |value - threshold| <= 0.002 triggers.
+  Input side (thresholds -0.005 and +0.005 on the point value; 0 on the CI end of the 'fires' conditions; +/-0.005 on CI ends for 'unresolved'):
+    input noise:4608            point            -0.02690 vs -0.005                   |diff| 0.02190  
+    input noise:4608            point            -0.02690 vs +0.005                   |diff| 0.03190  
+    input noise:4608            CI lower end     -0.03023 vs -0.005 (unresolved)      |diff| 0.02523  
+    input noise:4608            CI lower end     -0.03023 vs +0.005 (unresolved)      |diff| 0.03523  
+    input noise:4608            CI upper end     -0.02463 vs -0.005 (unresolved)      |diff| 0.01963  
+    input noise:4608            CI upper end     -0.02463 vs +0.005 (unresolved)      |diff| 0.02963  
+    input noise:4608            CI upper end     -0.02463 vs 0 (negative cond.)       |diff| 0.02463  
+    input noise:4608            CI lower end     -0.03023 vs 0 (positive cond.)       |diff| 0.03023  
+    input shuffle:dinov3        point            -0.00311 vs -0.005                   |diff| 0.00189  TRIGGER
+    input shuffle:dinov3        point            -0.00311 vs +0.005                   |diff| 0.00811  
+    input shuffle:dinov3        CI lower end     -0.00358 vs -0.005 (unresolved)      |diff| 0.00142  TRIGGER
+    input shuffle:dinov3        CI lower end     -0.00358 vs +0.005 (unresolved)      |diff| 0.00858  
+    input shuffle:dinov3        CI upper end     -0.00270 vs -0.005 (unresolved)      |diff| 0.00230  
+    input shuffle:dinov3        CI upper end     -0.00270 vs +0.005 (unresolved)      |diff| 0.00770  
+    input shuffle:dinov3        CI upper end     -0.00270 vs 0 (negative cond.)       |diff| 0.00270  
+    input shuffle:dinov3        CI lower end     -0.00358 vs 0 (positive cond.)       |diff| 0.00358  
+    input randproj:dinov3:4608  point            +0.00110 vs -0.005                   |diff| 0.00610  
+    input randproj:dinov3:4608  point            +0.00110 vs +0.005                   |diff| 0.00390  
+    input randproj:dinov3:4608  CI lower end     -0.00072 vs -0.005 (unresolved)      |diff| 0.00428  
+    input randproj:dinov3:4608  CI lower end     -0.00072 vs +0.005 (unresolved)      |diff| 0.00572  
+    input randproj:dinov3:4608  CI upper end     +0.00266 vs -0.005 (unresolved)      |diff| 0.00766  
+    input randproj:dinov3:4608  CI upper end     +0.00266 vs +0.005 (unresolved)      |diff| 0.00234  
+    input randproj:dinov3:4608  CI lower end     -0.00072 vs 0 (positive cond.)       |diff| 0.00072  TRIGGER
+  Target side (0.0100 and 0.0050 for noise:4608:0.3 and randproj on a'; 0.0177 and 0.0104 for noise:4608 under b; -0.003 for every control's CI ends):
+    target noise:4608:0.3        a' point         +0.00071 vs 0.0100                   |diff| 0.00929  
+    target noise:4608:0.3        a' point         +0.00071 vs 0.0050                   |diff| 0.00429  
+    target randproj:dinov3:4608  a' point         +0.00076 vs 0.0100                   |diff| 0.00924  
+    target randproj:dinov3:4608  a' point         +0.00076 vs 0.0050                   |diff| 0.00424  
+    target noise:4608            b point          +0.00073 vs 0.0177                   |diff| 0.01697  
+    target noise:4608            b point          +0.00073 vs 0.0104                   |diff| 0.00967  
+    target noise:4608:0.3        a' CI lower end  +0.00068 vs -0.003                   |diff| 0.00368  
+    target noise:4608:0.3        a' CI upper end  +0.00075 vs -0.003                   |diff| 0.00375  
+    target noise:4608            a' CI lower end  +0.00354 vs -0.003                   |diff| 0.00654  
+    target noise:4608            a' CI upper end  +0.00574 vs -0.003                   |diff| 0.00874  
+    target randproj:dinov3:4608  a' CI lower end  +0.00062 vs -0.003                   |diff| 0.00362  
+    target randproj:dinov3:4608  a' CI upper end  +0.00088 vs -0.003                   |diff| 0.00388  
+    target shuffle:dinov3        a' CI lower end  +0.08556 vs -0.003                   |diff| 0.08856  
+    target shuffle:dinov3        a' CI upper end  +0.09133 vs -0.003                   |diff| 0.09433  
+
+  STAGE 2 TRIGGERED for:
+    input shuffle:dinov3: point -0.00311, threshold -0.005, |diff| 0.00189
+    input shuffle:dinov3: CI lower end -0.00358, threshold -0.005 (unresolved), |diff| 0.00142
+    input randproj:dinov3:4608: CI lower end -0.00072, threshold 0 (positive cond.), |diff| 0.00072
+  (Stage 2 is a second Job and needs the user's OK first, per the PLAN.)
+
+============================================================
+PREDICTIONS (PLAN, written before running; speculative) against the results
+  Input noise:4608: predicted [-0.03, +0], most likely -0.015 to -0.005; result -0.02690: inside the range
+    inside the 'most likely' band [-0.015, -0.005]: False  (more negative than the most-likely band, still inside the full range)
+    PLAN's reading 'below -0.005 with CI under 0: the input test can go negative': point -0.02690, CI upper -0.02463 -> True
+  Input dup:dinov3 (within +/-0.003): predicted [-0.003, +0.003]; outside +/-0.005 would be a bug; result +0.00279: inside the range
+  Input randproj:dinov3:4608: predicted [-0.005, +0.005]; result +0.00110: inside the range
+  Input shuffle:dinov3: predicted [-0.01, +0], nearer zero than noise:4608; result -0.00311: inside the range
+    nearer zero than noise:4608: |-0.00311| < |-0.02690|: True
+  Input D + C-RADIOv4 rerun: predicted +0.037 [+0.032, +0.042], reproducing the tally within 1e-5; result +0.0371 [+0.0325, +0.0423]; gate 1 passed.
+  Target interference, a', r = 64, mean over k:
+    dup:dinov3: predicted exactly 0 (|x| < 1e-6) under every scaling, rank and k; result max |x| 2.22e-16: as predicted
+      randproj:dinov3:4608: predicted [+0, +0.015], central 0.005; result +0.00076: inside the range
+      noise:4608:0.3: predicted [+0.002, +0.02], central 0.008; result +0.00071: below the range  (MISS)
+      noise:4608: predicted [+0.005, +0.035], central 0.015; result +0.00469: below the range  (MISS)
+      'larger than the 0.3 version': noise:4608 +0.00469 > noise:4608:0.3 +0.00071: True
+      shuffle:dinov3: predicted [+0.003, +0.02]; result +0.08844: above the range  (MISS)
+      noise:4608 under b: predicted [+0.015, +0.03]; result +0.00073: below the range  (MISS)
+    dup under b is 0: max |x| over ranks 7.40e-17: as predicted
+
+============================================================
+ALPHA CHOSEN WITH AND WITHOUT EACH CONTROL (the PLAN asks for them side by side)
+Input side, global probe (ridge strength chosen on validation demos):
+  control               alpha D alone  alpha control alone  alpha D+control
+  dup:dinov3                      0.1                  0.1              0.1
+  noise:4608                      0.1                 1000              0.1
+  randproj:dinov3:4608            0.1                  0.1              0.1
+  shuffle:dinov3                  0.1                10000              0.1
+  C-RADIOv4 (rerun)               0.1                  0.1              0.1
+Target side, T2 reduced-rank fits (alpha for D's prediction alone 'ref' versus with the control as co-target under a' / b / a''); primary rank r = 64, then every cell where they differ:
+  dup:dinov3
+    k=4  r=64: ref 0.1 | a' 0.1  b 0.1  a'' 0.1
+    k=16 r=64: ref 0.1 | a' 0.1  b 0.1  a'' 0.1
+    k=32 r=64: ref 1 | a' 1  b 1  a'' 1
+    cells (of 27: 3 k x 3 ranks x 3 scalings) where alpha with the control differs from the reference: 0
+    T1b input-side probe alphas D only / D+B: k=4 0.01/0.1; k=16 0.1/0.1; k=32 0.1/0.1
+  noise:4608:0.3
+    k=4  r=64: ref 0.1 | a' 0.1  b 0.1  a'' 0.1
+    k=16 r=64: ref 0.1 | a' 0.1  b 0.1  a'' 0.1
+    k=32 r=64: ref 1 | a' 1  b 1  a'' 1
+    cells (of 27: 3 k x 3 ranks x 3 scalings) where alpha with the control differs from the reference: 1
+      k=4 r=256 a'': ref 0.1 -> 1
+    T1b input-side probe alphas D only / D+B: k=4 0.01/0.1; k=16 0.1/0.1; k=32 0.1/0.1
+  noise:4608
+    k=4  r=64: ref 0.1 | a' 1  b 0.1  a'' 1
+    k=16 r=64: ref 0.1 | a' 0.1  b 0.1  a'' 1
+    k=32 r=64: ref 1 | a' 1  b 1  a'' 1
+    cells (of 27: 3 k x 3 ranks x 3 scalings) where alpha with the control differs from the reference: 8
+      k=4 r=64 a': ref 0.1 -> 1
+      k=4 r=64 a'': ref 0.1 -> 1
+      k=4 r=16 a'': ref 0.1 -> 1
+      k=4 r=256 a': ref 0.1 -> 1
+      k=4 r=256 a'': ref 0.1 -> 1
+      k=16 r=64 a'': ref 0.1 -> 1
+      k=16 r=256 a': ref 0.1 -> 1
+      k=16 r=256 a'': ref 0.1 -> 1
+    T1b input-side probe alphas D only / D+B: k=4 0.01/0.1; k=16 0.1/0.1; k=32 0.1/0.1
+  randproj:dinov3:4608
+    k=4  r=64: ref 0.1 | a' 0.1  b 0.1  a'' 0.1
+    k=16 r=64: ref 0.1 | a' 0.1  b 0.1  a'' 0.1
+    k=32 r=64: ref 1 | a' 1  b 1  a'' 1
+    cells (of 27: 3 k x 3 ranks x 3 scalings) where alpha with the control differs from the reference: 0
+    T1b input-side probe alphas D only / D+B: k=4 0.01/0.1; k=16 0.1/0.1; k=32 0.1/0.1
+  shuffle:dinov3
+    k=4  r=64: ref 0.1 | a' 1  b 0.1  a'' 1
+    k=16 r=64: ref 0.1 | a' 1  b 0.1  a'' 1
+    k=32 r=64: ref 0.1 | a' 1  b 1  a'' 1
+    cells (of 27: 3 k x 3 ranks x 3 scalings) where alpha with the control differs from the reference: 18
+      k=4 r=64 a': ref 0.1 -> 1
+      k=4 r=64 a'': ref 0.1 -> 1
+      k=4 r=16 a': ref 0.1 -> 1
+      k=4 r=16 b: ref 0.1 -> 1
+      k=4 r=16 a'': ref 0.1 -> 1
+      k=16 r=64 a': ref 0.1 -> 1
+      k=16 r=64 a'': ref 0.1 -> 1
+      k=16 r=16 a': ref 0.1 -> 1
+      k=16 r=16 a'': ref 0.1 -> 1
+      k=32 r=64 a': ref 0.1 -> 1
+      k=32 r=64 b: ref 0.1 -> 1
+      k=32 r=64 a'': ref 0.1 -> 1
+      k=32 r=16 a': ref 0.1 -> 1
+      k=32 r=16 b: ref 0.1 -> 1
+      k=32 r=16 a'': ref 0.1 -> 1
+      k=32 r=256 a': ref 0.1 -> 1
+      k=32 r=256 b: ref 0.1 -> 1
+      k=32 r=256 a'': ref 0.1 -> 1
+    T1b input-side probe alphas D only / D+B: k=4 0.01/0.1; k=16 0.1/0.1; k=32 0.1/0.1
+
+============================================================
+RUN TIMES against the PLAN's estimate (PLAN 'Cost'; 'seconds' field of each result JSON)
+Input side (PLAN basis: 1,374 s for 4,096-d runs, 1,572 s for 6,656-d runs):
+  dup:dinov3                300 s   PLAN 1374 s   ratio 0.22
+  noise:4608                531 s   PLAN 1572 s   ratio 0.34
+  randproj:dinov3:4608      500 s   PLAN 1572 s   ratio 0.32
+  shuffle:dinov3            301 s   PLAN 1374 s   ratio 0.22
+  C-RADIOv4 (rerun)         498 s   PLAN 1572 s   ratio 0.32
+Target side (PLAN basis: about 1,850 s for 4,096-d runs, about 4,190 s for 6,656-d runs):
+  dup:dinov3               1314 s   PLAN about 1850 s   ratio 0.71
+  noise:4608:0.3           5645 s   PLAN about 4190 s   ratio 1.35
+  noise:4608               4715 s   PLAN about 4190 s   ratio 1.13
+  randproj:dinov3:4608     4741 s   PLAN about 4190 s   ratio 1.13
+  shuffle:dinov3           3237 s   PLAN about 1850 s   ratio 1.75
+Sum of the ten script times: input 0.59 h, target 5.46 h, together 6.05 h.
+Staging lines in the log: dinov3 4.4G in 148 s; c-radiov4 5.2G in 312 s (total 460 s = 7.7 min; PLAN said staging and download about 5 min)
+Whole Job: started 2026-11-10T09:26:18Z, finished 2026-11-10T15:37:23Z (times from the lead's kubectl read, not in the pod log; the finish equals the last log timestamp): 6 h 11 min 5 s = 6.18 h wall; PLAN estimate about 6.7 h (pessimistic about 10 h); ratio 0.92.
+CPU-hours: 2 CPU requested x 6.18 h = 12.4 CPU-h requested (not a measured use; no CPU reading was taken); PLAN estimate about 13 CPU-h.
+
+============================================================
+NOT COMPUTED
+  Paired difference gain(C-RADIOv4|DINOv3) minus gain(control|DINOv3) with a CI: NOT COMPUTED. It needs the bootstrap draws files (input-draws-*.npz, written by --save-draws on the cluster volume
+  /mnt/features/stacking-encoders/control-partners/), which are not in this repo or on this machine. They would have to be copied off the volume. No unpaired interval is substituted for it.
+  Which rule clauses need it: only the 'Capacity floor above zero' re-reading (every real partner as gain minus matched-width noise gain, paired CI): that clause did not fire. The prediction note that R's +0.037 is 'information on top of a width penalty (paired difference larger than +0.037)' cannot be checked without it.
+  Memory: UNKNOWN. No RSS reading was taken during the run (the lead's LOG entry says RSS was not checked) and the pod log holds no memory figure, so nothing is inferred about peak memory against the 14Gi request.
+  Mean-type features and grid CKA for controls: out of scope in the PLAN. The input JSONs do carry mean-type CKA (printed above for sanity); no mean-type probes or targets were run.
+  Stage 2 (seeds 1 and 2) and the noise-matrix variation in the CIs: not run (the bootstrap CIs hold the noise draw fixed; PLAN 'Seeds').
+
+LOG WARNINGS AND ERRORS (scan of the pod log for warn/error/traceback/killed/oom/nan/fail/edge/deprecat/exception/retry/notice; lines outside the JSON bodies)
+  log line 4: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.
+  log line 6: [notice] A new release of pip is available: 24.0 -> 26.3
+  log line 7: [notice] To update, run: pip install --upgrade pip
+  log line 172: [target   1314s] alpha at grid edge: ['global|k=4|t1b_D|alpha=0.01']
+  log line 220: [target   3237s] alpha at grid edge: ['global|k=4|t1b_D|alpha=0.01']
+  log line 268: [target   5645s] alpha at grid edge: ['global|k=4|t1b_D|alpha=0.01']
+  log line 316: [target   4715s] alpha at grid edge: ['global|k=4|t1b_D|alpha=0.01']
+  log line 364: [target   4741s] alpha at grid edge: ['global|k=4|t1b_D|alpha=0.01']
+  Lines matching traceback/killed/oom/nan/exception/error outside the JSON bodies: none
