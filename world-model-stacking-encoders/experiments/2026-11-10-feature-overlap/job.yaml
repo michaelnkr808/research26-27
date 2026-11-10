@@ -1,0 +1,180 @@
+# One-way feature overlap (CPU only): the PLAN's 26 invocations of src/feature_overlap.py on libero_goal, P = S2.
+#   4 controls (fold 1, global): dup:dinov3, randproj:dinov3:4608, noise:4608, shuffle:dinov3, each as a partner of DINOv3.
+#   16 real-pair runs: DINOv3 + {siglip2, sam3, vggt-omega, c-radiov4}, global folds 1, 2, 3, plus the mean-type repeat (fold 1).
+#   6 context-matrix pairs among the four partners (fold 1, global), two encoders staged at a time.
+# Design, outcome rule, test-set use and cost: PLAN.md in this folder. The parameters are recorded in config.json (the command
+# lines below must match its "invocations"). Template: ../2026-11-09-control-partners/job.yaml (stage 1) and job-stage2.yaml (guards).
+# Follows _standards/08: Job (not pod), runs a real command and exits, NO sleep, no GPU, kept off GPU nodes, limits within 20% of
+# requests, activeDeadlineSeconds caps runtime. No tolerations.
+# Scripts are mounted from ConfigMap `stacking-encoders-overlap-src` (create it from ../../src/diagnostics.py and
+# ../../src/feature_overlap.py at SRC_GIT_COMMIT).
+# Features: DINOv3, SAM 3, VGGT-Omega from CephFS PVC stacking-encoders-features (ReadWriteMany). SigLIP 2 and C-RADIOv4 from PVC
+# michael-persistent, RBD ReadWriteOnce: check no other pod holds it before submitting, or the pod sits in ContainerCreating.
+# Every encoder is copied to local disk (emptyDir) before use. Disk: raw libero_goal 5.9 GiB stays; DINOv3 (4.4) stays for the
+# controls and real pairs, then is removed before the context pairs; one partner at a time for the real pairs, two partners at a
+# time for the context pairs (largest: VGGT-Omega 8.8 + C-RADIOv4 5.2 + raw 5.9 = 19.9 GiB).
+# NOT SUBMITTED. Needs the user's own go in the implementation window (ConfigMap, then Job, each asked for), then the checks of
+# ../2026-10-21-target-diagnostics/RUN.md (nothing of ours running, michael-persistent free, features still on the volumes, CPU capacity).
+# Before submitting: set SRC_GIT_COMMIT below to the merged commit (40 lowercase hex; the script aborts otherwise) and create the
+# ConfigMap from the files at that commit. The output folder must be new (03: a rerun gets a new folder); the script aborts otherwise.
+# Order inside the Job: controls first, then real pairs, then the context pairs. The PLAN requires the controls to be READ before any
+# real-pair output is opened; the Job writes each result as soon as it finishes.
+# PROVISIONAL: the memory size (14Gi/16Gi) is the PLAN's judgment, not a measurement. It stands until the local measurement of the
+# largest pair (VGGT-Omega + C-RADIOv4, 8,704 columns) says otherwise: if that peak exceeds 11Gi, size the whole Job at 24Gi instead
+# (PLAN, Memory). The activeDeadlineSeconds (24 h) and the ephemeral-storage sizes are provisional too, to be replaced by the
+# locally timed estimate. Watch RSS on Prometheus in the first minutes (macOS RSS undercounts Linux).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-feature-overlap
+  namespace: aria-world
+spec:
+  # NOT set: `priorityClassName: opportunistic`. _standards/08 line 81 says to use it for large CPU jobs, but it allows preemption
+  # at any time and this Job has no checkpointing, so a preemption would lose hours of work. DEVIATION from _standards/08 line 81,
+  # on purpose (the lead's decision, PR #21 review).
+  # backoffLimit 0 as stage 2 of the control-partners experiment: a retry would hit the non-empty-output-folder abort and run
+  # nothing, so a node loss means resubmitting under a new name and folder (03). DEVIATES from _standards/08 line 31.
+  backoffLimit: 0
+  # PROVISIONAL. The PLAN's bound is 52,296 s (14.5 h) x 1.5 for a slow node = about 22 h, and its guess is 2 to 5 h; 24 h includes
+  # queue time. Replace with the locally timed number.
+  activeDeadlineSeconds: 86400
+  ttlSecondsAfterFinished: 86400      # safety net; delete manually after collecting logs
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}   # CPU-only: stay off GPU nodes
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}                 # near rook-cephfs
+      containers:
+      - name: main
+        image: python:3.11.14-slim
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          # SRC_GIT_COMMIT must be exactly 40 lowercase hex characters (the placeholder fails this).
+          if ! [[ "${SRC_GIT_COMMIT:-}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "ABORT: SRC_GIT_COMMIT is not 40 lowercase hex characters (still the placeholder?). Nothing was run."; exit 2
+          fi
+          OUT=/mnt/features/stacking-encoders/feature-overlap
+          if [ -d "$OUT" ] && [ -n "$(find "$OUT" -mindepth 1 -maxdepth 1 -print -quit)" ]; then
+            echo "ABORT: $OUT already holds entries; a rerun needs a new folder (03). Nothing was run."; exit 3
+          fi
+          mkdir -p $OUT /mnt/features/stacking-encoders/logs
+          LOG=/mnt/features/stacking-encoders/logs/feature-overlap-$(date +%Y%m%d-%H%M%S).log
+          # tee reads from a named pipe so its PID is reliable; on any exit flush it before leaving.
+          mkfifo /tmp/logpipe
+          tee -a $LOG < /tmp/logpipe &
+          TEEPID=$!
+          exec > /tmp/logpipe 2>&1
+          finish() { RC=$?; exec >&- 2>&-; wait $TEEPID || true; exit $RC; }
+          trap finish EXIT
+          echo "SRC_GIT_COMMIT=$SRC_GIT_COMMIT"
+          nproc; head -2 /proc/meminfo   # python:slim has no procps
+          pip install --no-cache-dir -q numpy==2.2.6 h5py==3.16.0 huggingface-hub==0.36.2
+          echo "=== pip freeze"; pip freeze
+          src_of() { case $1 in siglip2|c-radiov4) echo /persistent/stacking-encoders/features/$1;;
+                                *) echo /mnt/features/stacking-encoders/features/$1;; esac; }
+          stage() { mkdir -p /work/feats/$1; T=$(date +%s); cp -r $(src_of $1)/libero_goal /work/feats/$1/
+                    echo "staged $1: $(du -sh /work/feats/$1/libero_goal | cut -f1) in $(( $(date +%s) - T ))s"; df -h /work | tail -1; }
+          unstage() { rm -rf /work/feats/$1; }
+          safe() { echo "$1" | tr ':' '-'; }
+          stage dinov3
+          echo "=== download libero_goal (actions, demo index, proprio)"; date -u
+          python - <<'PY'
+          from huggingface_hub import snapshot_download, HfApi
+          snapshot_download("yifengzhu-hf/LIBERO-datasets", repo_type="dataset", revision="main",
+                            allow_patterns=["libero_goal/*.hdf5"], local_dir="/work/data")
+          try:
+              print("LIBERO-datasets revision sha:", HfApi().dataset_info("yifengzhu-hf/LIBERO-datasets").sha)
+          except Exception as e:
+              print("could not read the dataset sha:", repr(e))
+          PY
+          date -u
+          du -sh /work/data; df -h /work
+          # The same arguments for every invocation except the ones that name the pair, fold and type. Bootstrap seed 0 and
+          # synthetic seed 0 everywhere, so the demo draws are shared across runs and draws can be differenced across runs.
+          run() {   # $1 base, $2 partner (real encoder or synthetic spec), $3 fold, $4 feature type
+            TAG=$1-$(safe $2)-f$3-$4
+            echo "--- $TAG"; date -u
+            python /src/feature_overlap.py --feats /work/feats --suite libero_goal --raw /work/data/libero_goal \
+              --base $1 --partner "$2" --fold $3 --types $4 --m 64 --n-boot 2000 --seed 0 --synth-seed 0 \
+              --save-draws $OUT/draws-$TAG.npz --out $OUT/overlap-libero_goal-$TAG.json
+          }
+          echo "=== CONTROLS (4 invocations, fold 1, global): read these before any real-pair output"
+          for S in dup:dinov3 randproj:dinov3:4608 noise:4608 shuffle:dinov3; do run dinov3 $S 1 global; done
+          echo "=== REAL PAIRS (16 invocations): DINOv3 + partner, global folds 1 2 3, then the mean-type repeat (fold 1)"
+          for P in siglip2 sam3 vggt-omega c-radiov4; do
+            stage $P
+            for F in 1 2 3; do run dinov3 $P $F global; done
+            run dinov3 $P 1 mean
+            unstage $P
+          done
+          echo "=== CONTEXT PAIRS (6 invocations, fold 1, global): the six pairs among the four partners, DINOv3 unstaged"
+          unstage dinov3
+          PARTNERS=(siglip2 sam3 vggt-omega c-radiov4)
+          for I in 0 1 2; do   # the last partner (c-radiov4) only appears as a Y; staging it as an X would pair it with nothing
+            X=${PARTNERS[$I]}
+            stage $X
+            for J in 0 1 2 3; do
+              if [ $J -gt $I ]; then
+                Y=${PARTNERS[$J]}; stage $Y; run $X $Y 1 global; unstage $Y
+              fi
+            done
+            unstage $X
+          done
+          echo "=== $(ls $OUT/overlap-*.json | wc -l) result JSON files (expected 26)"
+          # Blindness (PLAN, review of PR #21): only the four control JSONs are printed to the log. The real-pair and context
+          # JSONs are not printed anywhere in the log; they stay on the volume and come back in the tarball below.
+          echo "=== CONTROL result JSONs (controls are read first)"
+          for F in $OUT/overlap-libero_goal-dinov3-dup-*.json $OUT/overlap-libero_goal-dinov3-randproj-*.json \
+                   $OUT/overlap-libero_goal-dinov3-noise-*.json $OUT/overlap-libero_goal-dinov3-shuffle-*.json; do
+            echo "=== result json $F"; cat $F; echo
+          done
+          echo "=== sha256 of every output file (regular files only)"; ls -l $OUT
+          (cd $OUT && find . -maxdepth 1 -type f -exec sha256sum {} + | sort -k2)
+          echo "=== results tarball (draws npz and ALL result JSONs; base64 below is not read until the controls are)"
+          find $OUT -maxdepth 1 \( -name 'draws-*.npz' -o -name 'overlap-*.json' \) -printf '%f\n' | sort > /work/npz.list
+          echo "npz files: $(wc -l < /work/npz.list)"
+          tar -C $OUT -czf /work/draws.tgz -T /work/npz.list
+          TARBYTES=$(stat -c %s /work/draws.tgz)
+          echo "tarball bytes: $TARBYTES  (limit for printing: 20000000)"
+          sha256sum /work/draws.tgz
+          if [ "$TARBYTES" -lt 20000000 ]; then
+            echo "=== BEGIN draws.tgz base64"
+            base64 /work/draws.tgz
+            echo "=== END draws.tgz base64"
+          else
+            echo "tarball not printed (20 MB or more); the npz files stay on the volume in $OUT"
+          fi
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: "SET-AT-SUBMISSION"}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: OMP_NUM_THREADS, value: "2"}
+        - {name: OPENBLAS_NUM_THREADS, value: "2"}
+        # PROVISIONAL (see the header): 14Gi request / 16Gi limit is the PLAN's judgment from the control-partners Job (same
+        # frame count, D + C-RADIOv4 6,656 columns peaked at 12.85 GiB in the target Job; this code makes no shifted copies).
+        # The largest pair here is VGGT-Omega + C-RADIOv4 (8,704 columns). NRP checks: memory within 20-150% and CPU within
+        # 20-200% of the request. Limits within 20% of requests. Ephemeral storage sized for the 19.9 GiB peak of local disk.
+        resources:
+          requests: {cpu: "2", memory: 14Gi, ephemeral-storage: 24Gi}
+          limits:   {cpu: "2400m", memory: 16Gi, ephemeral-storage: 28Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: persistent-vol, mountPath: /persistent, readOnly: true}
+        - {name: features, mountPath: /mnt/features}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 24Gi}   # raw libero_goal 5.9 GiB + at most two staged encoders at a time (peak 19.9 GiB, provisional)
+      - name: src
+        configMap: {name: stacking-encoders-overlap-src}
+      - name: persistent-vol
+        persistentVolumeClaim: {claimName: michael-persistent}   # RWO, read-only here; SigLIP 2 and C-RADIOv4
+      - name: features
+        persistentVolumeClaim: {claimName: stacking-encoders-features}

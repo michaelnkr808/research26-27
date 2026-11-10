@@ -1,0 +1,39 @@
+{
+  "experiment": "2026-11-10-feature-overlap",
+  "plan": "PLAN.md (signed off by the user 2026-11-10, primary score P = S2 = C(partner in DINOv3))",
+  "code": "../../src/feature_overlap.py",
+  "job": "job.yaml (the command lines there must match \"invocations\" below; 26 invocations)",
+  "suite": "libero_goal",
+  "base": "dinov3",
+  "partners": ["siglip2", "sam3", "vggt-omega", "c-radiov4"],
+  "feature_type_primary": "global",
+  "feature_type_repeat": "mean (fold 1, the four real pairs only)",
+  "target_components_m": 64,
+  "alphas": [0.01, 0.1, 1, 10, 100, 1000, 10000, 100000],
+  "alpha_rule": "mean validation R^2 over the scored columns, validation demos only; refit on train+val; test scored once",
+  "n_boot": 2000,
+  "n_boot_required_minimum": 1000,
+  "bootstrap_seed": 0,
+  "synthetic_seed": 0,
+  "folds": {"1": {"test_block": 5, "val_block": 4, "note": "tally split"},
+            "2": {"test_block": 1, "val_block": 2},
+            "3": {"test_block": 3, "val_block": 4}},
+  "controls": ["dup:dinov3", "randproj:dinov3:4608", "noise:4608", "shuffle:dinov3"],
+  "control_gates": {
+    "dup:dinov3": {"S1_S2_min": 0.98, "S3_abs_max": 0.02},
+    "randproj:dinov3:4608": {"S1_S2_min": 0.95, "S3_abs_max": 0.05},
+    "noise:4608": {"S1_S2_range": [-0.03, 0.01], "S3_abs_max": 0.04},
+    "shuffle:dinov3": {"S1_S2_range": [-0.03, 0.01], "S3_abs_max": 0.04},
+    "note": "copied from PLAN.md, Control partners; a gate failure permits code bug fixes only"
+  },
+  "invocations": {
+    "controls_fold1_global": 4,
+    "real_pairs_folds_1_2_3_global": 12,
+    "real_pairs_mean_fold1": 4,
+    "context_pairs_among_partners_fold1_global": 6,
+    "total": 26
+  },
+  "not_run": "width-matched guard (P = S2, so not part of the run)",
+  "resources_provisional": {"cpu": "2 / 2400m", "memory": "14Gi / 16Gi until the local measurement of VGGT-Omega + C-RADIOv4", "activeDeadlineSeconds": 86400},
+  "output_folder_on_volume": "/mnt/features/stacking-encoders/feature-overlap (new folder; the Job aborts if it is not empty)"
+}

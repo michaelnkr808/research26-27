@@ -1,5 +1,5 @@
 # One-way feature overlap (containment) score
 
-**Results:** none yet. Design in `PLAN.md` (written 2026-11-10, awaiting the user's sign-off, nothing run), progress in `LOG.md`. Parameters go in `config.*` (add it when the code is written; see `_standards/03-reproducibility-and-data.md`).
+**Results:** none yet. Design in `PLAN.md` (written 2026-11-10, signed off by the user the same day, nothing run on real features), progress in `LOG.md`. Code written and tested on synthetic data only: `../../src/feature_overlap.py`, `../../src/test_feature_overlap.py`; parameters in `config.json`; CPU Job manifest `job.yaml` (not submitted, memory size provisional until the local measurement).
 
 <!-- After the run: command to run, commit hash, outcome, where the outputs are, and links to the LOG entries (see _standards/03-reproducibility-and-data.md). -->
