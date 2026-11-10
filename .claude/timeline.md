@@ -315,6 +315,14 @@
 - Open loops: PR #16 is open and waits on the user's "merge" (then pull, remove worktree agent-a63dd9603a5fb2949). This session's closing chore merge is on local main, not pushed. Ask the mentor on 2026-11-11 whether the pair-harm measure is in this paper and whether it is the headline. The overlap code and CPU Job need the user's go in the implementation window. The full Table 10 design waits a few days for the authors' reply.
 - See: world-model-stacking-encoders/writing/2026-11-09-path-to-paper.md, world-model-stacking-encoders/experiments/2026-11-10-feature-overlap/PLAN.md, world-model-stacking-encoders/PLAN.md (Next 5, Next 6), world-model-stacking-encoders/LOG.md (2026-11-10 [agent, lead, planning] entries), https://github.com/michaelnkr808/research26-27/pull/16
 
+## 2026-11-10: stacking-encoders review lead: cleanup after the four-audit review
+
+- Short session for the review lead (renamed vis-review-agent). No new review task was assigned; the five review reports and the synthesis from 2026-11-08/09 are already on main (9cdc6ce..a7f10c2) and their LOG entry is written.
+- Stopped two finished subagents (a fact-check reviewer and the perturbed-frames/docs audit worker) that were still listed in the session after reporting back; their worktrees had been removed earlier.
+- Decisions relayed earlier and still owned by other sessions: seed-noise threshold wording before the proxy verdict (implementation), same-seed init mismatch in proxy_wam.py, Key findings headline rewording, PLAN Next 3 reframing around LiLa-WAM/ReWAM, backoffLimit exception.
+- Open loops: no review in flight. Candidates offered to the user: review main's rewritten pf_analysis.py before the final perturbed-frames run, and recheck the synthesis fix list against current main (its status column is as of 43c3b7d). Any new report lands by PR per _standards/05.
+- See: world-model-stacking-encoders/reviews/2026-11-09-synthesis.md, world-model-stacking-encoders/reviews/README.md, world-model-stacking-encoders/LOG.md (2026-11-09 [agent, review])
+
 ## 2026-11-10: stacking-encoders draft lead: writing plan, LaTeX skeleton, page-length question
 
 - Started the paper's draft session (vis-draft-agent). Wrote the writing plan (outline with a slot per ending, figure list, citation list, venue facts checked on the CVPR site) and the LaTeX skeleton in the CVPR 2027 template under writing/paper/. Both went through two read-only review rounds and were merged on the user's OK (PRs #12, #13).
