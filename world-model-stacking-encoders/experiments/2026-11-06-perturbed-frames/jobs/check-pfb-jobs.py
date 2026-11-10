@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """pfb-jobs done-check helper: parse every job-pfb-*.yaml (nine expected, plus the optional RTX A6000 twin of the render Job, job-pfb-render-a6000.yaml, plus the recovery Job job-pfb-recover.yaml), extract the container script, run bash -n, check the resource, policy and phase-B rules.
-Usage: check-pfb-jobs.py [--rendered] <jobs dir> <scratch dir> [<src dir>]    (src dir default: ../../../src of this file; used to cross-check the CLI flags the scripts pass)
-With --rendered a manifest may be a submit-time copy: SRC_GIT_COMMIT must then be 40 hex characters and NOISE_CAP (render-type Jobs) digits, with no FILL_AT_SUBMIT left in a value; a manifest that still has the placeholders is checked as before.
+Usage: check-pfb-jobs.py [--rendered [--any-values]] <jobs dir> <scratch dir> [<src dir>]    (src dir default: ../../../src of this file; used to cross-check the CLI flags the scripts pass)
+With --rendered (the recovery copy must then carry the A6000 render copy's commit and NOISE_CAP, unless --any-values) a manifest may be a submit-time copy: SRC_GIT_COMMIT must then be 40 hex characters and NOISE_CAP (render-type Jobs) digits, with no FILL_AT_SUBMIT left in a value; a manifest that still has the placeholders is checked as before.
 Started from check-pfa-jobs.py (same checks), plus the phase-B specifics: pinned digest in every Job and IMAGE_DIGEST equal to it in the render Job; per-condition staging paths;
 --consistency-ref on every test render and --expect-draws on every perturbed one; --config /pf/phase-a.yaml everywhere; revision asserts; no sleep/while/until; CPU Jobs without GPU."""
 import glob
@@ -13,7 +13,10 @@ from pathlib import Path
 import yaml
 
 RENDERED = "--rendered" in sys.argv
-sys.argv = [a for a in sys.argv if a != "--rendered"]
+ANY_VALUES = "--any-values" in sys.argv    # accept other commit / noise cap values in a rendered recovery copy (tests with dummy values)
+sys.argv = [a for a in sys.argv if a not in ("--rendered", "--any-values")]
+RENDERED_COMMIT = "a3777d7db734bf1a7275df17b0e5f4ae57e90c84"    # jobs/rendered/job-pfb-render-a6000.yaml (the run whose clean DINOv3 features exist)
+RENDERED_NOISE_CAP = "10800"
 jobs = Path(sys.argv[1])
 scratch = Path(sys.argv[2])
 scratch.mkdir(parents=True, exist_ok=True)
@@ -110,6 +113,11 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
     if filled:
         if not re.fullmatch(r"[0-9a-f]{40}", str(envd.get("SRC_GIT_COMMIT"))):
             msgs.append(f"rendered: SRC_GIT_COMMIT env {envd.get('SRC_GIT_COMMIT')!r} is not 40 hex characters")
+        if is_recover and not ANY_VALUES:
+            if envd.get("SRC_GIT_COMMIT") != RENDERED_COMMIT:
+                msgs.append(f"rendered recover: SRC_GIT_COMMIT is not the A6000 render copy's {RENDERED_COMMIT} (--any-values to allow)")
+            if not re.search(r"^ *NOISE_CAP=" + RENDERED_NOISE_CAP + "$", c["args"][0], re.M):
+                msgs.append(f"rendered recover: NOISE_CAP is not the A6000 render copy's {RENDERED_NOISE_CAP} (--any-values to allow)")
     elif envd.get("SRC_GIT_COMMIT") != "FILL_AT_SUBMIT":
         msgs.append("SRC_GIT_COMMIT env is not FILL_AT_SUBMIT")
     if envd.get("PYTHONPATH") != "/pf:/src":
@@ -266,32 +274,82 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
             if f"--encoder {e}" not in script:
                 msgs.append(f"no extraction of {e}")
     if is_recover:
-        # the four published renders are only read; noise is the only thing this Job may publish; nothing on the volume is deleted
+        # the recovery script is compared with the render Job's script as text: the extraction block, the meta and copy stages and the noise render line must be the render Job's, apart from the documented additions
+        o_path = jobs / ORIGINAL
+        if not o_path.is_file():
+            msgs.append("recover: job-pfb-render.yaml missing, cannot compare the script")
+        else:
+            ol = [ln.strip() for ln in yaml.safe_load(open(o_path))["spec"]["template"]["spec"]["containers"][0]["args"][0].split("\n")]
+            rl = [ln.strip() for ln in script.split("\n")]
+
+            def arms(lns):
+                i_ = next((k for k, ln in enumerate(lns) if ln.startswith("case $_e in")), None)
+                j_ = next((k for k in range(i_ + 1, len(lns)) if lns[k] == "esac"), None) if i_ is not None else None
+                return None if i_ is None or j_ is None else lns[i_:j_ + 1]
+            if arms(ol) is None or arms(ol) != arms(rl):
+                msgs.append("recover: the encoder arms (python, flags, batch size, caps) differ from the render Job's")
+            for key in ("stage meta-$_e-$_c", "stage copy-$_e-$_c", "if [ $LAST -eq 0 ]; then rm -rf /work/feats/$_c/$_e; fi"):
+                if [ln for ln in ol if ln.startswith(key)] != [ln for ln in rl if ln.startswith(key)] or not [ln for ln in rl if ln.startswith(key)]:
+                    msgs.append(f"recover: the line starting {key!r} differs from the render Job's or is missing")
+            if [ln for ln in ol if ln.startswith("stage render-noise")] != [ln for ln in rl if ln.startswith("stage render-noise")]:
+                msgs.append("recover: the noise render line differs from the render Job's")
+            o_ext = [ln for ln in ol if ln.startswith("stage extract-$_e-$_c cap $_t ")]
+            r_ext = [ln for ln in rl if ln.startswith("cap $_t $_py /src/extract_features.py")]
+            if len(o_ext) != 1 or len(r_ext) != 1:
+                msgs.append("recover: cannot find the extraction command in both scripts")
+            else:
+                r_norm = re.sub(r" 2>&1 \| tee \S+$", "", r_ext[0]).replace(" --device cuda", "")
+                if "stage extract-$_e-$_c " + r_norm != o_ext[0]:
+                    msgs.append("recover: the extraction command differs from the render Job's beyond --device cuda and the log tee")
+        # published renders are only read: any line that writes toward render/ or a published folder must be a line of the render Job (publish_render) or the one staging copy
+        write_verb = re.compile(r"\b(cp|mv|mkdir|touch|rm|ln|tee|dd|truncate)\b|(?<![0-9&])>\s*\S*\$(PB/render|_d\b)")
+        for ln in rl:
+            if ln.startswith("#") or not ("$PB/render" in ln or "$_d" in ln):
+                continue
+            if write_verb.search(ln) and ln not in ol and ln != "cp $_d/libero_goal/*.hdf5 $_l/":
+                msgs.append("recover: a line writes toward render/ or a published folder and is not a render Job line: " + ln[:100])
+        for ln in rl:
+            if re.search(r"\btouch\b", ln) and not ln.startswith("#") and ln not in ol:
+                msgs.append("recover: a touch that the render Job does not have: " + ln[:100])
         if not re.search(r'^ *PUBC="clean camera light background"$', script, re.M):
             msgs.append("recover: PUBC is not exactly the four published conditions")
-        if "exit 20" not in script.split("for c in $CONDS; do", 1)[-1][:700] or "exit 14" not in script.split("for c in $CONDS; do", 1)[-1][:1800] or "exit 22" not in script.split("for c in $CONDS; do", 1)[-1][:2400]:
-            msgs.append("recover: the exit 20 / 14 / 22 refusals are missing from the pre-flight loop")
+        for x in ("exit 20", "exit 14", "exit 22"):
+            if x not in script:
+                msgs.append(f"recover: {x} refusal missing")
         pr_lines = [ln.strip() for ln in lines if "publish_render" in ln and not ln.strip().startswith("#")]
         if len(pr_lines) != 3 or not any(ln.startswith("publish_render()") for ln in pr_lines) or not any(ln.startswith("export -f publish_render") for ln in pr_lines) \
                 or not any(ln.startswith("stage publish-$_c cap 1800 bash -c 'publish_render") for ln in pr_lines):
             msgs.append(f"recover: publish_render is used outside its definition, export and the stage in finish_render: {pr_lines}")
         if 'REFUSE: $PB/render/$_c or $_c.part exists' not in script:
             msgs.append("recover: publish_render does not refuse an existing target")
-        if "render-sha256.txt" not in script or "sha256sum -c $_d/render-sha256.txt" not in script:
-            msgs.append("recover: staging is not checked against render-sha256.txt")
-        if "RENDER_COMPLETE" not in script:
-            msgs.append("recover: no RENDER_COMPLETE check")
+        if "sha256sum -c $_d/render-sha256.txt" not in script or "RENDER_COMPLETE" not in script:
+            msgs.append("recover: staging is not checked against render-sha256.txt / RENDER_COMPLETE")
+        if not re.search(r"elif \[ -f \$PB/render/\$c/RENDER_COMPLETE \] && \[ -f \$PB/render/\$c/render-sha256.txt \] && \[ -f \$PB/render/\$c/render-report.json \]", script):
+            msgs.append("recover: the 'noise already published' pre-flight does not require RENDER_COMPLETE, render-sha256.txt and render-report.json")
         for ln in lines:
-            if ln.strip().startswith("#"):
-                continue
-            if re.search(r"\brm\b", ln) and ("$PB" in ln or "/mnt/proxy" in ln or "$R" in ln):
+            if not ln.strip().startswith("#") and re.search(r"\brm\b", ln) and ("$PB" in ln or "/mnt/proxy" in ln or "$R" in ln):
                 msgs.append("recover: rm on the volume: " + ln.strip()[:90])
-            if re.search(r"\bmv\b", ln) and "$PB" in ln and "publish" not in ln and "$_d/$_b.partial" not in ln and "$_c.part $PB/render/$_c" not in ln:
-                msgs.append("recover: mv on the volume outside publish/copy: " + ln.strip()[:90])
-        if re.search(r"cp .*\$_d/libero_goal.* \$PB|cp .* \$PB/render/\$_c/", code):
-            msgs.append("recover: a copy writes into a published render")
         if "feats_done $PB/feats/$_c/$_e/libero_goal" not in script or "meta_check.py $_e $_c $PB/feats/$_c" not in script:
             msgs.append("recover: skipped complete features are not meta-checked")
+        # order: noise render first, then every extraction; a failed consistency check (5) or draws check (3) ends the Job before any extraction
+        i_noise = script.find("stage render-noise")
+        i_ext = script.find("for e in dinov3 siglip2 c-radiov4; do for c in $CONDS; do extract_one $e $c; done; done")
+        if i_noise < 0 or i_ext < 0 or i_noise > i_ext:
+            msgs.append("recover: the noise render does not come before the extractions")
+        if "[ $_nrc -eq 5 ] || [ $_nrc -eq 3 ]" not in script or 'abort_job $_nrc' not in script:
+            msgs.append("recover: exit 5 / 3 of the noise render do not end the Job before the extractions")
+        # dead-GPU fail-fast: checked before every extraction stage, in the stage's own python; device=cpu ends the Job; extraction forced to cuda
+        gc = script.split("gpu_check() {", 1)[-1][:700] if "gpu_check() {" in script else ""
+        if "nvidia-smi -L" not in gc or "torch.cuda.is_available()" not in gc or "torch.ones(64, device=\"cuda\")" not in gc or "$_py -c" not in gc or "abort_job 30" not in gc:
+            msgs.append("recover: gpu_check is missing or incomplete (nvidia-smi, torch.cuda.is_available, a CUDA op in $_py, abort_job 30)")
+        i_g = script.find("gpu_check extract-$_e-$_c\n")
+        i_s = script.find("stage extract-$_e-$_c run_extract")
+        if i_g < 0 or i_s < 0 or i_g > i_s:
+            msgs.append("recover: gpu_check is not called right before the extraction stage")
+        if "grep -q 'device=cpu'" not in script or "abort_job 31" not in script:
+            msgs.append("recover: a device=cpu log does not end the Job (exit 31)")
+        if "--device cuda" not in script.split("run_extract() {", 1)[-1][:400]:
+            msgs.append("recover: the extraction is not run with --device cuda")
     if name.startswith("job-pfb-ext-") or is_render:
         # per-condition staging paths
         toks = re.findall(r"/work/pfb-test-([^/\s\"']*)/", code)
