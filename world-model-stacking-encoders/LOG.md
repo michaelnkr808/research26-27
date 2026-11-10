@@ -1602,3 +1602,12 @@ Reviews were read-only; findings reported by subagents, spot-checked by the lead
 **Test-set use:** none.
 **Next:** wait a few days for a reply before designing PLAN Next 5's extractions; meanwhile, if the user asks, planning designs the one-way overlap score on the four pairs already extracted (no new extraction).
 **Open questions:** whether the authors reply; whether the mentor wants to be copied on a follow-up.
+
+## 2026-11-10 [agent, implementation lead] control-partners stage 1 submitted; phase B render still Pending
+**Goal:** run the control-partners stage 1 now that it needs only CPU, and record where phase B stands.
+**Did:** on the user's go in chat ("yeah if it only needs cpu then create the configmap to be a cpu only job and submit it"), the lead created the source ConfigMap and submitted the CPU Job at 09:26 UTC; the pod was Running within a minute. This is ahead of phase B's GPU work because the run needs no GPU. Detail: `experiments/2026-11-09-control-partners/LOG.md` (2026-11-10 entry). Phase B: render pod `stacking-encoders-pfb-render-jm5rg` was still Pending at 09:23 UTC, 3 h 53 min after the resubmission (scheduler: "0/536 nodes are available: 18 Insufficient nvidia.com/gpu ..."); a background wait reports when it leaves Pending. The planning session sent a heads-up (information only) about the Table 10 retrospective (PLAN Next 5); the lead replied with what the repo records about the V-JEPA 2.1, UniTok and HRP stubs; nothing started. All verified by the implementation lead this session.
+**PR:** direct.
+**Found:** no results yet.
+**Test-set use:** none new in this entry (see the experiment LOG).
+**Next:** check the Job's memory use and first run; collect and read results when it ends, then explain to the user before any key-finding change; stage 2 needs the user's OK; phase B continues when the render pod schedules.
+**Open questions:** whether the Job's feature folders and output folder were as expected (checked by the Job's staging step, not before submit).
