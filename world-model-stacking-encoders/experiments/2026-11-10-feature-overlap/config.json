@@ -34,6 +34,6 @@
     "total": 26
   },
   "not_run": "width-matched guard (P = S2, so not part of the run)",
-  "resources_provisional": {"cpu": "2 / 2400m", "memory": "14Gi / 16Gi until the local measurement of VGGT-Omega + C-RADIOv4", "activeDeadlineSeconds": 86400},
+  "resources_provisional": {"cpu": "2 / 2400m", "memory": "14Gi / 16Gi until the cluster sizing Job (job-sizing.yaml) has measured VGGT-Omega + C-RADIOv4", "activeDeadlineSeconds": 86400},
   "output_folder_on_volume": "/mnt/features/stacking-encoders/feature-overlap (new folder; the Job aborts if it is not empty)"
 }

@@ -19,10 +19,10 @@
 # ConfigMap from the files at that commit. The output folder must be new (03: a rerun gets a new folder); the script aborts otherwise.
 # Order inside the Job: controls first, then real pairs, then the context pairs. The PLAN requires the controls to be READ before any
 # real-pair output is opened; the Job writes each result as soon as it finishes.
-# PROVISIONAL: the memory size (14Gi/16Gi) is the PLAN's judgment, not a measurement. It stands until the local measurement of the
-# largest pair (VGGT-Omega + C-RADIOv4, 8,704 columns) says otherwise: if that peak exceeds 11Gi, size the whole Job at 24Gi instead
+# PROVISIONAL: the memory size (14Gi/16Gi) is the PLAN's judgment, not a measurement. It stands until the cluster sizing Job (job-sizing.yaml,
+# PLAN amendment 2026-11-10, which replaced the local measurement) has measured the largest pair (VGGT-Omega + C-RADIOv4, 8,704 columns): if that peak exceeds 11Gi, size the whole Job at 24Gi instead
 # (PLAN, Memory). The activeDeadlineSeconds (24 h) and the ephemeral-storage sizes are provisional too, to be replaced by the
-# locally timed estimate. Watch RSS on Prometheus in the first minutes (macOS RSS undercounts Linux).
+# sizing Job's measured time. Watch RSS on Prometheus in the first minutes (macOS RSS undercounts Linux).
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -36,7 +36,7 @@ spec:
   # nothing, so a node loss means resubmitting under a new name and folder (03). DEVIATES from _standards/08 line 31.
   backoffLimit: 0
   # PROVISIONAL. The PLAN's bound is 52,296 s (14.5 h) x 1.5 for a slow node = about 22 h, and its guess is 2 to 5 h; 24 h includes
-  # queue time. Replace with the locally timed number.
+  # queue time. Replace with the number measured by the cluster sizing Job (job-sizing.yaml).
   activeDeadlineSeconds: 86400
   ttlSecondsAfterFinished: 86400      # safety net; delete manually after collecting logs
   template:
