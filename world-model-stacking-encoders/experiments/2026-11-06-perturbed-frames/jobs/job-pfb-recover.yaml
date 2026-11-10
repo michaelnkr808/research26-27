@@ -1,0 +1,311 @@
+# PHASE B RECOVERY Job (pfb-recover), written 2026-11-10 by the worker pfb-recover. NOT SUBMITTED; the lead fills SRC_GIT_COMMIT and NOISE_CAP, runs the server dry run and submits (jobs/PHASE-B.md section 11).
+# Derived from job-pfb-render.yaml (same image, node rule, resources, environments, caps, meta check, copy steps, ConfigMaps). Why: the render Job ran on an RTX A6000 that failed during DINOv3 on camera; it published four test
+# renders (clean, camera, light, background; each with RENDER_COMPLETE and a hash-verified copy) and the clean DINOv3 features, then was deleted. One combined GPU Job recovers the rest (the user's choice, 2026-11-10).
+# It does exactly two things, in this order (PHASE-B.md section 11):
+#   1. READS the four published renders from /mnt/proxy/pf-main/phase-b/render/<c>/ (never writes, renders or deletes there), stages each to /work/pfb-test-<c>/libero_goal/ (the same local path the render Job used, so the
+#      feature files' source_file meta matches), checks it against render-sha256.txt written by the publish step, and extracts DINOv3, SigLIP 2 and C-RADIOv4 on it. An (encoder, condition) whose feature folder is complete (10 .h5, no
+#      .partial; today clean/dinov3) is skipped after a read-only meta check; an incomplete folder is refused with exit 22, never deleted. A published render that is missing or incomplete is exit 20 (this Job never renders those four).
+#   2. Renders NOISE with the consistency check and --expect-draws (the render Job's noise path, unchanged), publishes it, extracts the three encoders on it. If render/noise or render/noise.part exists without a complete publish: exit 14
+#      (never overwritten). If render/noise is already published and complete (a retry after a noise extraction failure) it is only read, like the other four.
+# SAM 3 and VGGT-Omega are other Jobs. L4, A10, RTX A5000, RTX 3090, RTX 4090 (24 GB, generic nvidia.com/gpu), us-west, driver > 569, the two excluded hosts: as job-pfb-render.yaml.
+# Environments and pins: as job-pfb-render.yaml (simulator venv + /work/extlib for DINOv3, /work/venv457 for SigLIP 2 and C-RADIOv4).
+# Estimate (speculative, PHASE-B.md section 11): about 2.3 GPU-busy hours plus the noise render time X, setup and staging about 0.5 h.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-pfb-recover
+  namespace: aria-world
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 172800        # 48 h from creation, queue included (phase A precedent); the work itself is capped stage by stage inside
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-L4, NVIDIA-A10, NVIDIA-RTX-A5000, NVIDIA-GeForce-RTX-3090, NVIDIA-GeForce-RTX-4090]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net, ry-gpu-08.sdsc.optiputer.net]}  # GPU faults, 2026-11-03
+      containers:
+      - name: main
+        image: pytorch/pytorch@sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2   # pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime, pinned by digest (phase A)
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          case "${SRC_GIT_COMMIT:-}" in FILL*|"") echo "ABORT: SRC_GIT_COMMIT not filled in (render the manifest with sed at submit time, see PHASE-B.md)"; exit 11;; esac
+          R=/mnt/proxy; PA=$R/pf-main/phase-a; PB=$R/pf-main/phase-b; STAMP=$(date +%Y%m%d-%H%M%S); OUT=/work/out; JOB=pfb-recover
+          # Stage cap of the noise render, in seconds. THE LEAD SETS THIS before submitting from `python jobs/estimate_noise_time.py config/draws.json <pilot-noise-render-report.json>`
+          # (its "suggested NOISE_CAP" line); the default is a placeholder. The noise cost depends on the drawn LIBERO-Plus noise codes (codes 41 and 46 cost 0.7 to 1.0 s per frame).
+          NOISE_CAP=FILL_AT_SUBMIT
+          # The conditions this run handles. Default all five. A retry restricted to some conditions (for example CONDS="noise" after a noise exit 124) edits this line in the rendered copy (PHASE-B.md section 11, retry recipes).
+          # PUBC = the four renders the A6000 render Job published; this Job only reads them. MODE[c]=pub: render already published (read, staged, extracted); MODE[c]=new: to be rendered here (only noise can be).
+          CONDS="clean camera light background noise"
+          PUBC="clean camera light background"
+          declare -A MODE
+          want() { case " $CONDS " in *" $1 "*) return 0;; esac; return 1; }
+          feats_done() { [ -d "$1" ] && [ "$(ls $1/*.h5 2>/dev/null | wc -l)" -eq 10 ] && ! ls $1 | grep -q partial; }   # feats_done <dir>: 10 feature files, no .partial
+          case "$NOISE_CAP" in ''|*[!0-9]*) echo "ABORT: NOISE_CAP is '$NOISE_CAP' (render the manifest with sed at submit time, see PHASE-B.md section 3)"; exit 11;; esac
+          # SigLIP 2 revision that phase A extracted with: `main` at that time, from results/pf-main/phase-a/pfa-ext-siglip2-cradio/revisions.txt (line "revision google/siglip2-large-patch16-384 <sha>")
+          SIGLIP2_SHA=1b426889ea62b5a72bf9839009a1b184bfc9c178
+          export PA PB OUT SIGLIP2_SHA
+          # per-stage caps: every long-running command (installs, downloads, hashing and copies on CephFS, render, extraction) runs under `timeout <seconds>`
+          # (exit 124 on expiry = a failed stage); only the sourced environment restore and small file operations (mkdir, ls, cp of small reports) do not
+          cap() { _s=$1; shift; timeout -k 60 "$_s" "$@"; }
+          WORST=0; LAST=0
+          stage() { _n=$1; shift; "$@"; LAST=$?; echo "=== $_n exit code $LAST"; date -u; if [ $LAST -gt $WORST ]; then WORST=$LAST; fi; return 0; }
+          mkdir -p $R/logs $PB $OUT /work/hf
+          exec > >(tee -a $R/logs/$JOB-$STAMP.log) 2>&1
+          echo "=== $JOB $STAMP src $SRC_GIT_COMMIT noise cap $NOISE_CAP"; nvidia-smi -L; nproc; date -u; df -h /mnt/proxy | tail -1
+          FREE_GB=$(df -BG --output=avail /mnt/proxy | tail -1 | tr -dc 0-9)
+          if [ "$FREE_GB" -lt 100 ]; then echo "ABORT: only ${FREE_GB}G free on the proxy PVC, need >= 100G (expected use about 60G)"; exit 12; fi
+          [ -f $PA/render/RENDER_COMPLETE ] && [ -f $PA/render/render-report.json ] || { echo "ABORT: the phase-A render $PA/render (the --consistency-ref) is not complete"; exit 20; }
+          [ -f /pf/draws.json ] || { echo "ABORT: /pf/draws.json missing (ConfigMap key draws.json; run job-pfb-draws first and commit config/draws.json)"; exit 20; }
+          sha256sum /pf/draws.json /pf/phase-a.yaml /pf/smoke-report.json /pf/pf_render.py /pf/pf_rerender.py /pf/pf_smoke.py /pf/pf_analysis.py /pf/diagnostics.py
+          for c in $CONDS; do
+            case " $PUBC " in
+              *" $c "*) [ -f $PB/render/$c/RENDER_COMPLETE ] && [ -f $PB/render/$c/render-sha256.txt ] && [ -f $PB/render/$c/render-report.json ] && [ ! -e $PB/render/$c.part ] || { echo "ABORT: the published render $PB/render/$c is missing or incomplete (this Job never renders it, never overwritten)"; exit 20; }
+                        MODE[$c]=pub;;
+              *) if [ ! -e $PB/render/$c ] && [ ! -e $PB/render/$c.part ]; then MODE[$c]=new
+                 elif [ -f $PB/render/$c/RENDER_COMPLETE ] && [ -f $PB/render/$c/render-sha256.txt ] && [ ! -e $PB/render/$c.part ]; then MODE[$c]=pub; echo "NOTE: $PB/render/$c is already published, it will only be read"
+                 else echo "ABORT: $PB/render/$c or $c.part exists but is not a complete publish (never overwritten)"; exit 14; fi;;
+            esac
+            echo "render $c: ${MODE[$c]}"
+            for e in dinov3 siglip2 c-radiov4; do
+              if [ -e $PB/feats/$c/$e ]; then
+                if feats_done $PB/feats/$c/$e/libero_goal; then echo "NOTE: $PB/feats/$c/$e is complete, its extraction will be skipped"; else echo "ABORT: $PB/feats/$c/$e exists but is incomplete (never overwritten)"; exit 22; fi
+              fi
+            done
+          done
+          EXT=$(sha256sum /src/extract_features.py | cut -c1-12)
+          [ "$EXT" = "03734ba84a86" ] || { echo "ABORT: /src/extract_features.py sha256 prefix is $EXT, expected 03734ba84a86 (the tally/pf-val extractor)"; exit 21; }
+          # --- environment bundle identity (Amendment 2026-11-09 (b)): the key is recomputed exactly as env_bundle.sh does it, the tar's sha256 is taken here
+          BKEY=$(cat /src/setup_env.sh /src/setup_sim.sh /src/env_bundle.sh | sha256sum | cut -c1-12)
+          [ -f $R/env/env-$BKEY.tar ] || { echo "ABORT: no env bundle $R/env/env-$BKEY.tar for the scripts in /src"; exit 13; }
+          ENV_BUNDLE_SHA256=$(cap 1800 sha256sum $R/env/env-$BKEY.tar | cut -d' ' -f1)
+          [ ${#ENV_BUNDLE_SHA256} -eq 64 ] || { echo "ABORT: bad bundle sha256 '$ENV_BUNDLE_SHA256'"; exit 13; }
+          export ENV_BUNDLE_SHA256
+          echo "env bundle key $BKEY tar sha256 $ENV_BUNDLE_SHA256 image $IMAGE_DIGEST"
+          # --- second extraction environment (SigLIP 2, C-RADIOv4), made BEFORE the simulator venv is active so that its base python is the image's: the pins of job-pfa-ext-siglip2-cradio.yaml.
+          #     Fail fast: import test, the SigLIP 2 revision assert, the weights into the HF cache. C-RADIOv4's weights and remote code revision are pinned inside extract_features.py (c0457f5...);
+          #     phase A recorded main = c0457f5dc26ca145f954cd4fc5bb6114e5705ad8, printed here for the record.
+          python -m venv --system-site-packages /work/venv457
+          cap 1800 /work/venv457/bin/pip install --no-cache-dir -q torch==2.7.1 torchvision==0.22.1 \
+            transformers==4.57.6 tokenizers==0.22.2 safetensors==0.8.0 huggingface-hub==0.36.2 \
+            timm==1.0.30 einops==0.8.1 open-clip-torch==3.3.0 ftfy==6.3.1 regex==2026.9.29 \
+            h5py==3.16.0 numpy==2.2.6 pillow==13.0.0
+          cap 900 env PYTHONPATH=/pf:/src /work/venv457/bin/python - <<'PY' 2>&1 | tee $OUT/setup-info-457.txt
+          import os
+          import h5py, numpy, torch, transformers, huggingface_hub, timm, einops, open_clip
+          assert transformers.__version__ == "4.57.6", transformers.__version__
+          assert numpy.__version__ == "2.2.6", numpy.__version__
+          assert torch.__version__.startswith("2.7.1"), torch.__version__
+          import pf_analysis
+          from transformers import AutoImageProcessor, AutoModel
+          from huggingface_hub import HfApi
+          repo = "google/siglip2-large-patch16-384"
+          sha = HfApi().model_info(repo).sha
+          assert sha == os.environ["SIGLIP2_SHA"], f"SigLIP 2 revision is {sha}, phase A used {os.environ['SIGLIP2_SHA']}"
+          print("revision", repo, sha, "required", os.environ["SIGLIP2_SHA"])
+          print("revision nvidia/C-RADIOv4-SO400M", HfApi().model_info("nvidia/C-RADIOv4-SO400M").sha, "(recorded in phase A: c0457f5dc26ca145f954cd4fc5bb6114e5705ad8; the extractor pins its own)")
+          proc = AutoImageProcessor.from_pretrained(repo)
+          model = AutoModel.from_pretrained(repo, dtype=torch.float16)
+          print("setup ok (venv457): transformers", transformers.__version__, "numpy", numpy.__version__, "torch", torch.__version__, "h5py", h5py.__version__,
+                "huggingface_hub", huggingface_hub.__version__, "siglip2 params", sum(p.numel() for p in model.parameters()))
+          PY
+          . /src/env_bundle.sh restore    # prebuilt venv + debs; LIBERO-Plus assets unzip. (Sourcing it turns `set -e` on again.) Nothing is pip-installed into this venv from here on.
+          # --- DINOv3 environment (pfa-render): transformers 5.18.0 pins in a separate folder, an import test, the DINOv3 processor, weights and revision
+          cap 900 pip install --no-cache-dir -q --target /work/extlib transformers==5.18.0 tokenizers==0.23.3 safetensors==0.8.0 huggingface-hub==2.2.0 einops==0.8.1 numpy==2.2.6
+          cap 900 env PYTHONPATH=/work/extlib:$PYTHONPATH python - <<'PY' 2>&1 | tee $OUT/setup-info.txt
+          import h5py, numpy, torch, transformers, huggingface_hub
+          assert transformers.__version__ == "5.18.0", transformers.__version__
+          assert numpy.__version__ == "2.2.6", numpy.__version__
+          from transformers import AutoImageProcessor, AutoModel
+          from huggingface_hub import HfApi
+          repo = "facebook/dinov3-vitl16-pretrain-lvd1689m"
+          sha = HfApi().model_info(repo).sha
+          assert sha.startswith("ea8dc28"), f"DINOv3 revision is {sha}, expected ea8dc28"
+          proc = AutoImageProcessor.from_pretrained(repo)
+          model = AutoModel.from_pretrained(repo, dtype=torch.float32)
+          print("setup ok: transformers", transformers.__version__, "numpy", numpy.__version__, "torch", torch.__version__, "h5py", h5py.__version__,
+                "huggingface_hub", huggingface_hub.__version__, "dinov3 sha", sha, "image_mean", proc.image_mean, "params", sum(p.numel() for p in model.parameters()))
+          PY
+          cap 1800 python - <<'PY'
+          from huggingface_hub import snapshot_download
+          snapshot_download("yifengzhu-hf/LIBERO-datasets", repo_type="dataset", revision="f13aa24a3da8c43c7225569f28c562979fa0e35a",
+                            allow_patterns=["libero_goal/*.hdf5"], local_dir="/work/data")
+          PY
+          ls -la /work/data/libero_goal; sha256sum /work/data/libero_goal/*.hdf5 /src/diagnostics.py /src/extract_features.py; date -u
+          # the meta check of every (encoder, condition): extraction meta against the smoke-report reference (A.check_meta), source file = the condition's own staging path,
+          # ten files of ten test demos (demo_40 to demo_49), and 12,748 frames per camera in the condition (A.EXPECTED_FRAMES["test"])
+          cat > /work/meta_check.py <<'PY'
+          import glob, json, sys
+          sys.path[:0] = ["/pf", "/src"]
+          import h5py
+          import pf_analysis as A
+          enc, cond, root = sys.argv[1], sys.argv[2], sys.argv[3]
+          ref = A.load_reference_meta("/pf/smoke-report.json", [enc])[enc]
+          files = sorted(glob.glob(f"{root}/{enc}/libero_goal/*.h5"))
+          assert len(files) == 10, (len(files), 10)
+          tot = {c: 0 for c in A.CAMS}
+          for p in files:
+              with h5py.File(p, "r") as f:
+                  A.check_meta(f, ref, p)
+                  m = json.loads(f.attrs["meta"])
+                  stem = p.rsplit("/", 1)[1][:-3]
+                  assert m["source_file"] == f"/work/pfb-test-{cond}/libero_goal/{stem}.hdf5", m["source_file"]
+                  demos = sorted(k for k in f.keys() if k.startswith("demo_"))
+                  assert demos == [f"demo_{i}" for i in range(40, 50)], demos
+                  assert m["n_demos"] == 10, m["n_demos"]
+                  for d in demos:
+                      for c in A.CAMS:
+                          tot[c] += f[d][c]["global"].shape[0]
+          assert all(v == A.EXPECTED_FRAMES["test"] for v in tot.values()), (tot, A.EXPECTED_FRAMES["test"])
+          print("meta ok:", enc, cond, len(files), "files; checked keys", A.META_KEYS, "frames per camera", tot)
+          PY
+          # --- from here on every stage's exit code is kept; the Job ends with the worst one, after the copies.
+          set +e
+          mkdir -p /work/render /work/feats
+          declare -A OK     # OK[c]=1: condition c rendered, published and staged at /work/pfb-test-c/libero_goal
+          publish_render() {   # publish_render <c>: hashes, copy through <c>.part, verify, rename, marker
+            set -e
+            _c=$1
+            [ ! -e $PB/render/$_c ] && [ ! -e $PB/render/$_c.part ] || { echo "REFUSE: $PB/render/$_c or $_c.part exists (never overwritten)"; exit 1; }
+            (cd /work/render/$_c/libero_goal && sha256sum *.hdf5) > $OUT/render-sha256-$_c.txt
+            mkdir -p $PB/render/$_c.part/libero_goal
+            cp /work/render/$_c/libero_goal/*.hdf5 $PB/render/$_c.part/libero_goal/
+            cp /work/render/$_c/render-report.json $PB/render/$_c.part/
+            cp $OUT/render-sha256-$_c.txt $PB/render/$_c.part/render-sha256.txt
+            (cd $PB/render/$_c.part/libero_goal && sha256sum -c $PB/render/$_c.part/render-sha256.txt)
+            mv $PB/render/$_c.part $PB/render/$_c
+            touch $PB/render/$_c/RENDER_COMPLETE
+          }
+          export -f publish_render
+          copy_feats() {   # copy_feats <encoder> <condition>: local /work/feats/<c>/<enc>/libero_goal/*.h5 -> PVC, one file at a time through .partial, compared byte for byte; never overwrites
+            set -e
+            _d=$PB/feats/$2/$1/libero_goal; mkdir -p $_d
+            for _f in /work/feats/$2/$1/libero_goal/*.h5; do
+              _b=$(basename $_f)
+              if [ -e $_d/$_b ]; then echo "REFUSE: $_d/$_b already exists"; exit 1; fi
+              cp $_f $_d/$_b.partial
+              cmp -s $_f $_d/$_b.partial || { echo "COPY MISMATCH: $_b"; exit 1; }
+              mv $_d/$_b.partial $_d/$_b
+            done
+            ls -la $_d
+          }
+          export -f copy_feats
+          finish_render() {   # finish_render <c> <render exit code>: keep the reports, publish, stage at the condition's own path
+            _c=$1; _rc=$2
+            cp /work/render/$_c/render-report.json $OUT/render-report-$_c.json 2>/dev/null
+            cp /work/render/$_c/consistency/consistency-report.json $OUT/consistency-report-$_c.json 2>/dev/null
+            if [ $_rc -ne 0 ]; then echo "=== $_c: render exited $_rc, not published, not extracted"; return 0; fi
+            stage publish-$_c cap 1800 bash -c 'publish_render "$@"' _ $_c
+            if [ $LAST -ne 0 ]; then return 0; fi
+            du -sh /work/render/$_c/libero_goal
+            mkdir -p /work/pfb-test-$_c && mv /work/render/$_c/libero_goal /work/pfb-test-$_c/libero_goal && OK[$_c]=1
+            return 0
+          }
+          extract_one() {   # extract_one <encoder> <condition>: extract, meta check, copy, then free the local features
+            _e=$1; _c=$2
+            if ! want $_c; then return 0; fi
+            case $_e in
+              dinov3)    _py="env PYTHONPATH=/work/extlib:$PYTHONPATH python"; _a="--encoder dinov3 --dtype float32 --batch-size 64"; _t=1800;;
+              siglip2)   _py="env PYTHONPATH=/pf:/src /work/venv457/bin/python"; _a="--encoder siglip2 --variant google/siglip2-large-patch16-384 --dtype float16 --batch-size 64"; _t=1800;;
+              c-radiov4) _py="env PYTHONPATH=/pf:/src /work/venv457/bin/python"; _a="--encoder c-radiov4 --dtype float16 --batch-size 64"; _t=3600;;
+            esac
+            if feats_done $PB/feats/$_c/$_e/libero_goal; then
+              echo "=== SKIP $_e on $_c: its 10 feature files already exist on the PVC (complete, no .partial); read-only meta check of them"
+              stage verify-$_e-$_c cap 900 $_py /work/meta_check.py $_e $_c $PB/feats/$_c
+              return 0
+            fi
+            if [ "${OK[$_c]:-0}" != 1 ]; then echo "=== SKIP $_e on $_c: no staged render"; return 0; fi
+            stage extract-$_e-$_c cap $_t $_py /src/extract_features.py $_a --out /work/feats/$_c --hdf5 /work/pfb-test-$_c/libero_goal/*.hdf5
+            if [ $LAST -ne 0 ]; then return 0; fi
+            stage meta-$_e-$_c cap 900 $_py /work/meta_check.py $_e $_c /work/feats/$_c
+            if [ $LAST -ne 0 ]; then return 0; fi
+            stage copy-$_e-$_c cap 3600 bash -c 'copy_feats "$@"' _ $_e $_c
+            if [ $LAST -eq 0 ]; then rm -rf /work/feats/$_c/$_e; fi
+            return 0
+          }
+          stage_in() {   # stage_in <c>: READ the published render, copy it to the local staging path, check it against the sha list the publish step recorded. Writes only under /work.
+            set -e
+            _c=$1; _d=$PB/render/$_c; _l=/work/pfb-test-$_c/libero_goal
+            [ -f $_d/RENDER_COMPLETE ]
+            [ "$(ls $_d/libero_goal/*.hdf5 | wc -l)" -eq 10 ]
+            [ "$(wc -l < $_d/render-sha256.txt)" -eq 10 ]
+            mkdir -p $_l
+            cp $_d/libero_goal/*.hdf5 $_l/
+            (cd $_l && sha256sum -c $_d/render-sha256.txt)
+            [ "$(ls $_l | wc -l)" -eq 10 ]
+          }
+          export -f stage_in
+          stage_published() {   # stage_published <c>: stage only if at least one of the three encoders still has to be extracted on c
+            _c=$1; _need=0
+            for _e in dinov3 siglip2 c-radiov4; do feats_done $PB/feats/$_c/$_e/libero_goal || _need=1; done
+            if [ $_need -eq 0 ]; then echo "=== $_c: all three encoders already complete, nothing to stage"; return 0; fi
+            stage stagein-$_c cap 1800 bash -c 'stage_in "$@"' _ $_c
+            if [ $LAST -eq 0 ]; then OK[$_c]=1; fi
+            return 0
+          }
+          # the raw files must be the ones the render used (the render also gates on the config's hashes); a failure here stops the noise render before any test frame is drawn (the extractions of the published renders do not need them)
+          stage raw-sha256 cap 900 bash -c "awk '/^  [a-z_]+_demo:/ {gsub(\":\",\"\",\$1); print \$2\"  /work/data/libero_goal/\"\$1\".hdf5\"}' /pf/phase-a.yaml | sha256sum -c -"
+          GO=0
+          if [ $LAST -eq 0 ]; then GO=1; fi
+          # 1. the published renders (read only): stage each, then the three encoders on them (GPU-bound: about 100,000 images per encoder for four conditions; dinov3 on clean is skipped when complete)
+          for c in $CONDS; do if [ "${MODE[$c]}" = pub ]; then stage_published $c; fi; done
+          for e in dinov3 siglip2 c-radiov4; do for c in $CONDS; do if [ "${MODE[$c]}" = pub ]; then extract_one $e $c; fi; done; done
+          # 2. noise: the only render this Job makes, the long pole (cost depends on the drawn noise codes). Its cap is NOISE_CAP, set by the lead from estimate_noise_time.py.
+          if [ $GO -eq 1 ] && want noise && [ "${MODE[noise]:-}" = new ]; then
+            stage render-noise cap $NOISE_CAP python /pf/pf_rerender.py render --raw /work/data/libero_goal --config /pf/phase-a.yaml --out /work/render/noise --split test --condition noise --consistency-ref $PA/render --env-scripts-dir /src --expect-draws /pf/draws.json
+            finish_render noise $LAST
+          fi
+          # 3. the three encoders on noise
+          if [ "${MODE[noise]:-}" = new ]; then for e in dinov3 siglip2 c-radiov4; do extract_one $e noise; done; fi
+          echo "=== exit codes: worst $WORST"; date -u
+          REP=$PB/reports/$JOB-$STAMP
+          mkdir -p $REP && cp -r $OUT/. $REP/ && echo "copied reports to $REP" || { echo "REPORT COPY FAILED"; if [ $WORST -eq 0 ]; then WORST=15; fi; }
+          (cd $OUT && tar czf /work/$JOB.tgz .)
+          ls -la /work/$JOB.tgz
+          if [ $(du -k /work/$JOB.tgz | cut -f1) -lt 2048 ]; then echo "=== BEGIN PFB_TGZ_B64"; base64 -w 76 /work/$JOB.tgz; echo "=== END PFB_TGZ_B64"; fi
+          echo "=== done; exiting with $WORST (0 only if every stage passed)"
+          exit $WORST
+        env:
+        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}   # sed at submit time (PHASE-B.md); the script aborts if it is still FILL_AT_SUBMIT
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: "/pf:/src"}
+        - {name: IMAGE_DIGEST, value: pytorch/pytorch@sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2}
+        - {name: SIM_DIR, value: /work/sim}
+        - {name: MUJOCO_GL, value: egl}
+        - {name: PYOPENGL_PLATFORM, value: egl}
+        - {name: NVIDIA_DRIVER_CAPABILITIES, value: "compute,utility,graphics"}
+        resources:
+          requests: {cpu: "2", memory: 12Gi, nvidia.com/gpu: "1", ephemeral-storage: 56Gi}
+          limits:   {cpu: "2400m", memory: 14Gi, nvidia.com/gpu: "1", ephemeral-storage: 64Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: pf, mountPath: /pf, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 64Gi}
+      - name: src
+        configMap: {name: stacking-encoders-proxy-src}
+      - name: pf
+        configMap: {name: stacking-encoders-pf-main-src-b}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 4Gi}
