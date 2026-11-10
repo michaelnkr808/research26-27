@@ -1590,3 +1590,15 @@ Reviews were read-only; findings reported by subagents, spot-checked by the lead
 **Test-set use:** none.
 **Next:** (1) planning drafts the experiment PLAN for Next 5 (question, measures, predictions, decision rule, the three extractions, cost) for the user's sign-off; (2) the user emails the authors (planning can draft the text); (3) dated note on decisions/004 by PR; (4) earlier loose ends unchanged.
 **Open questions:** the CVPR workshop deadline (not in the repo; mentor to confirm); which checkpoints the paper used for V-JEPA 2.1, UniTok and HRP.
+
+## 2026-11-10 [agent, lead, planning] (author email sent; implementation's notes on the three missing encoders)
+**Goal:** find who to write to about liu2026what, draft the email, and record that the user sent it.
+**Did:** a fetch agent read the paper's project page and the author homepages it links; the lead read page 1 of the arXiv PDF (v1). The lead drafted the email; the user sent it 2026-11-10 after removing the sentence naming the mentor (user: "okay sent it i just took out the mentor part"). It asks three things: the exact checkpoint and input resolution per encoder in Table 10 (V-JEPA 2.1, UniTok, HRP and its base above all), whether DINOv3 or DINOv3 + C-RADIOv4 was trained more than once, and whether code or checkpoints will be released. It reports none of our results. PLAN Next 6 updated.
+**PR:** direct.
+**Found:**
+- verified (PDF page 1, read by the lead): no email address is printed; "*Equal contribution. †Co-corresponding authors."; corresponding authors Dongbin Zhao, Zhizheng Zhang, He Wang.
+- reported by the fetch agent, not re-checked by the lead: addresses for He Wang, Dongbin Zhao, Kai Liu and Jiangran Lyu are printed on their own homepages (linked from the project page); none found for Zhizheng Zhang; the project page links no code repository and has no release statement. The addresses are not copied into this public repo.
+- reported by the implementation session (cross-session reply, from files, not tested): V-JEPA 2.1 is a video model with weights outside Hugging Face, so the design must fix the frames per sample and how per-frame features are taken; UniTok is a tokenizer, so the design must choose which output is the feature; HRP is a fine-tune with several bases and the paper's base is unknown, the most likely blocker. Each code or weight download is a pinned command the user runs; no memory numbers exist; any checkpoint chosen where the paper's is unknown is a stand-in the user approves first.
+**Test-set use:** none.
+**Next:** wait a few days for a reply before designing PLAN Next 5's extractions; meanwhile, if the user asks, planning designs the one-way overlap score on the four pairs already extracted (no new extraction).
+**Open questions:** whether the authors reply; whether the mentor wants to be copied on a follow-up.
