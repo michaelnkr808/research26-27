@@ -9,3 +9,7 @@ Step-by-step record of running this experiment (Jobs, errors, reruns, exact numb
 **Found:** nothing (design only).
 **Test-set use:** none. (Per run, record here: invocation, fold, feature type, number of test evaluations; see `PLAN.md` "Test-set use".)
 **Next:** the user's sign-off on `PLAN.md`, including which score is primary (open question 1); then code and tests by PR; then a CPU Job on the user's go.
+
+## 2026-11-10 [agent, worker, planning] decision recorded
+**Did:** recorded the user's sign-off and decision (lead's chat, 2026-11-10): primary score P = S2, C(B in D), fixed before any run; the design is signed off. Consequences in `PLAN.md` ("Consequences of P = S2"): headroom applies, no width-matched runs, 26 invocations. No gate, threshold or rule changed. No results opened.
+**Test-set use:** none.

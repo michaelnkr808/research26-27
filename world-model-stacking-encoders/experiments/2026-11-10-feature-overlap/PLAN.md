@@ -13,6 +13,8 @@ VGGT-Omega adds a second test of the distillation reading: its encoder is initia
 
 Which one is the headline score is the user's decision at sign-off (open question 1). Everything below is written for a primary score P that is fixed as S1 or S2 before any run.
 
+**Decision, 2026-11-10 (the user, in the lead's chat, before any run): P = S2, "rebuild the partner from DINOv3", C(B in D).** S1 and S3 are reported and carry no decision weight. The S1 reasoning below is kept for the record.
+
 One trap is avoided on purpose. The action-probe gains cannot serve as the score: gain(D|B) is R2(D+B) minus R2(B), so the difference between the two directions is just R2(D) minus R2(B), the solo score again (`writing/2026-11-09-blind-baselines.md` line 113). This score never touches actions.
 
 With four pairs and one harmful label this is a tally, suggestive at most (`STANDARDS.md` line 31: "With 7 pairs, report the tally and don't claim significance"). It is groundwork for the Table 10 retrospective check (direction `PLAN.md` Next 5), not a finding. Nothing goes into the README key findings without the user's sign-off at the verification gate (`../../../_standards/05`).
@@ -32,6 +34,7 @@ Direction `PLAN.md` Next 5 names a one-way overlap score as a candidate measure 
 C(Y in X) is the held-out score of a linear map from source X's features to target Y's features. Three candidate pair scores, D = DINOv3 and B = partner:
 - **S1 = C(D in B)**, **S2 = C(B in D)**, **S3 = S2 minus S1** (positive: the partner is more inside D than D is inside it).
 - **P, the primary score, is S1 or S2, chosen by the user before any run.** S3 and the unchosen score are reported and carry no decision weight. Higher P means more overlap, which is the predicted-worse end.
+- **Fixed 2026-11-10 by the user: P = S2, before any run.** The consequences are listed under "Consequences of P = S2" in the outcome-rule section.
 
 **Inputs.** Global features (the primary type of the tally and control-partners designs), both cameras concatenated, so each encoder is one 2,048-to-4,608-column matrix. Each source column is standardized with train-frame mean and standard deviation (`diagnostics.standardize`, lines 241-243), which removes per-dimension scale. Mean features are a secondary repeat: same code, fold 1, the four real pairs only.
 
@@ -94,6 +97,8 @@ Also: S3 between -0.02 and +0.02 for dup and between -0.05 and +0.05 for randpro
 
 Prediction (speculative): if the user fixes P = S1, C-RADIOv4 is highest, at about even odds, and VGGT-Omega (DINOv3-initialized, roughly harmless) is not at or above it; a high S1 for VGGT-Omega would cut against "S1 tracks harm". If P = S2, I have no strong prior and note the tension above. I make no prediction on other partners or on score sizes beyond the control gates, and no prediction that S3 is positive.
 
+2026-11-10 (after the decision, no new prediction): the user fixed P = S2, so the "if P = S2, I have no strong prior and note the tension above" statement is the one that applies; the P = S1 statement above stays as written before the decision.
+
 ### Outcome rule, written once for the primary score P (fold 1 = tally split, global, 2,000 paired draws)
 Controls are read first. Four outcomes:
 - **Invalid, no verdict:** any control gate fails.
@@ -108,6 +113,12 @@ Margin sizes are reported; no effect-size floor is used (the intervals hold fitt
 - Does not flag: the retrospective check should not be built around P as measured here; this agrees with the README's current reading that the harm leaves no trace in clean frozen features, which stays the user's call.
 - Unresolved or invalid: do not spend the extractions on this score; a follow-up is a new plan.
 
+### Consequences of P = S2 (2026-11-10, recorded after the user's decision; nothing above is changed)
+- The headroom requirement applies (S2 form, fold 1).
+- The residual specificity score uses the S2 form: spec(B) = C(B in D) minus the mean of C(B in X) over the other three real encoders X.
+- The width-matched guard is not required, and its 4 runs are not part of the run (26 invocations; cost bound 52,296 s).
+- Signed off by the user 2026-11-10 (in the lead's chat): the design, with P = S2.
+
 ## Test-set use (`../../../_standards/07` line 6)
 Test demos are never used to choose alpha, components, standardization, P or any threshold. Test demos are scored once per ordered pair, fold and feature type at the chosen alpha, plus the secondaries on the same demos; each invocation logs its count of test evaluations in its result JSON and in this folder's `LOG.md`. Fold 1's test demos are the same 100 demos already scored by the pilot diagnostics, the tally and the target-side experiment, so reuse is high and nothing here is a fresh holdout; folds 2 and 3 score demos those earlier experiments used for training or validation.
 
@@ -119,6 +130,8 @@ One CPU-only Job run by the implementation session, **only on the user's own go 
 
 Invocations: 12 (four real pairs x three folds) + 4 controls + 6 context-matrix pairs (the four pairs with DINOv3 come from the fold-1 real-pair runs; the six pairs among the four partners are new, loaded two encoders at a time) + 4 mean-type repeats (fold 1) = 26, plus 4 width-matched runs (fold 1) if P = S1 = 30.
 
+2026-11-10: with P = S2 the 4 width-matched runs are not part of the run, so the count is 26 invocations.
+
 Estimate (speculative), arithmetic: recorded per-pair script times of the tally diagnostics, which did more work than this (CKA, three probes, both pred directions): SigLIP 2 1,374 s, C-RADIOv4 1,572 s, SAM 3 1,750 s, VGGT-Omega 2,690 s (`../2026-10-19-feasibility-tally/results/tally-libero_goal-dinov3-*.json`, `seconds`, line 338, verified); sum 7,386 s.
 - Four real pairs x 3 folds: 22,158 s.
 - Four controls (control-partners PLAN lines 101, 108-111: 2 x 1,572 + 2 x 1,374): 5,892 s.
@@ -128,6 +141,8 @@ Estimate (speculative), arithmetic: recorded per-pair script times of the tally 
 - Width-matched runs, only if P = S1, bounded like the mean-type repeat: 7,386 s.
 - Total 22,158 + 5,892 + 16,140 + 7,386 + 720 = 52,296 s = 14.5 h; with the width-matched runs 59,682 s = **16.6 h wall upper bound, about 33 CPU-h at 2 CPU; x1.5 for a slow node about 25 h** (set the Job deadline accordingly). It should be far below this (no CKA or action probes, one decomposition per source instead of a solve per alpha; my guess 2 to 5 h); the implementation session replaces it with a locally timed number.
 
+2026-11-10: with P = S2 the cost bound is the 52,296 s figure (14.5 h, about 29 CPU-h at 2 CPU, about 22 h with the 1.5x slow-node factor); the 59,682 s figure applied only if P = S1.
+
 Memory (speculative): the context matrix loads two encoders at a time, which `diagnostics.load` allows (it loads only the encoders listed in `--encoders`, `src/diagnostics.py` lines 149-186), so the whole Job stays at the control-partners size, 14Gi/16Gi requests and limits within 20% (`../../../_standards/08`). The largest pair is VGGT-Omega + C-RADIOv4, 8,704 columns, about 2.2 GB as float32 against 1.7 GB for D + C-RADIOv4 (6,656 columns), which peaked at 12.85 GiB in the target Job with k-shifted copies this experiment does not make (target-diagnostics README line 65) and ran inside 11Gi in the tally diagnostics Job. That is a judgment, not a measurement: the implementation session measures the VGGT-Omega + C-RADIOv4 pair locally first, and if its peak exceeds 11Gi sizes the whole Job at 24Gi instead. macOS RSS undercounts Linux (`../2026-11-09-control-partners/job.yaml` lines 117-118), so the implementation session also watches RSS in the first minutes of the Job, as the control-partners Job does, and resizes to 24Gi if it nears the limit. No GPU.
 
 ## Not in scope
@@ -135,6 +150,7 @@ No new encoder extraction (V-JEPA 2.1, UniTok, HRP stay stubs); no training, pro
 
 ## Open questions for the user at sign-off
 1. **Primary score P: S1 or S2?** This is the user's decision, not the lead's or the writer's, and it must be fixed before any run.
+   - **Answered 2026-11-10 by the user (lead's chat): P = S2.** The question text and the options below are kept as asked.
    - S1 = C(D in B), DINOv3 inside the partner. Directly tests the paper's stated distillation story. Its crude ordering is, as far as the record shows, unseen for three partners. Cost: the sources differ in width (C-RADIOv4 widest); handled by validation alpha, the noise gate and a required width-matched guard (every source cut to its top 2,048 components).
    - S2 = C(B in D), the partner inside DINOv3. Same input for every partner, so no width confound, and it matches the "adds nothing new" reading. Cost: it is not the distillation test, it sits in tension with the largest gain(B|D), and its crude ordering is already in the record.
    - My recommendation (the writer's, not the lead's): S1 primary, S2 and S3 reported, with the width-matched guard as part of the S1 rule.
@@ -144,7 +160,7 @@ No new encoder extraction (V-JEPA 2.1, UniTok, HRP stay stubs); no training, pro
 5. Prior-art and citation check (regression-based or stitching-style encoder comparison; add Kornblith et al. 2019 to `references.bib`) before any write-up. Recommend yes; it does not block the run.
 
 ## Status
-planned; awaiting the user's sign-off; no code, no Job.
+planned; signed off by the user 2026-11-10 (design, with P = S2); no code, no Job.
 
 ## Amendments
 <!-- ### YYYY-MM-DD: what changed, why, and whether any results had been seen yet -->
