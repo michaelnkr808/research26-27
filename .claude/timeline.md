@@ -289,3 +289,19 @@
 - Each PR took one read-only reviewer round posted as a PR comment, fixes by the same worker, then the user's "go for it". Three workers lost time on the Mac's Python setup, so the working interpreters are now in memory.
 - Diagnosed the laptop fan: eight orphaned busy-loop shells left by a worker in the Arbor session; the user kills them with a `!` line since the classifier blocks cross-session kills.
 - See: _standards/05-ai-assisted-work.md (Git section), world-model-stacking-encoders/writing/2026-11-09-blind-baselines.md, world-model-stacking-encoders/writing/2026-11-09-seed-power.md, world-model-stacking-encoders/experiments/2026-11-09-control-partners/PLAN.md, world-model-stacking-encoders/LOG.md (2026-11-09 [agent, lead, planning], PR rule condensed), https://github.com/michaelnkr808/research26-27/pull/6
+
+## 2026-11-10: stacking-encoders literature lead: orientation only, four decisions put to the user
+
+- Started a fresh literature-lead session after /clear (renamed vis-literature-agent). Read the standards, PLAN, and the literature LOG entries; no papers read, searched, or edited.
+- Laid out the four items waiting on the user from the 2026-11-09 literature session: (1) Hewitt et al. 2021 bib entry and read marks, still on unmerged branch `worktree-agent-aec5f053ca0c12e3a` (566bf8b, worktree under .claude/worktrees/), to be redone as a PR; (2) Yardi 2025 and Chun 2026 as unread leads; (3) whether small direct-merge chores may be pushed to main right away; (4) Kornblith 2019 (CKA) to the top of the reading queue, bib entry once read.
+- No decisions made; the user closed before answering.
+- Open loops: the four questions above are unanswered; suggested next reads are Dong et al. 2026 then Wang et al. 2019. The Hewitt worktree is still present.
+- See: world-model-stacking-encoders/LOG.md (2026-11-09 [agent, literature] novelty check), world-model-stacking-encoders/literature/reading-list/README.md
+
+## 2026-11-10: stacking-encoders slides: session restarted, status refreshed for the 11/11 deck
+
+- Restarted the slides-lead role after a /clear: read the standards, direction README, PLAN, recent LOG and the two earlier slides entries.
+- Told the user what moved since the Nov 7 export (-10, still the newest): perturbed-frames phase B is resubmitted but has no output yet; the proxy retrain is set to a 16-layer DINOv3 and not submitted; the mentor has not heard about decision 004.
+- No slide lines, figures, workers or cluster work this session.
+- Open loops: the user picks what to do next for the 11/11 meeting (refreshed Noise Check and Disturbed Scenes lines, the two optional figures, or a check of a new deck export).
+- See: world-model-stacking-encoders/LOG.md (2026-11-09 [agent, slides] and 2026-11-10 [agent, slides])
