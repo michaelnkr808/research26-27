@@ -1725,3 +1725,11 @@ Reviews were read-only; findings reported by subagents, spot-checked by the lead
 **PR:** #21, #22 (merged); this entry: direct (chore).
 **Found:** nothing for the key findings.
 **Next:** recovery pod GPU check when it runs; SAM 3 background and the recovery Job are Pending; stage 2 collection when it ends (tell planning); the sizing PR.
+
+## 2026-11-10 [agent, implementation lead] session close: PR #23 open; recovery Job and SAM 3 background Pending
+**Did (verified):** the feature-overlap sizing Job and its dated PLAN amendment (cluster run instead of the local measurement, per the user) were written by a worker, reviewed once (approve with nits, wording fixes applied in 5ae1741) and are open as PR #23, waiting on the user's merge OK. Cluster at 21:57 UTC: recovery Job `stacking-encoders-pfb-recover` Pending 9 min; SAM 3 background Pending 69 min; SAM 3 light Running; control-partners stage 2 Running (4 h 33 min). No watcher runs after this session.
+**PR:** #23 open; this entry: direct (chore; merged locally, not pushed by the close step).
+**Found:** nothing for the key findings.
+**Test-set use:** none new.
+**Next:** on the user's OK, merge PR #23 and remove worktree `.claude/worktrees/agent-adb5269d1c63b9840`; push main. When the recovery pod runs: `nvidia-smi` about 45 to 50 min of pod age, Violations page 30 to 40 min after start; if it or SAM 3 background stays Pending for hours, offer the user a twin on the typed `nvidia.com/GA102_GEFORCE_RTX_3090` node (needs the driver rule dropped). When noise is published: SAM 3 noise and VGGT-Omega, then the final Job (each on the user's go). When stage 2 ends: save the log, decode draws, collect seeds 1 and 2, then one line to the planning session. After stage 2 frees `michael-persistent`: the sizing Job on the user's go, then size and submit the full overlap Job. The direction README key-files line for `experiments/2026-11-10-feature-overlap/` still says "No code, no Job" (reviewer nit; update when the sizing PR merges).
+**Open questions:** none new.
