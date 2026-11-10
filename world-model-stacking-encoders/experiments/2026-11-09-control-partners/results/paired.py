@@ -23,7 +23,7 @@ from pathlib import Path
 import numpy as np
 
 HERE = Path(__file__).resolve().parent
-LOG = HERE / "control-fetch-draws-20261110.log"
+LOG = HERE / "stacking-encoders-control-fetch-draws.log"
 NPZDIR = HERE / "draws-s1"
 CONTROLS = {  # control name -> (npz file, JSON file)
     "noise:4608": ("input-draws-noise-4608-s0.npz", "input-libero_goal-dinov3-noise-4608-s0.json"),
