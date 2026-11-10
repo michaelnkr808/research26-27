@@ -1,6 +1,11 @@
-% Owner: the draft session drafts; the user edits. State: mostly ready; the proxy's final depth waits on the retrain (M3).
+% Owner: the draft session drafts; the user edits. State: mostly ready; the proxy's final depth waits on
+% the retrain (M3); data licenses not recorded (data/README.md lines 14, 25).
 % Sources: literature/ (paper note, Table 1 and 10 CSVs, encoder-weights.md), data/README.md,
-% decisions/002 and 003, experiments/2026-10-27-proxy-calibration/PLAN.md ("Framing", "Choice" lines, "Step 1 findings").
+% decisions/002 and 003, experiments/2026-10-27-proxy-calibration/PLAN.md (line 8, lines 83-85,
+% "Step 1 findings"), PLAN.md line 22 (suspect 3, grid resizing).
+% Do not repeat: proxy PLAN line 17 calls D+L the "paper's best D pair"; wrong (README.md line 29).
+% Do not claim same-seed configs share initial weights (probably not; synthesis decision 2, open).
+% Paper-note numbers still need a check against the PDF (paper note line 4).
 % About 1 page.
 \section{Setup}
 \label{sec:setup}
@@ -9,8 +14,8 @@
 
 \TODO{Encoders: DINOv3, C-RADIOv4, SigLIP 2, SAM 3, VGGT-Omega; checkpoints and licenses. Spell names out; one-letter codes only inside tables.}
 
-\TODO{Data: LIBERO-Goal demos for the frozen-feature tests; the four LIBERO suites for proxy training; LIBERO-Plus for evaluation.}
+\TODO{Data: LIBERO-Goal demos for the frozen-feature tests; the four LIBERO suites for proxy training; LIBERO-Plus for evaluation. Cite LIBERO~\cite{liu2023libero} and LIBERO-Plus once their read status and published venues are confirmed (plan section 4).}
 
-\TODO{Our proxy and how it differs from the paper: built on Fast-WAM; Wan 2.2 VAE latents; T5 text encoder; flow matching; no pretrained video prior; smaller; per-source z-scoring and grid resizing where the paper is silent. Final depth after Amendment (c) waits on the retrain.}
+\TODO{Our proxy and how it differs from the paper: built on Fast-WAM; Wan 2.2 VAE latents; T5 text encoder; flow matching; no pretrained video prior; smaller; per-source z-scoring, temporal averaging of future features and resizing C-RADIOv4's grid to the VAE grid where the paper is silent. Configs at one seed share data order. Final depth after Amendment (c) waits on the retrain.}
 
-\TODO{Pre-registration: every decision rule was fixed before its results; the dated trail is in the supplement.}
+\TODO{Pre-registration: each rule was fixed before the data it decides was read, with named exceptions (input-side tally had no decision rule and an fp32 deviation; blind baselines computed after the fact; seed-noise thresholds locked on the user's silence; Amendment (c) decided after the pilot-scale means; perturbed-frames gate and render tolerance; control-partner thresholds as fractions of C-RADIOv4's known value). The dated trail is in the supplement.}

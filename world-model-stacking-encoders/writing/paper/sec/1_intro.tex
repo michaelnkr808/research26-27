@@ -1,15 +1,18 @@
 % Owner: the user writes this section from the outline below; the draft session fact-checks it.
-% State: partial (contributions wait on results). Plan: ../2026-11-10-writing-plan.md, section 2.
-% About 1 page.
+% State: partial (contributions wait on results and on the framing gate, plan section 5 step 1).
+% Plan: ../2026-11-10-writing-plan.md, section 2. About 1 page.
+% Do not repeat: "SigLIP 2 is the paper's best pair" (wrong; plan, do-not-repeat list).
 \section{Introduction}
 \label{sec:intro}
 
-\TODO{Paragraph 1, the setting. World action models (WAMs) take frozen vision encoders both as inputs and as future-feature targets. Liu et al.~\cite{liu2026what} stack other encoders on top of DINOv3 and report that most partners help a little and one, C-RADIOv4, hurts. Sources: \texttt{literature/liu2026what-table10-composition.csv}; \texttt{literature/notes/liu2026-what-visual-representations-wams.md}. Careful: SigLIP 2 is the best of \emph{our four} partners, not the paper's best pair (UniTok is higher; README correction 2026-11-09).}
+\TODO{Paragraph 1, the setting. In Liu et al.'s world action model (WAM)~\cite{liu2026what}, frozen vision encoders are both inputs and future-feature targets (do not claim this for every WAM). They stack other encoders on top of DINOv3. Against DINOv3 alone (84.0, their Table 1; Table 10 has no DINOv3-alone row), most of the seven DINOv3 pairs change success a little and DINOv3 + C-RADIOv4 is the lowest (our arithmetic on \texttt{literature/liu2026what-table1-single-source.csv} and \texttt{literature/liu2026what-table10-composition.csv}). SigLIP 2 is the best of \emph{our four} partners; the paper's best pair is DINOv3 + UniTok.}
 
-\TODO{Paragraph 2, why it matters. Each row of the paper's composition table is one trained model; its three seeds are evaluation seeds (\texttt{STANDARDS.md}, sources to treat with caution). If the harm is real, a cheap check before training could save the cost of training bad stacks. If it is training noise, a one-checkpoint table can mislead people choosing encoders.}
+\TODO{Paragraph 2, why it matters. Each row of the paper's composition table is one trained model; its three seeds are evaluation seeds (\texttt{STANDARDS.md}, sources to treat with caution). If the harm is real, a cheap check before training could save the cost of training bad stacks. If it is training noise, a one-checkpoint table can mislead people choosing encoders. (A judgment; phrase as motivation, not as a finding.)}
 
 \TODO{Paragraph 3, the question, from \texttt{README.md} (decided 2026-11-09, decisions/004): is the reported harm reproducible across training seeds, and does it leave any trace in frozen features (clean, perturbed, or as co-targets), or does it arise only in training?}
 
-\TODO{Paragraph 4, what we did: three probes, each with its decision rule fixed before its results (Sec.~\ref{sec:clean}, \ref{sec:perturbed}, \ref{sec:proxy}).}
+\TODO{Paragraph 4, what we did: three tests (say ``tests'', not ``probes''): clean-frame frozen-feature tests (Sec.~\ref{sec:clean}), a perturbed-frame test (Sec.~\ref{sec:perturbed}) and a multi-seed proxy replication (Sec.~\ref{sec:proxy}). The target-side test, the perturbed-frame test and the proxy have decision rules fixed before the data they decide was read; the input-side tally fixed its design but had no decision rule. Exceptions are in the supplement.}
 
-\TODO{Contributions, one bullet each, wording per ending: (1) clean-frame frozen-feature tests do not single out the pair, and the control partners say what those tests can detect (wording waits on the control-partners run and the README headline sign-off); (2) the perturbed-frame result (waits on phase B); (3) the multi-seed answer (waits on the retrain and the other 13 runs); (4) slot: a pair-harm measure across the paper's table (PLAN Next 5, not designed).}
+\TODO{Contributions, one bullet each, wording per ending, after the framing gate: (1) the clean-frame measurements and what the control partners say those tests can detect (waits on the control-partners run and the README headline sign-off); (2) the perturbed-frame result (waits on phase B); (3) the multi-seed answer (waits on the retrain and the other 13 runs); (4) slot: a pair-harm measure across the paper's table (PLAN Next 5, not designed).}
+
+\TODO{Figure F1 (could sit here or in Sec.~\ref{sec:setup}): encoders stacked as inputs and future-feature targets of the WAM, and where each of our three tests looks. Script: extend \texttt{src/plot\_slide\_diagrams.py}.}

@@ -1,19 +1,25 @@
 % Owner: the draft session drafts; the user edits. State: method ready; results wait on the retrain,
 % the other 13 runs and the seed-power rerun (M3, M4, M5).
-% Sources: experiments/2026-10-27-proxy-calibration/PLAN.md (outcome rule lines 155-161, power caveat line 337,
-% level target line 385, Amendment (c)), its LOG and README; writing/2026-11-09-seed-power.md.
+% Sources: experiments/2026-10-27-proxy-calibration/PLAN.md (paired deltas line 152; outcome rule lines 155-162;
+% seed-noise rule line 215; data-dependent retrain line 277; level-target options line 330; scale reading
+% lines 334-336; power caveat line 337; flagged departure line 338; level target line 385; Amendment (c)),
+% its LOG and README; writing/2026-11-09-seed-power.md (line 11).
+% Do not repeat: proxy PLAN line 17 calls D+L the "paper's best D pair"; wrong (README.md line 29).
+% Do not describe same-seed configs as sharing initial weights.
 % About 1.5 pages.
 \section{Multi-seed proxy replication}
 \label{sec:proxy}
 
-\TODO{Configs and seeds; evaluation on the full LIBERO-Plus benchmark; the rules in order: calibration, seed noise, level target, outcome.}
+\TODO{Configs and seeds; evaluation on the full LIBERO-Plus benchmark; the rules: seed noise and the level target (run on the DINOv3 pair first), then calibration and the outcome rule (need all 15 runs).}
 
-\TODO{What happened so far, as a record: the first seed pair passed the noise rule but scored far below the paper, so training was amended before the other runs (Amendment (c)).}
+\TODO{Reporting duties from the PLAN: every comparison shows the three per-seed deltas and their average; episode intervals are never treated as evidence about training-seed variability; one sentence on how far below the paper's DINOv3 and VAE-only scores the proxy sits and that the thresholds were set for the paper's range (6B); each drop also as a share of the proxy's own DINOv3 mean, secondary and not deciding (6A); overlap or feature interference stays a hypothesis, not the explanation.}
 
-\TODO{Slot (a), substantial effect: every seed drops and the mean drop clears the threshold. The PLAN's own words: a trigger for a higher-fidelity replication, not proof.}
+\TODO{What happened so far, as a record: the first seed pair passed the noise rule but scored far below the paper, so training was amended before the other runs (Amendment (c)). The decision to retrain was made after the two DINOv3 means were read, and 6A was fixed after the pilot-scale means; say both.}
 
-\TODO{Slot (b), no substantial effect: not evidence of no effect, since the three-seed design has no detection-power argument; the seed-power rerun sets the wording.}
+\TODO{Slot (a), only if calibration passes: ``substantial proxy effect'' if every seed drops and the average drop is at least 2.7 points, each seed with discordant-episode counts. The PLAN's words: ``trigger for the higher-fidelity multi-seed WAM replication, not proof that the effect is statistically established''.}
 
-\TODO{Slot (c), the proxy cannot tell: say which stop fired (level target, calibration, noise or floor) and what the user chose then.}
+\TODO{Slot (b): ``the proxy does not show a substantial effect'', which ``does not establish that the paper's result was training noise: the harm may need the pretrained video prior or the full-size model''; the three-seed design has no detection-power argument, and the seed-power rerun sets the wording.}
+
+\TODO{Slot (c), the proxy cannot tell: say which stop fired. Seed-noise ``rethink seeds'' or the floor: the rule and the user's choice. Calibration fails: ``don't interpret the D+R comparison from this proxy'', not ``D+R is fine'' and not ``the proxy is useless''. Level target missed: the option the user chose.}
 
 \TODO{Figure F4: success per config and seed, with the paper's values.}

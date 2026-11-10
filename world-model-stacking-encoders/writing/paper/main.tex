@@ -11,6 +11,20 @@
 
 \input{preamble}
 
+% Tectonic (the Mac build) runs XeTeX, where the kit's Times setup falls back to Latin Modern.
+% Use the TeX Gyre clones of Times, Helvetica and Courier there; pdfLaTeX (Overleaf, the kit's CI)
+% is unaffected. Final page counts are checked with pdfLaTeX (README.md).
+\usepackage{iftex}
+\ifXeTeX
+  \usepackage{fontspec}
+  \defaultfontfeatures{Extension=.otf,UprightFont=*-regular,BoldFont=*-bold,ItalicFont=*-italic,BoldItalicFont=*-bolditalic}
+  \setmainfont{texgyretermes}\setsansfont{texgyreheros}\setmonofont{texgyrecursor}
+\fi
+
+% Supplement in the draft PDF: true while drafting; set false for submission (it is submitted separately).
+\newif\ifwithsuppl
+\withsuppltrue
+
 \definecolor{cvprblue}{rgb}{0.21,0.49,0.74}
 \usepackage[pagebackref,breaklinks,colorlinks,allcolors=cvprblue]{hyperref}
 
@@ -51,8 +65,10 @@ Institution\\
     \bibliography{../../literature/references}
 }
 
-% Supplementary material: submitted separately; keep out of the main PDF at submission.
+% Supplementary material: submitted separately; switch off with \withsupplfalse above at submission.
+\ifwithsuppl
 \clearpage
 \input{sec/X_suppl}
+\fi
 
 \end{document}

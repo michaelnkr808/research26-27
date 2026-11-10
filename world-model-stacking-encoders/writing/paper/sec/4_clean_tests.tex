@@ -1,17 +1,20 @@
 % Owner: the draft session drafts; the user edits. State: measurements ready; the reading waits on the
 % control-partners run (M2) and the README headline sign-off (M6).
-% Sources: experiments/2026-10-19-feasibility-tally/README.md, experiments/2026-10-21-target-diagnostics/README.md,
-% writing/2026-11-09-blind-baselines.md, experiments/2026-11-09-control-partners/PLAN.md (line 95), README.md key findings.
+% Sources: experiments/2026-10-19-feasibility-tally/README.md (lines 3, 17, 79, 107, 108),
+% experiments/2026-10-21-target-diagnostics/README.md, writing/2026-11-09-blind-baselines.md (lines 5-7),
+% experiments/2026-11-09-control-partners/PLAN.md (rule lines 79-91; proposed mapping line 95, capacity floor line 81),
+% README.md key findings (renderer caveat line 28).
+% Do not repeat: target-diagnostics README line 12 calls SigLIP 2 the paper's best partner; wrong.
 % About 1.25 pages.
 \section{Clean-frame tests on frozen features}
 \label{sec:clean}
 
-\TODO{Input side: similarity (CKA) and how much action information the partner adds on top of DINOv3 (gain), with demo-level bootstrap intervals.}
+\TODO{Input side: how much action information the partner adds on top of DINOv3 (gain), with demo-level bootstrap intervals; similarity (CKA), without intervals (none were computed). The tally fixed its design in advance but had no decision rule; DINOv3 features are fp32, the partners' fp16 (a deviation from its pre-registration). Pairs differ in input width; no matched-dimension control was run.}
 
-\TODO{Target side: how much adding the partner's future features as a co-target interferes with predicting DINOv3's future features.}
+\TODO{Target side: how much adding the partner's future features as a co-target interferes with predicting DINOv3's future features (decision rule fixed in advance).}
 
-\TODO{Table T1: the paper's numbers for our four partners next to these measures and the blind baselines (single-encoder score, the paper's overlap reasoning as a label, random ranking).}
+\TODO{Table T1: the paper's numbers for our four partners next to these measures and the blind baselines (single-encoder score, the paper's overlap reasoning as a label, random ranking). Say the baselines were computed after the tally and the label is not blind to the paper's numbers. The gain column waits on M2 (a capacity floor above zero would re-read every gain against matched-width noise).}
 
 \TODO{Caveat: absolute probe numbers depend on the renderer; orderings are what we compare.}
 
-\TODO{Slot, control partners (waits on M2), per the rule in the control-partners PLAN: floor near zero and size-explained: ``the cheap checks cannot flag a bad partner''; can go negative and partner-specific: the finding stands and is stronger; mixed: each test reported separately. Wording must match the README headline the user signs off, not stronger.}
+\TODO{Slot, control partners (waits on M2). Each test's outcome comes from the control-partners PLAN's rule. What the outcomes mean for the finding is the mapping proposed in that PLAN, explicitly not decided there: floor near zero and size-explained: ``the cheap checks cannot flag a bad partner'', ``no evidence either way about D + R''; can go negative and partner-specific: the finding stands and is stronger, and the controls give a floor to report next to each real number; mixed: report each test separately. If the input side shows a capacity floor above zero, every real partner is re-read as gain minus the matched-width noise gain. Wording must match the README headline the user signs off, not stronger. Figure F2: control partners next to the real partners.}
