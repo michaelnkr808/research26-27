@@ -1,0 +1,136 @@
+# Control partners (CPU only): synthetic partners next to DINOv3 on libero_goal, through the two finished cheap tests.
+# Input side (src/diagnostics.py): gain(control|D), global probes, plus a rerun of the real pair D + C-RADIOv4 with
+# --save-draws so the control gains can be differenced against it with a paired CI. Target side (src/target_diagnostics.py):
+# T2 interference with the control as co-target, global features, same k, rank and scalings as the target experiment.
+# Design, predictions, decision rule and cost: PLAN.md in this folder.
+# Follows _standards/08: Job (not pod), runs a real command and exits, NO sleep, no GPU, kept off GPU nodes,
+# limits within 20% of requests, activeDeadlineSeconds caps runtime. No tolerations.
+# Scripts are mounted from ConfigMap `stacking-encoders-control-src` (created from ../../src/diagnostics.py and
+# ../../src/target_diagnostics.py at SRC_GIT_COMMIT).
+# Features: DINOv3 from CephFS PVC stacking-encoders-features (ReadWriteMany). C-RADIOv4 (only for the D + R rerun) from PVC
+# michael-persistent, which is RBD ReadWriteOnce and also holds the SigLIP 2 cache: check no other pod holds it before
+# submitting, or the pod sits in ContainerCreating. Both are copied to local disk (emptyDir) before use, as the target
+# Job did after its OOM. All synthetic partners are generated in memory from the loaded DINOv3 features; nothing new is
+# read or extracted. Downloads libero_goal for actions and the demo index, as the earlier Jobs did.
+# NOT SUBMITTED. Needs the user's sign-off on PLAN.md first, then the same pre-checks as RUN.md in
+# ../2026-10-21-target-diagnostics/ (nothing of ours running, michael-persistent free, features still on the PVC, CPU capacity).
+# Before submitting: set SRC_GIT_COMMIT below to the merged commit and create the ConfigMap from the files at that commit.
+# Each result is written to CephFS as soon as it finishes, so partial results survive a failure; the log also prints them.
+# SYNTH_SEEDS: the seeds of the random controls (noise, randproj, shuffle). The bootstrap seed stays 0 in every run so the
+# demo draws are the tally's. Stage 1 is "0". Seed replicates (PLAN.md, Decision rule) are a second Job with "1 2" under a new
+# Job name and output folder (03: a rerun gets a new folder), after the user's OK.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-control-partners
+  namespace: aria-world
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 57600        # 16 h cap, includes time Pending (the target Job ended with the same cap); expected ~6.7 h, pessimistic ~10 h (PLAN.md, Cost)
+  ttlSecondsAfterFinished: 86400      # safety net; delete manually after collecting logs
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}   # CPU-only: stay off GPU nodes
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}                 # near rook-cephfs
+      containers:
+      - name: main
+        image: python:3.11.14-slim
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          OUT=/mnt/features/stacking-encoders/control-partners
+          mkdir -p $OUT /mnt/features/stacking-encoders/logs
+          LOG=/mnt/features/stacking-encoders/logs/control-partners-$(date +%Y%m%d-%H%M%S).log
+          exec > >(tee -a $LOG) 2>&1
+          nproc; head -2 /proc/meminfo   # python:slim has no procps
+          pip install --no-cache-dir -q numpy==2.2.6 h5py==3.16.0 huggingface-hub==0.36.2
+          echo "=== pip freeze"; pip freeze
+          src_of() { case $1 in siglip2|c-radiov4) echo /persistent/stacking-encoders/features/$1;;
+                                *) echo /mnt/features/stacking-encoders/features/$1;; esac; }
+          stage() { mkdir -p /work/feats/$1; T=$(date +%s); cp -r $(src_of $1)/libero_goal /work/feats/$1/
+                    echo "staged $1: $(du -sh /work/feats/$1/libero_goal | cut -f1) in $(( $(date +%s) - T ))s"; }
+          safe() { echo "$1" | tr ':' '-'; }
+          stage dinov3
+          echo "=== download libero_goal (actions, demo index)"; date -u
+          python - <<'PY'
+          from huggingface_hub import snapshot_download, HfApi
+          snapshot_download("yifengzhu-hf/LIBERO-datasets", repo_type="dataset", revision="main",
+                            allow_patterns=["libero_goal/*.hdf5"], local_dir="/work/data")
+          try:
+              print("LIBERO-datasets revision sha:", HfApi().dataset_info("yifengzhu-hf/LIBERO-datasets").sha)
+          except Exception as e:
+              print("could not read the dataset sha:", repr(e))
+          PY
+          date -u
+          # The same arguments for every input-side run, so the split, CKA frames and bootstrap draws are the tally's.
+          input_run() {   # $1 encoder or synthetic spec, $2 output tag, $3 synthetic seed
+            python /src/diagnostics.py --feats /work/feats --suite libero_goal --raw /work/data/libero_goal \
+              --encoders dinov3 "$1" --probe-types global --n-boot 1000 --seed 0 --synth-seed $3 \
+              --save-draws $OUT/input-draws-$2.npz --out $OUT/input-libero_goal-dinov3-$2.json
+          }
+          target_run() {  # $1 synthetic spec, $2 output tag, $3 synthetic seed
+            python /src/target_diagnostics.py --feats /work/feats --suite libero_goal --raw /work/data/libero_goal \
+              --base dinov3 --partner "$1" --types global --n-boot 1000 --seed 0 --synth-seed $3 \
+              --out $OUT/target-libero_goal-dinov3-$2.json
+          }
+          FIRST=${SYNTH_SEEDS%% *}
+          echo "=== INPUT SIDE, controls (seeds: $SYNTH_SEEDS)"
+          echo "--- input dup:dinov3 (deterministic)"; date -u
+          input_run dup:dinov3 dup-dinov3 $FIRST
+          for SEED in $SYNTH_SEEDS; do
+            for S in noise:4608 randproj:dinov3:4608 shuffle:dinov3; do
+              echo "--- input $S seed $SEED"; date -u
+              input_run $S $(safe $S)-s$SEED $SEED
+            done
+          done
+          echo "=== INPUT SIDE, real reference D + C-RADIOv4 rerun (reproduces the tally; saves its draws)"; date -u
+          stage c-radiov4; df -h /work | tail -1
+          input_run c-radiov4 c-radiov4-rerun $FIRST
+          rm -rf /work/feats/c-radiov4
+          echo "=== TARGET SIDE, controls (seeds: $SYNTH_SEEDS)"
+          echo "--- target dup:dinov3 (deterministic)"; date -u
+          target_run dup:dinov3 dup-dinov3 $FIRST
+          for SEED in $SYNTH_SEEDS; do
+            for S in shuffle:dinov3 noise:4608:0.3 noise:4608 randproj:dinov3:4608; do
+              echo "--- target $S seed $SEED"; date -u
+              target_run $S $(safe $S)-s$SEED $SEED
+            done
+          done
+          for F in $OUT/*.json; do echo "=== result json $F"; cat $F; echo; done
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: "2274e32b383b82c6aa46140bbbfb7051a4c7ed3c"}
+        - {name: SYNTH_SEEDS, value: "0"}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: OMP_NUM_THREADS, value: "2"}
+        - {name: OPENBLAS_NUM_THREADS, value: "2"}
+        # Sized from the two earlier Jobs (PLAN.md, Cost and Risks). The largest synthetic pair (noise or random projection
+        # at 4,608 dims next to DINOv3) has the same 6,656 input dims and frame count as D + C-RADIOv4, which peaked at
+        # 12.85 GiB RSS in the target Job (14Gi request, 16Gi limit, no OOM) and sat inside 11Gi/13Gi in the tally diagnostics
+        # Job. Synthetic generation adds under 3 GiB transiently (measured locally on the Mac at the real frame count; macOS RSS
+        # undercounts Linux, so watch RSS on Prometheus in the first minutes). NRP checks: memory within 20-150% and CPU within
+        # 20-200% of the request. Limits within 20% of requests.
+        resources:
+          requests: {cpu: "2", memory: 14Gi, ephemeral-storage: 18Gi}
+          limits:   {cpu: "2400m", memory: 16Gi, ephemeral-storage: 21Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: persistent-vol, mountPath: /persistent, readOnly: true}
+        - {name: features, mountPath: /mnt/features}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 20Gi}   # raw libero_goal 5.9 GiB + dinov3 4.4 + c-radiov4 5.2 (staged only for the rerun)
+      - name: src
+        configMap: {name: stacking-encoders-control-src}
+      - name: persistent-vol
+        persistentVolumeClaim: {claimName: michael-persistent}   # RWO, read-only here; only the D + C-RADIOv4 rerun needs it
+      - name: features
+        persistentVolumeClaim: {claimName: stacking-encoders-features}
