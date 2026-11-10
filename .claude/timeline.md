@@ -259,3 +259,11 @@
 - Seed-noise verdict read from main: the locked rule says "go ahead", but both DINOv3 models succeed around a tenth as often as the paper's, so the pre-committed scale-reading exit applies. The user chose to amend first (train the DINOv3 models longer or larger, rerun the noise check, thresholds unchanged) before the other 13 runs; handed to the implementation session as direction, which drafts the amendment as a PR.
 - The user lifted the two-worker cap for leads (high usage plan); all research leads told to re-read the lead prompt. Open: condense the rule text (follow-up PR), motion-score deferral unconfirmed, mention the case-study framing to the mentor.
 - See: _standards/05-ai-assisted-work.md (Git section), world-model-stacking-encoders/LOG.md (2026-11-09 [agent, lead, planning] PR workflow), world-model-stacking-encoders/writing/2026-11-09-proxy-exit-options.md, https://github.com/michaelnkr808/research26-27/pull/1
+
+## 2026-11-10: stacking-encoders implementation: phase B render resubmitted on a wider GPU set, queue of waiting experiments set
+
+- The phase B render Job (perturbed frames, first read of test frames) never started: its L4-only rule matched just two nodes in the cluster and both stayed full for eight hours. With the user's OK it was deleted and resubmitted accepting five kinds of 24 GB card (PR #10, reviewed, merged, pushed); fresh 36 h deadline, pod still queued at close.
+- The code bundle on the cluster keeps phase B's reviewed copy of the shared diagnostics file even though a later control-partners PR changed it on main; recorded as a provenance note in the experiment LOG.
+- Planning handoff received: a CPU-only control-partners run (PR #9) joins the queue after phase B's GPU work. Order now: render, then SAM 3 / VGGT / final analysis, then control partners, then the 16-layer DINOv3 proxy retrain. Each cluster step waits for the user's go here; nothing proxy-side submitted.
+- Lesson kept in memory: read the FailedScheduling event's "didn't match affinity" count early; a two-node pool is a rule problem, not a queue.
+- See: world-model-stacking-encoders/experiments/2026-11-06-perturbed-frames/LOG.md (2026-11-10 entry), .../jobs/PHASE-B.md (note 2026-11-10), world-model-stacking-encoders/LOG.md (2026-11-10 implementation lead), world-model-stacking-encoders/experiments/2026-11-09-control-partners/PLAN.md
