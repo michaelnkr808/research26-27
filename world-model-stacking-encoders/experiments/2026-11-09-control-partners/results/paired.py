@@ -146,9 +146,10 @@ for c in CONTROLS:
     mx = max(mx, abs(pd_["r2_mean"] - d0["r2_mean"]), abs(pd_["r2_ci95"][0] - d0["r2_ci95"][0]), abs(pd_["r2_ci95"][1] - d0["r2_ci95"][1]))
 say(f"      DINOv3 alone: R2 {d0['r2_mean']:.6f}, CI [{d0['r2_ci95'][0]:.6f}, {d0['r2_ci95'][1]:.6f}]; max abs difference over the five JSONs {mx:.3e}")
 check(mx == 0.0, "DINOv3-alone R2 and CI are identical in all five JSONs (max abs difference exactly 0)")
-say("  (b) q_X = gain(D|X) draws - gain(X|D) draws = R2(D) - R2(X) per draw. For a probe X that predicts a constant (noise and")
-say("      shuffle: their JSONs give R2 about 0), R2(X) is a function of the weights only, so q_noise - q_shuffle = R2(shuffle) - R2(noise)")
-say("      per draw is 0 if the two runs used the same weights, and has the full bootstrap spread (about sqrt(2) times sd(q)) if not.")
+say("  (b) suggestive, not a proof. q_X = gain(D|X) draws - gain(X|D) draws = R2(D) - R2(X) per draw. R2(D) has a bootstrap spread of its own")
+say("      (sd of q_noise below, about 0.012) and R2(X) is near 0 for noise and shuffle (their JSONs). If two runs used different weights,")
+say("      q_noise - q_shuffle would contain the difference of two independent R2(D) draws, with spread about sqrt(2) times sd(q). If the same")
+say("      weights, that part cancels and only R2(shuffle) - R2(noise) per draw remains. The probes of X are not assumed to predict a constant.")
 q = {c: draws[c][f"{c}|dinov3|global"] - draws[c][f"dinov3|{c}|global"] for c in CONTROLS}
 for c in CONTROLS:
     say(f"      q_{c:22s} mean {q[c].mean():+.5f} sd {q[c].std(ddof=1):.5f}")
@@ -159,7 +160,7 @@ ratio = (qn - qs).std(ddof=1) / (np.sqrt(2) * qn.std(ddof=1))
 say(f"      noise:4608 vs shuffle:dinov3: corr {r:.8f}, max abs (q_noise - q_shuffle) {mad:.3e}, sd of the difference / (sqrt(2) * sd(q_noise)) = {ratio:.5f}")
 perm = np.random.default_rng(12345).permutation(N_BOOT)
 say(f"      reference for scale, one array with its draw order permuted (what unpaired looks like): corr {np.corrcoef(qn, qs[perm])[0, 1]:+.4f}")
-check(r > 0.9999 and ratio < 0.01, "noise:4608 and shuffle:dinov3 runs share the same weights (corr > 0.9999, difference spread under 1% of the unpaired value)")
+check(r > 0.9999 and ratio < 0.01, "noise:4608 and shuffle:dinov3 runs: R2(D) fluctuation cancels in q_noise - q_shuffle (corr > 0.9999, difference spread under 1% of the unpaired value); suggestive of shared weights")
 say("      randproj:dinov3:4608 and c-radiov4 are not used in (b): their own R2(X) is about R2(D) and fluctuates with the weights, so q_X does not isolate R2(D).")
 say("  (c) dup:dinov3 is the same features as DINOv3, so its probe predictions equal DINOv3's and R2(D) - R2(X) must be 0 in every draw:")
 dq = q["dup:dinov3"]

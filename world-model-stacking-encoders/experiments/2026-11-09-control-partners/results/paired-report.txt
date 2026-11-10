@@ -80,9 +80,10 @@
       draws inside each run) must be the same in all five JSONs if the weights were the same:
       DINOv3 alone: R2 0.649880, CI [0.622967, 0.670881]; max abs difference over the five JSONs 0.000e+00
   [pass] DINOv3-alone R2 and CI are identical in all five JSONs (max abs difference exactly 0)
-  (b) q_X = gain(D|X) draws - gain(X|D) draws = R2(D) - R2(X) per draw. For a probe X that predicts a constant (noise and
-      shuffle: their JSONs give R2 about 0), R2(X) is a function of the weights only, so q_noise - q_shuffle = R2(shuffle) - R2(noise)
-      per draw is 0 if the two runs used the same weights, and has the full bootstrap spread (about sqrt(2) times sd(q)) if not.
+  (b) suggestive, not a proof. q_X = gain(D|X) draws - gain(X|D) draws = R2(D) - R2(X) per draw. R2(D) has a bootstrap spread of its own
+      (sd of q_noise below, about 0.012) and R2(X) is near 0 for noise and shuffle (their JSONs). If two runs used different weights,
+      q_noise - q_shuffle would contain the difference of two independent R2(D) draws, with spread about sqrt(2) times sd(q). If the same
+      weights, that part cancels and only R2(shuffle) - R2(noise) per draw remains. The probes of X are not assumed to predict a constant.
       q_noise:4608             mean +0.65046 sd 0.01169
       q_dup:dinov3             mean +0.00000 sd 0.00000
       q_randproj:dinov3:4608   mean +0.00369 sd 0.00076
@@ -90,7 +91,7 @@
       q_c-radiov4              mean -0.01990 sd 0.00376
       noise:4608 vs shuffle:dinov3: corr 0.99999997, max abs (q_noise - q_shuffle) 1.050e-05, sd of the difference / (sqrt(2) * sd(q_noise)) = 0.00016
       reference for scale, one array with its draw order permuted (what unpaired looks like): corr +0.0275
-  [pass] noise:4608 and shuffle:dinov3 runs share the same weights (corr > 0.9999, difference spread under 1% of the unpaired value)
+  [pass] noise:4608 and shuffle:dinov3 runs: R2(D) fluctuation cancels in q_noise - q_shuffle (corr > 0.9999, difference spread under 1% of the unpaired value); suggestive of shared weights
       randproj:dinov3:4608 and c-radiov4 are not used in (b): their own R2(X) is about R2(D) and fluctuates with the weights, so q_X does not isolate R2(D).
   (c) dup:dinov3 is the same features as DINOv3, so its probe predictions equal DINOv3's and R2(D) - R2(X) must be 0 in every draw:
       dup:dinov3: max abs q 0.000e+00
