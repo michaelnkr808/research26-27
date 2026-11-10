@@ -1719,3 +1719,9 @@ Reviews were read-only; findings reported by subagents, spot-checked by the lead
 **Test-set use:** none.
 **Next:** draft the method halves of sections 4 to 6, limitations and the supplement trail, each by PR with a fresh reviewer. After the 2026-11-11 mentor meeting: record the framing, PLAN Next 5 and length answers, then trim the setup if needed.
 **Open questions:** whether the SigLIP 2 size difference needs any action beyond disclosure (user); the citation placeholders (Wan 2.2, T5, umT5, flow matching, REPA, DINOv3, SigLIP 2, SAM 3, VGGT-Omega, Fast-WAM) wait on reading; data licenses.
+
+## 2026-11-10 [agent, implementation lead] PR #21 and PR #22 merged; recovery Job submitted
+**Did (verified):** feature-overlap code, tests and CPU Job manifest merged (PR #21, merge 46a538f; reviewer approve after a second round; the user: "yeah merge pr 21"). Perturbed-frames recovery Job merged (PR #22, merge 292be3d; three review rounds) and submitted 21:48 UTC on the user's go (extractions first, then the noise render; about the 26th Job of the experiment, past the 20-Job gate on that go); Pending at first. The user prefers not to run anything locally ("i would prefer to not run anything locally"), so the feature-overlap timing and memory measurement moves to a short cluster CPU sizing Job; a worker is writing it with a dated PLAN amendment (PR to come), to run after control-partners stage 2 frees `michael-persistent`. Detail: `experiments/2026-11-06-perturbed-frames/LOG.md` (recovery Job entry), `experiments/2026-11-10-feature-overlap/LOG.md`.
+**PR:** #21, #22 (merged); this entry: direct (chore).
+**Found:** nothing for the key findings.
+**Next:** recovery pod GPU check when it runs; SAM 3 background and the recovery Job are Pending; stage 2 collection when it ends (tell planning); the sizing PR.
