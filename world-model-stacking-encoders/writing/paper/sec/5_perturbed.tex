@@ -9,7 +9,7 @@
 
 \TODO{Design: four picture changes (camera, light, background, sensor noise); action probe trained on our own clean re-renders, tested on perturbed re-renders of the same moments; feature drift as a sanity check.}
 
-\TODO{The redesign, reported plainly: the first validation check failed its 0.01 gate, so the probes were retrained on re-renders with a 0.025 gate fixed before any re-render-trained result, and that gate passed; the render tolerance was set after the phase-A validation comparison. No test data was read in either step.}
+\TODO{The redesign, reported plainly: the first validation check failed its 0.01 gate, so the probes were retrained on re-renders with a 0.025 gate fixed before any re-render-trained result, and that gate passed; the render tolerance was set after the phase-A validation comparison. No test-set result was seen in either step (the early stove test-demo load, perturbed LOG line 204, is disclosed in the supplement).}
 
 \TODO{Decision rule P, quoted from the PLAN, read only on the deciding slice (full-size features, global pooling, combined view of both cameras); the other eleven slices are robustness checks with no decision weight; rule B is reported alongside, not deciding; a partner whose re-measured clean gain differs from the tally is flagged. With four partners an ordering match is a hint, not evidence.}
 
