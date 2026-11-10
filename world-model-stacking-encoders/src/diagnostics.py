@@ -30,6 +30,7 @@ import itertools
 import json
 import subprocess
 import time
+import zlib
 from pathlib import Path
 
 import h5py
@@ -48,6 +49,80 @@ def git_commit():
                                        text=True, stderr=subprocess.DEVNULL).strip()
     except Exception:
         return "unknown"
+
+
+# ---------------------------------------------------------------------------
+# Synthetic control partners (experiments/2026-11-09-control-partners/). Real-encoder runs never reach this code:
+# a name is synthetic only if it has the form kind:args, and no real encoder name contains ":".
+#   noise:N[:s]       Gaussian noise, N dims in total (N / len(CAMS) per cam), per-channel variance s times the mean
+#                     per-channel variance of the reference encoder (first real encoder) on train frames; s defaults to 1
+#   dup:SRC           exact copy of encoder SRC
+#   randproj:SRC:N    fixed random linear map of SRC to N dims in total, one Gaussian matrix per cam (entries
+#                     N(0, 1/d_in), which keeps the per-channel variance), so no new information and N / 2 dims per cam
+#   shuffle:SRC       SRC with the frames permuted (one permutation for all cams and types): real marginal, broken pairing
+# Generated in memory from the loaded features with np.random.default_rng([seed, crc32(spec), crc32(type), crc32(cam)])
+# (shuffle: [seed, crc32(spec)]), so a run is reproducible from --seed alone (or from --synth-seed, if given: it replaces
+# --seed for the synthetic partners only, so replicate noise draws can share the bootstrap draws). The spec and the seed
+# used go into the encoder meta.
+# ---------------------------------------------------------------------------
+
+SYNTHETIC_KINDS = {"noise", "dup", "randproj", "shuffle"}
+
+
+def is_synthetic(name):
+    return ":" in name and name.split(":")[0] in SYNTHETIC_KINDS
+
+
+def parse_synthetic(spec):
+    kind, *a = spec.split(":")
+    ok = {"noise": len(a) in (1, 2), "dup": len(a) == 1, "randproj": len(a) == 2, "shuffle": len(a) == 1}
+    assert kind in SYNTHETIC_KINDS and ok[kind], f"bad synthetic partner spec {spec!r}"
+    if kind == "noise":
+        return {"kind": kind, "dim": int(a[0]), "scale": float(a[1]) if len(a) == 2 else 1.0}
+    if kind == "randproj":
+        return {"kind": kind, "src": a[0], "dim": int(a[1])}
+    return {"kind": kind, "src": a[0]}
+
+
+def _rng(seed, *keys):
+    return np.random.default_rng([seed] + [zlib.crc32(k.encode()) for k in keys])
+
+
+def make_synthetic(spec, feats, types, seed, train, ref):
+    """Features {type: {cam: (n, d) float32}} and meta for one synthetic partner. feats: loaded real encoders;
+    train: boolean mask of train frames (the noise scale uses train frames only); ref: reference encoder name."""
+    p = parse_synthetic(spec)
+    meta = {"synthetic": spec, **p, "seed": seed, "numpy": np.__version__,
+            "rng": "np.random.default_rng([seed, crc32(spec), crc32(type), crc32(cam)]); shuffle: [seed, crc32(spec)]"}
+    if "src" in p:
+        assert p["src"] in feats, f"{spec}: source encoder {p['src']!r} is not among the loaded real encoders {list(feats)}"
+        meta["source"] = p["src"]
+    if "dim" in p:
+        assert p["dim"] % len(CAMS) == 0, f"{spec}: N must be a multiple of {len(CAMS)} cams"
+    out = {t: {} for t in types}
+    if p["kind"] == "noise":
+        meta["reference"], meta["std"] = ref, {}
+    if p["kind"] == "shuffle":
+        n = len(next(iter(next(iter(feats[p["src"]].values())).values())))
+        perm = _rng(seed, spec).permutation(n)
+        meta["permutation_head"] = [int(i) for i in perm[:5]]
+    for t in types:
+        for c in CAMS:
+            if p["kind"] == "noise":
+                std = float(np.sqrt(p["scale"] * feats[ref][t][c][train].astype(np.float64).var(0).mean()))
+                meta["std"][f"{t}|{c}"] = std
+                out[t][c] = (std * _rng(seed, spec, t, c).standard_normal(
+                    (len(train), p["dim"] // len(CAMS)), dtype=np.float32)).astype(np.float32)
+            elif p["kind"] == "dup":
+                out[t][c] = feats[p["src"]][t][c].copy()
+            elif p["kind"] == "randproj":
+                x = feats[p["src"]][t][c]
+                w = _rng(seed, spec, t, c).standard_normal((x.shape[1], p["dim"] // len(CAMS)), dtype=np.float32)
+                out[t][c] = (x @ (w / np.float32(np.sqrt(x.shape[1])))).astype(np.float32)
+            else:
+                out[t][c] = feats[p["src"]][t][c][perm]
+    meta["dims_per_cam"] = {t: {c: int(out[t][c].shape[1]) for c in CAMS} for t in types}
+    return out, meta
 
 
 # ---------------------------------------------------------------------------
@@ -71,11 +146,13 @@ def load(args, types=("global", "mean")):
     """
     raw_files = sorted(Path(args.raw).glob("*.hdf5"))
     assert raw_files, f"no LIBERO files in {args.raw}"
-    feats = {e: {t: {c: [] for c in CAMS} for t in types} for e in args.encoders}
+    real = [e for e in args.encoders if not is_synthetic(e)]  # synthetic partners are added at the end
+    assert real, "need at least one real encoder"
+    feats = {e: {t: {c: [] for c in CAMS} for t in types} for e in real}
     actions, proprio, split, index = [], [], [], []  # index: (file stem, demo, length) per demo
     meta = {}
     for raw in raw_files:
-        fe = {e: h5py.File(Path(args.feats) / e / args.suite / (raw.stem + ".h5"), "r") for e in args.encoders}
+        fe = {e: h5py.File(Path(args.feats) / e / args.suite / (raw.stem + ".h5"), "r") for e in real}
         for e, f in fe.items():
             meta.setdefault(e, json.loads(f.attrs["meta"]))
         with h5py.File(raw, "r") as fr:
@@ -100,7 +177,13 @@ def load(args, types=("global", "mean")):
             f.close()
     cat = lambda xs: np.concatenate(xs).astype(np.float32)
     feats = {e: {t: {c: cat(v) for c, v in tv.items()} for t, tv in ev.items()} for e, ev in feats.items()}
-    return feats, cat(actions), cat(proprio), np.array(split), index, meta, [r.name for r in raw_files]
+    split = np.array(split)
+    for e in args.encoders:
+        if is_synthetic(e):
+            seed = getattr(args, "synth_seed", None)
+            seed = getattr(args, "seed", 0) if seed is None else seed
+            feats[e], meta[e] = make_synthetic(e, {r: feats[r] for r in real}, types, seed, split == "train", real[0])
+    return feats, cat(actions), cat(proprio), split, index, meta, [r.name for r in raw_files]
 
 
 def load_grid(args, enc, cam, index, idx):
@@ -252,6 +335,10 @@ def main():
     p.add_argument("--cka-n", type=int, default=5000, help="frames subsampled for CKA")
     p.add_argument("--n-boot", type=int, default=1000, help="demo-level bootstrap draws for CIs")
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--synth-seed", type=int, default=None, help="seed for synthetic partners only (default: --seed)")
+    p.add_argument("--save-draws", default=None,
+                   help="optional .npz path: the gain(B|A) bootstrap draws of every pair, so gains from separate runs "
+                        "(same data, seed and n-boot give the same draws) can be differenced with a paired CI")
     p.add_argument("--out", required=True)
     args = p.parse_args()
 
@@ -272,6 +359,8 @@ def main():
     for a, b in itertools.combinations(args.encoders, 2):
         for t in ("global", "mean", "grid"):
             for c in CAMS:
+                if t == "grid" and (is_synthetic(a) or is_synthetic(b)):
+                    continue  # synthetic partners have no grid features
                 if t == "grid":
                     xa, xb = load_grid(args, a, c, index, idx), load_grid(args, b, c, index, idx)
                 else:
@@ -308,9 +397,11 @@ def main():
     for k, d in draws.items():
         res["probes"][k]["r2_ci95"] = ci(d)
         print(f"[diag] probe {k}: R2 {res['probes'][k]['r2_mean']:.3f} CI95 {ci(d)[0]:.3f}..{ci(d)[1]:.3f}", flush=True)
+    gain_draws = {}
     for key, pr in res["pairs"].items():
         a, b, t = key.split("|")
         g = draws[f"{min(a, b)}+{max(a, b)}|{t}"] - draws[f"{a}|{t}"]
+        gain_draws[key] = g
         pr["gain_ci95"] = ci(g)
         print(f"[diag] {t}: A={a} B={b} gain(B|A) {pr['gain_B_given_A']:+.3f} CI95 {pr['gain_ci95'][0]:+.3f}..{pr['gain_ci95'][1]:+.3f} "
               f"pred(A->B) R2 {pr['pred_A_to_B_r2']:.3f}", flush=True)
@@ -319,6 +410,8 @@ def main():
         for t in args.probe_types:
             res["pairs"][f"{a}|{b}|{t}"]["asym_ci95"] = ci(draws[f"{b}|{t}"] - draws[f"{a}|{t}"])
 
+    if args.save_draws:
+        np.savez_compressed(args.save_draws, **{k: v for k, v in gain_draws.items()})
     res["seconds"] = time.time() - t0
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(res, indent=1))

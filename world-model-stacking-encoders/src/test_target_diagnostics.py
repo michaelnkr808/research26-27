@@ -2,14 +2,21 @@
 
 Checks 1-5 are the ones listed in experiments/2026-10-21-target-diagnostics/PLAN.md; 6-7 check the fast ridge against
 diagnostics.ridge_select and run run_type end to end. Thresholds in check 4 were fixed before the first run.
+Check 8 (experiments/2026-11-09-control-partners/) runs main() with synthetic control partners on a small HDF5 fixture;
+its thresholds (dup interference |x| < 1e-6 everywhere, because the copy adds no new direction to the target) were written
+before the first run.
 """
 
 import json
+import sys
+import tempfile
+from pathlib import Path
 
 import numpy as np
 
 import diagnostics as D
 import target_diagnostics as T
+import test_diagnostics as TD
 
 
 def fits(x, y, split):
@@ -167,6 +174,36 @@ def main():
         raise RuntimeError("short test demo did not trip the assert")
     except AssertionError as e:
         print(f"  short test demo trips the assert: {e}")
+
+    # 8. Synthetic control partners through main(): a duplicate of the base as co-target costs nothing (the stacked target
+    #    [Delta_D, Delta_D] has the same top-r directions, same weights per block, same alpha), under every scaling, rank
+    #    and k. Noise, random projection and shuffled partners run and are recorded with their spec and seed.
+    with tempfile.TemporaryDirectory() as tmp:
+        fx = TD.make_fixture(tmp)
+        out = {}
+        for spec in ("dup:dinov3", "noise:32", "noise:32:0.3", "randproj:dinov3:32", "shuffle:dinov3"):
+            path = Path(tmp) / f"t-{spec.replace(':', '-')}.json"
+            sys.argv = ["target_diagnostics.py", "--feats", fx.feats, "--suite", fx.suite, "--raw", fx.raw, "--base",
+                        "dinov3", "--partner", spec, "--types", "global", "--ks", "4", "16", "--ranks", "4", "8",
+                        "--n-boot", "50", "--seed", "5", "--out", str(path)]
+            T.main()
+            out[spec] = r = json.loads(path.read_text())
+            assert r["partner"] == spec and r["encoders"][spec]["synthetic"] == spec and r["encoders"][spec]["seed"] == 5
+            vals = [e["interference"] for by_r in r["types"]["global"]["k_mean"]["t2"].values() for e in by_r.values()]
+            assert np.isfinite(vals).all() and len(vals) == 6, vals
+            assert abs(r["types"]["global"]["k_mean"]["t0_loss_share_B"]["b"] - 0.5) < 1e-12
+        km = out["dup:dinov3"]["types"]["global"]
+        for k in ("4", "16"):
+            for s, by_r in km["by_k"][k]["t2"]["with_B"].items():
+                for rr, e in by_r.items():
+                    assert abs(e["interference"]) < 1e-6 and max(abs(v) for v in e["interference_ci95"]) < 1e-6, (k, s, rr, e)
+        assert abs(km["k_mean"]["t0_loss_share_B"]["a_prime"] - 0.5) < 1e-12
+        sh = {spec: round(r["types"]["global"]["k_mean"]["t0_loss_share_B"]["a_prime"], 3) for spec, r in out.items()}
+        assert sh["noise:32:0.3"] < sh["noise:32"], sh  # a smaller noise scale carries a smaller share of the loss
+        print("8 synthetic partners via main(): dup interference |x| < 1e-6 under every scaling, rank and k; "
+              f"a_prime loss share of B {sh}")
+        print("  primary interference " + ", ".join(
+            f"{spec} {r['primary']['interference']:+.4f}" for spec, r in out.items()))
     print("all ok")
 
 

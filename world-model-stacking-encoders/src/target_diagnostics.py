@@ -26,6 +26,10 @@ CIs: demo-level bootstrap from diagnostics.bootstrap_r2 (1,000 paired draws, see
 Example:
   python target_diagnostics.py --feats /work/feats --suite libero_goal --raw /work/data/libero_goal \
       --base dinov3 --partner c-radiov4 --out target-libero_goal-dinov3-c-radiov4.json
+
+Control partners (experiments/2026-11-09-control-partners/): --partner may also be a synthetic spec generated in memory
+from the loaded base features by diagnostics.load (noise:4608, noise:4608:0.3, dup:dinov3, randproj:dinov3:4608,
+shuffle:dinov3; see diagnostics.py), seeded by --seed and recorded in the result's encoders[<spec>]. Nothing else changes.
 """
 
 import argparse
@@ -383,12 +387,13 @@ def main():
     p.add_argument("--suite", required=True)
     p.add_argument("--raw", required=True, help="dir with the suite's LIBERO HDF5 files (demo index)")
     p.add_argument("--base", default="dinov3")
-    p.add_argument("--partner", required=True)
+    p.add_argument("--partner", required=True, help="a real encoder, or a synthetic control spec (see module docstring)")
     p.add_argument("--types", nargs="+", default=["global", "mean"], help="first is primary")
     p.add_argument("--ks", nargs="+", type=int, default=KS)
     p.add_argument("--ranks", nargs="+", type=int, default=RANKS, help="first is primary")
     p.add_argument("--n-boot", type=int, default=1000)
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--synth-seed", type=int, default=None, help="seed for a synthetic partner only (default: --seed)")
     p.add_argument("--out", required=True)
     args = p.parse_args()
 
