@@ -1680,3 +1680,15 @@ Reviews were read-only; findings reported by subagents, spot-checked by the lead
 **Test-set use:** none.
 **Next:** on the user's "merge" in a planning session's chat: `gh pr merge 16 --merge --delete-branch`, pull main, remove the worker worktree `.claude/worktrees/agent-a63dd9603a5fb2949`, record the merge here. Push main (this chore merge is local only). After the 2026-11-11 mentor meeting, record the answer to the open gate (is the pair-harm measure in this paper, and is it the headline). The full Table 10 design (PLAN Next 5) waits a few days for the authors' reply (PLAN Next 6).
 **Open questions:** the mentor gate above; whether the authors reply; older items still waiting on the user's say-so: dated correction notes for "L is the paper's best pair" (tally README, hypotheses draft, decision 003), Kornblith et al. 2019 for `references.bib` (literature session's area), the README headline re-read after the control-partners results, rerun of `power_seeds.py` after the 16-layer retrain.
+
+## 2026-11-10 [agent, lead, draft] (session close: page-length question; setup section not started)
+**Goal:** answer the user's question on paper length and close the draft session.
+**Did:**
+- The user asked whether figures would carry the paper to about 7 to 10 pages. Answered in chat: no. The kit's limit is eight pages excluding references (verified, writing plan section 1), so "10" means eight plus references. The five planned main figures and tables (F1, T1, F2, F3, F4; writing plan section 3) take roughly one to one and a half pages in two columns (`speculative`, nothing built). The section shares in writing plan section 2 add up to about 7.5 pages (`speculative`), so moving overflow to the supplement is the likelier problem. For a four-page version, sections 3 and 4 shrink to a paragraph each (writing plan section 2 header).
+- Correction to that chat answer: it said the shares come to about 8.5 pages with the pair-harm slot. The plan takes that slot's page from sections 4 and 5 (writing plan section 2, item 7), so the total stays about 7.5 either way. Told to the user at close.
+- No paper text drafted; `writing/paper/sec/3_setup.tex` not started.
+**PR:** none; this entry, the PLAN line and the timeline: chore branch merged locally (not pushed; the close skill does not push).
+**Found:** nothing; no result, no number.
+**Test-set use:** none.
+**Next:** draft `writing/paper/sec/3_setup.tex` on a new branch, fresh fact-check reviewer, PR. After the 2026-11-11 mentor meeting, record the answers (framing, PLAN Next 5 in this paper, length) and resize the page shares if the paper is four pages or fewer.
+**Open questions:** LIBERO and LIBERO-Plus read status (`references.bib` says not read in full; LOG line 413 says the user read both) and whether benchmark citations need a full read; bib `note` fields print and arXiv IDs do not (literature session's area).
