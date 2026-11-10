@@ -125,8 +125,14 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
         msgs.append("no GPU-node anti-affinity")
     if cpu_only and "nvidia.com/gpu.product" in aff:
         msgs.append("CPU job selects a GPU product")
-    if is_render and "['NVIDIA-L4']" not in aff:
-        msgs.append("render not L4 only")
+    if is_render:
+        render_gpus = set()
+        for term in pod["affinity"]["nodeAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"]:
+            for me in term.get("matchExpressions", []):
+                if me.get("key") == "nvidia.com/gpu.product" and me.get("operator") == "In":
+                    render_gpus |= set(me["values"])
+        if render_gpus != {"NVIDIA-L4", "NVIDIA-A10", "NVIDIA-RTX-A5000", "NVIDIA-GeForce-RTX-3090", "NVIDIA-GeForce-RTX-4090"}:
+            msgs.append("render GPU set is not the five 24 GB cards")
     if spec.get("ttlSecondsAfterFinished") is None or not spec.get("activeDeadlineSeconds"):
         msgs.append("ttl or deadline missing")
     script = c["args"][0]
