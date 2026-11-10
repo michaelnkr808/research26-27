@@ -1,15 +1,17 @@
 # PHASE B RECOVERY Job (pfb-recover), written 2026-11-10 by the worker pfb-recover. NOT SUBMITTED; the lead fills SRC_GIT_COMMIT and NOISE_CAP, runs the server dry run and submits (jobs/PHASE-B.md section 11).
 # Derived from job-pfb-render.yaml (same image, node rule, resources, environments, caps, meta check, copy steps, ConfigMaps). Why: the render Job ran on an RTX A6000 that failed during DINOv3 on camera; it published four test
 # renders (clean, camera, light, background; each with RENDER_COMPLETE and a hash-verified copy) and the clean DINOv3 features, then was deleted. One combined GPU Job recovers the rest (the user's choice, 2026-11-10).
-# It does exactly two things, in this order (PHASE-B.md section 11):
-#   1. READS the four published renders from /mnt/proxy/pf-main/phase-b/render/<c>/ (never writes, renders or deletes there), stages each to /work/pfb-test-<c>/libero_goal/ (the same local path the render Job used, so the
-#      feature files' source_file meta matches), checks it against render-sha256.txt written by the publish step, and extracts DINOv3, SigLIP 2 and C-RADIOv4 on it. An (encoder, condition) whose feature folder is complete (10 .h5, no
-#      .partial; today clean/dinov3) is skipped after a read-only meta check; an incomplete folder is refused with exit 22, never deleted. A published render that is missing or incomplete is exit 20 (this Job never renders those four).
-#   2. Renders NOISE with the consistency check and --expect-draws (the render Job's noise path, unchanged), publishes it, extracts the three encoders on it. If render/noise or render/noise.part exists without a complete publish: exit 14
-#      (never overwritten). If render/noise is already published and complete (a retry after a noise extraction failure) it is only read, like the other four.
+# It does exactly two things, NOISE FIRST (the user's choice 2026-11-10: noise problems show up early, and SAM 3 noise and VGGT-Omega can start sooner; PHASE-B.md section 11):
+#   1. Renders NOISE with the consistency check and --expect-draws (the render Job's noise path, unchanged) and publishes it. A failed consistency check (exit 5) or draws mismatch (exit 3) ends the Job at once, before any
+#      extraction. If render/noise or render/noise.part exists without a complete publish: exit 14 (never overwritten). If render/noise is already published and complete (a retry) it is only read, like the other four.
+#   2. READS the four published renders from /mnt/proxy/pf-main/phase-b/render/<c>/ (never writes, renders or deletes there), stages each to /work/pfb-test-<c>/libero_goal/ (the same local path the render Job used, so the
+#      feature files' source_file meta matches), checks it against render-sha256.txt written by the publish step, and extracts DINOv3, SigLIP 2 and C-RADIOv4 on it and on noise. An (encoder, condition) whose feature folder
+#      is complete (10 .h5, no .partial; today clean/dinov3) is skipped after a read-only meta check; an incomplete folder is refused with exit 22, never deleted. A published render that is missing or incomplete is exit 20.
+#   Dead-GPU fail-fast: before every extraction stage (and the noise render) nvidia-smi and a tiny CUDA op run in the stage's own python; a failure ends the whole Job at once with exit 30 so the card is released. An
+#   extraction that logs device=cpu ends it with exit 31. Extraction is called with --device cuda, so it cannot fall back to the CPU silently.
 # SAM 3 and VGGT-Omega are other Jobs. L4, A10, RTX A5000, RTX 3090, RTX 4090 (24 GB, generic nvidia.com/gpu), us-west, driver > 569, the two excluded hosts: as job-pfb-render.yaml.
 # Environments and pins: as job-pfb-render.yaml (simulator venv + /work/extlib for DINOv3, /work/venv457 for SigLIP 2 and C-RADIOv4).
-# Estimate (speculative, PHASE-B.md section 11): about 2.3 GPU-busy hours plus the noise render time X, setup and staging about 0.5 h.
+# Estimate (speculative, PHASE-B.md section 11): about 2.3 GPU-busy hours plus the noise render time X, setup and staging about 0.5 h (the order does not change the total).
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -74,7 +76,7 @@ spec:
               *" $c "*) [ -f $PB/render/$c/RENDER_COMPLETE ] && [ -f $PB/render/$c/render-sha256.txt ] && [ -f $PB/render/$c/render-report.json ] && [ ! -e $PB/render/$c.part ] || { echo "ABORT: the published render $PB/render/$c is missing or incomplete (this Job never renders it, never overwritten)"; exit 20; }
                         MODE[$c]=pub;;
               *) if [ ! -e $PB/render/$c ] && [ ! -e $PB/render/$c.part ]; then MODE[$c]=new
-                 elif [ -f $PB/render/$c/RENDER_COMPLETE ] && [ -f $PB/render/$c/render-sha256.txt ] && [ ! -e $PB/render/$c.part ]; then MODE[$c]=pub; echo "NOTE: $PB/render/$c is already published, it will only be read"
+                 elif [ -f $PB/render/$c/RENDER_COMPLETE ] && [ -f $PB/render/$c/render-sha256.txt ] && [ -f $PB/render/$c/render-report.json ] && [ ! -e $PB/render/$c.part ]; then MODE[$c]=pub; echo "NOTE: $PB/render/$c is already published, it will only be read"
                  else echo "ABORT: $PB/render/$c or $c.part exists but is not a complete publish (never overwritten)"; exit 14; fi;;
             esac
             echo "render $c: ${MODE[$c]}"
@@ -212,6 +214,20 @@ spec:
             mkdir -p /work/pfb-test-$_c && mv /work/render/$_c/libero_goal /work/pfb-test-$_c/libero_goal && OK[$_c]=1
             return 0
           }
+          abort_job() {   # abort_job <code> <message>: copy the reports, then end the whole Job at once (nothing else is started)
+            echo "=== ABORT: $2 (exit $1)"; date -u
+            REP=$PB/reports/$JOB-$STAMP
+            mkdir -p $REP && cp -r $OUT/. $REP/ && echo "copied reports to $REP"
+            exit $1
+          }
+          gpu_check() {   # gpu_check <what>: nvidia-smi AND a tiny CUDA op in the python the next stage uses ($_py); a dead card ends the Job (exit 30) so it is released at once
+            if nvidia-smi -L > /dev/null 2>&1 && cap 300 $_py -c 'import torch; assert torch.cuda.is_available(); y = (torch.ones(64, device="cuda") * 2).sum().item(); torch.cuda.synchronize(); assert y == 128.0'; then return 0; fi
+            nvidia-smi 2>&1 | head -20
+            abort_job 30 "GPU check failed before $1 (nvidia-smi or the CUDA op), the card is released"
+          }
+          run_extract() {   # the extraction command of the render Job plus --device cuda (no silent CPU fallback); its output is kept per stage to look for device=cpu
+            cap $_t $_py /src/extract_features.py $_a --device cuda --out /work/feats/$_c --hdf5 /work/pfb-test-$_c/libero_goal/*.hdf5 2>&1 | tee $OUT/extract-$_e-$_c.log
+          }
           extract_one() {   # extract_one <encoder> <condition>: extract, meta check, copy, then free the local features
             _e=$1; _c=$2
             if ! want $_c; then return 0; fi
@@ -226,8 +242,10 @@ spec:
               return 0
             fi
             if [ "${OK[$_c]:-0}" != 1 ]; then echo "=== SKIP $_e on $_c: no staged render"; return 0; fi
-            stage extract-$_e-$_c cap $_t $_py /src/extract_features.py $_a --out /work/feats/$_c --hdf5 /work/pfb-test-$_c/libero_goal/*.hdf5
-            if [ $LAST -ne 0 ]; then return 0; fi
+            gpu_check extract-$_e-$_c
+            stage extract-$_e-$_c run_extract
+            if grep -q 'device=cpu' $OUT/extract-$_e-$_c.log; then abort_job 31 "extract-$_e-$_c ran on the CPU (device=cpu in its log)"; fi
+            if [ $LAST -ne 0 ]; then gpu_check after-failed-extract-$_e-$_c; return 0; fi
             stage meta-$_e-$_c cap 900 $_py /work/meta_check.py $_e $_c /work/feats/$_c
             if [ $LAST -ne 0 ]; then return 0; fi
             stage copy-$_e-$_c cap 3600 bash -c 'copy_feats "$@"' _ $_e $_c
@@ -258,16 +276,18 @@ spec:
           stage raw-sha256 cap 900 bash -c "awk '/^  [a-z_]+_demo:/ {gsub(\":\",\"\",\$1); print \$2\"  /work/data/libero_goal/\"\$1\".hdf5\"}' /pf/phase-a.yaml | sha256sum -c -"
           GO=0
           if [ $LAST -eq 0 ]; then GO=1; fi
-          # 1. the published renders (read only): stage each, then the three encoders on them (GPU-bound: about 100,000 images per encoder for four conditions; dinov3 on clean is skipped when complete)
-          for c in $CONDS; do if [ "${MODE[$c]}" = pub ]; then stage_published $c; fi; done
-          for e in dinov3 siglip2 c-radiov4; do for c in $CONDS; do if [ "${MODE[$c]}" = pub ]; then extract_one $e $c; fi; done; done
-          # 2. noise: the only render this Job makes, the long pole (cost depends on the drawn noise codes). Its cap is NOISE_CAP, set by the lead from estimate_noise_time.py.
+          # 1. NOISE FIRST (the user's choice 2026-11-10): the only render this Job makes, the long pole (cost depends on the drawn noise codes). Its cap is NOISE_CAP, set by the lead from estimate_noise_time.py.
+          #    A failed consistency check (exit 5) or draws mismatch (exit 3) ends the Job here, before any extraction. Another failure (timeout 124, crash 4) loses only noise; the other four are still extracted.
           if [ $GO -eq 1 ] && want noise && [ "${MODE[noise]:-}" = new ]; then
+            nvidia-smi -L > /dev/null 2>&1 || { nvidia-smi 2>&1 | head -20; abort_job 30 "GPU check failed before the noise render"; }
             stage render-noise cap $NOISE_CAP python /pf/pf_rerender.py render --raw /work/data/libero_goal --config /pf/phase-a.yaml --out /work/render/noise --split test --condition noise --consistency-ref $PA/render --env-scripts-dir /src --expect-draws /pf/draws.json
-            finish_render noise $LAST
+            _nrc=$LAST
+            finish_render noise $_nrc
+            if [ $_nrc -eq 5 ] || [ $_nrc -eq 3 ]; then abort_job $_nrc "the noise render failed its consistency check (5) or draws check (3); nothing is extracted, tell the user"; fi
           fi
-          # 3. the three encoders on noise
-          if [ "${MODE[noise]:-}" = new ]; then for e in dinov3 siglip2 c-radiov4; do extract_one $e noise; done; fi
+          # 2. the published renders (read only): stage each, then the three encoders on all five conditions (GPU-bound: about 127,000 images per encoder; complete folders are skipped)
+          for c in $CONDS; do if [ "${MODE[$c]}" = pub ]; then stage_published $c; fi; done
+          for e in dinov3 siglip2 c-radiov4; do for c in $CONDS; do extract_one $e $c; done; done
           echo "=== exit codes: worst $WORST"; date -u
           REP=$PB/reports/$JOB-$STAMP
           mkdir -p $REP && cp -r $OUT/. $REP/ && echo "copied reports to $REP" || { echo "REPORT COPY FAILED"; if [ $WORST -eq 0 ]; then WORST=15; fi; }
