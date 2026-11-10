@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""pfb-jobs done-check helper: parse every job-pfb-*.yaml (nine expected, plus the optional RTX A6000 twin of the render Job, job-pfb-render-a6000.yaml), extract the container script, run bash -n, check the resource, policy and phase-B rules.
+"""pfb-jobs done-check helper: parse every job-pfb-*.yaml (nine expected, plus the optional RTX A6000 twin of the render Job, job-pfb-render-a6000.yaml, plus the recovery Job job-pfb-recover.yaml), extract the container script, run bash -n, check the resource, policy and phase-B rules.
 Usage: check-pfb-jobs.py <jobs dir> <scratch dir> [<src dir>]    (src dir default: ../../../src of this file; used to cross-check the CLI flags the scripts pass)
 Started from check-pfa-jobs.py (same checks), plus the phase-B specifics: pinned digest in every Job and IMAGE_DIGEST equal to it in the render Job; per-condition staging paths;
 --consistency-ref on every test render and --expect-draws on every perturbed one; --config /pf/phase-a.yaml everywhere; revision asserts; no sleep/while/until; CPU Jobs without GPU."""
@@ -23,6 +23,7 @@ CPU_ONLY = {"job-pfb-draws.yaml", "job-pfb-final.yaml"}
 TWIN = "job-pfb-render-a6000.yaml"    # 2026-11-10: RTX A6000 twin of the render Job, raced against the original; never counted as a second GPU (see PHASE-B.md note 2026-11-10)
 TWIN_RESOURCE = "nvidia.com/rtxa6000"
 ORIGINAL = "job-pfb-render.yaml"
+RECOVER = "job-pfb-recover.yaml"      # 2026-11-10: one combined GPU Job that recovers what the failed A6000 render Job did not finish (PHASE-B.md section 11); replaces the render Job, never runs beside it
 SIGLIP2_SHA = "1b426889ea62b5a72bf9839009a1b184bfc9c178"     # results/pf-main/phase-a/pfa-ext-siglip2-cradio/revisions.txt
 CONFIG_ARG = "/pf/phase-a.yaml"
 
@@ -60,7 +61,7 @@ if src_dir.is_dir():
 
 bad = 0
 missing = [n for n in EXPECTED if not (jobs / n).is_file()]
-extra = sorted(Path(f).name for f in glob.glob(str(jobs / "job-pfb-*.yaml")) if Path(f).name not in EXPECTED and Path(f).name != TWIN)
+extra = sorted(Path(f).name for f in glob.glob(str(jobs / "job-pfb-*.yaml")) if Path(f).name not in EXPECTED and Path(f).name not in (TWIN, RECOVER))
 if missing or extra:
     print("PROBLEMS: expected manifests missing", missing, "unexpected", extra)
     bad += 1
@@ -96,7 +97,8 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
         msgs.append("image not the pinned digest")
     envd = {e["name"]: e.get("value") for e in c["env"]}
     is_twin = name == TWIN
-    is_render = name in (ORIGINAL, TWIN)    # the twin runs the same script, so every render check applies to it
+    is_recover = name == RECOVER
+    is_render = name in (ORIGINAL, TWIN, RECOVER)    # the twin runs the same script, so every render check applies to it; the recovery Job shares the manifest checks and has its own script checks below
     if is_render and envd.get("IMAGE_DIGEST") != c["image"]:
         msgs.append("IMAGE_DIGEST env differs from the image")
     if is_render and envd.get("IMAGE_DIGEST") != DIGEST:
@@ -116,7 +118,7 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
         ngpu = int(req.get("nvidia.com/gpu", 0))
         if ngpu != (0 if cpu_only else 1) or int(lim.get("nvidia.com/gpu", 0)) != ngpu or TWIN_RESOURCE in req or TWIN_RESOURCE in lim:
             msgs.append(f"gpu request {ngpu}")
-    if not is_twin:    # the twin and the original are raced and never both run, so only the original counts toward the peak
+    if not is_twin and not is_recover:    # the twin and the original are raced and never both run, so only the original counts toward the peak; the recovery Job replaces the render Job
         total_gpu += ngpu
     for k in ("cpu", "memory", "ephemeral-storage"):
         r, l = num(req[k]), num(lim[k])
@@ -157,7 +159,7 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
         msgs.append("no GPU-node anti-affinity")
     if cpu_only and "nvidia.com/gpu.product" in aff:
         msgs.append("CPU job selects a GPU product")
-    if name == ORIGINAL:
+    if name in (ORIGINAL, RECOVER):
         render_gpus = set()
         for term in pod["affinity"]["nodeAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"]:
             for me in term.get("matchExpressions", []):
@@ -231,8 +233,8 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
                 msgs.append(f"render {cond}: --out is not /work/render/{cond}")
             if "--pilot" in ln or "--max-demos" in ln:
                 msgs.append(f"render {cond}: pilot flags")
-        if seen != {c_: 1 for c_ in CONDS}:
-            msgs.append(f"render conditions {seen}")
+        if seen != ({"noise": 1} if is_recover else {c_: 1 for c_ in CONDS}):
+            msgs.append(f"render conditions {seen}" + (" (the recovery Job may render noise only)" if is_recover else ""))
         if "PA=$R/pf-main/phase-a" not in script or "R=/mnt/proxy" not in script:
             msgs.append("PA is not /mnt/proxy/pf-main/phase-a")
         if not re.search(r"^ *NOISE_CAP=FILL_AT_SUBMIT$", script, re.M):
@@ -254,6 +256,33 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
         for e in ("dinov3", "siglip2", "c-radiov4"):
             if f"--encoder {e}" not in script:
                 msgs.append(f"no extraction of {e}")
+    if is_recover:
+        # the four published renders are only read; noise is the only thing this Job may publish; nothing on the volume is deleted
+        if not re.search(r'^ *PUBC="clean camera light background"$', script, re.M):
+            msgs.append("recover: PUBC is not exactly the four published conditions")
+        if "exit 20" not in script.split("for c in $CONDS; do", 1)[-1][:700] or "exit 14" not in script.split("for c in $CONDS; do", 1)[-1][:1800] or "exit 22" not in script.split("for c in $CONDS; do", 1)[-1][:2400]:
+            msgs.append("recover: the exit 20 / 14 / 22 refusals are missing from the pre-flight loop")
+        pr_lines = [ln.strip() for ln in lines if "publish_render" in ln and not ln.strip().startswith("#")]
+        if len(pr_lines) != 3 or not any(ln.startswith("publish_render()") for ln in pr_lines) or not any(ln.startswith("export -f publish_render") for ln in pr_lines) \
+                or not any(ln.startswith("stage publish-$_c cap 1800 bash -c 'publish_render") for ln in pr_lines):
+            msgs.append(f"recover: publish_render is used outside its definition, export and the stage in finish_render: {pr_lines}")
+        if 'REFUSE: $PB/render/$_c or $_c.part exists' not in script:
+            msgs.append("recover: publish_render does not refuse an existing target")
+        if "render-sha256.txt" not in script or "sha256sum -c $_d/render-sha256.txt" not in script:
+            msgs.append("recover: staging is not checked against render-sha256.txt")
+        if "RENDER_COMPLETE" not in script:
+            msgs.append("recover: no RENDER_COMPLETE check")
+        for ln in lines:
+            if ln.strip().startswith("#"):
+                continue
+            if re.search(r"\brm\b", ln) and ("$PB" in ln or "/mnt/proxy" in ln or "$R" in ln):
+                msgs.append("recover: rm on the volume: " + ln.strip()[:90])
+            if re.search(r"\bmv\b", ln) and "$PB" in ln and "publish" not in ln and "$_d/$_b.partial" not in ln and "$_c.part $PB/render/$_c" not in ln:
+                msgs.append("recover: mv on the volume outside publish/copy: " + ln.strip()[:90])
+        if re.search(r"cp .*\$_d/libero_goal.* \$PB|cp .* \$PB/render/\$_c/", code):
+            msgs.append("recover: a copy writes into a published render")
+        if "feats_done $PB/feats/$_c/$_e/libero_goal" not in script or "meta_check.py $_e $_c $PB/feats/$_c" not in script:
+            msgs.append("recover: skipped complete features are not meta-checked")
     if name.startswith("job-pfb-ext-") or is_render:
         # per-condition staging paths
         toks = re.findall(r"/work/pfb-test-([^/\s\"']*)/", code)
@@ -375,6 +404,20 @@ if TWIN in docs_by_name and ORIGINAL in docs_by_name:
         tmsgs.append("Job spec (deadline, ttl, backoff) differs")
     print("twin vs original:", "identical apart from name, GPU resource name and affinity" if not tmsgs else "PROBLEMS: " + "; ".join(tmsgs))
     bad += bool(tmsgs)
-print(f"Jobs: {len(names)}; GPUs if all ran at once: {total_gpu}" + (" (the A6000 twin is not counted: it races the original and the loser is deleted, so at most one of the pair runs)" if TWIN in docs_by_name else ""))
+if RECOVER in docs_by_name and ORIGINAL in docs_by_name:
+    # the recovery Job is the render Job with another name and another script: everything else (node rule, resources, env, volumes, deadline, ttl) must be identical
+    a, b = docs_by_name[ORIGINAL], docs_by_name[RECOVER]
+    rmsgs = []
+    import copy
+    def norm(d_):
+        d2 = copy.deepcopy(d_)
+        d2["metadata"].pop("name")
+        d2["spec"]["template"]["spec"]["containers"][0].pop("args")
+        return d2
+    if norm(a) != norm(b):
+        rmsgs.append("manifest differs from the render Job beyond name and script (node rule, resources, env, volumes, deadline or ttl)")
+    print("recover vs original:", "identical apart from name and script" if not rmsgs else "PROBLEMS: " + "; ".join(rmsgs))
+    bad += bool(rmsgs)
+print(f"Jobs: {len(names)}; GPUs if all ran at once: {total_gpu}" + (" (the A6000 twin is not counted: it races the original and the loser is deleted, so at most one of the pair runs)" if TWIN in docs_by_name else "") + (" (the recovery Job is not counted: it replaces the render Job)" if RECOVER in docs_by_name else ""))
 print("TOTAL problems:", bad)
 sys.exit(1 if bad else 0)
