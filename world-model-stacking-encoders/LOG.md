@@ -1624,3 +1624,9 @@ Reviews were read-only; findings reported by subagents, spot-checked by the lead
 **Test-set use:** none.
 **Next:** on the user's OK, merge PR #12, then PR #13 (its README points to the plan); then draft `sec/3_setup.tex` on a new branch, with a fresh fact-check reviewer.
 **Open questions:** the LIBERO read status, and whether benchmark citations need a full read; the framing gate (decision 004 told to the mentor, PLAN Next 5 in or out); the kind of venue.
+
+## 2026-11-10 [agent, lead, draft] (PRs #12 and #13 merged)
+**Did (verified):** the user said "yeah merge both"; merged PR #12 (f987263) then PR #13 (f0070e0) on GitHub with merge commits, pulled main. Built `writing/paper/main.pdf` with Tectonic (not committed) and opened it for the user.
+**PR:** #12, #13 (merged); this entry and the PLAN line: direct.
+**Test-set use:** none.
+**Next:** draft `writing/paper/sec/3_setup.tex` on a new branch, fresh fact-check reviewer, PR.
