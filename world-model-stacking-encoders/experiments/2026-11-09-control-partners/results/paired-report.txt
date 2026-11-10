@@ -1,0 +1,113 @@
+1. File integrity
+  log control-fetch-draws-20261110.log: 90500 bytes, sha256 e324bad96de81df15929226d6e04223293848d49f48e11babfa9f2dec2d9e2fc
+  volume listing: 15 files hashed in the log (5 npz, 5 input JSON, 5 target JSON)
+  [pass] tarball decoded from the log has the printed sha256 (896693fd3c08...)
+  [pass] tarball holds exactly the 5 npz files on the volume
+  [pass] tar member input-draws-c-radiov4-rerun.npz matches the volume's printed sha256
+  [pass] committed draws-s1/input-draws-c-radiov4-rerun.npz is byte-identical to the tar member
+  [pass] tar member input-draws-dup-dinov3.npz matches the volume's printed sha256
+  [pass] committed draws-s1/input-draws-dup-dinov3.npz is byte-identical to the tar member
+  [pass] tar member input-draws-noise-4608-s0.npz matches the volume's printed sha256
+  [pass] committed draws-s1/input-draws-noise-4608-s0.npz is byte-identical to the tar member
+  [pass] tar member input-draws-randproj-dinov3-4608-s0.npz matches the volume's printed sha256
+  [pass] committed draws-s1/input-draws-randproj-dinov3-4608-s0.npz is byte-identical to the tar member
+  [pass] tar member input-draws-shuffle-dinov3-s0.npz matches the volume's printed sha256
+  [pass] committed draws-s1/input-draws-shuffle-dinov3-s0.npz is byte-identical to the tar member
+  committed result JSONs versus the volume's printed sha256 (trailing newline):
+  [pass] input-libero_goal-dinov3-c-radiov4-rerun.json: repo file minus its final newline hashes to the volume value; repo file with the newline does not
+  [pass] input-libero_goal-dinov3-dup-dinov3.json: repo file minus its final newline hashes to the volume value; repo file with the newline does not
+  [pass] input-libero_goal-dinov3-noise-4608-s0.json: repo file minus its final newline hashes to the volume value; repo file with the newline does not
+  [pass] input-libero_goal-dinov3-randproj-dinov3-4608-s0.json: repo file minus its final newline hashes to the volume value; repo file with the newline does not
+  [pass] input-libero_goal-dinov3-shuffle-dinov3-s0.json: repo file minus its final newline hashes to the volume value; repo file with the newline does not
+  [pass] target-libero_goal-dinov3-dup-dinov3.json: repo file minus its final newline hashes to the volume value; repo file with the newline does not
+  [pass] target-libero_goal-dinov3-noise-4608-0.3-s0.json: repo file minus its final newline hashes to the volume value; repo file with the newline does not
+  [pass] target-libero_goal-dinov3-noise-4608-s0.json: repo file minus its final newline hashes to the volume value; repo file with the newline does not
+  [pass] target-libero_goal-dinov3-randproj-dinov3-4608-s0.json: repo file minus its final newline hashes to the volume value; repo file with the newline does not
+  [pass] target-libero_goal-dinov3-shuffle-dinov3-s0.json: repo file minus its final newline hashes to the volume value; repo file with the newline does not
+  10 of 10 JSONs differ from the volume copy only by one trailing newline
+  [pass] input-draws-noise-4608-s0.npz: keys ['dinov3|noise:4608|global', 'noise:4608|dinov3|global'], each float64 x 1000
+  [pass] input-libero_goal-dinov3-noise-4608-s0.json: n_boot 1000, seed 0, test demos 100
+  [pass] input-draws-dup-dinov3.npz: keys ['dinov3|dup:dinov3|global', 'dup:dinov3|dinov3|global'], each float64 x 1000
+  [pass] input-libero_goal-dinov3-dup-dinov3.json: n_boot 1000, seed 0, test demos 100
+  [pass] input-draws-randproj-dinov3-4608-s0.npz: keys ['dinov3|randproj:dinov3:4608|global', 'randproj:dinov3:4608|dinov3|global'], each float64 x 1000
+  [pass] input-libero_goal-dinov3-randproj-dinov3-4608-s0.json: n_boot 1000, seed 0, test demos 100
+  [pass] input-draws-shuffle-dinov3-s0.npz: keys ['dinov3|shuffle:dinov3|global', 'shuffle:dinov3|dinov3|global'], each float64 x 1000
+  [pass] input-libero_goal-dinov3-shuffle-dinov3-s0.json: n_boot 1000, seed 0, test demos 100
+  [pass] input-draws-c-radiov4-rerun.npz: keys ['c-radiov4|dinov3|global', 'dinov3|c-radiov4|global'], each float64 x 1000
+  [pass] input-libero_goal-dinov3-c-radiov4-rerun.json: n_boot 1000, seed 0, test demos 100
+
+2. Saved draws reproduce the CIs in the stage 1 JSONs (method: np.quantile at 0.025 and 0.975, linear interpolation, as src/diagnostics.py ci())
+  control                array                        JSON ci95                  from draws                 max abs diff
+  noise:4608             dinov3|noise:4608|global     [-0.030234, -0.024632] [-0.030234, -0.024632] 0.00e+00
+  [pass] noise:4608: CI of dinov3|noise:4608|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  noise:4608             noise:4608|dinov3|global     [+0.596569, +0.646656] [+0.596569, +0.646656] 0.00e+00
+  [pass] noise:4608: CI of noise:4608|dinov3|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  [pass] noise:4608: CI of (gain(X|D) draws - gain(D|X) draws) = R2(X) - R2(D) equals the JSON asym_ci95 (diff 0.00e+00)
+  noise:4608             mean of gain draws -0.027109 against point value -0.026900
+  dup:dinov3             dinov3|dup:dinov3|global     [+0.001640, +0.003980] [+0.001640, +0.003980] 0.00e+00
+  [pass] dup:dinov3: CI of dinov3|dup:dinov3|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  dup:dinov3             dup:dinov3|dinov3|global     [+0.001640, +0.003980] [+0.001640, +0.003980] 0.00e+00
+  [pass] dup:dinov3: CI of dup:dinov3|dinov3|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  [pass] dup:dinov3: CI of (gain(X|D) draws - gain(D|X) draws) = R2(X) - R2(D) equals the JSON asym_ci95 (diff 0.00e+00)
+  dup:dinov3             mean of gain draws +0.002740 against point value +0.002794
+  randproj:dinov3:4608   dinov3|randproj:dinov3:4608|global [-0.000719, +0.002660] [-0.000719, +0.002660] 0.00e+00
+  [pass] randproj:dinov3:4608: CI of dinov3|randproj:dinov3:4608|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  randproj:dinov3:4608   randproj:dinov3:4608|dinov3|global [+0.003436, +0.006029] [+0.003436, +0.006029] 0.00e+00
+  [pass] randproj:dinov3:4608: CI of randproj:dinov3:4608|dinov3|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  [pass] randproj:dinov3:4608: CI of (gain(X|D) draws - gain(D|X) draws) = R2(X) - R2(D) equals the JSON asym_ci95 (diff 0.00e+00)
+  randproj:dinov3:4608   mean of gain draws +0.001010 against point value +0.001104
+  shuffle:dinov3         dinov3|shuffle:dinov3|global [-0.003579, -0.002697] [-0.003579, -0.002697] 0.00e+00
+  [pass] shuffle:dinov3: CI of dinov3|shuffle:dinov3|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  shuffle:dinov3         shuffle:dinov3|dinov3|global [+0.621816, +0.670095] [+0.621816, +0.670095] 0.00e+00
+  [pass] shuffle:dinov3: CI of shuffle:dinov3|dinov3|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  [pass] shuffle:dinov3: CI of (gain(X|D) draws - gain(D|X) draws) = R2(X) - R2(D) equals the JSON asym_ci95 (diff 0.00e+00)
+  shuffle:dinov3         mean of gain draws -0.003143 against point value -0.003106
+  c-radiov4              dinov3|c-radiov4|global      [+0.032483, +0.042330] [+0.032483, +0.042330] 0.00e+00
+  [pass] c-radiov4: CI of dinov3|c-radiov4|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  c-radiov4              c-radiov4|dinov3|global      [+0.013655, +0.021297] [+0.013655, +0.021297] 0.00e+00
+  [pass] c-radiov4: CI of c-radiov4|dinov3|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  [pass] c-radiov4: CI of (gain(X|D) draws - gain(D|X) draws) = R2(X) - R2(D) equals the JSON asym_ci95 (diff 0.00e+00)
+  c-radiov4              mean of gain draws +0.037250 against point value +0.037096
+
+3. Are the draws paired across the five runs?
+  The PLAN's claim: the weights depend only on n_test_demos, n_boot and the seed. Code (bootstrap_r2):
+  w = np.random.default_rng(seed).multinomial(k, np.full(k, 1/k), size=n_boot), k = number of test demos.
+  All five JSONs record n_boot 1000, seed 0, 100 test demos (checked above), so the Job used one weight matrix for all five runs.
+  Reconstructed w: shape (1000, 100), every row sums to 100-100, sha256 of its bytes 5d0d66d20b93f356...
+  The DINOv3-alone R2 draws are not in the npz files (only gain arrays are saved), so the exact-identity test of those
+  draws cannot be run. Three weaker tests that the files and JSONs do allow:
+  (a) DINOv3 alone is the same probe in every run, so its R2 point value and its bootstrap CI (computed from the DINOv3-alone
+      draws inside each run) must be the same in all five JSONs if the weights were the same:
+      DINOv3 alone: R2 0.649880, CI [0.622967, 0.670881]; max abs difference over the five JSONs 0.000e+00
+  [pass] DINOv3-alone R2 and CI are identical in all five JSONs (max abs difference exactly 0)
+  (b) q_X = gain(D|X) draws - gain(X|D) draws = R2(D) - R2(X) per draw. For a probe X that predicts a constant (noise and
+      shuffle: their JSONs give R2 about 0), R2(X) is a function of the weights only, so q_noise - q_shuffle = R2(shuffle) - R2(noise)
+      per draw is 0 if the two runs used the same weights, and has the full bootstrap spread (about sqrt(2) times sd(q)) if not.
+      q_noise:4608             mean +0.65046 sd 0.01169
+      q_dup:dinov3             mean +0.00000 sd 0.00000
+      q_randproj:dinov3:4608   mean +0.00369 sd 0.00076
+      q_shuffle:dinov3         mean +0.65046 sd 0.01169
+      q_c-radiov4              mean -0.01990 sd 0.00376
+      noise:4608 vs shuffle:dinov3: corr 0.99999997, max abs (q_noise - q_shuffle) 1.050e-05, sd of the difference / (sqrt(2) * sd(q_noise)) = 0.00016
+      reference for scale, one array with its draw order permuted (what unpaired looks like): corr +0.0275
+  [pass] noise:4608 and shuffle:dinov3 runs share the same weights (corr > 0.9999, difference spread under 1% of the unpaired value)
+      randproj:dinov3:4608 and c-radiov4 are not used in (b): their own R2(X) is about R2(D) and fluctuates with the weights, so q_X does not isolate R2(D).
+  (c) dup:dinov3 is the same features as DINOv3, so its probe predictions equal DINOv3's and R2(D) - R2(X) must be 0 in every draw:
+      dup:dinov3: max abs q 0.000e+00
+  [pass] dup:dinov3 R2(D) - R2(X) is exactly 0 in every draw (shows the two probes inside that run saw the same weights; not a cross-run test)
+  What is not shown by the files alone: that the weights of the c-radiov4 and randproj runs equal the others' draw by draw. It rests on (a), the code, and the identical
+  recorded seed, n_boot and test-demo count; (a) is the supporting evidence (a bootstrap CI matching to the last digit would not be expected under different weights; an expectation, not a proof).
+
+4. Paired difference gain(C-RADIOv4|DINOv3) minus gain(control|DINOv3), per draw (95% interval: same np.quantile method)
+  gain(C-RADIOv4|DINOv3): point +0.037096 (rerun JSON), CI from draws [+0.032483, +0.042330]
+  control                 gain(ctrl|D) point  paired diff point        95% interval from draws  mean of draws  share of draws > 0
+  noise:4608                       -0.026900          +0.063996         [+0.058410, +0.070880]      +0.064359               1.000
+  dup:dinov3                       +0.002794          +0.034302         [+0.029634, +0.039448]      +0.034509               1.000
+  randproj:dinov3:4608             +0.001104          +0.035993         [+0.031451, +0.041356]      +0.036240               1.000
+  shuffle:dinov3                   -0.003106          +0.040202         [+0.035454, +0.045579]      +0.040393               1.000
+
+  PLAN note (Predictions, input side, 'below -0.005 with CI under 0'): R's +0.037 is information on top of a width penalty (paired difference larger than +0.037).
+  paired difference against noise:4608: point +0.063996, interval [+0.058410, +0.070880];
+  gain(C-RADIOv4|DINOv3) point is +0.037096; the paired difference is larger than it: True (point), interval lower end above it: True.
+
+Checks failed: none
