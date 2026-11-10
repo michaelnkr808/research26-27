@@ -1,0 +1,60 @@
+# Fetch the stage 1 bootstrap-draw files (input-draws-*.npz) off the volume (CPU only, read only).
+# The user's 2026-11-10 chat OK: "sure go ahead with both cpu jobs". Why: the stage 1 pod log holds the result JSONs but not the
+# npz draws, which the paired difference gain(C-RADIOv4|DINOv3) minus gain(control|DINOv3) needs (README, "Not computed").
+# Follows _standards/08: Job, real command then exit, NO sleep, no GPU, off GPU nodes, limits within 20% of requests.
+# Mounts only stacking-encoders-features, READ ONLY. No pip install, no writes to the volume. Prints the file sizes, the sha256 of
+# every file in the stage 1 folder, then the input-draws npz files as one base64 tarball between BEGIN/END marker lines if the
+# tarball is under 20 MB; otherwise prints the sizes and exits nonzero. NOT SUBMITTED.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-control-fetch-draws
+  namespace: aria-world
+spec:
+  backoffLimit: 0                     # deviates from _standards/08 line 31 (> 0): a read-only fetch whose failure the lead wants to see, not retry
+  activeDeadlineSeconds: 1800        # 30 min cap, includes time Pending; the work is a read, a tar and a base64
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}   # CPU-only: stay off GPU nodes
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}                 # near rook-cephfs
+      containers:
+      - name: main
+        image: python:3.11.14-slim
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          D=/mnt/features/stacking-encoders/control-partners
+          echo "=== files in $D"; ls -l $D
+          echo "=== sha256 of every file (regular files only)"; (cd $D && find . -maxdepth 1 -type f -exec sha256sum {} + | sort -k2)
+          find $D -maxdepth 1 -name 'input-draws-*.npz' -printf '%f\n' | sort > /tmp/npz.list
+          N=$(wc -l < /tmp/npz.list)
+          if [ "$N" -eq 0 ]; then echo "ERROR: no input-draws-*.npz in $D"; exit 4; fi
+          echo "=== input-draws npz files: $N"; (cd $D && ls -l $(cat /tmp/npz.list))
+          tar -C $D -czf /tmp/input-draws-s1.tgz -T /tmp/npz.list
+          TARBYTES=$(stat -c %s /tmp/input-draws-s1.tgz)
+          echo "tarball bytes: $TARBYTES  (limit for printing: 20000000)"
+          sha256sum /tmp/input-draws-s1.tgz
+          if [ "$TARBYTES" -lt 20000000 ]; then
+            echo "=== BEGIN input-draws-s1.tgz base64"
+            base64 /tmp/input-draws-s1.tgz
+            echo "=== END input-draws-s1.tgz base64"
+          else
+            echo "ERROR: tarball is 20 MB or more, not printed; sizes are listed above"; exit 5
+          fi
+          echo "=== done"
+        resources:
+          requests: {cpu: "1", memory: 1Gi, ephemeral-storage: 1Gi}
+          limits:   {cpu: "1200m", memory: 1200Mi, ephemeral-storage: 1200Mi}
+        volumeMounts:
+        - {name: features, mountPath: /mnt/features, readOnly: true}
+      volumes:
+      - name: features
+        persistentVolumeClaim: {claimName: stacking-encoders-features, readOnly: true}
