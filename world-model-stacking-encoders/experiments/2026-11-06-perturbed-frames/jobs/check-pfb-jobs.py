@@ -20,6 +20,9 @@ CONFIGMAP = "stacking-encoders-pf-main-src-b"
 CONDS = ["clean", "camera", "light", "background", "noise"]
 EXPECTED = (["job-pfb-draws.yaml", "job-pfb-render.yaml", "job-pfb-ext-vggt.yaml"] + [f"job-pfb-ext-sam3-{c}.yaml" for c in CONDS] + ["job-pfb-final.yaml"])
 CPU_ONLY = {"job-pfb-draws.yaml", "job-pfb-final.yaml"}
+TWIN = "job-pfb-render-a6000.yaml"    # 2026-11-10: RTX A6000 twin of the render Job, raced against the original; never counted as a second GPU (see PHASE-B.md note 2026-11-10)
+TWIN_RESOURCE = "nvidia.com/rtxa6000"
+ORIGINAL = "job-pfb-render.yaml"
 SIGLIP2_SHA = "1b426889ea62b5a72bf9839009a1b184bfc9c178"     # results/pf-main/phase-a/pfa-ext-siglip2-cradio/revisions.txt
 CONFIG_ARG = "/pf/phase-a.yaml"
 
@@ -57,12 +60,13 @@ if src_dir.is_dir():
 
 bad = 0
 missing = [n for n in EXPECTED if not (jobs / n).is_file()]
-extra = sorted(Path(f).name for f in glob.glob(str(jobs / "job-pfb-*.yaml")) if Path(f).name not in EXPECTED)
+extra = sorted(Path(f).name for f in glob.glob(str(jobs / "job-pfb-*.yaml")) if Path(f).name not in EXPECTED and Path(f).name != TWIN)
 if missing or extra:
     print("PROBLEMS: expected manifests missing", missing, "unexpected", extra)
     bad += 1
 names = set()
 total_gpu = 0
+docs_by_name = {}
 for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
     name = Path(f).name
     docs = list(yaml.safe_load_all(open(f)))
@@ -72,6 +76,7 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
         bad += 1
         continue
     d = docs[0]
+    docs_by_name[name] = d
     spec = d["spec"]
     pod = spec["template"]["spec"]
     c = pod["containers"][0]
@@ -90,7 +95,8 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
     if c["image"] != DIGEST:
         msgs.append("image not the pinned digest")
     envd = {e["name"]: e.get("value") for e in c["env"]}
-    is_render = name == "job-pfb-render.yaml"
+    is_twin = name == TWIN
+    is_render = name in (ORIGINAL, TWIN)    # the twin runs the same script, so every render check applies to it
     if is_render and envd.get("IMAGE_DIGEST") != c["image"]:
         msgs.append("IMAGE_DIGEST env differs from the image")
     if is_render and envd.get("IMAGE_DIGEST") != DIGEST:
@@ -101,10 +107,17 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
         msgs.append(f"PYTHONPATH env {envd.get('PYTHONPATH')!r}")
     req, lim = c["resources"]["requests"], c["resources"]["limits"]
     cpu_only = name in CPU_ONLY
-    ngpu = int(req.get("nvidia.com/gpu", 0))
-    if ngpu != (0 if cpu_only else 1) or int(lim.get("nvidia.com/gpu", 0)) != ngpu:
-        msgs.append(f"gpu request {ngpu}")
-    total_gpu += ngpu
+    if is_twin:
+        # the twin asks for exactly one RTX A6000 under its own resource name and no generic GPU
+        ngpu = int(req.get(TWIN_RESOURCE, 0))
+        if ngpu != 1 or int(lim.get(TWIN_RESOURCE, 0)) != 1 or "nvidia.com/gpu" in req or "nvidia.com/gpu" in lim:
+            msgs.append(f"twin must request exactly {TWIN_RESOURCE}: 1 and no nvidia.com/gpu")
+    else:
+        ngpu = int(req.get("nvidia.com/gpu", 0))
+        if ngpu != (0 if cpu_only else 1) or int(lim.get("nvidia.com/gpu", 0)) != ngpu or TWIN_RESOURCE in req or TWIN_RESOURCE in lim:
+            msgs.append(f"gpu request {ngpu}")
+    if not is_twin:    # the twin and the original are raced and never both run, so only the original counts toward the peak
+        total_gpu += ngpu
     for k in ("cpu", "memory", "ephemeral-storage"):
         r, l = num(req[k]), num(lim[k])
         if not (r <= l <= 1.2 * r + 1e-9):
@@ -119,13 +132,30 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
     aff = str(pod["affinity"])
     if "us-west" not in aff:
         msgs.append("no us-west")
+    req_terms = pod["affinity"]["nodeAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"]
+    req_exprs = [me for t in req_terms for me in t.get("matchExpressions", [])]
+    has_req_region = any(me.get("key") == "topology.kubernetes.io/region" for me in req_exprs)
+    if is_twin:
+        # twin: no gpu.product, no required region, driver rule and excluded hosts kept, soft us-west preference weight 100
+        if any(me.get("key") == "nvidia.com/gpu.product" for me in req_exprs):
+            msgs.append("twin must not require nvidia.com/gpu.product")
+        if has_req_region:
+            msgs.append("twin must not require a region (soft preference only)")
+        if not any(me.get("key") == "nvidia.com/cuda.driver.major" and me.get("operator") == "Gt" and me.get("values") == ["569"] for me in req_exprs):
+            msgs.append("twin lost the driver rule")
+        prefs = pod["affinity"]["nodeAffinity"].get("preferredDuringSchedulingIgnoredDuringExecution", [])
+        if not any(pr.get("weight") == 100 and any(me.get("key") == "topology.kubernetes.io/region" and me.get("operator") == "In" and me.get("values") == ["us-west"]
+                                                    for me in pr["preference"].get("matchExpressions", [])) for pr in prefs):
+            msgs.append("twin lacks the preferred us-west term (weight 100)")
+    elif not cpu_only and not any(me.get("key") == "topology.kubernetes.io/region" and me.get("operator") == "In" and me.get("values") == ["us-west"] for me in req_exprs):
+        msgs.append("us-west is not a REQUIRED rule")
     if not cpu_only and "ry-gpu-08" not in aff:
         msgs.append("excluded hosts missing")
     if cpu_only and "pci-10de" not in aff:
         msgs.append("no GPU-node anti-affinity")
     if cpu_only and "nvidia.com/gpu.product" in aff:
         msgs.append("CPU job selects a GPU product")
-    if is_render:
+    if name == ORIGINAL:
         render_gpus = set()
         for term in pod["affinity"]["nodeAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"]:
             for me in term.get("matchExpressions", []):
@@ -304,6 +334,26 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
           f"cpu {req['cpu']}/{lim['cpu']}, mem {req['memory']}/{lim['memory']}, eph {req['ephemeral-storage']}/{lim['ephemeral-storage']}; "
           f"bash -n rc={r.returncode}; " + ("OK" if not msgs else "PROBLEMS: " + "; ".join(msgs)))
     bad += bool(msgs)
-print(f"Jobs: {len(names)}; GPUs if all ran at once: {total_gpu}")
+if TWIN in docs_by_name and ORIGINAL in docs_by_name:
+    # the twin must be the original with only the allowed differences: same script, same env, same volumes, same CPU, memory and ephemeral storage
+    a, b = docs_by_name[ORIGINAL], docs_by_name[TWIN]
+    ca, cb = a["spec"]["template"]["spec"]["containers"][0], b["spec"]["template"]["spec"]["containers"][0]
+    tmsgs = []
+    if ca["args"] != cb["args"]:
+        tmsgs.append("script differs from the original")
+    if ca["env"] != cb["env"] or ca["image"] != cb["image"] or ca["command"] != cb["command"] or ca["volumeMounts"] != cb["volumeMounts"]:
+        tmsgs.append("env, image, command or volumeMounts differ")
+    if a["spec"]["template"]["spec"]["volumes"] != b["spec"]["template"]["spec"]["volumes"]:
+        tmsgs.append("volumes differ")
+    for sect in ("requests", "limits"):
+        ra = {k: v for k, v in ca["resources"][sect].items() if k != "nvidia.com/gpu"}
+        rb = {k: v for k, v in cb["resources"][sect].items() if k != TWIN_RESOURCE}
+        if ra != rb:
+            tmsgs.append(f"{sect} differ beyond the GPU resource name")
+    if {k: v for k, v in a["spec"].items() if k != "template"} != {k: v for k, v in b["spec"].items() if k != "template"}:
+        tmsgs.append("Job spec (deadline, ttl, backoff) differs")
+    print("twin vs original:", "identical apart from name, GPU resource name and affinity" if not tmsgs else "PROBLEMS: " + "; ".join(tmsgs))
+    bad += bool(tmsgs)
+print(f"Jobs: {len(names)}; GPUs if all ran at once: {total_gpu} (the A6000 twin is not counted: it races the original and the loser is deleted, so at most one of the pair runs)")
 print("TOTAL problems:", bad)
 sys.exit(1 if bad else 0)
