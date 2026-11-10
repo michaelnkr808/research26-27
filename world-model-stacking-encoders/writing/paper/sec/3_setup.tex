@@ -19,11 +19,16 @@
 % higher), both checked cell by cell against the arXiv HTML v1 (2026-10-18); 84.0, 83.5 and 78.6 also read in the
 % PDF text (paper note, 2026-10-21 section). "Only pair below DINOv3 alone": our arithmetic on those two CSVs.
 % Distillation sentence: paper Sec. 4.4, p8 (paper note, Q3). The paper's explanation is qualitative (same place).
+% Inputs (frames, robot state, T5 language): paper Sec. 3.1. Loss weight: Eq. 9 is an unweighted sum over sources and
+% App. B.2 p16 sets auxiliary feature losses to 1.0 "unless otherwise specified"; not stated for compositions.
+% PDF check asked for by the paper note line 4: done by the PR #20 reviewer, 2026-11-10 (arXiv v1 PDF and HTML).
 \paragraph{The source result.}
-Liu~\etal~\cite{liu2026what} add frozen visual encoders to a world action model (WAM) built from a video expert initialized from Wan~2.2~\TODO{cite} and a separate action expert, which together predict future video latents and an action chunk from T5 language features~\TODO{cite}.
+Liu~\etal~\cite{liu2026what} add frozen visual encoders to a world action model (WAM) built from a video expert initialized from Wan~2.2~\TODO{cite} and a separate action expert.
+From camera frames, the robot state and T5-encoded instructions~\TODO{cite}, the model predicts future video latents and an action chunk.
 Each encoder's final-layer token features are aligned to the VAE latent grid and concatenated with the VAE latents along the channel dimension.
-The features enter twice: features of the current frame as clean inputs, and features of future frames as noised targets that the model learns to predict, with one flow-matching loss~\TODO{cite} per encoder, summed with weight 1.0.
-The model is trained once on 1,712 LIBERO episodes and scored on the 10,030 episodes of LIBERO-Plus, which change the camera, the robot's initial state, the instruction, the lighting, the background, the sensor noise or the object layout, under three evaluation seeds.
+The features enter twice: features of the current frame as clean inputs, and features of future frames as noised targets that the model learns to predict.
+Each encoder has its own flow-matching loss~\TODO{cite} on its future features, and these losses are summed, by default with weight 1.0.
+The model is trained once on 1,712 LIBERO episodes~\TODO{cite LIBERO} and scored on the 10,030 episodes of LIBERO-Plus~\TODO{cite LIBERO-Plus}, which change the camera, the robot's initial state, the instruction, the lighting, the background, the sensor noise or the object layout, under three evaluation seeds.
 Each configuration is one trained checkpoint; the three seeds vary only the evaluation.
 In the paper, DINOv3 alone reaches 84.0\% total success on LIBERO-Plus and C-RADIOv4 alone 83.5\%, but the two stacked together reach 78.6\%: below either one alone, and the only one of the seven DINOv3 pairs that falls below DINOv3 alone.
 The paper explains its composition results qualitatively, by overlap in pretraining objectives, and notes that C-RADIOv4 distills DINOv3, SigLIP~2 and SAM~3~\cite{liu2026what,ranzinger2026cradiov4}.
@@ -37,9 +42,10 @@ The paper's numbers for the four partners we test are listed with our measuremen
 % Proxy SigLIP 2: experiments/2026-10-27-proxy-calibration/jobs/rendered/job-extract-siglip2.yaml line 47 (no
 % --variant, so the so400m default) and proxy PLAN line 132. No L variant of C-RADIOv4: literature/encoder-weights.md
 % ("Variants", release list). The SigLIP 2 size differs between our two experiments; no decision record found.
+% DINOv3 grid in the paper: App. D.3, 14x14 grid of 1,024-d features per view (paper note Q1; encoder-weights.md).
 \paragraph{Encoders.}
 We test DINOv3 with four of its seven partners in the paper's composition table: C-RADIOv4~\cite{ranzinger2026cradiov4}, SigLIP~2, SAM~3 and VGGT-Omega~\TODO{cite DINOv3, SigLIP 2, SAM 3, VGGT-Omega}.
-The paper says only that it uses ``primarily large (L) variants'' and final-layer token features, so the checkpoints are our choice and may differ from the paper's.
+The paper names no checkpoints. It uses ``primarily large (L) variants'' and final-layer token features, and the DINOv3 feature grid it reports fits ViT-L/16; the other checkpoints are our choice and may differ from the paper's.
 We use DINOv3 ViT-L/16 at 224 pixels, C-RADIOv4-SO400M at 448 pixels (C-RADIOv4 has no L variant), SAM~3's vision backbone before its feature-pyramid neck at 1008 pixels, and VGGT-Omega 1B (final aggregator layer) at 512 pixels.
 For SigLIP~2, the frozen-feature tests use the Large/16 model and the proxy uses the So400m/14 model, both at 384 pixels.
 All encoders stay frozen. Model revisions and licenses are listed in the supplement.
@@ -51,32 +57,49 @@ All encoders stay frozen. Model revisions and licenses are listed in the supplem
 % Evaluation: proxy PLAN "Amendment 2026-11-06" (all 10,030 episodes, eval seeds 41-43, the 40-trial clean list,
 % one per task at eval seed 41); data/README.md section 2. Perturbed frames: PLAN.md Now (re-renders).
 % Licenses: data/README.md sections 1-3 (LIBERO HDF5 not recorded; LIBERO-Plus code unstated, assets tagged MIT;
-% Fast-WAM data CC BY 4.0).
+% Fast-WAM data CC BY 4.0). Paper's dataset count and clean evaluation: Table 7 note ("counted before the validation
+% split"; 1,712 processed LIBERO episodes) and App. C.2 (50 rollouts per task); our proxy holds out no validation
+% episodes (PR #20 reviewer, src/fastwam_data.py and proxy_wam.py).
 \paragraph{Data.}
 The frozen-feature tests use the LIBERO-Goal demonstrations~\TODO{cite LIBERO}: 10 tasks, 500 demonstrations and 63,728 time steps, each step with an agent-view and a wrist image at 128$\times$128 pixels and the 7-dimensional action the human teleoperator recorded.
 We split by demonstration within each task (the last 20\% for testing, the 20\% before that for validation, the rest for training; 100 test demonstrations), so no demonstration is split across sets.
-The proxy trains on the same 1,712 episodes from the four LIBERO suites as the paper, from Fast-WAM's regenerated release~\TODO{cite Fast-WAM}, at 224$\times$224 pixels per camera.
-It is evaluated on all 10,030 LIBERO-Plus episodes~\TODO{cite LIBERO-Plus} under evaluation seeds 41, 42 and 43, as in the paper, with 40 clean LIBERO episodes (one per task) as context.
+The proxy trains on all 1,712 episodes of Fast-WAM's regenerated release of the four LIBERO suites~\TODO{cite Fast-WAM}, the set the paper reports, at 224$\times$224 pixels per camera.
+The paper counts these episodes before a validation split; we hold none out.
+Each proxy checkpoint is scored on all 10,030 LIBERO-Plus episodes under evaluation seeds 41, 42 and 43, as in the paper.
+We also run 40 unperturbed LIBERO episodes, one per task, as a small sanity check; the paper runs 50 per task, so these are not comparable with its clean results.
 The perturbed-frame test renders its own frames from LIBERO-Goal states (Sec.~\ref{sec:perturbed}).
 \TODO{Licenses: the LIBERO HDF5 data license is not recorded and LIBERO-Plus states no code license (its assets are tagged MIT); Fast-WAM's data is CC BY 4.0. Resolve before submission.}
 
 % Proxy. Model: proxy PLAN "Stage 1" design (Fast-WAM FastWAMJoint at 7faa711, random init, video width 384,
 % action width 128, 8 layers; asymmetric mask, action sees video) and "Choice 6"; inputs: "Stage 1" facts
 % (Wan 2.2 VAE as used by Fast-WAM, 14x28 latent grid for the two views side by side, 48 channels; umT5-XXL;
-% state token), choices 1, 3 and 7 (lines 83-85). Training recipe: proxy PLAN line 58 (paper Table 6) and
-% src/proxy_wam.py (AdamW line 478, lr_at line 466, grad clip line 501, bf16 autocast line 497, defaults lines
-% 529-538). 31,647,943 parameters for the DINOv3 config: proxy PLAN Amendment (c) section 2. No code released:
-% paper note "Evidence strength" (checked 2026-10-17) and proxy PLAN line 90 (2026-10-28).
-% Choices where the paper is silent: proxy PLAN lines 131-135; also PLAN.md Next 2, suspect 3.
-% Configs and seeds: proxy PLAN "Configs" and line 151. Data order shared, weights not assumed shared:
+% state token), choices 1, 3 and 7 (lines 83-85). Fast-WAM's, not the paper's: side-by-side layout (proxy PLAN 50),
+% the VAE variant (PLAN 91, 127: the paper names none), umT5-XXL (PLAN 126; the paper says T5), the state token
+% (PLAN 126; the paper says only "conditioned on the robot state", Sec. 3.1). Future VAE latents are predicted too:
+% src/proxy_wam.py lines 221-227 and 396-429. Training recipe: proxy PLAN line 58 (paper Table 6 for the optimizer,
+% Table 7 for batch 128 and 10 epochs) and src/proxy_wam.py (AdamW line 478, lr_at line 466, grad clip line 501,
+% bf16 autocast line 497, defaults lines 529-538). 31,647,943 parameters for the DINOv3 config: proxy PLAN
+% Amendment (c) section 2. No code released: paper note "Evidence strength" (checked 2026-10-17), proxy PLAN
+% line 90 (2026-10-28), project page rechecked by the PR #20 reviewer 2026-11-10. "Main unavoidable gap" for the
+% video prior: proxy PLAN line 98 (no reason recorded; the size was set at the pilot), so the text does not call
+% either difference unavoidable.
+% Choices where neither source settles it: proxy PLAN lines 131-135; also PLAN.md Next 2, suspect 3.
+% Configs and seeds: proxy PLAN "Configs" and line 152. Data order shared, weights not assumed shared:
 % reviews/2026-11-09-synthesis.md decision 2. Rollouts: src/rollout.py docstring lines 5-21; paper App. E.3.
 % Amendment (c): proxy PLAN "Sign-off note 2026-11-09" (B1 --layers 16 first; A1 --epochs 20 fallback).
 \paragraph{Our proxy WAM.}
-No code for the source paper's model has been released, so we build a smaller proxy from the joint model of Fast-WAM~\TODO{cite Fast-WAM}: a video transformer and an action transformer with joint attention, in which action tokens attend to video tokens but not the reverse.
-Where the paper is specific, the proxy follows it: Wan~2.2 VAE latents of the two camera views placed side by side (48 channels, a 14$\times$14 grid per view), umT5-XXL instruction embeddings as in Fast-WAM, a robot-state token, and each encoder's features concatenated with the VAE latents along channels at every grid cell, both as clean current inputs and as noised future targets, trained by joint flow matching on actions and future features with each encoder's loss weighted 1.0.
-The optimizer and schedule are the paper's: AdamW, learning rate $10^{-4}$ with 5\% warm-up and cosine decay to $10^{-6}$, weight decay 0.01, gradient clipping at 1.0, batch 128, 10 epochs, bfloat16.
-Two differences cannot be avoided: the proxy starts from random weights, with no pretrained video prior, and it is far smaller (about 32 million parameters with DINOv3, before the change below).
-Where the paper is silent, we chose the following: each encoder resizes the 224-pixel frame to its own input size, and its token grid is then resized bilinearly to 14$\times$14 per camera; each encoder's channels are standardized with training-set statistics; future features are averaged over the four frames of each VAE latent step (the paper states this averaging only for a different mechanism, REPA); and batches come from 16-episode buffers instead of a full shuffle.
+The source paper's code has not been released.
+We build a smaller proxy from the joint model of Fast-WAM~\TODO{cite Fast-WAM}: a video transformer and an action transformer with joint attention, in which action tokens attend to video tokens but not the reverse.
+From the paper, the proxy takes the channel-wise stacking: each encoder's features are concatenated with the VAE latents at every grid cell, as clean current inputs and as noised future targets.
+The model is trained by joint flow matching on future VAE latents, future encoder features and actions, with each encoder's feature loss weighted 1.0.
+The optimizer and schedule are also the paper's: AdamW, learning rate $10^{-4}$ with 5\% warm-up and cosine decay to $10^{-6}$, weight decay 0.01, gradient clipping at 1.0, batch 128, 10 epochs, bfloat16.
+From Fast-WAM, where the paper does not say, the proxy takes the Wan~2.2 VAE that Fast-WAM uses (48 channels, a 14$\times$14 grid per camera, the two cameras side by side), umT5-XXL instruction embeddings~\TODO{cite umT5} (the paper says T5), and the robot state as one extra token.
+The two largest differences from the paper's model are that the proxy starts from random weights, with no pretrained video prior, and that it is far smaller (about 32 million parameters with DINOv3 in the first runs).
+Where neither source settles a detail, we chose as follows.
+Each encoder resizes the 224-pixel frame to its own input size, and its token grid is then resized bilinearly to 14$\times$14 per camera.
+Each encoder's channels are standardized with training-set statistics.
+Future features are averaged over the four frames of each VAE latent step; the paper states this averaging only for its representation-alignment mechanism~\TODO{cite REPA}.
+Batches come from 16-episode buffers instead of a full shuffle.
 Any of these choices could change whether stacking hurts.
 We train five configurations (no encoder, DINOv3, C-RADIOv4, DINOv3 + C-RADIOv4, and DINOv3 + SigLIP~2), each with training seeds 0, 1 and 2.
 Runs with the same seed see the same data order; we do not assume they share initial weights.
@@ -94,16 +117,22 @@ Rollouts follow Fast-WAM's LIBERO evaluation and the paper's composition setting
 % Amendment (c) section 1; perturbed gate 0.01 -> 0.025 after the first check failed, probes retrained on
 % re-renders, before any re-render-trained result, perturbed PLAN line 466 and PLAN.md line 14; render tolerance
 % after the phase-A val comparison, perturbed LOG "pf-tolerance"; control target thresholds as fractions of
-% C-RADIOv4's known value, control PLAN lines 87-88.
+% C-RADIOv4's known value, control PLAN lines 87-88; every control margin is set from the real partners' recorded
+% values (control PLAN lines 70, 71, 88, 91); the rule was committed before the control data were read (PR #9 merged
+% 2026-11-09, stage 1 Job 2026-11-10). fp32 DINOv3 cache also read by the target side: target-diagnostics README
+% line 18. Amendment (c) also fixed the level target 27 and the secondary 6A reading after the first full-length
+% means were read (proxy PLAN 338, 385); the retrain has not run (PLAN.md line 11). Render tolerance: perturbed
+% PLAN Amendment 2026-11-09 (d), line 542 on. Stove test-demo load: perturbed LOG line 204 (no output saved).
 % Left to the user (see the TODO): the seed-noise threshold and floor were locked on the user's silence
 % (reviews/2026-11-09-synthesis.md decision 1, open); proxy LOG 2026-11-06 line 438.
 \paragraph{Rules fixed in advance.}
 For each test with a decision rule (the target-side test, the perturbed-frame test, the control partners and the proxy replication), the rule was committed to our repository before the data it decides were read.
 The input-side test fixed its design in advance but had no decision rule.
 The exceptions are these, and the supplement gives the dated record of every rule and amendment.
-The input-side test ran DINOv3 in 32-bit and its partners in 16-bit floating point, because DINOv3 overflowed in 16-bit.
-The baselines next to it in Sec.~\ref{sec:clean} were computed after it ran, and the one that codes the paper's overlap reasoning as a label is not blind to the paper's numbers.
-The proxy was made deeper after the first two full-length DINOv3 runs were scored, before any full-length DINOv3 + C-RADIOv4 run.
-In the perturbed-frame test, the first validation check failed, so the probes were retrained on our own renders and the gate was set at 0.025 instead of 0.01, and the render tolerance was set after a validation comparison; both happened before any test-set result.
-On the target side, the control-partner thresholds are fractions of C-RADIOv4's value, which was already known.
+In the clean-frame tests, DINOv3's features are 32-bit and the partners' 16-bit floating point, because DINOv3 overflowed in 16-bit; both the input-side and the target-side tests read these features.
+The baselines next to the input-side test in Sec.~\ref{sec:clean} were computed after it ran, and the one that codes the paper's overlap reasoning as a label is not blind to the paper's numbers.
+After the first two full-length DINOv3 proxy runs were scored, we decided to retrain them with a deeper model (or, if that fails to run, for twice as many epochs), set a minimum success level the retrained runs must reach, and added a secondary reading of each drop relative to the proxy's own DINOv3 score; all of this was fixed before any full-length DINOv3 + C-RADIOv4 run.
+In the perturbed-frame test, the first check on validation data failed, so the probes were retrained on our own renders and the check's margin was widened from 0.01 to 0.025; how much our re-rendered frames may differ between two rendering runs was also set after a validation comparison.
+Both changes came before any test-set result; an early script loaded one task's test demonstrations into memory before a loader fix, and no output from it was saved.
+Every control-partner threshold was set from the real partners' values, which were already known.
 \TODO{Whether to disclose here, in the supplement only, or not at all: the seed-noise threshold and floor were fixed before the two DINOv3 runs were compared, but the approval was not recorded in words (user's call).}
