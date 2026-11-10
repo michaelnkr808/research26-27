@@ -1,0 +1,233 @@
+{
+ "suite": "libero_goal",
+ "files": [
+  "open_the_middle_drawer_of_the_cabinet_demo.hdf5",
+  "open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5",
+  "push_the_plate_to_the_front_of_the_stove_demo.hdf5",
+  "put_the_bowl_on_the_plate_demo.hdf5",
+  "put_the_bowl_on_the_stove_demo.hdf5",
+  "put_the_bowl_on_top_of_the_cabinet_demo.hdf5",
+  "put_the_cream_cheese_in_the_bowl_demo.hdf5",
+  "put_the_wine_bottle_on_the_rack_demo.hdf5",
+  "put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5",
+  "turn_on_the_stove_demo.hdf5"
+ ],
+ "n_frames": 63728,
+ "split_frames": {
+  "train": 38464,
+  "val": 12416,
+  "test": 12848
+ },
+ "encoders": {
+  "dinov3": {
+   "source_file": "/work/data/libero_goal/open_the_middle_drawer_of_the_cabinet_demo.hdf5",
+   "encoder": "dinov3",
+   "hf_id": "facebook/dinov3-vitl16-pretrain-lvd1689m",
+   "resolution": 224,
+   "cams": [
+    "agentview_rgb",
+    "eye_in_hand_rgb"
+   ],
+   "frame_stride": 1,
+   "rotate180": true,
+   "grid": 4,
+   "dtype": "float32",
+   "n_demos": 50,
+   "git_commit": "0cd09b5e745978cb4c61003959aa090674cbbca5"
+  },
+  "dup:dinov3": {
+   "synthetic": "dup:dinov3",
+   "kind": "dup",
+   "src": "dinov3",
+   "seed": 0,
+   "numpy": "2.2.6",
+   "rng": "np.random.default_rng([seed, crc32(spec), crc32(type), crc32(cam)]); shuffle: [seed, crc32(spec)]",
+   "source": "dinov3",
+   "dims_per_cam": {
+    "global": {
+     "agentview_rgb": 1024,
+     "eye_in_hand_rgb": 1024
+    },
+    "mean": {
+     "agentview_rgb": 1024,
+     "eye_in_hand_rgb": 1024
+    }
+   }
+  }
+ },
+ "git_commit": "2274e32b383b82c6aa46140bbbfb7051a4c7ed3c",
+ "alphas": [
+  0.01,
+  0.1,
+  1,
+  10,
+  100.0,
+  1000.0,
+  10000.0,
+  100000.0
+ ],
+ "seed": 0,
+ "n_boot": 1000,
+ "n_test_demos": 100,
+ "cka": {
+  "dinov3|dup:dinov3|global|agentview_rgb": {
+   "biased": 1.0,
+   "debiased": 1.0
+  },
+  "dinov3|dup:dinov3|global|eye_in_hand_rgb": {
+   "biased": 1.0,
+   "debiased": 1.0
+  },
+  "dinov3|dup:dinov3|mean|agentview_rgb": {
+   "biased": 1.0,
+   "debiased": 1.0
+  },
+  "dinov3|dup:dinov3|mean|eye_in_hand_rgb": {
+   "biased": 1.0,
+   "debiased": 1.0
+  }
+ },
+ "probes": {
+  "proprio": {
+   "r2_mean": 0.2792987175923334,
+   "r2_per_dim": [
+    0.24315778636266905,
+    0.18649191850510993,
+    0.329668235676861,
+    0.162742449256846,
+    0.07203388769248509,
+    0.23518833933820893,
+    0.7258084063141537
+   ],
+   "alpha": 0.01,
+   "val_r2_by_alpha": {
+    "0.01": 0.2962507444941469,
+    "0.1": 0.2858345429355058,
+    "1": 0.21785917526661153,
+    "10": 0.06514813135029214,
+    "100.0": 0.007856278171687594,
+    "1000.0": 0.000581627612124975,
+    "10000.0": -0.00016530533216133466,
+    "100000.0": -0.00024019832954604224
+   },
+   "r2_ci95": [
+    0.245840134762857,
+    0.308473101770941
+   ]
+  },
+  "dinov3|global": {
+   "r2_mean": 0.6498799336603044,
+   "r2_per_dim": [
+    0.6681892042744157,
+    0.693626948714057,
+    0.6641703203453813,
+    0.5926095204639459,
+    0.3982112149476109,
+    0.721976516888137,
+    0.8103758099885842
+   ],
+   "alpha": 0.1,
+   "val_r2_by_alpha": {
+    "0.01": 0.6478928830830648,
+    "0.1": 0.6538305228198683,
+    "1": 0.6074237095075309,
+    "10": 0.4732229119267816,
+    "100.0": 0.2520701433645774,
+    "1000.0": 0.06025857334248107,
+    "10000.0": 0.007032244071111392,
+    "100000.0": 0.0004951872964134811
+   },
+   "r2_ci95": [
+    0.6229666374862459,
+    0.670880824411892
+   ]
+  },
+  "dup:dinov3|global": {
+   "r2_mean": 0.6498799336603044,
+   "r2_per_dim": [
+    0.6681892042744157,
+    0.693626948714057,
+    0.6641703203453813,
+    0.5926095204639459,
+    0.3982112149476109,
+    0.721976516888137,
+    0.8103758099885842
+   ],
+   "alpha": 0.1,
+   "val_r2_by_alpha": {
+    "0.01": 0.6478928830830648,
+    "0.1": 0.6538305228198683,
+    "1": 0.6074237095075309,
+    "10": 0.4732229119267816,
+    "100.0": 0.2520701433645774,
+    "1000.0": 0.06025857334248107,
+    "10000.0": 0.007032244071111392,
+    "100000.0": 0.0004951872964134811
+   },
+   "r2_ci95": [
+    0.6229666374862459,
+    0.670880824411892
+   ]
+  },
+  "dinov3+dup:dinov3|global": {
+   "r2_mean": 0.6526739579938556,
+   "r2_per_dim": [
+    0.6729055983245311,
+    0.7002496822797213,
+    0.6746919344466806,
+    0.5907832430042728,
+    0.39340336277257804,
+    0.7231215921083947,
+    0.8135622930208112
+   ],
+   "alpha": 0.1,
+   "val_r2_by_alpha": {
+    "0.01": 0.642953582154359,
+    "0.1": 0.6557372399538768,
+    "1": 0.6289813328803336,
+    "10": 0.5241786840049184,
+    "100.0": 0.3246164075773565,
+    "1000.0": 0.10253099042088283,
+    "10000.0": 0.013982874086259993,
+    "100000.0": 0.0012353463361397374
+   },
+   "r2_ci95": [
+    0.6257197372826718,
+    0.6735178199760348
+   ]
+  }
+ },
+ "pairs": {
+  "dinov3|dup:dinov3|global": {
+   "gain_B_given_A": 0.0027940243335512482,
+   "pred_A_to_B_r2": 0.9984577632421789,
+   "gain_ci95": [
+    0.0016396579214667502,
+    0.003979938066606295
+   ],
+   "asym_ci95": [
+    0.0,
+    0.0
+   ]
+  },
+  "dup:dinov3|dinov3|global": {
+   "gain_B_given_A": 0.0027940243335512482,
+   "pred_A_to_B_r2": 0.9984577632421789,
+   "gain_ci95": [
+    0.0016396579214667502,
+    0.003979938066606295
+   ]
+  }
+ },
+ "cka_sanity": {
+  "self": [
+   1.0,
+   1.0
+  ],
+  "shuffled": [
+   0.0027395239588747368,
+   -0.0002008369458716684
+  ]
+ },
+ "seconds": 300.40063309669495
+}
