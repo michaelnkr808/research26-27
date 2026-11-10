@@ -1,0 +1,159 @@
+# Control partners, STAGE 2 (CPU only): seed replicates. Seeds 1 and 2 of ALL the random controls on both sides (the PLAN's
+# "all of them ... standard 3 seeds" option, Decision rule "Stage 2"; the lead's reading of the user's 2026-11-10 chat OK,
+# "sure go ahead with both cpu jobs"), not only the control that triggered. Same scripts, arguments, image, pins, affinity and
+# DINOv3 volume as job.yaml (stage 1); the bootstrap seed stays 0 so the demo draws are the tally's.
+# Input side: noise:4608, randproj:dinov3:4608, shuffle:dinov3, each with --save-draws. Target side: shuffle:dinov3,
+# noise:4608:0.3, noise:4608, randproj:dinov3:4608. NOT run again: dup:dinov3 (deterministic, stage 1 gate 2 already passed) and the
+# D + C-RADIOv4 rerun (stage 1 reproduced the tally and its draws are on the volume). So the michael-persistent volume is not used.
+# Follows _standards/08: Job (not pod), real command then exit, NO sleep, no GPU, off GPU nodes, limits within 20% of requests,
+# activeDeadlineSeconds, no tolerations. Scripts come from ConfigMap `stacking-encoders-control-src` (already on the cluster,
+# the same two scripts, unchanged since stage 1).
+# NOT SUBMITTED. Render with the sed line in STAGE2.md (fills SRC_GIT_COMMIT), then apply. The script aborts before doing anything if
+# the placeholder is still set, and aborts if the output folder already holds any entry (03: a rerun gets a new folder); SRC_GIT_COMMIT must be 40 lowercase hex.
+# Output: /mnt/features/stacking-encoders/control-partners-s2/. At the end the Job prints each result JSON, the sha256 of every output
+# file, and the input-draws npz files as one base64 tarball between BEGIN/END marker lines if the tarball is under 20 MB.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-control-partners-s2
+  namespace: aria-world
+spec:
+  # backoffLimit 0 DEVIATES from _standards/08 line 31 ("set backoffLimit > 0 so a Job survives node reboots"), the lead's decision:
+  # a retry would hit the non-empty-output-folder abort (exit 3) and run nothing, and a node reboot ends this run anyway, so a
+  # rerun needs a new folder (03) and a new Job. A reboot therefore means resubmitting under a new name and folder.
+  backoffLimit: 0
+  # Deadline 86400 s (24 h) is the PLAN's figure for stage 2 (Cost section); it covers queue time and a slower node.
+  # Measured basis (results/control-partners-20261110.log timestamps), expected about 11 h of run time:
+  #   per seed, input: noise 532 s + randproj 500 s + shuffle 301 s = 1,333 s
+  #   per seed, target: shuffle 3,238 s + noise:0.3 5,644 s + noise 4,716 s + randproj 4,742 s = 18,340 s
+  #   per seed 19,673 s; two seeds 39,346 s; setup (pip, staging DINOv3 148 s, download 12 s, tar and hashes) about 300 s
+  #   (39,346 + 300) x 1.5 = 59,469 s (16.5 h), under the 24 h cap with 7.5 h left for queue time.
+  activeDeadlineSeconds: 86400
+  ttlSecondsAfterFinished: 86400      # safety net; delete manually after collecting logs
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}   # CPU-only: stay off GPU nodes
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}                 # near rook-cephfs
+      containers:
+      - name: main
+        image: python:3.11.14-slim
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          # SRC_GIT_COMMIT must be exactly 40 lowercase hex characters (the placeholder fails this; it is not spelled out here
+          # so the sed render of the env value cannot touch the check).
+          if ! [[ "${SRC_GIT_COMMIT:-}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "ABORT: SRC_GIT_COMMIT is not 40 lowercase hex characters (still the placeholder?); render the manifest first (STAGE2.md). Nothing was run."; exit 2
+          fi
+          OUT=/mnt/features/stacking-encoders/control-partners-s2
+          if [ -d "$OUT" ] && [ -n "$(find "$OUT" -mindepth 1 -maxdepth 1 -print -quit)" ]; then
+            echo "ABORT: $OUT already holds entries (files or folders); a rerun needs a new folder (03). Nothing was run."; exit 3
+          fi
+          mkdir -p $OUT /mnt/features/stacking-encoders/logs
+          LOG=/mnt/features/stacking-encoders/logs/control-partners-s2-$(date +%Y%m%d-%H%M%S).log
+          # tee reads from a named pipe (not a process substitution) so its PID is reliable in any bash.
+          mkfifo /tmp/logpipe
+          tee -a $LOG < /tmp/logpipe &
+          TEEPID=$!
+          exec > /tmp/logpipe 2>&1
+          # On any exit (also set -e failures): keep the exit code, close our stdout and stderr so tee sees EOF, wait for tee
+          # to flush the last lines into the pod log and the file, then exit with the saved code.
+          finish() { RC=$?; exec >&- 2>&-; wait $TEEPID || true; exit $RC; }
+          trap finish EXIT
+          echo "SRC_GIT_COMMIT=$SRC_GIT_COMMIT SYNTH_SEEDS=$SYNTH_SEEDS"
+          nproc; head -2 /proc/meminfo   # python:slim has no procps
+          pip install --no-cache-dir -q numpy==2.2.6 h5py==3.16.0 huggingface-hub==0.36.2
+          echo "=== pip freeze"; pip freeze
+          src_of() { echo /mnt/features/stacking-encoders/features/$1; }
+          stage() { mkdir -p /work/feats/$1; T=$(date +%s); cp -r $(src_of $1)/libero_goal /work/feats/$1/
+                    echo "staged $1: $(du -sh /work/feats/$1/libero_goal | cut -f1) in $(( $(date +%s) - T ))s"; }
+          safe() { echo "$1" | tr ':' '-'; }
+          stage dinov3
+          echo "=== download libero_goal (actions, demo index)"; date -u
+          python - <<'PY'
+          from huggingface_hub import snapshot_download, HfApi
+          snapshot_download("yifengzhu-hf/LIBERO-datasets", repo_type="dataset", revision="main",
+                            allow_patterns=["libero_goal/*.hdf5"], local_dir="/work/data")
+          try:
+              print("LIBERO-datasets revision sha:", HfApi().dataset_info("yifengzhu-hf/LIBERO-datasets").sha)
+          except Exception as e:
+              print("could not read the dataset sha:", repr(e))
+          PY
+          date -u
+          du -sh /work/data; df -h /work
+          # The same arguments as stage 1 for every input-side run, so the split, CKA frames and bootstrap draws are the tally's.
+          input_run() {   # $1 synthetic spec, $2 output tag, $3 synthetic seed
+            python /src/diagnostics.py --feats /work/feats --suite libero_goal --raw /work/data/libero_goal \
+              --encoders dinov3 "$1" --probe-types global --n-boot 1000 --seed 0 --synth-seed $3 \
+              --save-draws $OUT/input-draws-$2.npz --out $OUT/input-libero_goal-dinov3-$2.json
+          }
+          target_run() {  # $1 synthetic spec, $2 output tag, $3 synthetic seed
+            python /src/target_diagnostics.py --feats /work/feats --suite libero_goal --raw /work/data/libero_goal \
+              --base dinov3 --partner "$1" --types global --n-boot 1000 --seed 0 --synth-seed $3 \
+              --out $OUT/target-libero_goal-dinov3-$2.json
+          }
+          echo "=== INPUT SIDE, controls (seeds: $SYNTH_SEEDS)"
+          for SEED in $SYNTH_SEEDS; do
+            for S in noise:4608 randproj:dinov3:4608 shuffle:dinov3; do
+              echo "--- input $S seed $SEED"; date -u
+              input_run $S $(safe $S)-s$SEED $SEED
+            done
+          done
+          echo "=== TARGET SIDE, controls (seeds: $SYNTH_SEEDS)"
+          for SEED in $SYNTH_SEEDS; do
+            for S in shuffle:dinov3 noise:4608:0.3 noise:4608 randproj:dinov3:4608; do
+              echo "--- target $S seed $SEED"; date -u
+              target_run $S $(safe $S)-s$SEED $SEED
+            done
+          done
+          for F in $OUT/*.json; do echo "=== result json $F"; cat $F; echo; done
+          echo "=== sha256 of every output file (regular files only)"; ls -l $OUT
+          (cd $OUT && find . -maxdepth 1 -type f -exec sha256sum {} + | sort -k2)
+          echo "=== input-draws npz tarball"
+          find $OUT -maxdepth 1 -name 'input-draws-*.npz' -printf '%f\n' | sort > /work/npz.list
+          echo "npz files: $(wc -l < /work/npz.list)"
+          tar -C $OUT -czf /work/input-draws-s2.tgz -T /work/npz.list
+          TARBYTES=$(stat -c %s /work/input-draws-s2.tgz)
+          echo "tarball bytes: $TARBYTES  (limit for printing: 20000000)"
+          sha256sum /work/input-draws-s2.tgz
+          if [ "$TARBYTES" -lt 20000000 ]; then
+            echo "=== BEGIN input-draws-s2.tgz base64"
+            base64 /work/input-draws-s2.tgz
+            echo "=== END input-draws-s2.tgz base64"
+          else
+            echo "tarball not printed (20 MB or more); the npz files stay on the volume in $OUT"
+          fi
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: "199071f1641c24dc8d2886fd1f5f9fd7110c9486"}
+        - {name: SYNTH_SEEDS, value: "1 2"}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: OMP_NUM_THREADS, value: "2"}
+        - {name: OPENBLAS_NUM_THREADS, value: "2"}
+        # Memory kept at stage 1's 14Gi request / 16Gi limit. Stage 1 took no RSS reading, so the true peak of these runs is
+        # unknown; it finished with exit 0 inside these numbers, and stage 2 runs the same pairs (6,656 input dims for noise and
+        # randproj next to DINOv3, the same as D + C-RADIOv4, which peaked at 12.85 GiB in the target Job). Do not shrink without a
+        # reading. NRP checks: memory within 20-150% and CPU within 20-200% of the request; limits within 20% of requests.
+        # Ephemeral storage: raw libero_goal 5.9 GiB + DINOv3 4.4 GiB = 10.3 GiB on the emptyDir, plus the HF cache, pip and
+        # the small tarball; 15Gi request, 17Gi limit (stage 1 also held C-RADIOv4, 5.2 GiB, and asked 18/21).
+        resources:
+          requests: {cpu: "2", memory: 14Gi, ephemeral-storage: 15Gi}
+          limits:   {cpu: "2400m", memory: 16Gi, ephemeral-storage: 17Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: features, mountPath: /mnt/features}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 14Gi}   # raw libero_goal 5.9 GiB + dinov3 4.4, headroom for the HF cache and the tarball
+      - name: src
+        configMap: {name: stacking-encoders-control-src}
+      - name: features
+        persistentVolumeClaim: {claimName: stacking-encoders-features}
