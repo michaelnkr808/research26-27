@@ -11,8 +11,8 @@ metadata:
   name: stacking-encoders-control-fetch-draws
   namespace: aria-world
 spec:
-  backoffLimit: 0
-  activeDeadlineSeconds: 1800         # 30 min cap, includes time Pending; the work is a read, a tar and a base64
+  backoffLimit: 0                     # deviates from _standards/08 line 31 (> 0): a read-only fetch whose failure the lead wants to see, not retry
+  activeDeadlineSeconds: 1800        # 30 min cap, includes time Pending; the work is a read, a tar and a base64
   ttlSecondsAfterFinished: 86400
   template:
     spec:
@@ -33,11 +33,12 @@ spec:
           set -euo pipefail
           D=/mnt/features/stacking-encoders/control-partners
           echo "=== files in $D"; ls -l $D
-          echo "=== sha256 of every file"; (cd $D && sha256sum *)
-          N=$(cd $D && ls input-draws-*.npz | wc -l)
+          echo "=== sha256 of every file (regular files only)"; (cd $D && find . -maxdepth 1 -type f -exec sha256sum {} + | sort -k2)
+          find $D -maxdepth 1 -name 'input-draws-*.npz' -printf '%f\n' | sort > /tmp/npz.list
+          N=$(wc -l < /tmp/npz.list)
           if [ "$N" -eq 0 ]; then echo "ERROR: no input-draws-*.npz in $D"; exit 4; fi
-          echo "=== input-draws npz files: $N"; (cd $D && ls -l input-draws-*.npz)
-          tar -C $D -czf /tmp/input-draws-s1.tgz $(cd $D && ls input-draws-*.npz)
+          echo "=== input-draws npz files: $N"; (cd $D && ls -l $(cat /tmp/npz.list))
+          tar -C $D -czf /tmp/input-draws-s1.tgz -T /tmp/npz.list
           TARBYTES=$(stat -c %s /tmp/input-draws-s1.tgz)
           echo "tarball bytes: $TARBYTES  (limit for printing: 20000000)"
           sha256sum /tmp/input-draws-s1.tgz

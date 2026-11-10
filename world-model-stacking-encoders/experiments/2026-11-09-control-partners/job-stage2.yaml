@@ -9,7 +9,7 @@
 # activeDeadlineSeconds, no tolerations. Scripts come from ConfigMap `stacking-encoders-control-src` (already on the cluster,
 # the same two scripts, unchanged since stage 1).
 # NOT SUBMITTED. Render with the sed line in STAGE2.md (fills SRC_GIT_COMMIT), then apply. The script aborts before doing anything if
-# the placeholder is still set, and aborts if the output folder already holds a .json or .npz (03: a rerun gets a new folder).
+# the placeholder is still set, and aborts if the output folder already holds any entry (03: a rerun gets a new folder); SRC_GIT_COMMIT must be 40 lowercase hex.
 # Output: /mnt/features/stacking-encoders/control-partners-s2/. At the end the Job prints each result JSON, the sha256 of every output
 # file, and the input-draws npz files as one base64 tarball between BEGIN/END marker lines if the tarball is under 20 MB.
 apiVersion: batch/v1
@@ -18,15 +18,17 @@ metadata:
   name: stacking-encoders-control-partners-s2
   namespace: aria-world
 spec:
-  backoffLimit: 0                     # a retry would hit the non-empty-output-folder abort
-  # Deadline from the measured stage 1 run times (results/control-partners-20261110.log timestamps), counts queue time:
+  # backoffLimit 0 DEVIATES from _standards/08 line 31 ("set backoffLimit > 0 so a Job survives node reboots"), the lead's decision:
+  # a retry would hit the non-empty-output-folder abort (exit 3) and run nothing, and a node reboot ends this run anyway, so a
+  # rerun needs a new folder (03) and a new Job. A reboot therefore means resubmitting under a new name and folder.
+  backoffLimit: 0
+  # Deadline 86400 s (24 h) is the PLAN's figure for stage 2 (Cost section); it covers queue time and a slower node.
+  # Measured basis (results/control-partners-20261110.log timestamps), expected about 11 h of run time:
   #   per seed, input: noise 532 s + randproj 500 s + shuffle 301 s = 1,333 s
   #   per seed, target: shuffle 3,238 s + noise:0.3 5,644 s + noise 4,716 s + randproj 4,742 s = 18,340 s
   #   per seed 19,673 s; two seeds 39,346 s; setup (pip, staging DINOv3 148 s, download 12 s, tar and hashes) about 300 s
-  #   (39,346 + 300) x 1.5 = 59,469 s, rounded to 59,500 s (16.5 h). Expected about 11 h without the factor.
-  #   The PLAN's stage 2 estimate (about 10.5 h wall, deadline 24 h) came from the pre-run Cost table; measured runs are slightly
-  #   longer on the target side, so this uses the measured numbers.
-  activeDeadlineSeconds: 59500
+  #   (39,346 + 300) x 1.5 = 59,469 s (16.5 h), under the 24 h cap with 7.5 h left for queue time.
+  activeDeadlineSeconds: 86400
   ttlSecondsAfterFinished: 86400      # safety net; delete manually after collecting logs
   template:
     spec:
@@ -45,16 +47,26 @@ spec:
         args:
         - |
           set -euo pipefail
-          case "${SRC_GIT_COMMIT:-}" in
-            ""|SET-AT-*) echo "ABORT: SRC_GIT_COMMIT is still the placeholder; render the manifest first (STAGE2.md)"; exit 2;;
-          esac
+          # SRC_GIT_COMMIT must be exactly 40 lowercase hex characters (the placeholder fails this; it is not spelled out here
+          # so the sed render of the env value cannot touch the check).
+          if ! [[ "${SRC_GIT_COMMIT:-}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "ABORT: SRC_GIT_COMMIT is not 40 lowercase hex characters (still the placeholder?); render the manifest first (STAGE2.md). Nothing was run."; exit 2
+          fi
           OUT=/mnt/features/stacking-encoders/control-partners-s2
-          if [ -d "$OUT" ] && [ -n "$(find "$OUT" -maxdepth 1 \( -name '*.json' -o -name '*.npz' \) -print -quit)" ]; then
-            echo "ABORT: $OUT already holds .json or .npz files; a rerun needs a new folder (03). Nothing was run."; exit 3
+          if [ -d "$OUT" ] && [ -n "$(find "$OUT" -mindepth 1 -maxdepth 1 -print -quit)" ]; then
+            echo "ABORT: $OUT already holds entries (files or folders); a rerun needs a new folder (03). Nothing was run."; exit 3
           fi
           mkdir -p $OUT /mnt/features/stacking-encoders/logs
           LOG=/mnt/features/stacking-encoders/logs/control-partners-s2-$(date +%Y%m%d-%H%M%S).log
-          exec > >(tee -a $LOG) 2>&1
+          # tee reads from a named pipe (not a process substitution) so its PID is reliable in any bash.
+          mkfifo /tmp/logpipe
+          tee -a $LOG < /tmp/logpipe &
+          TEEPID=$!
+          exec > /tmp/logpipe 2>&1
+          # On any exit (also set -e failures): keep the exit code, close our stdout and stderr so tee sees EOF, wait for tee
+          # to flush the last lines into the pod log and the file, then exit with the saved code.
+          finish() { RC=$?; exec >&- 2>&-; wait $TEEPID || true; exit $RC; }
+          trap finish EXIT
           echo "SRC_GIT_COMMIT=$SRC_GIT_COMMIT SYNTH_SEEDS=$SYNTH_SEEDS"
           nproc; head -2 /proc/meminfo   # python:slim has no procps
           pip install --no-cache-dir -q numpy==2.2.6 h5py==3.16.0 huggingface-hub==0.36.2
@@ -75,6 +87,7 @@ spec:
               print("could not read the dataset sha:", repr(e))
           PY
           date -u
+          du -sh /work/data; df -h /work
           # The same arguments as stage 1 for every input-side run, so the split, CKA frames and bootstrap draws are the tally's.
           input_run() {   # $1 synthetic spec, $2 output tag, $3 synthetic seed
             python /src/diagnostics.py --feats /work/feats --suite libero_goal --raw /work/data/libero_goal \
@@ -101,10 +114,12 @@ spec:
             done
           done
           for F in $OUT/*.json; do echo "=== result json $F"; cat $F; echo; done
-          echo "=== sha256 of every output file"; ls -l $OUT
-          (cd $OUT && sha256sum *)
+          echo "=== sha256 of every output file (regular files only)"; ls -l $OUT
+          (cd $OUT && find . -maxdepth 1 -type f -exec sha256sum {} + | sort -k2)
           echo "=== input-draws npz tarball"
-          tar -C $OUT -czf /work/input-draws-s2.tgz $(cd $OUT && ls input-draws-*.npz)
+          find $OUT -maxdepth 1 -name 'input-draws-*.npz' -printf '%f\n' | sort > /work/npz.list
+          echo "npz files: $(wc -l < /work/npz.list)"
+          tar -C $OUT -czf /work/input-draws-s2.tgz -T /work/npz.list
           TARBYTES=$(stat -c %s /work/input-draws-s2.tgz)
           echo "tarball bytes: $TARBYTES  (limit for printing: 20000000)"
           sha256sum /work/input-draws-s2.tgz
