@@ -561,6 +561,9 @@ for t_, o_ in T3090.items():
                       "# CUDA check", 'cap 300 python -c "import torch', "stage extract-$ENC-$c cap 10800 python", "if grep -q '^\\[extract\\]"]
         if len(removed) != len(want_removed) or any(not r_.startswith(w_) for r_, w_ in zip(removed, want_removed)):
             tmsgs.append(f"script: original lines changed or moved other than the three expected: {[r_[:50] for r_ in removed]}")
+        gi = next((k for k, ln in enumerate(lb) if ln.strip().startswith("if grep -q '^\\[extract\\]")), None)
+        if gi is None or not lb[gi - 1].strip().startswith("stage extract-$ENC-$c cap 10800 python"):
+            tmsgs.append("script: the device=cpu guard does not directly follow the extraction stage line")
         if len(added) != len(want_added) or any(not a_.startswith(w_) for a_, w_ in zip(added, want_added)):
             tmsgs.append(f"script: lines added or moved other than the expected ones, in order: {[a_[:50] for a_ in added]}")
         print(f"{t_} vs {o_}:", "identical apart from name, GPU resource name, affinity and the fail-fast script lines" if not tmsgs else "PROBLEMS: " + "; ".join(tmsgs))
