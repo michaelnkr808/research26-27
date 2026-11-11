@@ -645,4 +645,328 @@ strict = re.compile(r"traceback|killed|oom|\bnan\b|exception|error", re.I)
 sh = [q + 1 for q, l in enumerate(lines) if q not in body_lines and strict.search(l)]
 p("  Lines matching traceback/killed/oom/nan/exception/error outside the JSON bodies: " + (", ".join(map(str, sh)) if sh else "none"))
 
+# =========================================================== 9. STAGE 2 (seeds 1 and 2)
+# Everything above this line is the unchanged stage 1 (seed 0) report. Stage 2 is appended
+# (nothing above was edited), so the lines above, including the "Stage 2 ... not run" and
+# "Paired ... NOT COMPUTED" sentences, are the stage 1 statements as printed on 2026-11-10.
+LOGNAME2 = "control-partners-s2-20261111.log"
+LOG2_SHA256 = "963c4c3edb356b9e8961551ab5d8a29c79003370c8142e6f048509b8360ef2e3"
+LOG2_BYTES = 507515
+S2_COMMIT = "199071f1641c24dc8d2886fd1f5f9fd7110c9486"
+SEEDS = (0, 1, 2)
+S2_SPECS_IN = ("noise:4608", "randproj:dinov3:4608", "shuffle:dinov3")
+S2_SPECS_TG = ("noise:4608:0.3", "noise:4608", "randproj:dinov3:4608", "shuffle:dinov3")
+
+
+def fstem(spec):
+    return spec.replace(":", "-")
+
+
+def s2_names(seed):
+    ni = {s_: f"input-libero_goal-dinov3-{fstem(s_)}-s{seed}.json" for s_ in S2_SPECS_IN}
+    nt = {s_: f"target-libero_goal-dinov3-{fstem(s_)}-s{seed}.json" for s_ in S2_SPECS_TG}
+    return ni, nt
+
+
+p()
+p("=" * 60)
+p("STAGE 2: SEEDS 1 AND 2 (synthetic seeds 1 and 2; bootstrap seed 0 as in stage 1)")
+p("=" * 60)
+raw2 = open(os.path.join(HERE, LOGNAME2), "rb").read()
+sha2 = hashlib.sha256(raw2).hexdigest()
+p("Input log: results/" + LOGNAME2)
+p(f"  bytes {len(raw2)} (expected {LOG2_BYTES}): {'ok' if len(raw2) == LOG2_BYTES else 'MISMATCH'}")
+p(f"  sha256 {sha2}")
+p(f"  expected {LOG2_SHA256}: {'ok' if sha2 == LOG2_SHA256 else 'MISMATCH'}")
+if len(raw2) != LOG2_BYTES or sha2 != LOG2_SHA256:
+    p("STOP: stage 2 log does not match the recorded size/hash.")
+    print("\n".join(l.rstrip() for l in out))
+    sys.exit(1)
+lines2 = raw2.decode("utf-8").split("\n")
+heads2 = [i for i, l in enumerate(lines2) if l.startswith("=== result json ")]
+i0 = lines2.index("=== sha256 of every output file (regular files only)")
+i1 = next(i for i in range(i0 + 1, len(lines2)) if lines2[i].startswith("=== "))
+printed2 = {}
+for ln in lines2[i0 + 1:i1]:
+    if re.match(r"[0-9a-f]{64}  ", ln):
+        h, nm = ln.split(None, 1)
+        printed2[nm.strip().removeprefix("./")] = h
+J2 = {}
+p()
+p("Extracted stage 2 result JSONs (written under their original names; each parsed with json; sha256 of the text compared with the volume listing printed by the Job):")
+for n, i in enumerate(heads2):
+    j = heads2[n + 1] if n + 1 < len(heads2) else i0
+    body = "\n".join(lines2[i + 1:j]).lstrip()
+    obj, end = json.JSONDecoder().raw_decode(body)
+    text = body[:end]
+    assert json.loads(text) == obj
+    name = lines2[i].split("/")[-1].strip()
+    with open(os.path.join(HERE, name), "w") as f:
+        f.write(text + "\n")
+    J2[name] = obj
+    hh = hashlib.sha256(text.encode()).hexdigest()
+    p(f"  {name}: {len(text)} chars, parsed ok; sha256 of text equals the volume's printed value: {hh == printed2.get(name)}")
+    if hh != printed2.get(name):
+        p("STOP: JSON text hash differs from the volume listing.")
+        print("\n".join(l.rstrip() for l in out))
+        sys.exit(1)
+want2 = sorted(n_ for sd in (1, 2) for d_ in s2_names(sd) for n_ in d_.values())
+if sorted(J2) != want2 or len(heads2) != 14:
+    p(f"STOP: expected the 14 stage 2 names; got {sorted(J2)}")
+    print("\n".join(l.rstrip() for l in out))
+    sys.exit(1)
+JS = {}  # (seed, side, spec) -> json
+for sd in SEEDS:
+    if sd == 0:
+        for s_ in S2_SPECS_IN:
+            JS[(0, "in", s_)] = J[IN[s_]]
+        for s_ in S2_SPECS_TG:
+            JS[(0, "tg", s_)] = J[TG[s_]]
+    else:
+        ni, nt = s2_names(sd)
+        for s_ in S2_SPECS_IN:
+            JS[(sd, "in", s_)] = J2[ni[s_]]
+        for s_ in S2_SPECS_TG:
+            JS[(sd, "tg", s_)] = J2[nt[s_]]
+
+# ---- per-seed gates for the stage 2 runs
+p()
+p("STAGE 2 GATES (per seed, on the 14 new JSONs; gates 1 and 2 involve runs stage 2 does not repeat)")
+p("  Gate 1 (rerun of D + C-RADIOv4) and gate 2 (dup:dinov3, a deterministic copy with no seed): not repeated in stage 2 by design (the Job has no rerun and no dup). The stage 1 passes stand,")
+p("  and 'dup is 0' in the 'Partner-specific' clause is taken from stage 1 for every seed (dup has no random part).")
+g_ok2 = True
+for sd in (1, 2):
+    ni, nt = s2_names(sd)
+    p(f"  Seed {sd}:")
+    for kind, names in (("in", ni), ("tg", nt)):
+        for s_, nm in names.items():
+            d = J2[nm]
+            sz = d["split_frames"] == want and d["n_frames"] == 63728
+            if kind == "in":
+                dm = d["n_test_demos"] == 100
+            else:
+                dm = all(d["types"]["global"]["by_k"][k]["n_test_demos"] == 100 for k in KS)
+            bs = d["seed"] if kind == "in" else d["config"]["seed"]
+            nb = d["n_boot"] if kind == "in" else d["config"]["n_boot"]
+            seed_ok = d["encoders"][s_]["seed"] == sd and bs == 0 and nb == 1000
+            commit = d["git_commit"]
+            ok = sz and dm and seed_ok and commit == S2_COMMIT
+            g_ok2 &= ok
+            p(f"    {nm}: split ok {sz}; 100 test demos {dm}; synth seed recorded {d['encoders'][s_]['seed']}, bootstrap seed {bs}, n_boot {nb}; source commit {commit[:7]}: {'pass' if ok else 'FAIL'}")
+    for s_ in ("noise:4608", "shuffle:dinov3"):
+        c = JS[(sd, "in", s_)]["cka"]
+        vals = {k.split("|", 2)[2]: v["debiased"] for k, v in c.items()}
+        mxv = max(abs(v) for v in vals.values())
+        ok = mxv < 0.02 and len(vals) == 4
+        g_ok2 &= ok
+        p(f"    Gate 3 {s_} seed {sd}: debiased CKA with DINOv3 " + ", ".join(f"{k} {v:+.5f}" for k, v in vals.items()) + f"; max |.| {mxv:.5f}: {'pass' if ok else 'FAIL'}")
+    d3 = JS[(sd, "in", "randproj:dinov3:4608")]["cka"]
+    p("    (info) randproj CKA with DINOv3, debiased: " + ", ".join(f"{v['debiased']:+.4f}" for v in d3.values()))
+    r0 = J[IN["noise:4608"]]["probes"]["dinov3|global"]["r2_mean"]
+    for s_ in S2_SPECS_IN:
+        rd = JS[(sd, "in", s_)]["probes"]["dinov3|global"]["r2_mean"]
+        p(f"    (info, not a gate) DINOv3-alone global probe R2 in the {s_} run: {rd:.9f}; stage 1 value {r0:.9f}; |diff| {abs(rd - r0):.2e}")
+p("ALL STAGE 2 GATES PASS" if g_ok2 else "STAGE 2 GATE FAILURE")
+if not g_ok2:
+    p("Per the PLAN, no decision-rule verdict is read when a gate fails: debug and amend, do not interpret.")
+    print("\n".join(l.rstrip() for l in out))
+    sys.exit(1)
+
+
+def in_g(sd, s_):
+    d = JS[(sd, "in", s_)]["pairs"][f"dinov3|{s_}|global"]
+    return d["gain_B_given_A"], d["gain_ci95"]
+
+
+def tg_v(sd, s_, sc, r="64"):
+    v = JS[(sd, "tg", s_)]["types"]["global"]["k_mean"]["t2"][sc][r]
+    return v["interference"], v["ci95"]
+
+
+p()
+p("-" * 60)
+p("PER-SEED NUMBERS (seed 0 is stage 1, read again from the stage 1 JSONs)")
+p("Input side, gain(control|DINOv3), global, point [95% bootstrap CI]; alpha D alone / control alone / D+control")
+for s_ in S2_SPECS_IN:
+    for sd in SEEDS:
+        d = JS[(sd, "in", s_)]
+        g, gc = in_g(sd, s_)
+        ck_ = combo_key(d, s_)
+        p(f"  {s_:<21} seed {sd}: {fx(g, 5)} {cis(gc, 5)}  alpha {d['probes']['dinov3|global']['alpha']:g}/{d['probes'][s_ + '|global']['alpha']:g}/{d['probes'][ck_]['alpha']:g}")
+p("Target side, interference of the control as co-target, global, r = 64, k-mean: a' [CI]; b; a''; loss share under a'")
+for s_ in S2_SPECS_TG:
+    for sd in SEEDS:
+        cells = []
+        for sc in SCALINGS:
+            v, c = tg_v(sd, s_, sc)
+            cells.append(f"{fx(v, 5)} {cis(c, 5)}" if sc == "a_prime" else f"{fx(v, 5)}")
+        sh = JS[(sd, "tg", s_)]["types"]["global"]["k_mean"]["t0_loss_share_B"]["a_prime"]
+        p(f"  {s_:<21} seed {sd}: a' " + cells[0] + f"  b {cells[1]}  a'' {cells[2]}  share {sh:.3f}")
+p("  By k (4 / 16 / 32), r = 64, a': interference (alpha reference -> with control)")
+for s_ in S2_SPECS_TG:
+    for sd in SEEDS:
+        bk = JS[(sd, "tg", s_)]["types"]["global"]["by_k"]
+        p(f"    {s_:<21} seed {sd}: " + "; ".join(f"k={k} {bk[k]['t2']['with_B']['a_prime']['64']['interference']:+.5f} ({bk[k]['t2']['reference']['64']['alpha']:g}->{bk[k]['t2']['with_B']['a_prime']['64']['alpha']:g})" for k in KS))
+p("  Alpha changes: cells of 27 (3 k x 3 ranks x 3 scalings) where alpha with the control differs from the reference; and primary-cell (r = 64, a') changes out of k = 4, 16, 32:")
+for s_ in S2_SPECS_TG:
+    for sd in SEEDS:
+        jj = JS[(sd, "tg", s_)]["types"]["global"]["by_k"]
+        nd_ = sum(jj[k]["t2"]["with_B"][sc][r]["alpha"] != jj[k]["t2"]["reference"][r]["alpha"] for k in KS for r in RANKS for sc in SCALINGS)
+        npc = sum(jj[k]["t2"]["with_B"]["a_prime"]["64"]["alpha"] != jj[k]["t2"]["reference"]["64"]["alpha"] for k in KS)
+        p(f"    {s_:<21} seed {sd}: {nd_} of 27 cells; primary cell {npc} of 3 k")
+p("  Debiased CKA with DINOv3 (global agentview, global wrist, mean agentview, mean wrist), input runs:")
+for s_ in S2_SPECS_IN:
+    for sd in SEEDS:
+        c = JS[(sd, "in", s_)]["cka"]
+        p(f"    {s_:<21} seed {sd}: " + " ".join(f"{c[f'dinov3|{s_}|{t}|{cm}']['debiased']:+.4f}" for t in ("global", "mean") for cm in ("agentview_rgb", "eye_in_hand_rgb")))
+
+
+def apply_rule(sd):
+    """The PLAN's decision rule on seed sd (same logic and constants as the stage 1 section above)."""
+    o = {}
+    vi_ = {s_: in_g(sd, s_) for s_ in S2_SPECS_IN}
+    neg = [s_ for s_ in ("noise:4608", "shuffle:dinov3") if vi_[s_][0] <= -M_IN and vi_[s_][1][1] < 0]
+    pos = [s_ for s_ in S2_SPECS_IN if vi_[s_][0] >= M_IN and vi_[s_][1][0] > 0]
+    unr = [s_ for s_ in S2_SPECS_IN if any(vi_[s_][1][0] <= t <= vi_[s_][1][1] for t in (-M_IN, M_IN))]
+    within_ = all(abs(vi_[s_][0]) <= M_IN for s_ in S2_SPECS_IN)
+    if neg and pos:
+        io = "mixed (report both)"
+    elif neg:
+        io = "Can go negative"
+    elif pos:
+        io = "Capacity floor above zero"
+    elif (not unr) and within_:
+        io = "Floor near zero"
+    else:
+        io = "Unresolved (no clause met; stage 2 replicates before any call)"
+    o["in"] = (io, neg, pos, unr)
+    a1, _ = tg_v(sd, "noise:4608:0.3", "a_prime")
+    a2, _ = tg_v(sd, "randproj:dinov3:4608", "a_prime")
+    big_ = a1 >= TARGET_BIG and a2 >= TARGET_BIG
+    small_ = a1 <= TARGET_SMALL and a2 <= TARGET_SMALL and dup_zero
+    to = "Block size and loudness explain R" if big_ else ("Partner-specific" if small_ else "Mixed")
+    ng, un = [], []
+    lowok = True
+    for s_ in S2_SPECS_TG:
+        _, c = tg_v(sd, s_, "a_prime")
+        if c[1] < -M_T:
+            ng.append(s_)
+        if c[0] <= -M_T <= c[1]:
+            un.append(s_)
+        lowok &= c[0] >= -M_T
+    no = ("Can go negative (" + ", ".join(ng) + ")") if ng else (("Unresolved (" + ", ".join(un) + ")") if un else ("Floor near zero" if lowok else "none of the three"))
+    bv_, _ = tg_v(sd, "noise:4608", "b")
+    bo = "the b picture is the floor for any equal-weight co-target" if bv_ >= B_HI else ("the b values are partner-specific" if bv_ <= B_LO else "mixed, no claim")
+    o["tg"] = (to, no, bo, a1, a2, bv_)
+    return o
+
+
+p()
+p("-" * 60)
+p("DECISION RULE PER SEED (same clauses and constants as above; dup 'is 0' from stage 1, where dup is a deterministic gate)")
+RULE = {sd: apply_rule(sd) for sd in SEEDS}
+assert RULE[0]["in"][0] == in_outcome and RULE[0]["tg"][0] == t_outcome and RULE[0]["tg"][2] == b_out, "seed 0 per-seed rule disagrees with the stage 1 section above"
+p("  (check passed: the per-seed function on seed 0 reproduces the stage 1 outcomes printed above)")
+for sd in SEEDS:
+    io, neg, pos, unr = RULE[sd]["in"]
+    to, no, bo, a1, a2, bv_ = RULE[sd]["tg"]
+    p(f"  Seed {sd}")
+    p(f"    INPUT: can-go-negative fires for {neg if neg else 'none'}; capacity-floor fires for {pos if pos else 'none'}; unresolved {unr if unr else 'none'}  -> PLAN's label: {io}")
+    p(f"    TARGET a' (r = 64, global, k-mean): noise:4608:0.3 {fx(a1, 5)}, randproj {fx(a2, 5)}  -> PLAN's label: {to}")
+    p(f"    TARGET negativity (a', the four seeded controls; dup has no seed): {no}")
+    p(f"    TARGET under b: noise:4608 {fx(bv_, 5)}  -> {bo}")
+
+p()
+p("-" * 60)
+p("AGREEMENT ACROSS SEEDS 0, 1, 2 ON EACH THRESHOLD SIDE")
+p("PLAN, verbatim: \"A verdict stands only if the seeds agree on which side of each threshold they fall.\"")
+p("Each row is one comparison the rule makes; per seed the value compared and whether the row's condition holds (Y) or not (n); 'agree' = all three seeds on the same side.")
+rows = []
+
+
+def side_row(label, vals, test):
+    sides = [bool(test(v)) for v in vals]
+    rows.append((label, vals, sides, len(set(sides)) == 1))
+
+
+for s_ in ("noise:4608", "shuffle:dinov3"):
+    side_row(f"input {s_}: point <= -0.005", [in_g(sd, s_)[0] for sd in SEEDS], lambda v: v <= -M_IN)
+    side_row(f"input {s_}: CI upper < 0", [in_g(sd, s_)[1][1] for sd in SEEDS], lambda v: v < 0)
+for s_ in S2_SPECS_IN:
+    side_row(f"input {s_}: point >= +0.005", [in_g(sd, s_)[0] for sd in SEEDS], lambda v: v >= M_IN)
+    side_row(f"input {s_}: CI lower > 0", [in_g(sd, s_)[1][0] for sd in SEEDS], lambda v: v > 0)
+    for tname, t_ in (("-0.005", -M_IN), ("+0.005", M_IN)):
+        flags = [in_g(sd, s_)[1][0] <= t_ <= in_g(sd, s_)[1][1] for sd in SEEDS]
+        rows.append((f"input {s_}: CI contains {tname} (unresolved)", [t_] * 3, flags, len(set(flags)) == 1))
+for s_ in ("noise:4608:0.3", "randproj:dinov3:4608"):
+    side_row(f"target {s_} a': >= 0.0100", [tg_v(sd, s_, "a_prime")[0] for sd in SEEDS], lambda v: v >= TARGET_BIG)
+    side_row(f"target {s_} a': <= 0.0050", [tg_v(sd, s_, "a_prime")[0] for sd in SEEDS], lambda v: v <= TARGET_SMALL)
+side_row("target noise:4608 b: >= 0.0177", [tg_v(sd, "noise:4608", "b")[0] for sd in SEEDS], lambda v: v >= B_HI)
+side_row("target noise:4608 b: <= 0.0104", [tg_v(sd, "noise:4608", "b")[0] for sd in SEEDS], lambda v: v <= B_LO)
+for s_ in S2_SPECS_TG:
+    side_row(f"target {s_} a': CI upper < -0.003", [tg_v(sd, s_, "a_prime")[1][1] for sd in SEEDS], lambda v: v < -M_T)
+    side_row(f"target {s_} a': CI lower >= -0.003", [tg_v(sd, s_, "a_prime")[1][0] for sd in SEEDS], lambda v: v >= -M_T)
+for label, vals, sides, agree in rows:
+    p(f"  {label:<56} " + "  ".join(f"s{sd} {v:+.5f} {'Y' if sdd else 'n'}" for sd, v, sdd in zip(SEEDS, vals, sides)) + f"   agree: {'yes' if agree else 'NO'}")
+p("  (The 'CI contains' rows list the threshold itself as the value.)")
+p("  Not a clause of the rule, printed because stage 1 flagged it (README 'Open reading'): target noise:4608 a' against 0.0050 and 0.0100:")
+vv = [tg_v(sd, "noise:4608", "a_prime")[0] for sd in SEEDS]
+for t_ in (TARGET_SMALL, TARGET_BIG):
+    p(f"    noise:4608 a' <= {t_:.4f}: " + "  ".join(f"s{sd} {v:+.5f} {'Y' if v <= t_ else 'n'}" for sd, v in zip(SEEDS, vv)) + f"   same side on all seeds: {len({v <= t_ for v in vv}) == 1}")
+disagree = [r_[0] for r_ in rows if not r_[3]]
+p()
+p(f"  Rows where the seeds do NOT agree: {len(disagree)} of {len(rows)}" + ("" if not disagree else ": " + "; ".join(disagree)))
+p("  OUTCOME LABELS BY SEED:")
+p("    input:  " + "; ".join(f"seed {sd}: {RULE[sd]['in'][0]}" for sd in SEEDS))
+p("    target a' (first part of the rule): " + "; ".join(f"seed {sd}: {RULE[sd]['tg'][0]}" for sd in SEEDS))
+p("    target negativity: " + "; ".join(f"seed {sd}: {RULE[sd]['tg'][1]}" for sd in SEEDS))
+p("    target b: " + "; ".join(f"seed {sd}: {RULE[sd]['tg'][2]}" for sd in SEEDS))
+in_same = len({RULE[sd]["in"][0] for sd in SEEDS}) == 1
+tg_same = len({RULE[sd]["tg"][0] for sd in SEEDS}) == 1
+p(f"  Input label identical on all three seeds: {in_same}" + (f" ({RULE[0]['in'][0]})" if in_same else ""))
+p(f"  Target a' label identical on all three seeds: {tg_same}" + (f" ({RULE[0]['tg'][0]})" if tg_same else ""))
+p("  The rows that bear on each label are those of its clause (input: the noise:4608 and shuffle:dinov3 negative/positive/unresolved rows; target: the a' rows of noise:4608:0.3 and randproj).")
+
+p()
+p("-" * 60)
+p("STAGE 2 RUN TIMES (JSON 'seconds' field, and the `date -u` lines in the pod log)")
+for s_ in S2_SPECS_IN:
+    p(f"  input {s_:<21} " + "; ".join(f"seed {sd} {JS[(sd, 'in', s_)]['seconds']:.0f} s" for sd in (1, 2)) + f"   (stage 1 seed 0: {J[IN[s_]]['seconds']:.0f} s)")
+for s_ in S2_SPECS_TG:
+    p(f"  target {s_:<20} " + "; ".join(f"seed {sd} {JS[(sd, 'tg', s_)]['seconds']:.0f} s" for sd in (1, 2)) + f"   (stage 1 seed 0: {J[TG[s_]]['seconds']:.0f} s)")
+ti = sum(JS[(sd, "in", s_)]["seconds"] for sd in (1, 2) for s_ in S2_SPECS_IN)
+tt = sum(JS[(sd, "tg", s_)]["seconds"] for sd in (1, 2) for s_ in S2_SPECS_TG)
+p(f"  Sum of script times: input {ti / 3600:.2f} h, target {tt / 3600:.2f} h, together {(ti + tt) / 3600:.2f} h (STAGE2.md estimate from stage 1: 39,346 s = 10.93 h for both seeds plus about 300 s setup).")
+stg2 = re.findall(r"^staged (\S+): (\S+) in (\d+)s", raw2.decode(), re.M)
+p("  Staging lines in the log: " + "; ".join(f"{a} {b} in {c} s" for a, b, c in stg2))
+from datetime import datetime
+stamps = []
+for q, l in enumerate(lines2):
+    m = re.match(r"^[A-Z][a-z]{2} ([A-Z][a-z]{2}) +(\d+) (\d\d:\d\d:\d\d) UTC (\d{4})$", l)
+    if m:
+        stamps.append((q, datetime.strptime(f"{m.group(4)} {m.group(1)} {m.group(2)} {m.group(3)}", "%Y %b %d %H:%M:%S")))
+hdr = [(q, l) for q, l in enumerate(lines2) if l.startswith("--- ")]
+p("  Stage start times in the log (the `date -u` line after each '--- ' header); duration = to the next stage start, the last one to the final timestamp:")
+starts = [next(t for qq, t in stamps if qq > q) for q, _ in hdr]
+final = stamps[-1][1]
+for n, (q, l) in enumerate(hdr):
+    t1 = starts[n + 1] if n + 1 < len(hdr) else final
+    sec = int((t1 - starts[n]).total_seconds())
+    p(f"    {l[4:]:<42} start {starts[n]:%Y-%m-%d %H:%M:%S}  duration {sec} s ({sec // 3600} h {sec % 3600 // 60} min)")
+first = stamps[0][1]
+sp = int((final - first).total_seconds())
+p(f"  Log span: first timestamp {first:%Y-%m-%d %H:%M:%S} UTC (the download step, after pip and the 160 s DINOv3 staging) to last {final:%Y-%m-%d %H:%M:%S} UTC: {sp} s = {sp // 3600} h {sp % 3600 // 60} min. Job creation (17:23:39 UTC) and the Complete status come from LOG.md and the lead, not from this log.")
+warn_pat = re.compile(r"warn|error|traceback|killed|oom|\bnan\b|fail|edge|deprecat|exception|retry|notice", re.I)
+body2 = set()
+for n, i in enumerate(heads2):
+    j = heads2[n + 1] if n + 1 < len(heads2) else i0
+    for q in range(i + 1, j):
+        if lines2[q].startswith(("{", "}", " ", "\t")) or lines2[q] == "":
+            body2.add(q)
+p("  Log warnings outside the JSON bodies:")
+for q, l in enumerate(lines2):
+    if q not in body2 and warn_pat.search(l) and not re.fullmatch(r"[A-Za-z0-9+/=]{60,}", l):
+        p(f"    log line {q + 1}: {l[:160]}")
+p("  Memory: UNKNOWN. No RSS reading is in the pod log (it prints only the node's MemTotal and MemFree).")
+
 print("\n".join(l.rstrip() for l in out))

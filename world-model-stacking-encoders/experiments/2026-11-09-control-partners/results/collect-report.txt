@@ -330,3 +330,231 @@ LOG WARNINGS AND ERRORS (scan of the pod log for warn/error/traceback/killed/oom
   log line 316: [target   4715s] alpha at grid edge: ['global|k=4|t1b_D|alpha=0.01']
   log line 364: [target   4741s] alpha at grid edge: ['global|k=4|t1b_D|alpha=0.01']
   Lines matching traceback/killed/oom/nan/exception/error outside the JSON bodies: none
+
+============================================================
+STAGE 2: SEEDS 1 AND 2 (synthetic seeds 1 and 2; bootstrap seed 0 as in stage 1)
+============================================================
+Input log: results/control-partners-s2-20261111.log
+  bytes 507515 (expected 507515): ok
+  sha256 963c4c3edb356b9e8961551ab5d8a29c79003370c8142e6f048509b8360ef2e3
+  expected 963c4c3edb356b9e8961551ab5d8a29c79003370c8142e6f048509b8360ef2e3: ok
+
+Extracted stage 2 result JSONs (written under their original names; each parsed with json; sha256 of the text compared with the volume listing printed by the Job):
+  input-libero_goal-dinov3-noise-4608-s1.json: 5721 chars, parsed ok; sha256 of text equals the volume's printed value: True
+  input-libero_goal-dinov3-noise-4608-s2.json: 5725 chars, parsed ok; sha256 of text equals the volume's printed value: True
+  input-libero_goal-dinov3-randproj-dinov3-4608-s1.json: 5516 chars, parsed ok; sha256 of text equals the volume's printed value: True
+  input-libero_goal-dinov3-randproj-dinov3-4608-s2.json: 5523 chars, parsed ok; sha256 of text equals the volume's printed value: True
+  input-libero_goal-dinov3-shuffle-dinov3-s1.json: 5628 chars, parsed ok; sha256 of text equals the volume's printed value: True
+  input-libero_goal-dinov3-shuffle-dinov3-s2.json: 5632 chars, parsed ok; sha256 of text equals the volume's printed value: True
+  target-libero_goal-dinov3-noise-4608-0.3-s1.json: 36320 chars, parsed ok; sha256 of text equals the volume's printed value: True
+  target-libero_goal-dinov3-noise-4608-0.3-s2.json: 36320 chars, parsed ok; sha256 of text equals the volume's printed value: True
+  target-libero_goal-dinov3-noise-4608-s1.json: 36158 chars, parsed ok; sha256 of text equals the volume's printed value: True
+  target-libero_goal-dinov3-noise-4608-s2.json: 36168 chars, parsed ok; sha256 of text equals the volume's printed value: True
+  target-libero_goal-dinov3-randproj-dinov3-4608-s1.json: 36240 chars, parsed ok; sha256 of text equals the volume's printed value: True
+  target-libero_goal-dinov3-randproj-dinov3-4608-s2.json: 36256 chars, parsed ok; sha256 of text equals the volume's printed value: True
+  target-libero_goal-dinov3-shuffle-dinov3-s1.json: 36154 chars, parsed ok; sha256 of text equals the volume's printed value: True
+  target-libero_goal-dinov3-shuffle-dinov3-s2.json: 36089 chars, parsed ok; sha256 of text equals the volume's printed value: True
+
+STAGE 2 GATES (per seed, on the 14 new JSONs; gates 1 and 2 involve runs stage 2 does not repeat)
+  Gate 1 (rerun of D + C-RADIOv4) and gate 2 (dup:dinov3, a deterministic copy with no seed): not repeated in stage 2 by design (the Job has no rerun and no dup). The stage 1 passes stand,
+  and 'dup is 0' in the 'Partner-specific' clause is taken from stage 1 for every seed (dup has no random part).
+  Seed 1:
+    input-libero_goal-dinov3-noise-4608-s1.json: split ok True; 100 test demos True; synth seed recorded 1, bootstrap seed 0, n_boot 1000; source commit 199071f: pass
+    input-libero_goal-dinov3-randproj-dinov3-4608-s1.json: split ok True; 100 test demos True; synth seed recorded 1, bootstrap seed 0, n_boot 1000; source commit 199071f: pass
+    input-libero_goal-dinov3-shuffle-dinov3-s1.json: split ok True; 100 test demos True; synth seed recorded 1, bootstrap seed 0, n_boot 1000; source commit 199071f: pass
+    target-libero_goal-dinov3-noise-4608-0.3-s1.json: split ok True; 100 test demos True; synth seed recorded 1, bootstrap seed 0, n_boot 1000; source commit 199071f: pass
+    target-libero_goal-dinov3-noise-4608-s1.json: split ok True; 100 test demos True; synth seed recorded 1, bootstrap seed 0, n_boot 1000; source commit 199071f: pass
+    target-libero_goal-dinov3-randproj-dinov3-4608-s1.json: split ok True; 100 test demos True; synth seed recorded 1, bootstrap seed 0, n_boot 1000; source commit 199071f: pass
+    target-libero_goal-dinov3-shuffle-dinov3-s1.json: split ok True; 100 test demos True; synth seed recorded 1, bootstrap seed 0, n_boot 1000; source commit 199071f: pass
+    Gate 3 noise:4608 seed 1: debiased CKA with DINOv3 global|agentview_rgb +0.00013, global|eye_in_hand_rgb +0.00043, mean|agentview_rgb -0.00029, mean|eye_in_hand_rgb -0.00075; max |.| 0.00075: pass
+    Gate 3 shuffle:dinov3 seed 1: debiased CKA with DINOv3 global|agentview_rgb +0.00092, global|eye_in_hand_rgb +0.00020, mean|agentview_rgb +0.00015, mean|eye_in_hand_rgb +0.00012; max |.| 0.00092: pass
+    (info) randproj CKA with DINOv3, debiased: +0.9968, +0.9965, +0.9969, +0.9963
+    (info, not a gate) DINOv3-alone global probe R2 in the noise:4608 run: 0.649879911; stage 1 value 0.649879934; |diff| 2.23e-08
+    (info, not a gate) DINOv3-alone global probe R2 in the randproj:dinov3:4608 run: 0.649879911; stage 1 value 0.649879934; |diff| 2.23e-08
+    (info, not a gate) DINOv3-alone global probe R2 in the shuffle:dinov3 run: 0.649879911; stage 1 value 0.649879934; |diff| 2.23e-08
+  Seed 2:
+    input-libero_goal-dinov3-noise-4608-s2.json: split ok True; 100 test demos True; synth seed recorded 2, bootstrap seed 0, n_boot 1000; source commit 199071f: pass
+    input-libero_goal-dinov3-randproj-dinov3-4608-s2.json: split ok True; 100 test demos True; synth seed recorded 2, bootstrap seed 0, n_boot 1000; source commit 199071f: pass
+    input-libero_goal-dinov3-shuffle-dinov3-s2.json: split ok True; 100 test demos True; synth seed recorded 2, bootstrap seed 0, n_boot 1000; source commit 199071f: pass
+    target-libero_goal-dinov3-noise-4608-0.3-s2.json: split ok True; 100 test demos True; synth seed recorded 2, bootstrap seed 0, n_boot 1000; source commit 199071f: pass
+    target-libero_goal-dinov3-noise-4608-s2.json: split ok True; 100 test demos True; synth seed recorded 2, bootstrap seed 0, n_boot 1000; source commit 199071f: pass
+    target-libero_goal-dinov3-randproj-dinov3-4608-s2.json: split ok True; 100 test demos True; synth seed recorded 2, bootstrap seed 0, n_boot 1000; source commit 199071f: pass
+    target-libero_goal-dinov3-shuffle-dinov3-s2.json: split ok True; 100 test demos True; synth seed recorded 2, bootstrap seed 0, n_boot 1000; source commit 199071f: pass
+    Gate 3 noise:4608 seed 2: debiased CKA with DINOv3 global|agentview_rgb -0.00021, global|eye_in_hand_rgb +0.00011, mean|agentview_rgb -0.00031, mean|eye_in_hand_rgb -0.00042; max |.| 0.00042: pass
+    Gate 3 shuffle:dinov3 seed 2: debiased CKA with DINOv3 global|agentview_rgb +0.00027, global|eye_in_hand_rgb -0.00025, mean|agentview_rgb +0.00019, mean|eye_in_hand_rgb -0.00022; max |.| 0.00027: pass
+    (info) randproj CKA with DINOv3, debiased: +0.9967, +0.9965, +0.9963, +0.9971
+    (info, not a gate) DINOv3-alone global probe R2 in the noise:4608 run: 0.649879911; stage 1 value 0.649879934; |diff| 2.23e-08
+    (info, not a gate) DINOv3-alone global probe R2 in the randproj:dinov3:4608 run: 0.649879911; stage 1 value 0.649879934; |diff| 2.23e-08
+    (info, not a gate) DINOv3-alone global probe R2 in the shuffle:dinov3 run: 0.649879911; stage 1 value 0.649879934; |diff| 2.23e-08
+ALL STAGE 2 GATES PASS
+
+------------------------------------------------------------
+PER-SEED NUMBERS (seed 0 is stage 1, read again from the stage 1 JSONs)
+Input side, gain(control|DINOv3), global, point [95% bootstrap CI]; alpha D alone / control alone / D+control
+  noise:4608            seed 0: -0.02690 [-0.03023, -0.02463]  alpha 0.1/1000/0.1
+  noise:4608            seed 1: -0.02436 [-0.02743, -0.02195]  alpha 0.1/1000/0.1
+  noise:4608            seed 2: -0.02600 [-0.02873, -0.02419]  alpha 0.1/100000/0.1
+  randproj:dinov3:4608  seed 0: +0.00110 [-0.00072, +0.00266]  alpha 0.1/0.1/0.1
+  randproj:dinov3:4608  seed 1: +0.00160 [-0.00010, +0.00329]  alpha 0.1/0.1/0.1
+  randproj:dinov3:4608  seed 2: +0.00152 [-0.00041, +0.00346]  alpha 0.1/0.1/0.1
+  shuffle:dinov3        seed 0: -0.00311 [-0.00358, -0.00270]  alpha 0.1/10000/0.1
+  shuffle:dinov3        seed 1: -0.00373 [-0.00436, -0.00320]  alpha 0.1/100000/0.1
+  shuffle:dinov3        seed 2: -0.00356 [-0.00430, -0.00303]  alpha 0.1/100000/0.1
+Target side, interference of the control as co-target, global, r = 64, k-mean: a' [CI]; b; a''; loss share under a'
+  noise:4608:0.3        seed 0: a' +0.00071 [+0.00068, +0.00075]  b +0.00074  a'' +0.00196  share 0.408
+  noise:4608:0.3        seed 1: a' +0.00072 [+0.00069, +0.00075]  b +0.00075  a'' +0.00199  share 0.408
+  noise:4608:0.3        seed 2: a' +0.00071 [+0.00068, +0.00075]  b +0.00074  a'' +0.00196  share 0.408
+  noise:4608            seed 0: a' +0.00469 [+0.00354, +0.00574]  b +0.00073  a'' +0.01472  share 0.684
+  noise:4608            seed 1: a' +0.00481 [+0.00363, +0.00590]  b +0.00074  a'' +0.01488  share 0.684
+  noise:4608            seed 2: a' +0.00482 [+0.00366, +0.00586]  b +0.00073  a'' +0.01486  share 0.684
+  randproj:dinov3:4608  seed 0: a' +0.00076 [+0.00062, +0.00088]  b +0.00076  a'' +0.00126  share 0.499
+  randproj:dinov3:4608  seed 1: a' +0.00066 [+0.00057, +0.00077]  b +0.00066  a'' +0.00116  share 0.501
+  randproj:dinov3:4608  seed 2: a' +0.00080 [+0.00066, +0.00092]  b +0.00080  a'' +0.00136  share 0.500
+  shuffle:dinov3        seed 0: a' +0.08844 [+0.08556, +0.09133]  b +0.04869  a'' +0.08844  share 0.684
+  shuffle:dinov3        seed 1: a' +0.08845 [+0.08559, +0.09135]  b +0.04874  a'' +0.08845  share 0.684
+  shuffle:dinov3        seed 2: a' +0.08833 [+0.08548, +0.09122]  b +0.04849  a'' +0.08833  share 0.684
+  By k (4 / 16 / 32), r = 64, a': interference (alpha reference -> with control)
+    noise:4608:0.3        seed 0: k=4 +0.00165 (0.1->0.1); k=16 +0.00035 (0.1->0.1); k=32 +0.00013 (1->1)
+    noise:4608:0.3        seed 1: k=4 +0.00166 (0.1->0.1); k=16 +0.00037 (0.1->0.1); k=32 +0.00013 (1->1)
+    noise:4608:0.3        seed 2: k=4 +0.00165 (0.1->0.1); k=16 +0.00035 (0.1->0.1); k=32 +0.00013 (1->1)
+    noise:4608            seed 0: k=4 +0.01212 (0.1->1); k=16 +0.00142 (0.1->0.1); k=32 +0.00054 (1->1)
+    noise:4608            seed 1: k=4 +0.01250 (0.1->1); k=16 +0.00142 (0.1->0.1); k=32 +0.00052 (1->1)
+    noise:4608            seed 2: k=4 +0.01252 (0.1->1); k=16 +0.00145 (0.1->0.1); k=32 +0.00050 (1->1)
+    randproj:dinov3:4608  seed 0: k=4 +0.00073 (0.1->0.1); k=16 +0.00078 (0.1->0.1); k=32 +0.00077 (1->1)
+    randproj:dinov3:4608  seed 1: k=4 +0.00076 (0.1->0.1); k=16 +0.00056 (0.1->0.1); k=32 +0.00066 (1->1)
+    randproj:dinov3:4608  seed 2: k=4 +0.00081 (0.1->0.1); k=16 +0.00084 (0.1->0.1); k=32 +0.00075 (1->1)
+    shuffle:dinov3        seed 0: k=4 +0.11469 (0.1->1); k=16 +0.09003 (0.1->1); k=32 +0.06061 (0.1->1)
+    shuffle:dinov3        seed 1: k=4 +0.11474 (0.1->1); k=16 +0.08916 (0.1->1); k=32 +0.06144 (0.1->1)
+    shuffle:dinov3        seed 2: k=4 +0.11496 (0.1->1); k=16 +0.08879 (0.1->1); k=32 +0.06123 (0.1->1)
+  Alpha changes: cells of 27 (3 k x 3 ranks x 3 scalings) where alpha with the control differs from the reference; and primary-cell (r = 64, a') changes out of k = 4, 16, 32:
+    noise:4608:0.3        seed 0: 1 of 27 cells; primary cell 0 of 3 k
+    noise:4608:0.3        seed 1: 1 of 27 cells; primary cell 0 of 3 k
+    noise:4608:0.3        seed 2: 1 of 27 cells; primary cell 0 of 3 k
+    noise:4608            seed 0: 8 of 27 cells; primary cell 1 of 3 k
+    noise:4608            seed 1: 8 of 27 cells; primary cell 1 of 3 k
+    noise:4608            seed 2: 8 of 27 cells; primary cell 1 of 3 k
+    randproj:dinov3:4608  seed 0: 0 of 27 cells; primary cell 0 of 3 k
+    randproj:dinov3:4608  seed 1: 0 of 27 cells; primary cell 0 of 3 k
+    randproj:dinov3:4608  seed 2: 0 of 27 cells; primary cell 0 of 3 k
+    shuffle:dinov3        seed 0: 18 of 27 cells; primary cell 3 of 3 k
+    shuffle:dinov3        seed 1: 18 of 27 cells; primary cell 3 of 3 k
+    shuffle:dinov3        seed 2: 18 of 27 cells; primary cell 3 of 3 k
+  Debiased CKA with DINOv3 (global agentview, global wrist, mean agentview, mean wrist), input runs:
+    noise:4608            seed 0: +0.0005 +0.0000 +0.0001 -0.0002
+    noise:4608            seed 1: +0.0001 +0.0004 -0.0003 -0.0008
+    noise:4608            seed 2: -0.0002 +0.0001 -0.0003 -0.0004
+    randproj:dinov3:4608  seed 0: +0.9970 +0.9966 +0.9965 +0.9966
+    randproj:dinov3:4608  seed 1: +0.9968 +0.9965 +0.9969 +0.9963
+    randproj:dinov3:4608  seed 2: +0.9967 +0.9965 +0.9963 +0.9971
+    shuffle:dinov3        seed 0: -0.0004 +0.0002 -0.0001 +0.0000
+    shuffle:dinov3        seed 1: +0.0009 +0.0002 +0.0001 +0.0001
+    shuffle:dinov3        seed 2: +0.0003 -0.0003 +0.0002 -0.0002
+
+------------------------------------------------------------
+DECISION RULE PER SEED (same clauses and constants as above; dup 'is 0' from stage 1, where dup is a deterministic gate)
+  (check passed: the per-seed function on seed 0 reproduces the stage 1 outcomes printed above)
+  Seed 0
+    INPUT: can-go-negative fires for ['noise:4608']; capacity-floor fires for none; unresolved none  -> PLAN's label: Can go negative
+    TARGET a' (r = 64, global, k-mean): noise:4608:0.3 +0.00071, randproj +0.00076  -> PLAN's label: Partner-specific
+    TARGET negativity (a', the four seeded controls; dup has no seed): Floor near zero
+    TARGET under b: noise:4608 +0.00073  -> the b values are partner-specific
+  Seed 1
+    INPUT: can-go-negative fires for ['noise:4608']; capacity-floor fires for none; unresolved none  -> PLAN's label: Can go negative
+    TARGET a' (r = 64, global, k-mean): noise:4608:0.3 +0.00072, randproj +0.00066  -> PLAN's label: Partner-specific
+    TARGET negativity (a', the four seeded controls; dup has no seed): Floor near zero
+    TARGET under b: noise:4608 +0.00074  -> the b values are partner-specific
+  Seed 2
+    INPUT: can-go-negative fires for ['noise:4608']; capacity-floor fires for none; unresolved none  -> PLAN's label: Can go negative
+    TARGET a' (r = 64, global, k-mean): noise:4608:0.3 +0.00071, randproj +0.00080  -> PLAN's label: Partner-specific
+    TARGET negativity (a', the four seeded controls; dup has no seed): Floor near zero
+    TARGET under b: noise:4608 +0.00073  -> the b values are partner-specific
+
+------------------------------------------------------------
+AGREEMENT ACROSS SEEDS 0, 1, 2 ON EACH THRESHOLD SIDE
+PLAN, verbatim: "A verdict stands only if the seeds agree on which side of each threshold they fall."
+Each row is one comparison the rule makes; per seed the value compared and whether the row's condition holds (Y) or not (n); 'agree' = all three seeds on the same side.
+  input noise:4608: point <= -0.005                        s0 -0.02690 Y  s1 -0.02436 Y  s2 -0.02600 Y   agree: yes
+  input noise:4608: CI upper < 0                           s0 -0.02463 Y  s1 -0.02195 Y  s2 -0.02419 Y   agree: yes
+  input shuffle:dinov3: point <= -0.005                    s0 -0.00311 n  s1 -0.00373 n  s2 -0.00356 n   agree: yes
+  input shuffle:dinov3: CI upper < 0                       s0 -0.00270 Y  s1 -0.00320 Y  s2 -0.00303 Y   agree: yes
+  input noise:4608: point >= +0.005                        s0 -0.02690 n  s1 -0.02436 n  s2 -0.02600 n   agree: yes
+  input noise:4608: CI lower > 0                           s0 -0.03023 n  s1 -0.02743 n  s2 -0.02873 n   agree: yes
+  input noise:4608: CI contains -0.005 (unresolved)        s0 -0.00500 n  s1 -0.00500 n  s2 -0.00500 n   agree: yes
+  input noise:4608: CI contains +0.005 (unresolved)        s0 +0.00500 n  s1 +0.00500 n  s2 +0.00500 n   agree: yes
+  input randproj:dinov3:4608: point >= +0.005              s0 +0.00110 n  s1 +0.00160 n  s2 +0.00152 n   agree: yes
+  input randproj:dinov3:4608: CI lower > 0                 s0 -0.00072 n  s1 -0.00010 n  s2 -0.00041 n   agree: yes
+  input randproj:dinov3:4608: CI contains -0.005 (unresolved) s0 -0.00500 n  s1 -0.00500 n  s2 -0.00500 n   agree: yes
+  input randproj:dinov3:4608: CI contains +0.005 (unresolved) s0 +0.00500 n  s1 +0.00500 n  s2 +0.00500 n   agree: yes
+  input shuffle:dinov3: point >= +0.005                    s0 -0.00311 n  s1 -0.00373 n  s2 -0.00356 n   agree: yes
+  input shuffle:dinov3: CI lower > 0                       s0 -0.00358 n  s1 -0.00436 n  s2 -0.00430 n   agree: yes
+  input shuffle:dinov3: CI contains -0.005 (unresolved)    s0 -0.00500 n  s1 -0.00500 n  s2 -0.00500 n   agree: yes
+  input shuffle:dinov3: CI contains +0.005 (unresolved)    s0 +0.00500 n  s1 +0.00500 n  s2 +0.00500 n   agree: yes
+  target noise:4608:0.3 a': >= 0.0100                      s0 +0.00071 n  s1 +0.00072 n  s2 +0.00071 n   agree: yes
+  target noise:4608:0.3 a': <= 0.0050                      s0 +0.00071 Y  s1 +0.00072 Y  s2 +0.00071 Y   agree: yes
+  target randproj:dinov3:4608 a': >= 0.0100                s0 +0.00076 n  s1 +0.00066 n  s2 +0.00080 n   agree: yes
+  target randproj:dinov3:4608 a': <= 0.0050                s0 +0.00076 Y  s1 +0.00066 Y  s2 +0.00080 Y   agree: yes
+  target noise:4608 b: >= 0.0177                           s0 +0.00073 n  s1 +0.00074 n  s2 +0.00073 n   agree: yes
+  target noise:4608 b: <= 0.0104                           s0 +0.00073 Y  s1 +0.00074 Y  s2 +0.00073 Y   agree: yes
+  target noise:4608:0.3 a': CI upper < -0.003              s0 +0.00075 n  s1 +0.00075 n  s2 +0.00075 n   agree: yes
+  target noise:4608:0.3 a': CI lower >= -0.003             s0 +0.00068 Y  s1 +0.00069 Y  s2 +0.00068 Y   agree: yes
+  target noise:4608 a': CI upper < -0.003                  s0 +0.00574 n  s1 +0.00590 n  s2 +0.00586 n   agree: yes
+  target noise:4608 a': CI lower >= -0.003                 s0 +0.00354 Y  s1 +0.00363 Y  s2 +0.00366 Y   agree: yes
+  target randproj:dinov3:4608 a': CI upper < -0.003        s0 +0.00088 n  s1 +0.00077 n  s2 +0.00092 n   agree: yes
+  target randproj:dinov3:4608 a': CI lower >= -0.003       s0 +0.00062 Y  s1 +0.00057 Y  s2 +0.00066 Y   agree: yes
+  target shuffle:dinov3 a': CI upper < -0.003              s0 +0.09133 n  s1 +0.09135 n  s2 +0.09122 n   agree: yes
+  target shuffle:dinov3 a': CI lower >= -0.003             s0 +0.08556 Y  s1 +0.08559 Y  s2 +0.08548 Y   agree: yes
+  (The 'CI contains' rows list the threshold itself as the value.)
+  Not a clause of the rule, printed because stage 1 flagged it (README 'Open reading'): target noise:4608 a' against 0.0050 and 0.0100:
+    noise:4608 a' <= 0.0050: s0 +0.00469 Y  s1 +0.00481 Y  s2 +0.00482 Y   same side on all seeds: True
+    noise:4608 a' <= 0.0100: s0 +0.00469 Y  s1 +0.00481 Y  s2 +0.00482 Y   same side on all seeds: True
+
+  Rows where the seeds do NOT agree: 0 of 30
+  OUTCOME LABELS BY SEED:
+    input:  seed 0: Can go negative; seed 1: Can go negative; seed 2: Can go negative
+    target a' (first part of the rule): seed 0: Partner-specific; seed 1: Partner-specific; seed 2: Partner-specific
+    target negativity: seed 0: Floor near zero; seed 1: Floor near zero; seed 2: Floor near zero
+    target b: seed 0: the b values are partner-specific; seed 1: the b values are partner-specific; seed 2: the b values are partner-specific
+  Input label identical on all three seeds: True (Can go negative)
+  Target a' label identical on all three seeds: True (Partner-specific)
+  The rows that bear on each label are those of its clause (input: the noise:4608 and shuffle:dinov3 negative/positive/unresolved rows; target: the a' rows of noise:4608:0.3 and randproj).
+
+------------------------------------------------------------
+STAGE 2 RUN TIMES (JSON 'seconds' field, and the `date -u` lines in the pod log)
+  input noise:4608            seed 1 751 s; seed 2 711 s   (stage 1 seed 0: 531 s)
+  input randproj:dinov3:4608  seed 1 708 s; seed 2 708 s   (stage 1 seed 0: 500 s)
+  input shuffle:dinov3        seed 1 376 s; seed 2 379 s   (stage 1 seed 0: 301 s)
+  target noise:4608:0.3       seed 1 6264 s; seed 2 6224 s   (stage 1 seed 0: 5645 s)
+  target noise:4608           seed 1 6355 s; seed 2 6386 s   (stage 1 seed 0: 4715 s)
+  target randproj:dinov3:4608 seed 1 5693 s; seed 2 5637 s   (stage 1 seed 0: 4741 s)
+  target shuffle:dinov3       seed 1 1935 s; seed 2 1962 s   (stage 1 seed 0: 3237 s)
+  Sum of script times: input 1.01 h, target 11.24 h, together 12.25 h (STAGE2.md estimate from stage 1: 39,346 s = 10.93 h for both seeds plus about 300 s setup).
+  Staging lines in the log: dinov3 4.4G in 160 s
+  Stage start times in the log (the `date -u` line after each '--- ' header); duration = to the next stage start, the last one to the final timestamp:
+    input noise:4608 seed 1                    start 2026-11-10 17:26:56  duration 751 s (0 h 12 min)
+    input randproj:dinov3:4608 seed 1          start 2026-11-10 17:39:27  duration 708 s (0 h 11 min)
+    input shuffle:dinov3 seed 1                start 2026-11-10 17:51:15  duration 377 s (0 h 6 min)
+    input noise:4608 seed 2                    start 2026-11-10 17:57:32  duration 711 s (0 h 11 min)
+    input randproj:dinov3:4608 seed 2          start 2026-11-10 18:09:23  duration 709 s (0 h 11 min)
+    input shuffle:dinov3 seed 2                start 2026-11-10 18:21:12  duration 378 s (0 h 6 min)
+    target shuffle:dinov3 seed 1               start 2026-11-10 18:27:30  duration 1936 s (0 h 32 min)
+    target noise:4608:0.3 seed 1               start 2026-11-10 18:59:46  duration 6264 s (1 h 44 min)
+    target noise:4608 seed 1                   start 2026-11-10 20:44:10  duration 6355 s (1 h 45 min)
+    target randproj:dinov3:4608 seed 1         start 2026-11-10 22:30:05  duration 5693 s (1 h 34 min)
+    target shuffle:dinov3 seed 2               start 2026-11-11 00:04:58  duration 1963 s (0 h 32 min)
+    target noise:4608:0.3 seed 2               start 2026-11-11 00:37:41  duration 6223 s (1 h 43 min)
+    target noise:4608 seed 2                   start 2026-11-11 02:21:24  duration 6387 s (1 h 46 min)
+    target randproj:dinov3:4608 seed 2         start 2026-11-11 04:07:51  duration 5639 s (1 h 33 min)
+  Log span: first timestamp 2026-11-10 17:26:37 UTC (the download step, after pip and the 160 s DINOv3 staging) to last 2026-11-11 05:41:50 UTC: 44113 s = 12 h 15 min. Job creation (17:23:39 UTC) and the Complete status come from LOG.md and the lead, not from this log.
+  Log warnings outside the JSON bodies:
+    log line 5: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a v
+    log line 7: [notice] A new release of pip is available: 24.0 -> 26.3
+    log line 8: [notice] To update, run: pip install --upgrade pip
+    log line 190: [target   1935s] alpha at grid edge: ['global|k=4|t1b_D|alpha=0.01']
+    log line 238: [target   6264s] alpha at grid edge: ['global|k=4|t1b_D|alpha=0.01']
+    log line 286: [target   6355s] alpha at grid edge: ['global|k=4|t1b_D|alpha=0.01']
+    log line 334: [target   5693s] alpha at grid edge: ['global|k=4|t1b_D|alpha=0.01']
+    log line 382: [target   1962s] alpha at grid edge: ['global|k=4|t1b_D|alpha=0.01']
+    log line 430: [target   6224s] alpha at grid edge: ['global|k=4|t1b_D|alpha=0.01']
+    log line 478: [target   6386s] alpha at grid edge: ['global|k=4|t1b_D|alpha=0.01']
+    log line 526: [target   5637s] alpha at grid edge: ['global|k=4|t1b_D|alpha=0.01']
+  Memory: UNKNOWN. No RSS reading is in the pod log (it prints only the node's MemTotal and MemFree).
