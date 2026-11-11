@@ -29,6 +29,8 @@ CPU_ONLY = {"job-pfb-draws.yaml", "job-pfb-final.yaml"}
 TWIN = "job-pfb-render-a6000.yaml"    # 2026-11-10: RTX A6000 twin of the render Job, raced against the original; never counted as a second GPU (see PHASE-B.md note 2026-11-10)
 TWIN_RESOURCE = "nvidia.com/rtxa6000"
 ORIGINAL = "job-pfb-render.yaml"
+T3090_RESOURCE = "nvidia.com/GA102_GEFORCE_RTX_3090"
+T3090 = {f"job-pfb-ext-sam3-{c}-3090.yaml": f"job-pfb-ext-sam3-{c}.yaml" for c in ("background", "noise")}    # 2026-11-11: RTX 3090 twins (typed resource) of two SAM 3 Jobs, raced against the originals (PHASE-B.md section 12)
 RECOVER = "job-pfb-recover.yaml"      # 2026-11-10: one combined GPU Job that recovers what the failed A6000 render Job did not finish (PHASE-B.md section 11); replaces the render Job, never runs beside it
 SIGLIP2_SHA = "1b426889ea62b5a72bf9839009a1b184bfc9c178"     # results/pf-main/phase-a/pfa-ext-siglip2-cradio/revisions.txt
 CONFIG_ARG = "/pf/phase-a.yaml"
@@ -67,7 +69,7 @@ if src_dir.is_dir():
 
 bad = 0
 missing = [n for n in EXPECTED if not (jobs / n).is_file()]
-extra = sorted(Path(f).name for f in glob.glob(str(jobs / "job-pfb-*.yaml")) if Path(f).name not in EXPECTED and Path(f).name not in (TWIN, RECOVER))
+extra = sorted(Path(f).name for f in glob.glob(str(jobs / "job-pfb-*.yaml")) if Path(f).name not in EXPECTED and Path(f).name not in (TWIN, RECOVER) and Path(f).name not in T3090)
 if missing or extra:
     print("PROBLEMS: expected manifests missing", missing, "unexpected", extra)
     bad += 1
@@ -104,6 +106,7 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
     envd = {e["name"]: e.get("value") for e in c["env"]}
     is_twin = name == TWIN
     is_recover = name == RECOVER
+    is_t3 = name in T3090
     is_render = name in (ORIGINAL, TWIN, RECOVER)    # the twin runs the same script, so every render check applies to it; the recovery Job shares the manifest checks and has its own script checks below
     if is_render and envd.get("IMAGE_DIGEST") != c["image"]:
         msgs.append("IMAGE_DIGEST env differs from the image")
@@ -124,16 +127,20 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
         msgs.append(f"PYTHONPATH env {envd.get('PYTHONPATH')!r}")
     req, lim = c["resources"]["requests"], c["resources"]["limits"]
     cpu_only = name in CPU_ONLY
-    if is_twin:
+    if is_t3:
+        ngpu = int(req.get(T3090_RESOURCE, 0))
+        if ngpu != 1 or int(lim.get(T3090_RESOURCE, 0)) != 1 or "nvidia.com/gpu" in req or "nvidia.com/gpu" in lim or TWIN_RESOURCE in req or TWIN_RESOURCE in lim:
+            msgs.append(f"3090 twin must request exactly {T3090_RESOURCE}: 1 and no other GPU resource")
+    elif is_twin:
         # the twin asks for exactly one RTX A6000 under its own resource name and no generic GPU
         ngpu = int(req.get(TWIN_RESOURCE, 0))
         if ngpu != 1 or int(lim.get(TWIN_RESOURCE, 0)) != 1 or "nvidia.com/gpu" in req or "nvidia.com/gpu" in lim:
             msgs.append(f"twin must request exactly {TWIN_RESOURCE}: 1 and no nvidia.com/gpu")
     else:
         ngpu = int(req.get("nvidia.com/gpu", 0))
-        if ngpu != (0 if cpu_only else 1) or int(lim.get("nvidia.com/gpu", 0)) != ngpu or TWIN_RESOURCE in req or TWIN_RESOURCE in lim:
+        if ngpu != (0 if cpu_only else 1) or int(lim.get("nvidia.com/gpu", 0)) != ngpu or TWIN_RESOURCE in req or TWIN_RESOURCE in lim or T3090_RESOURCE in req or T3090_RESOURCE in lim:
             msgs.append(f"gpu request {ngpu}")
-    if not is_twin and not is_recover:    # the twin and the original are raced and never both run, so only the original counts toward the peak; the recovery Job replaces the render Job
+    if not is_twin and not is_recover and not is_t3:    # the twin and the original are raced and never both run, so only the original counts toward the peak; the recovery Job replaces the render Job
         total_gpu += ngpu
     for k in ("cpu", "memory", "ephemeral-storage"):
         r, l = num(req[k]), num(lim[k])
@@ -154,7 +161,21 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
     if is_render and len(req_terms) != 1:
         msgs.append(f"render manifest must have exactly one required nodeSelectorTerm (terms are ORed), found {len(req_terms)}")
     has_req_region = any(me.get("key") == "topology.kubernetes.io/region" for me in req_exprs)
-    if is_twin:
+    if is_t3:
+        # 3090 twin: no gpu.product, no driver rule, no required region, excluded hosts kept (checked below), soft us-west preference weight 100
+        if any(me.get("key") == "nvidia.com/gpu.product" for me in req_exprs):
+            msgs.append("3090 twin must not require nvidia.com/gpu.product")
+        if any(me.get("key") == "nvidia.com/cuda.driver.major" for me in req_exprs):
+            msgs.append("3090 twin must not carry the driver label rule (typed-resource nodes have no such label; the script checks the driver instead)")
+        if has_req_region:
+            msgs.append("3090 twin must not require a region (soft preference only)")
+        prefs = pod["affinity"]["nodeAffinity"].get("preferredDuringSchedulingIgnoredDuringExecution", [])
+        if not any(pr.get("weight") == 100 and any(me.get("key") == "topology.kubernetes.io/region" and me.get("operator") == "In" and me.get("values") == ["us-west"]
+                                                    for me in pr["preference"].get("matchExpressions", [])) for pr in prefs):
+            msgs.append("3090 twin lacks the preferred us-west term (weight 100)")
+        if "priorityClassName" in pod:
+            msgs.append("priorityClassName present")
+    elif is_twin:
         # twin: no gpu.product, no required region, driver rule and excluded hosts kept, soft us-west preference weight 100
         if any(me.get("key") == "nvidia.com/gpu.product" for me in req_exprs):
             msgs.append("twin must not require nvidia.com/gpu.product")
@@ -384,13 +405,33 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
             if "transformers==5.18.0" not in script or "48b23c8ce72c9a8fcf987f0d7f43d8e4870759f6" not in script:
                 msgs.append("vggt: pins")
         else:
-            cond = name[len("job-pfb-ext-sam3-"):-len(".yaml")]
+            cond = name[len("job-pfb-ext-sam3-"):-len(".yaml")].removesuffix("-3090")
             if conds != [cond]:
                 msgs.append(f"{name}: CONDS {conds}, expected [{cond}]")
             if enc != "sam3" or "3c879f3" not in script or "facebook/sam3" not in script:
                 msgs.append("sam3: encoder or revision assert")
             if "transformers==5.18.0" not in script:
                 msgs.append("sam3: pins")
+        if is_t3:
+            # the driver fail-fast comes before the free-space check and every install; CUDA check and --device cuda; a CPU-fallback guard on the log
+            # positions are taken in the script without comment lines, so a mention in a comment cannot satisfy a check
+            scode = "\n".join(ln for ln in script.split("\n") if not ln.strip().startswith("#"))
+            m_q = re.search(r'^\s*DRV=\$\(nvidia-smi --query-gpu=driver_version\b.*\) \|\| DRV=""$', scode, re.M)
+            m_empty = re.search(r'^\s*if \[ -z "\$DRV" \]; then .*exit 17; fi$', scode, re.M)
+            m_drv = re.search(r'^\s*if \[ "\$DRV" -le 569 \]; then .*exit 16; fi$', scode, re.M)
+            m_cuda = re.search(r"^\s*cap 300 python -c \"import torch; assert torch\.cuda\.is_available\(\).*exit 30; \}$", scode, re.M)
+            if not (m_q and m_empty and m_drv):
+                msgs.append("3090 twin: driver fail-fast missing (query with a message and exit 17 when it fails, exit 16 when the driver major is 569 or lower)")
+            elif not (m_q.start() < m_empty.start() < m_drv.start() < scode.find("df -BG") and m_drv.start() < scode.find("pip install")):
+                msgs.append("3090 twin: the driver fail-fast does not come before the free-space check and the installs")
+            if not m_cuda:
+                msgs.append("3090 twin: CUDA check (exit 30) missing")
+            elif m_drv and not (m_drv.start() < m_cuda.start() < scode.find("pip install")):
+                msgs.append("3090 twin: the CUDA check is not between the driver check and the installs")
+            if "--device cuda" not in scode:
+                msgs.append("3090 twin: extractor is not called with --device cuda")
+            if not re.search(r"grep -q '\^\\\[extract\\\] encoder=\.\* device=cpu\$' \$LOGF", scode) or "if [ $WORST -lt 31 ]; then WORST=31; fi" not in scode:
+                msgs.append("3090 twin: device=cpu guard on the extractor's own line (raising worst code to 31 without lowering a higher one) missing")
         if conds and len(set(conds)) != len(conds):
             msgs.append("duplicate conditions")
         if len(rerender):
@@ -477,6 +518,56 @@ if TWIN in docs_by_name and ORIGINAL in docs_by_name:
         tmsgs.append("Job spec (deadline, ttl, backoff) differs")
     print("twin vs original:", "identical apart from name, GPU resource name and affinity" if not tmsgs else "PROBLEMS: " + "; ".join(tmsgs))
     bad += bool(tmsgs)
+for t_, o_ in T3090.items():
+    if t_ in docs_by_name and o_ in docs_by_name:
+        # the 3090 twin is the original with only the allowed differences: name, GPU resource key, affinity, and the script lines that fail fast
+        a, b = docs_by_name[o_], docs_by_name[t_]
+        ca, cb = a["spec"]["template"]["spec"]["containers"][0], b["spec"]["template"]["spec"]["containers"][0]
+        tmsgs = []
+        import copy
+        def norm3(d_):
+            ps = copy.deepcopy(d_["spec"]["template"]["spec"])
+            ps.pop("affinity", None)
+            ps["containers"][0].pop("args")
+            for sect in ("requests", "limits"):
+                for k in ("nvidia.com/gpu", T3090_RESOURCE):
+                    ps["containers"][0]["resources"][sect].pop(k, None)
+            return ps
+        if norm3(a) != norm3(b):
+            tmsgs.append("pod spec differs beyond affinity, script and the GPU resource key")
+        if {k: v for k, v in a["spec"].items() if k != "template"} != {k: v for k, v in b["spec"].items() if k != "template"}:
+            tmsgs.append("Job spec (deadline, ttl, backoff) differs")
+        if a["spec"]["template"].get("metadata") != b["spec"]["template"].get("metadata"):
+            tmsgs.append("pod template metadata differs")
+        def hosts3(d_):
+            t = d_["spec"]["template"]["spec"]["affinity"]["nodeAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"]
+            return sorted(v for term in t for me in term.get("matchExpressions", []) if me.get("key") == "kubernetes.io/hostname" and me.get("operator") == "NotIn" for v in me["values"])
+        if not hosts3(b) or hosts3(a) != hosts3(b):
+            tmsgs.append("excluded hosts differ or are missing")
+        for sect in ("requests", "limits"):
+            ra = {k: v for k, v in ca["resources"][sect].items() if k != "nvidia.com/gpu"}
+            rb = {k: v for k, v in cb["resources"][sect].items() if k != T3090_RESOURCE}
+            if ra != rb:
+                tmsgs.append(f"{sect} differ beyond the GPU resource name")
+        # script, compared line by line IN ORDER (difflib opcodes, not a set): the only differences are three original lines replaced and the listed lines added, in this order
+        import difflib
+        la = ca["args"][0].split("\n")
+        lb = cb["args"][0].split("\n")
+        ops = difflib.SequenceMatcher(None, la, lb, autojunk=False).get_opcodes()
+        removed = [ln.strip() for tag, i1, i2, j1, j2 in ops if tag in ("replace", "delete") for ln in la[i1:i2]]
+        added = [ln.strip() for tag, i1, i2, j1, j2 in ops if tag in ("replace", "insert") for ln in lb[j1:j2]]
+        want_removed = ["R=/mnt/proxy", "exec > >(tee -a $R/logs/$JOB-$STAMP.log)", "stage extract-$ENC-$c cap 10800 python"]
+        want_added = ["R=/mnt/proxy", "exec > >(tee -a $LOGF)", "# driver fail-fast", "DRV=$(nvidia-smi", 'echo "driver major', 'if [ -z "$DRV" ]', 'if [ "$DRV" -le 569 ]',
+                      "# CUDA check", 'cap 300 python -c "import torch', "stage extract-$ENC-$c cap 10800 python", "if grep -q '^\\[extract\\]"]
+        if len(removed) != len(want_removed) or any(not r_.startswith(w_) for r_, w_ in zip(removed, want_removed)):
+            tmsgs.append(f"script: original lines changed or moved other than the three expected: {[r_[:50] for r_ in removed]}")
+        gi = next((k for k, ln in enumerate(lb) if ln.strip().startswith("if grep -q '^\\[extract\\]")), None)
+        if gi is None or not lb[gi - 1].strip().startswith("stage extract-$ENC-$c cap 10800 python"):
+            tmsgs.append("script: the device=cpu guard does not directly follow the extraction stage line")
+        if len(added) != len(want_added) or any(not a_.startswith(w_) for a_, w_ in zip(added, want_added)):
+            tmsgs.append(f"script: lines added or moved other than the expected ones, in order: {[a_[:50] for a_ in added]}")
+        print(f"{t_} vs {o_}:", "identical apart from name, GPU resource name, affinity and the fail-fast script lines" if not tmsgs else "PROBLEMS: " + "; ".join(tmsgs))
+        bad += bool(tmsgs)
 if RECOVER in docs_by_name and ORIGINAL in docs_by_name:
     # the recovery Job is the render Job with another name and another script: everything else (node rule, resources, env, volumes, deadline, ttl) must be identical
     a, b = docs_by_name[ORIGINAL], docs_by_name[RECOVER]
@@ -494,6 +585,6 @@ if RECOVER in docs_by_name and ORIGINAL in docs_by_name:
         rmsgs.append("manifest differs from the render Job beyond name and script (node rule, resources, env, volumes, deadline or ttl)")
     print("recover vs original:", "identical apart from name and script" if not rmsgs else "PROBLEMS: " + "; ".join(rmsgs))
     bad += bool(rmsgs)
-print(f"Jobs: {len(names)}; GPUs if all ran at once: {total_gpu}" + (" (the A6000 twin is not counted: it races the original and the loser is deleted, so at most one of the pair runs)" if TWIN in docs_by_name else "") + (" (the recovery Job is not counted: it replaces the render Job)" if RECOVER in docs_by_name else ""))
+print(f"Jobs: {len(names)}; GPUs if all ran at once: {total_gpu}" + (" (the A6000 twin is not counted: it races the original and the loser is deleted, so at most one of the pair runs)" if TWIN in docs_by_name else "") + (" (the two RTX 3090 twins are not counted: each races its original and the loser is deleted)" if any(t_ in docs_by_name for t_ in T3090) else "") + (" (the recovery Job is not counted: it replaces the render Job)" if RECOVER in docs_by_name else ""))
 print("TOTAL problems:", bad)
 sys.exit(1 if bad else 0)
