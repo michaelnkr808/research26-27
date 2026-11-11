@@ -1,0 +1,146 @@
+# SIZING RUN (CPU only, short): the single largest invocation of the full Job, run once on the cluster to measure wall time and peak
+# memory before the full Job (job.yaml) is sized. Replaces the local measurement of PLAN.md (Memory; "Where it runs") by the user's
+# decision of 2026-11-10 ("i would prefer to not run anything locally"); see PLAN.md, "Amendment 2026-11-10: sizing run on the
+# cluster instead of locally". It changes no design, score, threshold or gate.
+# What it runs: ONE invocation, the context pair VGGT-Omega (base) + C-RADIOv4 (partner), fold 1, global, written exactly as job.yaml
+# invokes a context pair (same flags, same run() function). DINOv3 is not staged. Disk peak is the same 19.9 GiB.
+# What it records: staging time per encoder (printed by stage()), wall time of the invocation, peak RSS read from the result JSON's
+# peak_rss_gib field (only that field is printed), and the pod's cgroup peak (memory.peak on cgroup v2, else max_usage_in_bytes on v1;
+# "unreadable" if neither opens; the cgroup figure includes page cache from the copies, so it overstates the process).
+# BLINDNESS (PLAN.md amendment): the output JSON is a real-pair result. It is NOT printed, NOT tarred and NOT sha-listed into the log;
+# it stays on the volume in /mnt/features/stacking-encoders/feature-overlap-sizing (a sibling of the full Job's folder, not inside it,
+# so the full Job's empty-output check on .../feature-overlap still passes). Do not open it before the controls of the full Job are
+# read. The script already withholds real-pair scores from stdout.
+# Must wait for michael-persistent (ReadWriteOnce, holds C-RADIOv4) to be free, i.e. run it after control-partners stage 2 has ended
+# (PLAN.md line 129: check that no other pod holds it); otherwise the pod sits in ContainerCreating. Also the same checks as the full
+# Job (../2026-10-21-target-diagnostics/RUN.md): nothing of ours running, features still on the volumes, CPU capacity.
+# Sizing rule applied afterwards (PLAN, Memory): peak above 11Gi gives the full Job 24Gi, otherwise 14Gi/16Gi; the full Job's
+# activeDeadlineSeconds comes from the measured time.
+# NOT SUBMITTED. Needs the user's own go in the implementation window (ConfigMap, then Job, each asked for). Before submitting: set
+# SRC_GIT_COMMIT below to the merged commit (40 lowercase hex; the script aborts otherwise) and use the ConfigMap
+# `stacking-encoders-overlap-src` built from the files at that same commit (the full Job uses the same one).
+# Follows _standards/08: Job, runs a real command and exits (nothing that waits or idles), no GPU, kept off GPU nodes, limits within 20% of requests,
+# activeDeadlineSeconds caps runtime. No taint overrides. Same priority and backoff choices as job.yaml (see there).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-feature-overlap-sizing
+  namespace: aria-world
+spec:
+  # NOT set: `priorityClassName: opportunistic`. _standards/08 line 81 says to use it for large CPU jobs, but it allows preemption
+  # at any time and this Job has no checkpointing, so a preemption would lose hours of work. DEVIATION from _standards/08 line 81,
+  # on purpose (the lead's decision, PR #21 review).
+  # backoffLimit 0 as stage 2 of the control-partners experiment: a retry would hit the non-empty-output-folder abort and run
+  # nothing, so a node loss means resubmitting under a new name and folder (03). DEVIATES from _standards/08 line 31.
+  backoffLimit: 0
+  # A few hours: one invocation (two directions) plus staging 14 GiB; the PLAN's guess for the whole 26-invocation Job is 2 to 5 h,
+  # so this should take well under an hour. 4 h includes queue time and a slow node.
+  activeDeadlineSeconds: 14400
+  ttlSecondsAfterFinished: 86400      # safety net; delete manually after collecting logs
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}   # CPU-only: stay off GPU nodes
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}                 # near rook-cephfs
+      containers:
+      - name: main
+        image: python:3.11.14-slim
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          # SRC_GIT_COMMIT must be exactly 40 lowercase hex characters (the placeholder fails this).
+          if ! [[ "${SRC_GIT_COMMIT:-}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "ABORT: SRC_GIT_COMMIT is not 40 lowercase hex characters (still the placeholder?). Nothing was run."; exit 2
+          fi
+          OUT=/mnt/features/stacking-encoders/feature-overlap-sizing
+          if [ -d "$OUT" ] && [ -n "$(find "$OUT" -mindepth 1 -maxdepth 1 -print -quit)" ]; then
+            echo "ABORT: $OUT already holds entries; a rerun needs a new folder (03). Nothing was run."; exit 3
+          fi
+          mkdir -p $OUT /mnt/features/stacking-encoders/logs
+          LOG=/mnt/features/stacking-encoders/logs/feature-overlap-sizing-$(date +%Y%m%d-%H%M%S).log
+          # tee reads from a named pipe so its PID is reliable; on any exit flush it before leaving.
+          mkfifo /tmp/logpipe
+          tee -a $LOG < /tmp/logpipe &
+          TEEPID=$!
+          exec > /tmp/logpipe 2>&1
+          finish() { RC=$?; exec >&- 2>&-; wait $TEEPID || true; exit $RC; }
+          trap finish EXIT
+          echo "SRC_GIT_COMMIT=$SRC_GIT_COMMIT"
+          nproc; head -2 /proc/meminfo   # python:slim has no procps
+          pip install --no-cache-dir -q numpy==2.2.6 h5py==3.16.0 huggingface-hub==0.36.2
+          echo "=== pip freeze"; pip freeze
+          src_of() { case $1 in siglip2|c-radiov4) echo /persistent/stacking-encoders/features/$1;;
+                                *) echo /mnt/features/stacking-encoders/features/$1;; esac; }
+          stage() { mkdir -p /work/feats/$1; T=$(date +%s); cp -r $(src_of $1)/libero_goal /work/feats/$1/
+                    echo "staged $1: $(du -sh /work/feats/$1/libero_goal | cut -f1) in $(( $(date +%s) - T ))s"; df -h /work | tail -1; }
+          unstage() { rm -rf /work/feats/$1; }
+          safe() { echo "$1" | tr ':' '-'; }
+          echo "=== download libero_goal (actions, demo index, proprio)"; date -u
+          python - <<'PY'
+          from huggingface_hub import snapshot_download, HfApi
+          snapshot_download("yifengzhu-hf/LIBERO-datasets", repo_type="dataset", revision="main",
+                            allow_patterns=["libero_goal/*.hdf5"], local_dir="/work/data")
+          try:
+              print("LIBERO-datasets revision sha:", HfApi().dataset_info("yifengzhu-hf/LIBERO-datasets").sha)
+          except Exception as e:
+              print("could not read the dataset sha:", repr(e))
+          PY
+          date -u
+          du -sh /work/data; df -h /work
+          # The same arguments for every invocation except the ones that name the pair, fold and type. Bootstrap seed 0 and
+          # synthetic seed 0 everywhere, so the demo draws are shared across runs and draws can be differenced across runs.
+          run() {   # $1 base, $2 partner (real encoder or synthetic spec), $3 fold, $4 feature type
+            TAG=$1-$(safe $2)-f$3-$4
+            echo "--- $TAG"; date -u
+            python /src/feature_overlap.py --feats /work/feats --suite libero_goal --raw /work/data/libero_goal \
+              --base $1 --partner "$2" --fold $3 --types $4 --m 64 --n-boot 2000 --seed 0 --synth-seed 0 \
+              --save-draws $OUT/draws-$TAG.npz --out $OUT/overlap-libero_goal-$TAG.json
+          }
+          echo "=== SIZING: one invocation, vggt-omega (base) + c-radiov4 (partner), fold 1, global"
+          stage vggt-omega
+          stage c-radiov4
+          T0=$(date +%s)
+          run vggt-omega c-radiov4 1 global
+          echo "=== wall time of the invocation: $(( $(date +%s) - T0 )) s"
+          # Peak RSS: only this one field of the result JSON is printed, never a score.
+          python -I - $OUT/overlap-libero_goal-vggt-omega-c-radiov4-f1-global.json <<'PY'
+          import json, sys
+          print("peak_rss_gib (from the result JSON, process RSS):", json.load(open(sys.argv[1]))["peak_rss_gib"])
+          PY
+          echo "=== pod cgroup peak (bytes; includes page cache from the copies)"
+          cat /sys/fs/cgroup/memory.peak 2>/dev/null || cat /sys/fs/cgroup/memory/memory.max_usage_in_bytes 2>/dev/null || echo "unreadable"
+          echo "=== files on the volume (names and sizes only; contents are not printed, hashed or tarred)"; ls -l $OUT
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: "SET-AT-SUBMISSION"}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: OMP_NUM_THREADS, value: "2"}
+        - {name: OPENBLAS_NUM_THREADS, value: "2"}
+        # Deliberately generous for a MEASUREMENT run: 24Gi request / 28Gi limit (limit within 20% of the request, about 17%) so that
+        # the largest pair cannot be OOM-killed before its peak is known; the full Job is sized from the result, not from this.
+        # The run is expected to be short (under an hour). _standards/08, "How the portal checks": the portal skips pods younger than
+        # 30 minutes and checks every 10 minutes, so a pod shorter than that is not checked against the 20-150% memory rule; a longer
+        # one may read low against 24Gi (accepted for a measurement run). CPU request 2 as in job.yaml.
+        resources:
+          requests: {cpu: "2", memory: 24Gi, ephemeral-storage: 24Gi}
+          limits:   {cpu: "2400m", memory: 28Gi, ephemeral-storage: 28Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: persistent-vol, mountPath: /persistent, readOnly: true}
+        - {name: features, mountPath: /mnt/features}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 24Gi}   # raw libero_goal 5.9 GiB + VGGT-Omega 8.8 + C-RADIOv4 5.2 (19.9 GiB)
+      - name: src
+        configMap: {name: stacking-encoders-overlap-src}
+      - name: persistent-vol
+        persistentVolumeClaim: {claimName: michael-persistent}   # RWO, read-only here; C-RADIOv4 (must be free, see header)
+      - name: features
+        persistentVolumeClaim: {claimName: stacking-encoders-features}
