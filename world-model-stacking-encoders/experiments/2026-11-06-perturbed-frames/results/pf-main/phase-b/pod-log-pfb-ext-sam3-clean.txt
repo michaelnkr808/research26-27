@@ -1,0 +1,76 @@
+=== pfb-ext-sam3-clean 20261110-182441 src e7089a6181f1db360249c3e3066a39701c77dc6a conditions clean
+GPU 0: NVIDIA L4 (UUID: GPU-fd3e5574-b4ce-778a-c34c-6bbef1680f62)
+22
+Tue Nov 10 18:24:41 UTC 2026
+csi-cephfs-node@90a5afad-c313-4e49-9b5f-317100c6930e.nautilusfs=/volumes/csi/csi-vol-9fc6b0fe-e947-4528-a5c5-c5e80fc7d70d/9f0765b7-9592-498f-ae6c-7f42cf4c5f62  1.0T  771G  254G  76% /mnt/proxy
+conditions to extract: clean
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+revision facebook/sam3 3c879f39826c281e95690f02c7821c4de09afae7 required prefix 3c879f3
+open_the_middle_drawer_of_the_cabinet_demo.hdf5: OK
+open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: OK
+push_the_plate_to_the_front_of_the_stove_demo.hdf5: OK
+put_the_bowl_on_the_plate_demo.hdf5: OK
+put_the_bowl_on_the_stove_demo.hdf5: OK
+put_the_bowl_on_top_of_the_cabinet_demo.hdf5: OK
+put_the_cream_cheese_in_the_bowl_demo.hdf5: OK
+put_the_wine_bottle_on_the_rack_demo.hdf5: OK
+put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: OK
+turn_on_the_stove_demo.hdf5: OK
+total 1224132
+drwxr-xr-x 2 root root      4096 Nov 10 18:25 .
+drwxr-xr-x 3 root root        33 Nov 10 18:24 ..
+-rw-r--r-- 1 root root 131069264 Nov 10 18:24 open_the_middle_drawer_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root 198899024 Nov 10 18:25 open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5
+-rw-r--r-- 1 root root 144831824 Nov 10 18:25 push_the_plate_to_the_front_of_the_stove_demo.hdf5
+-rw-r--r-- 1 root root  93222224 Nov 10 18:25 put_the_bowl_on_the_plate_demo.hdf5
+-rw-r--r-- 1 root root 100693328 Nov 10 18:25 put_the_bowl_on_the_stove_demo.hdf5
+-rw-r--r-- 1 root root 101184848 Nov 10 18:25 put_the_bowl_on_top_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root 108557648 Nov 10 18:25 put_the_cream_cheese_in_the_bowl_demo.hdf5
+-rw-r--r-- 1 root root 174814544 Nov 10 18:25 put_the_wine_bottle_on_the_rack_demo.hdf5
+-rw-r--r-- 1 root root 111211856 Nov 10 18:25 put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root  88995152 Nov 10 18:25 turn_on_the_stove_demo.hdf5
+Tue Nov 10 18:25:45 UTC 2026
+transformers 5.18.0 numpy 2.2.6
+Loading weights:   0%|          | 0/1468 [00:00<?, ?it/s]Loading weights:  22%|██▏       | 321/1468 [00:00<00:00, 3184.88it/s]Loading weights:  44%|████▎     | 640/1468 [00:00<00:01, 717.97it/s] Loading weights:  54%|█████▍    | 799/1468 [00:01<00:01, 434.89it/s]Loading weights:  61%|██████    | 896/1468 [00:02<00:01, 320.76it/s]Loading weights:  65%|██████▌   | 961/1468 [00:02<00:01, 298.13it/s]Loading weights:  69%|██████▉   | 1011/1468 [00:02<00:01, 295.86it/s]Loading weights:  72%|███████▏  | 1060/1468 [00:02<00:01, 314.47it/s]Loading weights:  75%|███████▌  | 1103/1468 [00:02<00:01, 323.16it/s]Loading weights:  78%|███████▊  | 1145/1468 [00:03<00:01, 287.18it/s]Loading weights:  80%|████████  | 1180/1468 [00:03<00:01, 254.74it/s]Loading weights:  82%|████████▏ | 1210/1468 [00:03<00:01, 180.54it/s]Loading weights:  84%|████████▍ | 1233/1468 [00:03<00:01, 184.34it/s]Loading weights:  86%|████████▌ | 1256/1468 [00:03<00:01, 165.92it/s]Loading weights:  87%|████████▋ | 1275/1468 [00:04<00:01, 165.77it/s]Loading weights:  88%|████████▊ | 1294/1468 [00:04<00:01, 145.13it/s]Loading weights:  89%|████████▉ | 1310/1468 [00:04<00:01, 146.56it/s]Loading weights:  91%|█████████ | 1329/1468 [00:04<00:00, 154.98it/s]Loading weights:  92%|█████████▏| 1346/1468 [00:04<00:00, 133.30it/s]Loading weights:  93%|█████████▎| 1361/1468 [00:04<00:00, 133.59it/s]Loading weights:  94%|█████████▍| 1382/1468 [00:04<00:00, 149.48it/s]Loading weights:  95%|█████████▌| 1398/1468 [00:04<00:00, 150.49it/s]Loading weights:  97%|█████████▋| 1418/1468 [00:05<00:00, 135.97it/s]Loading weights:  98%|█████████▊| 1439/1468 [00:05<00:00, 153.38it/s]Loading weights:  99%|█████████▉| 1456/1468 [00:05<00:00, 148.75it/s]Loading weights: 100%|██████████| 1468/1468 [00:05<00:00, 271.76it/s]
+[extract] encoder=sam3 hf_id=facebook/sam3 res=1008 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 2666 frames in 607.3s (4.4 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 4046 frames in 921.7s (4.4 frames/s)
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 2946 frames in 673.4s (4.4 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 1896 frames in 432.1s (4.4 frames/s)
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 2048 frames in 465.9s (4.4 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 2058 frames in 468.2s (4.4 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 2208 frames in 503.1s (4.4 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 3556 frames in 809.9s (4.4 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 2262 frames in 515.5s (4.4 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 1810 frames in 412.0s (4.4 frames/s)
+=== extract-sam3-clean exit code 0
+Tue Nov 10 20:03:13 UTC 2026
+meta ok: sam3 clean 10 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams'] frames per camera {'agentview_rgb': 12748, 'eye_in_hand_rgb': 12748}
+=== meta-sam3-clean exit code 0
+Tue Nov 10 20:03:13 UTC 2026
+total 918391
+drwxr-xr-x 2 root root        10 Nov 10 20:03 .
+drwxr-xr-x 3 root root         1 Nov 10 20:03 ..
+-rw-r--r-- 1 root root  98334088 Nov 10 20:03 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 149206408 Nov 10 20:03 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 108656008 Nov 10 20:03 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root  69948808 Nov 10 20:03 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root  75552136 Nov 10 20:03 put_the_bowl_on_the_stove_demo.h5
+-rw-r--r-- 1 root root  75920776 Nov 10 20:03 put_the_bowl_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  81450376 Nov 10 20:03 put_the_cream_cheese_in_the_bowl_demo.h5
+-rw-r--r-- 1 root root 131143048 Nov 10 20:03 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root  83441032 Nov 10 20:03 put_the_wine_bottle_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  66778504 Nov 10 20:03 turn_on_the_stove_demo.h5
+=== copy-sam3-clean exit code 0
+Tue Nov 10 20:03:16 UTC 2026
+=== exit codes: worst 0
+Tue Nov 10 20:03:16 UTC 2026
+copied reports to /mnt/proxy/pf-main/phase-b/reports/pfb-ext-sam3-clean-20261110-182441
+-rw-r--r-- 1 root root 216 Nov 10 20:03 /work/pfb-ext-sam3-clean.tgz
+=== BEGIN PFB_TGZ_B64
+H4sIAAAAAAAAA+3R0WrDIBTGca/3FD5BYjRqfBxnFcLY3Ew6+vjLCoVS6HYVxuj/d3PkqHAOX9eL
+3amNt/ZcN7f1fB6s9qNzyjq99b3XTki7/2hCHJc1NilFq3X96d1v9/9U17f8OS9zfVu69bTPht8B
+u3G8m/9grvM3Qg3aKiOk2mWaGw+e/yV9WWLKz7W+9Et8NdKkyYdiwqRd0tOQg3VBFaWTn/SQxkNW
+IZaYvWz54zi3fJDvLZf5dPn49Nd7AQAAAAAAAAAAAAAAAI/gC4UEyW8AKAAA
+=== END PFB_TGZ_B64
+=== done; exiting with 0 (0 only if every stage passed)

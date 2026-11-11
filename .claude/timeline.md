@@ -346,3 +346,11 @@
 - Decisions: one combined Job instead of a noise-only retry (idle GPU); order went noise first, then back to extractions first after a reviewer showed noise first leaves the first 3 h about a quarter busy; the user wants no local runs on real data, so the overlap timing check became a small cluster sizing Job (PR #23, open).
 - Open loops: PR #23 merge OK; recovery Job and SAM 3 background Pending (GPU check about 45 min after start; typed 3090 twin is an option if the wait drags); control-partners stage 2 collection overnight (then tell planning); sizing Job after stage 2 frees michael-persistent; SAM 3 noise, VGGT-Omega and the final Job once noise is published.
 - See: world-model-stacking-encoders/experiments/2026-11-06-perturbed-frames/jobs/PHASE-B.md (section 11), world-model-stacking-encoders/experiments/2026-11-06-perturbed-frames/LOG.md, world-model-stacking-encoders/experiments/2026-11-10-feature-overlap/PLAN.md (amendment), https://github.com/michaelnkr808/research26-27/pull/23
+
+## 2026-11-11: stacking-encoders implementation, PRs 24 and 25 merged, SAM 3 done, /doctor cleanup
+
+- Merged PR #25 (control-partners stage 2: the two labels hold on all three seeds) and PR #24 (RTX 3090 backup Jobs for SAM 3) on the user's OK.
+- All five SAM 3 extractions and the phase B recovery Job finished cleanly; four of five SAM 3 logs saved (camera's was already gone from the node).
+- /doctor: install healthy and current; turned off the unused clangd-lsp and swift-lsp plugins and made auto mode the default permission mode (both in ~/.claude/settings.json).
+- Open loops: VGGT-Omega and the feature-overlap sizing Job are on hold until the user says go; then the final phase B Job and the 16-layer DINOv3 retrain; turn off the Google Calendar connector in /mcp (user); pick 3-worker cap vs uncapped (global CLAUDE.md vs memory); push main.
+- See: world-model-stacking-encoders/LOG.md (2026-11-11 implementation lead close), world-model-stacking-encoders/experiments/2026-11-06-perturbed-frames/LOG.md (2026-11-11 [agent, lead])
