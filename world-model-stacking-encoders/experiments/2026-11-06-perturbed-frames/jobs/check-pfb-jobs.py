@@ -414,17 +414,24 @@ for f in sorted(glob.glob(str(jobs / "job-pfb-*.yaml"))):
                 msgs.append("sam3: pins")
         if is_t3:
             # the driver fail-fast comes before the free-space check and every install; CUDA check and --device cuda; a CPU-fallback guard on the log
-            i_drv = script.find("exit 13")
-            if "nvidia-smi --query-gpu=driver_version" not in script or i_drv < 0 or not re.search(r"-le 569 \]; then .*exit 13; fi", script):
-                msgs.append("3090 twin: driver fail-fast (exit 13 when the driver major is 569 or lower) missing")
-            elif not (i_drv < script.find("df -BG") and i_drv < script.find("pip install")):
+            # positions are taken in the script without comment lines, so a mention in a comment cannot satisfy a check
+            scode = "\n".join(ln for ln in script.split("\n") if not ln.strip().startswith("#"))
+            m_q = re.search(r'^\s*DRV=\$\(nvidia-smi --query-gpu=driver_version\b.*\) \|\| DRV=""$', scode, re.M)
+            m_empty = re.search(r'^\s*if \[ -z "\$DRV" \]; then .*exit 17; fi$', scode, re.M)
+            m_drv = re.search(r'^\s*if \[ "\$DRV" -le 569 \]; then .*exit 16; fi$', scode, re.M)
+            m_cuda = re.search(r"^\s*cap 300 python -c \"import torch; assert torch\.cuda\.is_available\(\).*exit 30; \}$", scode, re.M)
+            if not (m_q and m_empty and m_drv):
+                msgs.append("3090 twin: driver fail-fast missing (query with a message and exit 17 when it fails, exit 16 when the driver major is 569 or lower)")
+            elif not (m_q.start() < m_empty.start() < m_drv.start() < scode.find("df -BG") and m_drv.start() < scode.find("pip install")):
                 msgs.append("3090 twin: the driver fail-fast does not come before the free-space check and the installs")
-            if "torch.cuda.is_available()" not in script or "exit 30" not in script:
+            if not m_cuda:
                 msgs.append("3090 twin: CUDA check (exit 30) missing")
-            if "--device cuda" not in script:
+            elif m_drv and not (m_drv.start() < m_cuda.start() < scode.find("pip install")):
+                msgs.append("3090 twin: the CUDA check is not between the driver check and the installs")
+            if "--device cuda" not in scode:
                 msgs.append("3090 twin: extractor is not called with --device cuda")
-            if not re.search(r"grep -q 'device=cpu' \$LOGF", script) or "WORST=31" not in script:
-                msgs.append("3090 twin: device=cpu guard (worst code 31) missing")
+            if not re.search(r"grep -q '\^\\\[extract\\\] encoder=\.\* device=cpu\$' \$LOGF", scode) or "if [ $WORST -lt 31 ]; then WORST=31; fi" not in scode:
+                msgs.append("3090 twin: device=cpu guard on the extractor's own line (raising worst code to 31 without lowering a higher one) missing")
         if conds and len(set(conds)) != len(conds):
             msgs.append("duplicate conditions")
         if len(rerender):
@@ -542,13 +549,20 @@ for t_, o_ in T3090.items():
             rb = {k: v for k, v in cb["resources"][sect].items() if k != T3090_RESOURCE}
             if ra != rb:
                 tmsgs.append(f"{sect} differ beyond the GPU resource name")
-        # script: every line of the original is in the twin except three edited ones; the twin adds three edited lines and six new ones
+        # script, compared line by line IN ORDER (difflib opcodes, not a set): the only differences are three original lines replaced and the listed lines added, in this order
+        import difflib
         la = ca["args"][0].split("\n")
         lb = cb["args"][0].split("\n")
-        missing_lines = [ln for ln in la if ln not in lb]
-        extra_lines = [ln for ln in lb if ln not in la]
-        if len(missing_lines) != 3 or len(extra_lines) != 9:
-            tmsgs.append(f"script: {len(missing_lines)} original lines changed (expected 3) and {len(extra_lines)} lines new (expected 9)")
+        ops = difflib.SequenceMatcher(None, la, lb, autojunk=False).get_opcodes()
+        removed = [ln.strip() for tag, i1, i2, j1, j2 in ops if tag in ("replace", "delete") for ln in la[i1:i2]]
+        added = [ln.strip() for tag, i1, i2, j1, j2 in ops if tag in ("replace", "insert") for ln in lb[j1:j2]]
+        want_removed = ["R=/mnt/proxy", "exec > >(tee -a $R/logs/$JOB-$STAMP.log)", "stage extract-$ENC-$c cap 10800 python"]
+        want_added = ["R=/mnt/proxy", "exec > >(tee -a $LOGF)", "# driver fail-fast", "DRV=$(nvidia-smi", 'echo "driver major', 'if [ -z "$DRV" ]', 'if [ "$DRV" -le 569 ]',
+                      "# CUDA check", 'cap 300 python -c "import torch', "stage extract-$ENC-$c cap 10800 python", "if grep -q '^\\[extract\\]"]
+        if len(removed) != len(want_removed) or any(not r_.startswith(w_) for r_, w_ in zip(removed, want_removed)):
+            tmsgs.append(f"script: original lines changed or moved other than the three expected: {[r_[:50] for r_ in removed]}")
+        if len(added) != len(want_added) or any(not a_.startswith(w_) for a_, w_ in zip(added, want_added)):
+            tmsgs.append(f"script: lines added or moved other than the expected ones, in order: {[a_[:50] for a_ in added]}")
         print(f"{t_} vs {o_}:", "identical apart from name, GPU resource name, affinity and the fail-fast script lines" if not tmsgs else "PROBLEMS: " + "; ".join(tmsgs))
         bad += bool(tmsgs)
 if RECOVER in docs_by_name and ORIGINAL in docs_by_name:

@@ -1,7 +1,7 @@
 # RTX 3090 TWIN of job-pfb-ext-sam3-background.yaml, written 2026-11-11, NOT SUBMITTED. Differences from the original, and only these: the Job name (-3090); the GPU is requested under its typed resource name
 # nvidia.com/GA102_GEFORCE_RTX_3090 (some RTX 3090 nodes advertise no generic nvidia.com/gpu); the nodeAffinity drops the gpu.product list, the cuda.driver.major rule and the required us-west rule, keeps the two excluded hosts,
-# and adds a SOFT (preferred, weight 100) us-west term; the script gains a driver fail-fast (exit 13, driver major 569 or lower, because the driver label rule is gone), a CUDA check (exit 30), --device cuda on the extractor
-# and a CPU-fallback guard on the log (exit code 31 as the worst code). Everything else is byte-identical to the original; see jobs/PHASE-B.md section 12.
+# and adds a SOFT (preferred, weight 100) us-west term; the script gains a driver fail-fast (exit 16 when the driver major is 569 or lower, 17 when the query fails, because the driver label rule is gone), a CUDA check right after it (exit 30), --device cuda on the extractor
+# and a CPU-fallback guard on the extractor's own log line (exit code 31 as the worst code, never lowering a higher one). Everything else is byte-identical to the original; see jobs/PHASE-B.md section 12.
 # THE RACE: submit this twin next to the original; whichever pod gets a node first wins; the lead deletes the other Job only after a fresh check shows it has no nodeName and no startTime. The two Jobs write the same output paths on the proxy
 # volume on purpose; the script refuses an existing output (exit 22 incomplete features) and copy_feats refuses per file, but two running pods must never both run.
 # PHASE B, job 7 of 9 (pfb-ext-sam3-background). NOT SUBMITTED; written 2026-11-09 by the implementation worker pfb-jobs; the user gives the separate phase-B go (jobs/PHASE-B.md).
@@ -52,10 +52,13 @@ spec:
           mkdir -p $R/logs $PB $OUT /work/hf
           exec > >(tee -a $LOGF) 2>&1
           echo "=== $JOB $STAMP src $SRC_GIT_COMMIT conditions $CONDS"; nvidia-smi -L; nproc; date -u; df -h /mnt/proxy | tail -1
-          # driver fail-fast (exit 13): the original selects nodes with cuda.driver.major > 569, this twin cannot (typed-resource nodes carry no such label), so check it here, before any long setup
-          DRV=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -1 | cut -d. -f1 | tr -dc 0-9)
+          # driver fail-fast (exit 16, or 17 when the query fails): the original selects nodes with cuda.driver.major > 569, this twin cannot (typed-resource nodes carry no such label), so check it here, before any long setup
+          DRV=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -1 | cut -d. -f1 | tr -dc 0-9) || DRV=""
           echo "driver major: ${DRV:-unknown}"
-          if [ -z "$DRV" ] || [ "$DRV" -le 569 ]; then echo "ABORT: NVIDIA driver major ${DRV:-unknown} is 569 or lower, need > 569 (exit 13)"; exit 13; fi
+          if [ -z "$DRV" ]; then echo "ABORT: the nvidia-smi driver query failed or returned nothing (exit 17)"; exit 17; fi
+          if [ "$DRV" -le 569 ]; then echo "ABORT: NVIDIA driver major $DRV is 569 or lower, need > 569 (exit 16)"; exit 16; fi
+          # CUDA check (exit 30), right after the driver check: the image already carries torch 2.7.1, so it needs no pip install first
+          cap 300 python -c "import torch; assert torch.cuda.is_available(), 'CUDA not available'; print('cuda ok', torch.cuda.get_device_name(0))" || { echo "ABORT: CUDA not usable in the pod (exit 30)"; exit 30; }
           FREE_GB=$(df -BG --output=avail /mnt/proxy | tail -1 | tr -dc 0-9)
           if [ "$FREE_GB" -lt 100 ]; then echo "ABORT: only ${FREE_GB}G free on the proxy PVC, need >= 100G (expected use about 60G in all of phase B)"; exit 12; fi
           # --- inputs: the published test renders of this Job's conditions (fail fast if one is not there or not intact)
@@ -102,7 +105,6 @@ spec:
           export CONDS TODO
           cap 1800 bash -c stage_in
           date -u
-          cap 300 python -c "import torch; assert torch.cuda.is_available(), 'CUDA not available'; print('cuda ok', torch.cuda.get_device_name(0))" || { echo "ABORT: CUDA not usable in the pod (exit 30)"; exit 30; }
           python -c "import transformers, numpy; print('transformers', transformers.__version__, 'numpy', numpy.__version__)"
           # the meta check of every condition: extraction meta against the smoke-report reference (A.check_meta), source file = the condition's own staging path,
           # ten files of ten test demos (demo_40 to demo_49), and 12,748 frames per camera in the condition (A.EXPECTED_FRAMES["test"])
@@ -148,7 +150,7 @@ spec:
           export -f copy_feats
           for c in $TODO; do
             stage extract-$ENC-$c cap 10800 python /src/extract_features.py --encoder $ENC --dtype float16 --batch-size 8 --device cuda --out /work/feats/$c --hdf5 /work/pfb-test-$c/libero_goal/*.hdf5
-            if grep -q 'device=cpu' $LOGF; then echo "ABORT: the extractor of $c ran on the CPU (its log line says device is cpu, exit code 31)"; LAST=31; WORST=31; fi
+            if grep -q '^\[extract\] encoder=.* device=cpu$' $LOGF; then echo "ABORT: the extractor of $c ran on the CPU (its log line says device is cpu, exit code 31)"; LAST=31; if [ $WORST -lt 31 ]; then WORST=31; fi; fi
             if [ $LAST -eq 0 ]; then
               stage meta-$ENC-$c cap 900 python /work/meta_check.py $ENC $c /work/feats/$c
               if [ $LAST -eq 0 ]; then
