@@ -865,7 +865,7 @@ p()
 p("-" * 60)
 p("DECISION RULE PER SEED (same clauses and constants as above; dup 'is 0' from stage 1, where dup is a deterministic gate)")
 RULE = {sd: apply_rule(sd) for sd in SEEDS}
-assert RULE[0]["in"][0] == in_outcome and RULE[0]["tg"][0] == t_outcome and RULE[0]["tg"][2] == b_out, "seed 0 per-seed rule disagrees with the stage 1 section above"
+assert RULE[0]["in"][0] == in_outcome and RULE[0]["tg"][0] == t_outcome and RULE[0]["tg"][2] == b_out and RULE[0]["tg"][1] == neg_out, "seed 0 per-seed rule disagrees with the stage 1 section above"
 p("  (check passed: the per-seed function on seed 0 reproduces the stage 1 outcomes printed above)")
 for sd in SEEDS:
     io, neg, pos, unr = RULE[sd]["in"]
@@ -892,6 +892,7 @@ def side_row(label, vals, test):
 for s_ in ("noise:4608", "shuffle:dinov3"):
     side_row(f"input {s_}: point <= -0.005", [in_g(sd, s_)[0] for sd in SEEDS], lambda v: v <= -M_IN)
     side_row(f"input {s_}: CI upper < 0", [in_g(sd, s_)[1][1] for sd in SEEDS], lambda v: v < 0)
+side_row("input randproj:dinov3:4608: point <= -0.005", [in_g(sd, "randproj:dinov3:4608")[0] for sd in SEEDS], lambda v: v <= -M_IN)
 for s_ in S2_SPECS_IN:
     side_row(f"input {s_}: point >= +0.005", [in_g(sd, s_)[0] for sd in SEEDS], lambda v: v >= M_IN)
     side_row(f"input {s_}: CI lower > 0", [in_g(sd, s_)[1][0] for sd in SEEDS], lambda v: v > 0)

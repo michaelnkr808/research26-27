@@ -477,6 +477,7 @@ Each row is one comparison the rule makes; per seed the value compared and wheth
   input noise:4608: CI upper < 0                           s0 -0.02463 Y  s1 -0.02195 Y  s2 -0.02419 Y   agree: yes
   input shuffle:dinov3: point <= -0.005                    s0 -0.00311 n  s1 -0.00373 n  s2 -0.00356 n   agree: yes
   input shuffle:dinov3: CI upper < 0                       s0 -0.00270 Y  s1 -0.00320 Y  s2 -0.00303 Y   agree: yes
+  input randproj:dinov3:4608: point <= -0.005              s0 +0.00110 n  s1 +0.00160 n  s2 +0.00152 n   agree: yes
   input noise:4608: point >= +0.005                        s0 -0.02690 n  s1 -0.02436 n  s2 -0.02600 n   agree: yes
   input noise:4608: CI lower > 0                           s0 -0.03023 n  s1 -0.02743 n  s2 -0.02873 n   agree: yes
   input noise:4608: CI contains -0.005 (unresolved)        s0 -0.00500 n  s1 -0.00500 n  s2 -0.00500 n   agree: yes
@@ -508,7 +509,7 @@ Each row is one comparison the rule makes; per seed the value compared and wheth
     noise:4608 a' <= 0.0050: s0 +0.00469 Y  s1 +0.00481 Y  s2 +0.00482 Y   same side on all seeds: True
     noise:4608 a' <= 0.0100: s0 +0.00469 Y  s1 +0.00481 Y  s2 +0.00482 Y   same side on all seeds: True
 
-  Rows where the seeds do NOT agree: 0 of 30
+  Rows where the seeds do NOT agree: 0 of 31
   OUTCOME LABELS BY SEED:
     input:  seed 0: Can go negative; seed 1: Can go negative; seed 2: Can go negative
     target a' (first part of the rule): seed 0: Partner-specific; seed 1: Partner-specific; seed 2: Partner-specific
