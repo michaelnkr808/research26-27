@@ -1,0 +1,1056 @@
+=== pfb-recover 20261110-223131 src a3777d7db734bf1a7275df17b0e5f4ae57e90c84 noise cap 10800
+GPU 0: NVIDIA GeForce RTX 3090 (UUID: GPU-c4ae389f-85b5-261c-477f-c697c9c05254)
+15
+Tue Nov 10 22:31:31 UTC 2026
+csi-cephfs-node@90a5afad-c313-4e49-9b5f-317100c6930e.nautilusfs=/volumes/csi/csi-vol-9fc6b0fe-e947-4528-a5c5-c5e80fc7d70d/9f0765b7-9592-498f-ae6c-7f42cf4c5f62  1.0T  774G  251G  76% /mnt/proxy
+9170790f2b8c4fc530cef46b067a95c985aa33387eeb6c5394c6ddb583368406  /pf/draws.json
+c144c9f535b29fbc653b280ab470ceda09f21cc7e5d3f068902d6cbea540f1ef  /pf/phase-a.yaml
+2a877d8ed888bb34709559d27a9fe146a7a57397f3ca056b4704813df4c7a023  /pf/smoke-report.json
+acf1113a9e84f720f3eb6b72edbfdfba11852057564b9ac7592013c975b05a38  /pf/pf_render.py
+4a863a875ec737b28f0b7ece306ab45ed097bde35603ce9cf1a85de82278f473  /pf/pf_rerender.py
+fde7bc7de33b1dc86997cc15220e25a73c8dfb34e1133c1604983bb50bdb0261  /pf/pf_smoke.py
+3be12f70404f9ef6418d0f6f24ac88dadb981231ba34ec62441ad913b24e1762  /pf/pf_analysis.py
+ffb155b4cd8cb00813b9a4c9213c6553f1ea2d0e4a27ca96d272e8acec16d88b  /pf/diagnostics.py
+render clean: pub
+NOTE: /mnt/proxy/pf-main/phase-b/feats/clean/dinov3 is complete, its extraction will be skipped
+render camera: pub
+render light: pub
+render background: pub
+render noise: new
+env bundle key 9182f8131559 tar sha256 86afbf57e6fd927f006742f26d3efc33b08e862654ffac7349d3522208944f03 image pytorch/pytorch@sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2
+
+[notice] A new release of pip is available: 24.0 -> 26.3
+[notice] To update, run: python -m pip install --upgrade pip
+revision google/siglip2-large-patch16-384 1b426889ea62b5a72bf9839009a1b184bfc9c178 required 1b426889ea62b5a72bf9839009a1b184bfc9c178
+revision nvidia/C-RADIOv4-SO400M c0457f5dc26ca145f954cd4fc5bb6114e5705ad8 (recorded in phase A: c0457f5dc26ca145f954cd4fc5bb6114e5705ad8; the extractor pins its own)
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+setup ok (venv457): transformers 4.57.6 numpy 2.2.6 torch 2.7.1+cu128 h5py 3.16.0 huggingface_hub 0.36.2 siglip2 params 881854466
+debconf: delaying package configuration, since apt-utils is not installed
+articulated_objects
+new_objects
+scenes
+serving_region.xml
+stable_hope_objects
+stable_scanned_objects
+textures
+turbosquid_objects
+wall.xml
+wall_frames.stl
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+sim ok: numpy 1.26.4 mujoco 3.3.2 robosuite 1.4.0
+TIMING restore: untar 5 s, debs + assets unzip + checks 402 s (/mnt/proxy/env/env-9182f8131559.tar)
+fastwam ok, torch 2.7.1+cu128 cuda True
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+fastwam 0.1.0 requires accelerate==1.12.0, which is not installed.
+fastwam 0.1.0 requires boto3==1.35.99, which is not installed.
+fastwam 0.1.0 requires datasets==4.8.5, which is not installed.
+fastwam 0.1.0 requires deepspeed==0.18.7, which is not installed.
+fastwam 0.1.0 requires jsonlines==4.0.0, which is not installed.
+fastwam 0.1.0 requires modelscope==1.34.0, which is not installed.
+fastwam 0.1.0 requires torchcodec==0.4.0, which is not installed.
+fastwam 0.1.0 requires wandb==0.23.1, which is not installed.
+fastwam 0.1.0 requires huggingface-hub==0.29.2, but you have huggingface-hub 2.2.0 which is incompatible.
+fastwam 0.1.0 requires packaging==25.0, but you have packaging 26.3 which is incompatible.
+fastwam 0.1.0 requires pandas==2.2.3, but you have pandas 2.3.3 which is incompatible.
+fastwam 0.1.0 requires pillow==12.0.0, but you have pillow 13.0.0 which is incompatible.
+fastwam 0.1.0 requires pyarrow==24.0.0, but you have pyarrow 21.0.0 which is incompatible.
+fastwam 0.1.0 requires regex==2025.11.3, but you have regex 2026.11.9 which is incompatible.
+fastwam 0.1.0 requires rich==14.2.0, but you have rich 15.0.0 which is incompatible.
+fastwam 0.1.0 requires safetensors==0.5.3, but you have safetensors 0.8.0 which is incompatible.
+fastwam 0.1.0 requires tqdm==4.68.3, but you have tqdm 4.70.1 which is incompatible.
+fastwam 0.1.0 requires transformers==4.49.0, but you have transformers 5.18.0 which is incompatible.
+fastwam 0.1.0 requires typing-extensions==4.15.0, but you have typing-extensions 4.16.0 which is incompatible.
+
+[notice] A new release of pip is available: 24.0 -> 26.3
+[notice] To update, run: pip install --upgrade pip
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]Loading weights: 100%|██████████| 415/415 [00:00<00:00, 7653.94it/s]
+setup ok: transformers 5.18.0 numpy 2.2.6 torch 2.7.1+cu128 h5py 3.16.0 huggingface_hub 2.2.0 dinov3 sha ea8dc2863c51be0a264bab82070e3e8836b02d51 image_mean (0.485, 0.456, 0.406) params 303129600
+Fetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]Fetching 10 files:  10%|█         | 1/10 [00:09<01:22,  9.20s/it]Fetching 10 files:  20%|██        | 2/10 [00:15<00:59,  7.49s/it]Fetching 10 files:  90%|█████████ | 9/10 [00:16<00:01,  1.23s/it]Fetching 10 files: 100%|██████████| 10/10 [00:16<00:00,  1.66s/it]
+total 6223760
+drwxr-xr-x 2 root root       4096 Nov 10 22:42 .
+drwxr-xr-x 4 root root         51 Nov 10 22:42 ..
+-rw-r--r-- 1 root root  702223367 Nov 10 22:42 open_the_middle_drawer_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root 1017886342 Nov 10 22:42 open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5
+-rw-r--r-- 1 root root  762855139 Nov 10 22:42 push_the_plate_to_the_front_of_the_stove_demo.hdf5
+-rw-r--r-- 1 root root  468246288 Nov 10 22:42 put_the_bowl_on_the_plate_demo.hdf5
+-rw-r--r-- 1 root root  509123820 Nov 10 22:42 put_the_bowl_on_the_stove_demo.hdf5
+-rw-r--r-- 1 root root  510414285 Nov 10 22:42 put_the_bowl_on_top_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root  535715512 Nov 10 22:42 put_the_cream_cheese_in_the_bowl_demo.hdf5
+-rw-r--r-- 1 root root  878958730 Nov 10 22:42 put_the_wine_bottle_on_the_rack_demo.hdf5
+-rw-r--r-- 1 root root  540179470 Nov 10 22:42 put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5
+-rw-r--r-- 1 root root  447509922 Nov 10 22:42 turn_on_the_stove_demo.hdf5
+20252c7cf98cd7437061f7f200ae7b6cb6219fabbd53b4536dfaa8abda6ab737  /work/data/libero_goal/open_the_middle_drawer_of_the_cabinet_demo.hdf5
+1b50d99a053a7e4547c9ae9ccd2e3cd762543d27be78f240f13440d7ae487ae8  /work/data/libero_goal/open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5
+36b4e1bced49d2f4ff6b2fce6b1596a63978e14199e2513cd0df71e127bf47a6  /work/data/libero_goal/push_the_plate_to_the_front_of_the_stove_demo.hdf5
+e69528b0cf10dfc59b20698e12ec2affc03f3887309034d3eb74cac3ec929406  /work/data/libero_goal/put_the_bowl_on_the_plate_demo.hdf5
+ff77d3bf0f89a147d423840ecbd842cd63c3c55aeead91f88dbc0917be473e99  /work/data/libero_goal/put_the_bowl_on_the_stove_demo.hdf5
+e14c84ebc820a13ef9a92ca82a7f04bb299f0ee96dfe9cc907bab71aeb2683b2  /work/data/libero_goal/put_the_bowl_on_top_of_the_cabinet_demo.hdf5
+ee58a7d72c143a71bf1448674e70940ac7781c1d1bb10a1b0c7a5c69b26abbef  /work/data/libero_goal/put_the_cream_cheese_in_the_bowl_demo.hdf5
+f9092aa70734fc4083e97fc58c3ba25f87c614d18326182ddc7a455f0ab4da2e  /work/data/libero_goal/put_the_wine_bottle_on_the_rack_demo.hdf5
+7dc087a7596d5cbbe394f681b21a0be434438b0dca73ac430c293fe4c818404a  /work/data/libero_goal/put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5
+387fc10747696b80dea6ed8d7f2beaa162bf92ae11750b241073cbd33aac73d5  /work/data/libero_goal/turn_on_the_stove_demo.hdf5
+ffb155b4cd8cb00813b9a4c9213c6553f1ea2d0e4a27ca96d272e8acec16d88b  /src/diagnostics.py
+03734ba84a8696e0d9f605ec89c11b50f033af9ea41cb4ef841c3c30742bd6a1  /src/extract_features.py
+Tue Nov 10 22:42:50 UTC 2026
+/work/data/libero_goal/open_the_middle_drawer_of_the_cabinet_demo.hdf5: OK
+/work/data/libero_goal/open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: OK
+/work/data/libero_goal/push_the_plate_to_the_front_of_the_stove_demo.hdf5: OK
+/work/data/libero_goal/put_the_bowl_on_the_plate_demo.hdf5: OK
+/work/data/libero_goal/put_the_bowl_on_the_stove_demo.hdf5: OK
+/work/data/libero_goal/put_the_bowl_on_top_of_the_cabinet_demo.hdf5: OK
+/work/data/libero_goal/put_the_cream_cheese_in_the_bowl_demo.hdf5: OK
+/work/data/libero_goal/put_the_wine_bottle_on_the_rack_demo.hdf5: OK
+/work/data/libero_goal/put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: OK
+/work/data/libero_goal/turn_on_the_stove_demo.hdf5: OK
+=== raw-sha256 exit code 0
+Tue Nov 10 22:43:27 UTC 2026
+open_the_middle_drawer_of_the_cabinet_demo.hdf5: OK
+open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: OK
+push_the_plate_to_the_front_of_the_stove_demo.hdf5: OK
+put_the_bowl_on_the_plate_demo.hdf5: OK
+put_the_bowl_on_the_stove_demo.hdf5: OK
+put_the_bowl_on_top_of_the_cabinet_demo.hdf5: OK
+put_the_cream_cheese_in_the_bowl_demo.hdf5: OK
+put_the_wine_bottle_on_the_rack_demo.hdf5: OK
+put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: OK
+turn_on_the_stove_demo.hdf5: OK
+=== stagein-clean exit code 0
+Tue Nov 10 22:44:26 UTC 2026
+open_the_middle_drawer_of_the_cabinet_demo.hdf5: OK
+open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: OK
+push_the_plate_to_the_front_of_the_stove_demo.hdf5: OK
+put_the_bowl_on_the_plate_demo.hdf5: OK
+put_the_bowl_on_the_stove_demo.hdf5: OK
+put_the_bowl_on_top_of_the_cabinet_demo.hdf5: OK
+put_the_cream_cheese_in_the_bowl_demo.hdf5: OK
+put_the_wine_bottle_on_the_rack_demo.hdf5: OK
+put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: OK
+turn_on_the_stove_demo.hdf5: OK
+=== stagein-camera exit code 0
+Tue Nov 10 22:45:08 UTC 2026
+open_the_middle_drawer_of_the_cabinet_demo.hdf5: OK
+open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: OK
+push_the_plate_to_the_front_of_the_stove_demo.hdf5: OK
+put_the_bowl_on_the_plate_demo.hdf5: OK
+put_the_bowl_on_the_stove_demo.hdf5: OK
+put_the_bowl_on_top_of_the_cabinet_demo.hdf5: OK
+put_the_cream_cheese_in_the_bowl_demo.hdf5: OK
+put_the_wine_bottle_on_the_rack_demo.hdf5: OK
+put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: OK
+turn_on_the_stove_demo.hdf5: OK
+=== stagein-light exit code 0
+Tue Nov 10 22:45:57 UTC 2026
+open_the_middle_drawer_of_the_cabinet_demo.hdf5: OK
+open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: OK
+push_the_plate_to_the_front_of_the_stove_demo.hdf5: OK
+put_the_bowl_on_the_plate_demo.hdf5: OK
+put_the_bowl_on_the_stove_demo.hdf5: OK
+put_the_bowl_on_top_of_the_cabinet_demo.hdf5: OK
+put_the_cream_cheese_in_the_bowl_demo.hdf5: OK
+put_the_wine_bottle_on_the_rack_demo.hdf5: OK
+put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: OK
+turn_on_the_stove_demo.hdf5: OK
+=== stagein-background exit code 0
+Tue Nov 10 22:46:49 UTC 2026
+=== SKIP dinov3 on clean: its 10 feature files already exist on the PVC (complete, no .partial); read-only meta check of them
+meta ok: dinov3 clean 10 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams'] frames per camera {'agentview_rgb': 12748, 'eye_in_hand_rgb': 12748}
+=== verify-dinov3-clean exit code 0
+Tue Nov 10 22:48:01 UTC 2026
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]Loading weights:  11%|█▏        | 47/415 [00:00<00:00, 449.34it/s]Loading weights:  25%|██▌       | 104/415 [00:00<00:00, 517.80it/s]Loading weights:  38%|███▊      | 156/415 [00:00<00:00, 502.96it/s]Loading weights:  54%|█████▎    | 223/415 [00:00<00:00, 538.99it/s]Loading weights: 100%|██████████| 415/415 [00:00<00:00, 846.19it/s]
+[extract] encoder=dinov3 hf_id=facebook/dinov3-vitl16-pretrain-lvd1689m res=224 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 2666 frames in 24.2s (110.3 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 4046 frames in 36.5s (110.9 frames/s)
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 2946 frames in 27.4s (107.4 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 1896 frames in 17.9s (105.8 frames/s)
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 2048 frames in 19.4s (105.6 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 2058 frames in 19.5s (105.6 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 2208 frames in 21.0s (105.3 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 3556 frames in 33.7s (105.4 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 2262 frames in 21.6s (104.7 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 1810 frames in 17.3s (104.7 frames/s)
+=== extract-dinov3-camera exit code 0
+Tue Nov 10 22:52:12 UTC 2026
+meta ok: dinov3 camera 10 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams'] frames per camera {'agentview_rgb': 12748, 'eye_in_hand_rgb': 12748}
+=== meta-dinov3-camera exit code 0
+Tue Nov 10 22:52:12 UTC 2026
+total 918391
+drwxr-xr-x 2 root root        10 Nov 10 22:52 .
+drwxr-xr-x 3 root root         1 Nov 10 22:52 ..
+-rw-r--r-- 1 root root  98334088 Nov 10 22:52 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 149206408 Nov 10 22:52 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 108656008 Nov 10 22:52 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root  69948808 Nov 10 22:52 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root  75552136 Nov 10 22:52 put_the_bowl_on_the_stove_demo.h5
+-rw-r--r-- 1 root root  75920776 Nov 10 22:52 put_the_bowl_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  81450376 Nov 10 22:52 put_the_cream_cheese_in_the_bowl_demo.h5
+-rw-r--r-- 1 root root 131143048 Nov 10 22:52 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root  83441032 Nov 10 22:52 put_the_wine_bottle_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  66778504 Nov 10 22:52 turn_on_the_stove_demo.h5
+=== copy-dinov3-camera exit code 0
+Tue Nov 10 22:52:15 UTC 2026
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]Loading weights: 100%|██████████| 415/415 [00:00<00:00, 6250.60it/s]
+[extract] encoder=dinov3 hf_id=facebook/dinov3-vitl16-pretrain-lvd1689m res=224 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 2666 frames in 24.7s (107.8 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 4046 frames in 37.9s (106.8 frames/s)
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 2946 frames in 27.9s (105.6 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 1896 frames in 18.1s (104.5 frames/s)
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 2048 frames in 19.7s (103.9 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 2058 frames in 19.9s (103.7 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 2208 frames in 21.4s (102.9 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 3556 frames in 34.5s (103.1 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 2262 frames in 22.0s (102.7 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 1810 frames in 17.7s (102.3 frames/s)
+=== extract-dinov3-light exit code 0
+Tue Nov 10 22:56:30 UTC 2026
+meta ok: dinov3 light 10 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams'] frames per camera {'agentview_rgb': 12748, 'eye_in_hand_rgb': 12748}
+=== meta-dinov3-light exit code 0
+Tue Nov 10 22:56:31 UTC 2026
+total 918391
+drwxr-xr-x 2 root root        10 Nov 10 22:56 .
+drwxr-xr-x 3 root root         1 Nov 10 22:56 ..
+-rw-r--r-- 1 root root  98334088 Nov 10 22:56 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 149206408 Nov 10 22:56 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 108656008 Nov 10 22:56 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root  69948808 Nov 10 22:56 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root  75552136 Nov 10 22:56 put_the_bowl_on_the_stove_demo.h5
+-rw-r--r-- 1 root root  75920776 Nov 10 22:56 put_the_bowl_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  81450376 Nov 10 22:56 put_the_cream_cheese_in_the_bowl_demo.h5
+-rw-r--r-- 1 root root 131143048 Nov 10 22:56 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root  83441032 Nov 10 22:56 put_the_wine_bottle_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  66778504 Nov 10 22:56 turn_on_the_stove_demo.h5
+=== copy-dinov3-light exit code 0
+Tue Nov 10 22:56:33 UTC 2026
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]Loading weights: 100%|██████████| 415/415 [00:00<00:00, 10150.01it/s]
+[extract] encoder=dinov3 hf_id=facebook/dinov3-vitl16-pretrain-lvd1689m res=224 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 2666 frames in 25.2s (105.6 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 4046 frames in 39.9s (101.4 frames/s)
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 2946 frames in 28.7s (102.6 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 1896 frames in 18.5s (102.4 frames/s)
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 2048 frames in 20.1s (102.0 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 2058 frames in 20.2s (102.1 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 2208 frames in 21.6s (102.3 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 3556 frames in 34.8s (102.1 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 2262 frames in 22.1s (102.3 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 1810 frames in 17.7s (102.2 frames/s)
+=== extract-dinov3-background exit code 0
+Tue Nov 10 23:00:53 UTC 2026
+meta ok: dinov3 background 10 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams'] frames per camera {'agentview_rgb': 12748, 'eye_in_hand_rgb': 12748}
+=== meta-dinov3-background exit code 0
+Tue Nov 10 23:00:54 UTC 2026
+total 918391
+drwxr-xr-x 2 root root        10 Nov 10 23:00 .
+drwxr-xr-x 3 root root         1 Nov 10 23:00 ..
+-rw-r--r-- 1 root root  98334088 Nov 10 23:00 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 149206408 Nov 10 23:00 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 108656008 Nov 10 23:00 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root  69948808 Nov 10 23:00 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root  75552136 Nov 10 23:00 put_the_bowl_on_the_stove_demo.h5
+-rw-r--r-- 1 root root  75920776 Nov 10 23:00 put_the_bowl_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  81450376 Nov 10 23:00 put_the_cream_cheese_in_the_bowl_demo.h5
+-rw-r--r-- 1 root root 131143048 Nov 10 23:00 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root  83441032 Nov 10 23:00 put_the_wine_bottle_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  66778504 Nov 10 23:00 turn_on_the_stove_demo.h5
+=== copy-dinov3-background exit code 0
+Tue Nov 10 23:00:57 UTC 2026
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+[extract] encoder=siglip2 hf_id=google/siglip2-large-patch16-384 res=384 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 2666 frames in 19.5s (136.6 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 4046 frames in 29.6s (136.9 frames/s)
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 2946 frames in 21.7s (135.9 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 1896 frames in 14.1s (134.9 frames/s)
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 2048 frames in 15.1s (135.6 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 2058 frames in 15.2s (135.1 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 2208 frames in 16.3s (135.4 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 3556 frames in 26.3s (135.2 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 2262 frames in 16.7s (135.8 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 1810 frames in 13.4s (135.2 frames/s)
+=== extract-siglip2-clean exit code 0
+Tue Nov 10 23:04:22 UTC 2026
+meta ok: siglip2 clean 10 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams'] frames per camera {'agentview_rgb': 12748, 'eye_in_hand_rgb': 12748}
+=== meta-siglip2-clean exit code 0
+Tue Nov 10 23:04:22 UTC 2026
+total 918391
+drwxr-xr-x 2 root root        10 Nov 10 23:04 .
+drwxr-xr-x 3 root root         1 Nov 10 23:04 ..
+-rw-r--r-- 1 root root  98334088 Nov 10 23:04 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 149206408 Nov 10 23:04 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 108656008 Nov 10 23:04 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root  69948808 Nov 10 23:04 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root  75552136 Nov 10 23:04 put_the_bowl_on_the_stove_demo.h5
+-rw-r--r-- 1 root root  75920776 Nov 10 23:04 put_the_bowl_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  81450376 Nov 10 23:04 put_the_cream_cheese_in_the_bowl_demo.h5
+-rw-r--r-- 1 root root 131143048 Nov 10 23:04 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root  83441032 Nov 10 23:04 put_the_wine_bottle_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  66778504 Nov 10 23:04 turn_on_the_stove_demo.h5
+=== copy-siglip2-clean exit code 0
+Tue Nov 10 23:04:25 UTC 2026
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+[extract] encoder=siglip2 hf_id=google/siglip2-large-patch16-384 res=384 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 2666 frames in 19.5s (137.0 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 4046 frames in 29.6s (136.8 frames/s)
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 2946 frames in 21.7s (135.5 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 1896 frames in 14.0s (135.1 frames/s)
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 2048 frames in 15.1s (135.4 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 2058 frames in 15.3s (134.7 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 2208 frames in 16.4s (135.0 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 3556 frames in 26.3s (135.3 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 2262 frames in 16.7s (135.3 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 1810 frames in 13.5s (134.5 frames/s)
+=== extract-siglip2-camera exit code 0
+Tue Nov 10 23:07:49 UTC 2026
+meta ok: siglip2 camera 10 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams'] frames per camera {'agentview_rgb': 12748, 'eye_in_hand_rgb': 12748}
+=== meta-siglip2-camera exit code 0
+Tue Nov 10 23:07:49 UTC 2026
+total 918391
+drwxr-xr-x 2 root root        10 Nov 10 23:07 .
+drwxr-xr-x 3 root root         1 Nov 10 23:07 ..
+-rw-r--r-- 1 root root  98334088 Nov 10 23:07 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 149206408 Nov 10 23:07 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 108656008 Nov 10 23:07 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root  69948808 Nov 10 23:07 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root  75552136 Nov 10 23:07 put_the_bowl_on_the_stove_demo.h5
+-rw-r--r-- 1 root root  75920776 Nov 10 23:07 put_the_bowl_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  81450376 Nov 10 23:07 put_the_cream_cheese_in_the_bowl_demo.h5
+-rw-r--r-- 1 root root 131143048 Nov 10 23:07 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root  83441032 Nov 10 23:07 put_the_wine_bottle_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  66778504 Nov 10 23:07 turn_on_the_stove_demo.h5
+=== copy-siglip2-camera exit code 0
+Tue Nov 10 23:07:53 UTC 2026
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+[extract] encoder=siglip2 hf_id=google/siglip2-large-patch16-384 res=384 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 2666 frames in 19.3s (138.1 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 4046 frames in 29.5s (137.0 frames/s)
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 2946 frames in 21.7s (136.0 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 1896 frames in 14.0s (135.6 frames/s)
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 2048 frames in 15.2s (135.1 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 2058 frames in 15.3s (134.8 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 2208 frames in 16.3s (135.4 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 3556 frames in 26.2s (135.7 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 2262 frames in 16.6s (135.9 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 1810 frames in 13.4s (134.9 frames/s)
+=== extract-siglip2-light exit code 0
+Tue Nov 10 23:11:16 UTC 2026
+meta ok: siglip2 light 10 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams'] frames per camera {'agentview_rgb': 12748, 'eye_in_hand_rgb': 12748}
+=== meta-siglip2-light exit code 0
+Tue Nov 10 23:11:16 UTC 2026
+total 918391
+drwxr-xr-x 2 root root        10 Nov 10 23:11 .
+drwxr-xr-x 3 root root         1 Nov 10 23:11 ..
+-rw-r--r-- 1 root root  98334088 Nov 10 23:11 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 149206408 Nov 10 23:11 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 108656008 Nov 10 23:11 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root  69948808 Nov 10 23:11 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root  75552136 Nov 10 23:11 put_the_bowl_on_the_stove_demo.h5
+-rw-r--r-- 1 root root  75920776 Nov 10 23:11 put_the_bowl_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  81450376 Nov 10 23:11 put_the_cream_cheese_in_the_bowl_demo.h5
+-rw-r--r-- 1 root root 131143048 Nov 10 23:11 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root  83441032 Nov 10 23:11 put_the_wine_bottle_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  66778504 Nov 10 23:11 turn_on_the_stove_demo.h5
+=== copy-siglip2-light exit code 0
+Tue Nov 10 23:11:21 UTC 2026
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+[extract] encoder=siglip2 hf_id=google/siglip2-large-patch16-384 res=384 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 2666 frames in 19.3s (137.9 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 4046 frames in 29.5s (137.2 frames/s)
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 2946 frames in 21.6s (136.1 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 1896 frames in 14.0s (135.1 frames/s)
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 2048 frames in 15.1s (135.6 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 2058 frames in 15.3s (134.6 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 2208 frames in 16.3s (135.1 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 3556 frames in 26.3s (135.2 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 2262 frames in 16.6s (136.3 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 1810 frames in 13.3s (135.7 frames/s)
+=== extract-siglip2-background exit code 0
+Tue Nov 10 23:14:44 UTC 2026
+meta ok: siglip2 background 10 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams'] frames per camera {'agentview_rgb': 12748, 'eye_in_hand_rgb': 12748}
+=== meta-siglip2-background exit code 0
+Tue Nov 10 23:14:44 UTC 2026
+total 918391
+drwxr-xr-x 2 root root        10 Nov 10 23:14 .
+drwxr-xr-x 3 root root         1 Nov 10 23:14 ..
+-rw-r--r-- 1 root root  98334088 Nov 10 23:14 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 149206408 Nov 10 23:14 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 108656008 Nov 10 23:14 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root  69948808 Nov 10 23:14 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root  75552136 Nov 10 23:14 put_the_bowl_on_the_stove_demo.h5
+-rw-r--r-- 1 root root  75920776 Nov 10 23:14 put_the_bowl_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  81450376 Nov 10 23:14 put_the_cream_cheese_in_the_bowl_demo.h5
+-rw-r--r-- 1 root root 131143048 Nov 10 23:14 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root  83441032 Nov 10 23:14 put_the_wine_bottle_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  66778504 Nov 10 23:14 turn_on_the_stove_demo.h5
+=== copy-siglip2-background exit code 0
+Tue Nov 10 23:14:47 UTC 2026
+[extract] encoder=c-radiov4 hf_id=nvidia/C-RADIOv4-SO400M res=448 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 2666 frames in 38.8s (68.8 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 4046 frames in 59.6s (67.8 frames/s)
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 2946 frames in 43.8s (67.2 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 1896 frames in 28.4s (66.8 frames/s)
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 2048 frames in 30.7s (66.7 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 2058 frames in 30.8s (66.8 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 2208 frames in 33.0s (67.0 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 3556 frames in 52.8s (67.4 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 2262 frames in 33.8s (66.9 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 1810 frames in 27.1s (66.8 frames/s)
+=== extract-c-radiov4-clean exit code 0
+Tue Nov 10 23:21:26 UTC 2026
+meta ok: c-radiov4 clean 10 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams'] frames per camera {'agentview_rgb': 12748, 'eye_in_hand_rgb': 12748}
+=== meta-c-radiov4-clean exit code 0
+Tue Nov 10 23:21:27 UTC 2026
+total 1090489
+drwxr-xr-x 2 root root        10 Nov 10 23:21 .
+drwxr-xr-x 3 root root         1 Nov 10 23:21 ..
+-rw-r--r-- 1 root root 116761480 Nov 10 23:21 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 177172360 Nov 10 23:21 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 129018760 Nov 10 23:21 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root  83053960 Nov 10 23:21 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root  89707912 Nov 10 23:21 put_the_bowl_on_the_stove_demo.h5
+-rw-r--r-- 1 root root  90145672 Nov 10 23:21 put_the_bowl_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  96712072 Nov 10 23:21 put_the_cream_cheese_in_the_bowl_demo.h5
+-rw-r--r-- 1 root root 155722120 Nov 10 23:21 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root  99075976 Nov 10 23:21 put_the_wine_bottle_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  79289224 Nov 10 23:21 turn_on_the_stove_demo.h5
+=== copy-c-radiov4-clean exit code 0
+Tue Nov 10 23:21:30 UTC 2026
+[extract] encoder=c-radiov4 hf_id=nvidia/C-RADIOv4-SO400M res=448 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 2666 frames in 39.7s (67.2 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 4046 frames in 59.7s (67.7 frames/s)
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 2946 frames in 43.9s (67.2 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 1896 frames in 28.3s (67.0 frames/s)
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 2048 frames in 30.7s (66.7 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 2058 frames in 30.8s (66.8 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 2208 frames in 33.0s (66.9 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 3556 frames in 52.7s (67.5 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 2262 frames in 33.8s (66.9 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 1810 frames in 27.1s (66.8 frames/s)
+=== extract-c-radiov4-camera exit code 0
+Tue Nov 10 23:28:01 UTC 2026
+meta ok: c-radiov4 camera 10 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams'] frames per camera {'agentview_rgb': 12748, 'eye_in_hand_rgb': 12748}
+=== meta-c-radiov4-camera exit code 0
+Tue Nov 10 23:28:01 UTC 2026
+total 1090489
+drwxr-xr-x 2 root root        10 Nov 10 23:28 .
+drwxr-xr-x 3 root root         1 Nov 10 23:28 ..
+-rw-r--r-- 1 root root 116761480 Nov 10 23:28 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 177172360 Nov 10 23:28 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 129018760 Nov 10 23:28 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root  83053960 Nov 10 23:28 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root  89707912 Nov 10 23:28 put_the_bowl_on_the_stove_demo.h5
+-rw-r--r-- 1 root root  90145672 Nov 10 23:28 put_the_bowl_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  96712072 Nov 10 23:28 put_the_cream_cheese_in_the_bowl_demo.h5
+-rw-r--r-- 1 root root 155722120 Nov 10 23:28 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root  99075976 Nov 10 23:28 put_the_wine_bottle_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  79289224 Nov 10 23:28 turn_on_the_stove_demo.h5
+=== copy-c-radiov4-camera exit code 0
+Tue Nov 10 23:28:04 UTC 2026
+[extract] encoder=c-radiov4 hf_id=nvidia/C-RADIOv4-SO400M res=448 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 2666 frames in 39.2s (68.0 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 4046 frames in 59.5s (67.9 frames/s)
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 2946 frames in 43.7s (67.4 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 1896 frames in 28.1s (67.4 frames/s)
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 2048 frames in 30.5s (67.1 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 2058 frames in 30.6s (67.3 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 2208 frames in 32.8s (67.3 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 3556 frames in 52.6s (67.5 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 2262 frames in 33.6s (67.3 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 1810 frames in 27.0s (67.1 frames/s)
+=== extract-c-radiov4-light exit code 0
+Tue Nov 10 23:34:33 UTC 2026
+meta ok: c-radiov4 light 10 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams'] frames per camera {'agentview_rgb': 12748, 'eye_in_hand_rgb': 12748}
+=== meta-c-radiov4-light exit code 0
+Tue Nov 10 23:34:33 UTC 2026
+total 1090489
+drwxr-xr-x 2 root root        10 Nov 10 23:34 .
+drwxr-xr-x 3 root root         1 Nov 10 23:34 ..
+-rw-r--r-- 1 root root 116761480 Nov 10 23:34 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 177172360 Nov 10 23:34 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 129018760 Nov 10 23:34 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root  83053960 Nov 10 23:34 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root  89707912 Nov 10 23:34 put_the_bowl_on_the_stove_demo.h5
+-rw-r--r-- 1 root root  90145672 Nov 10 23:34 put_the_bowl_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  96712072 Nov 10 23:34 put_the_cream_cheese_in_the_bowl_demo.h5
+-rw-r--r-- 1 root root 155722120 Nov 10 23:34 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root  99075976 Nov 10 23:34 put_the_wine_bottle_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  79289224 Nov 10 23:34 turn_on_the_stove_demo.h5
+=== copy-c-radiov4-light exit code 0
+Tue Nov 10 23:34:39 UTC 2026
+[extract] encoder=c-radiov4 hf_id=nvidia/C-RADIOv4-SO400M res=448 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 2666 frames in 39.0s (68.3 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 4046 frames in 59.6s (67.9 frames/s)
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 2946 frames in 43.7s (67.4 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 1896 frames in 28.2s (67.1 frames/s)
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 2048 frames in 30.7s (66.8 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 2058 frames in 30.7s (67.0 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 2208 frames in 32.9s (67.1 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 3556 frames in 52.8s (67.4 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 2262 frames in 33.8s (67.0 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 1810 frames in 27.1s (66.8 frames/s)
+=== extract-c-radiov4-background exit code 0
+Tue Nov 10 23:41:08 UTC 2026
+meta ok: c-radiov4 background 10 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams'] frames per camera {'agentview_rgb': 12748, 'eye_in_hand_rgb': 12748}
+=== meta-c-radiov4-background exit code 0
+Tue Nov 10 23:41:08 UTC 2026
+total 1090489
+drwxr-xr-x 2 root root        10 Nov 10 23:41 .
+drwxr-xr-x 3 root root         1 Nov 10 23:41 ..
+-rw-r--r-- 1 root root 116761480 Nov 10 23:41 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 177172360 Nov 10 23:41 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 129018760 Nov 10 23:41 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root  83053960 Nov 10 23:41 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root  89707912 Nov 10 23:41 put_the_bowl_on_the_stove_demo.h5
+-rw-r--r-- 1 root root  90145672 Nov 10 23:41 put_the_bowl_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  96712072 Nov 10 23:41 put_the_cream_cheese_in_the_bowl_demo.h5
+-rw-r--r-- 1 root root 155722120 Nov 10 23:41 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root  99075976 Nov 10 23:41 put_the_wine_bottle_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  79289224 Nov 10 23:41 turn_on_the_stove_demo.h5
+=== copy-c-radiov4-background exit code 0
+Tue Nov 10 23:41:12 UTC 2026
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_30 clean: 135 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_30 clean: 198 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_30 clean: 141 frames
+[render] put_the_bowl_on_the_plate_demo demo_30 clean: 102 frames
+[render] put_the_bowl_on_the_stove_demo demo_30 clean: 107 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_30 clean: 102 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_30 clean: 94 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_30 clean: 154 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_30 clean: 99 frames
+[render] turn_on_the_stove_demo demo_30 clean: 94 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo: scene files of 10 test demos match the 40 train/val demos outside the fixture list ['flat_stove_1_main', 'wine_rack_1_main', 'wooden_cabinet_1_main']
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo: scene files of 10 test demos match the 40 train/val demos outside the fixture list ['flat_stove_1_main', 'wine_rack_1_main', 'wooden_cabinet_1_main']
+[render] push_the_plate_to_the_front_of_the_stove_demo: scene files of 10 test demos match the 40 train/val demos outside the fixture list ['flat_stove_1_main', 'wine_rack_1_main', 'wooden_cabinet_1_main']
+[render] put_the_bowl_on_the_plate_demo: scene files of 10 test demos match the 40 train/val demos outside the fixture list ['flat_stove_1_main', 'wine_rack_1_main', 'wooden_cabinet_1_main']
+[render] put_the_bowl_on_the_stove_demo: scene files of 10 test demos match the 40 train/val demos outside the fixture list ['flat_stove_1_main', 'wine_rack_1_main', 'wooden_cabinet_1_main']
+[render] put_the_bowl_on_top_of_the_cabinet_demo: scene files of 10 test demos match the 40 train/val demos outside the fixture list ['flat_stove_1_main', 'wine_rack_1_main', 'wooden_cabinet_1_main']
+[render] put_the_cream_cheese_in_the_bowl_demo: scene files of 10 test demos match the 40 train/val demos outside the fixture list ['flat_stove_1_main', 'wine_rack_1_main', 'wooden_cabinet_1_main']
+[render] put_the_wine_bottle_on_the_rack_demo: scene files of 10 test demos match the 40 train/val demos outside the fixture list ['flat_stove_1_main', 'wine_rack_1_main', 'wooden_cabinet_1_main']
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo: scene files of 10 test demos match the 40 train/val demos outside the fixture list ['flat_stove_1_main', 'wine_rack_1_main', 'wooden_cabinet_1_main']
+[render] turn_on_the_stove_demo: scene files of 10 test demos match the 40 train/val demos outside the fixture list ['flat_stove_1_main', 'wine_rack_1_main', 'wooden_cabinet_1_main']
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_40 noise: 149 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_41 noise: 135 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_42 noise: 130 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_43 noise: 129 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_44 noise: 136 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_45 noise: 135 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_46 noise: 123 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_47 noise: 126 frames
+/work/sim/LIBERO-plus/libero/libero/envs/env_wrapper.py:52: DeprecationWarning: The binary mode of fromstring is deprecated, as it behaves surprisingly on unicode inputs. Use frombuffer instead
+  x = cv2.imdecode(np.fromstring(x.make_blob(), np.uint8),
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_48 noise: 142 frames
+[render] open_the_middle_drawer_of_the_cabinet_demo demo_49 noise: 128 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_40 noise: 186 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_41 noise: 177 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_42 noise: 203 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_43 noise: 193 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_44 noise: 194 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_45 noise: 218 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_46 noise: 189 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_47 noise: 250 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_48 noise: 205 frames
+[render] open_the_top_drawer_and_put_the_bowl_inside_demo demo_49 noise: 208 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_40 noise: 127 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_41 noise: 187 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_42 noise: 129 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_43 noise: 181 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_44 noise: 142 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_45 noise: 131 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_46 noise: 137 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_47 noise: 140 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_48 noise: 182 frames
+[render] push_the_plate_to_the_front_of_the_stove_demo demo_49 noise: 117 frames
+[render] put_the_bowl_on_the_plate_demo demo_40 noise: 89 frames
+[render] put_the_bowl_on_the_plate_demo demo_41 noise: 89 frames
+[render] put_the_bowl_on_the_plate_demo demo_42 noise: 102 frames
+[render] put_the_bowl_on_the_plate_demo demo_43 noise: 125 frames
+[render] put_the_bowl_on_the_plate_demo demo_44 noise: 88 frames
+[render] put_the_bowl_on_the_plate_demo demo_45 noise: 108 frames
+[render] put_the_bowl_on_the_plate_demo demo_46 noise: 78 frames
+[render] put_the_bowl_on_the_plate_demo demo_47 noise: 92 frames
+[render] put_the_bowl_on_the_plate_demo demo_48 noise: 89 frames
+[render] put_the_bowl_on_the_plate_demo demo_49 noise: 88 frames
+[render] put_the_bowl_on_the_stove_demo demo_40 noise: 114 frames
+[render] put_the_bowl_on_the_stove_demo demo_41 noise: 94 frames
+[render] put_the_bowl_on_the_stove_demo demo_42 noise: 97 frames
+[render] put_the_bowl_on_the_stove_demo demo_43 noise: 101 frames
+[render] put_the_bowl_on_the_stove_demo demo_44 noise: 94 frames
+[render] put_the_bowl_on_the_stove_demo demo_45 noise: 97 frames
+[render] put_the_bowl_on_the_stove_demo demo_46 noise: 118 frames
+[render] put_the_bowl_on_the_stove_demo demo_47 noise: 114 frames
+[render] put_the_bowl_on_the_stove_demo demo_48 noise: 90 frames
+[render] put_the_bowl_on_the_stove_demo demo_49 noise: 105 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_40 noise: 96 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_41 noise: 103 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_42 noise: 94 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_43 noise: 95 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_44 noise: 89 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_45 noise: 92 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_46 noise: 147 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_47 noise: 119 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_48 noise: 97 frames
+[render] put_the_bowl_on_top_of_the_cabinet_demo demo_49 noise: 97 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_40 noise: 134 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_41 noise: 89 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_42 noise: 111 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_43 noise: 103 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_44 noise: 98 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_45 noise: 112 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_46 noise: 113 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_47 noise: 109 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_48 noise: 134 frames
+[render] put_the_cream_cheese_in_the_bowl_demo demo_49 noise: 101 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_40 noise: 176 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_41 noise: 168 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_42 noise: 137 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_43 noise: 178 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_44 noise: 172 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_45 noise: 188 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_46 noise: 253 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_47 noise: 195 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_48 noise: 148 frames
+[render] put_the_wine_bottle_on_the_rack_demo demo_49 noise: 163 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_40 noise: 109 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_41 noise: 126 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_42 noise: 136 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_43 noise: 91 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_44 noise: 89 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_45 noise: 127 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_46 noise: 141 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_47 noise: 106 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_48 noise: 91 frames
+[render] put_the_wine_bottle_on_top_of_the_cabinet_demo demo_49 noise: 115 frames
+[render] turn_on_the_stove_demo demo_40 noise: 95 frames
+[render] turn_on_the_stove_demo demo_41 noise: 95 frames
+[render] turn_on_the_stove_demo demo_42 noise: 86 frames
+[render] turn_on_the_stove_demo demo_43 noise: 92 frames
+[render] turn_on_the_stove_demo demo_44 noise: 118 frames
+[render] turn_on_the_stove_demo demo_45 noise: 78 frames
+[render] turn_on_the_stove_demo demo_46 noise: 92 frames
+[render] turn_on_the_stove_demo demo_47 noise: 76 frames
+[render] turn_on_the_stove_demo demo_48 noise: 84 frames
+[render] turn_on_the_stove_demo demo_49 noise: 89 frames
+[render] done
+=== render-noise exit code 0
+Wed Nov 11 01:40:44 UTC 2026
+open_the_middle_drawer_of_the_cabinet_demo.hdf5: OK
+open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: OK
+push_the_plate_to_the_front_of_the_stove_demo.hdf5: OK
+put_the_bowl_on_the_plate_demo.hdf5: OK
+put_the_bowl_on_the_stove_demo.hdf5: OK
+put_the_bowl_on_top_of_the_cabinet_demo.hdf5: OK
+put_the_cream_cheese_in_the_bowl_demo.hdf5: OK
+put_the_wine_bottle_on_the_rack_demo.hdf5: OK
+put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: OK
+turn_on_the_stove_demo.hdf5: OK
+=== publish-noise exit code 0
+Wed Nov 11 01:41:02 UTC 2026
+1.2G	/work/render/noise/libero_goal
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]Loading weights: 100%|██████████| 415/415 [00:00<00:00, 6645.35it/s]
+[extract] encoder=dinov3 hf_id=facebook/dinov3-vitl16-pretrain-lvd1689m res=224 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 2666 frames in 24.1s (110.6 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 4046 frames in 37.4s (108.2 frames/s)
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 2946 frames in 28.5s (103.5 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 1896 frames in 18.8s (100.9 frames/s)
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 2048 frames in 20.3s (101.1 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 2058 frames in 20.4s (101.0 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 2208 frames in 22.1s (100.0 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 3556 frames in 35.4s (100.5 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 2262 frames in 22.6s (99.9 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 1810 frames in 18.2s (99.5 frames/s)
+=== extract-dinov3-noise exit code 0
+Wed Nov 11 01:45:22 UTC 2026
+meta ok: dinov3 noise 10 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams'] frames per camera {'agentview_rgb': 12748, 'eye_in_hand_rgb': 12748}
+=== meta-dinov3-noise exit code 0
+Wed Nov 11 01:45:23 UTC 2026
+total 918391
+drwxr-xr-x 2 root root        10 Nov 11 01:45 .
+drwxr-xr-x 3 root root         1 Nov 11 01:45 ..
+-rw-r--r-- 1 root root  98334088 Nov 11 01:45 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 149206408 Nov 11 01:45 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 108656008 Nov 11 01:45 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root  69948808 Nov 11 01:45 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root  75552136 Nov 11 01:45 put_the_bowl_on_the_stove_demo.h5
+-rw-r--r-- 1 root root  75920776 Nov 11 01:45 put_the_bowl_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  81450376 Nov 11 01:45 put_the_cream_cheese_in_the_bowl_demo.h5
+-rw-r--r-- 1 root root 131143048 Nov 11 01:45 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root  83441032 Nov 11 01:45 put_the_wine_bottle_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  66778504 Nov 11 01:45 turn_on_the_stove_demo.h5
+=== copy-dinov3-noise exit code 0
+Wed Nov 11 01:45:26 UTC 2026
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+[extract] encoder=siglip2 hf_id=google/siglip2-large-patch16-384 res=384 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 2666 frames in 19.4s (137.3 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 4046 frames in 29.2s (138.4 frames/s)
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 2946 frames in 21.4s (137.5 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 1896 frames in 13.9s (136.6 frames/s)
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 2048 frames in 15.0s (136.9 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 2058 frames in 15.1s (136.1 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 2208 frames in 16.2s (136.1 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 3556 frames in 26.0s (136.7 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 2262 frames in 16.5s (136.8 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 1810 frames in 13.3s (136.2 frames/s)
+=== extract-siglip2-noise exit code 0
+Wed Nov 11 01:48:49 UTC 2026
+meta ok: siglip2 noise 10 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams'] frames per camera {'agentview_rgb': 12748, 'eye_in_hand_rgb': 12748}
+=== meta-siglip2-noise exit code 0
+Wed Nov 11 01:48:49 UTC 2026
+total 918391
+drwxr-xr-x 2 root root        10 Nov 11 01:48 .
+drwxr-xr-x 3 root root         1 Nov 11 01:48 ..
+-rw-r--r-- 1 root root  98334088 Nov 11 01:48 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 149206408 Nov 11 01:48 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 108656008 Nov 11 01:48 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root  69948808 Nov 11 01:48 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root  75552136 Nov 11 01:48 put_the_bowl_on_the_stove_demo.h5
+-rw-r--r-- 1 root root  75920776 Nov 11 01:48 put_the_bowl_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  81450376 Nov 11 01:48 put_the_cream_cheese_in_the_bowl_demo.h5
+-rw-r--r-- 1 root root 131143048 Nov 11 01:48 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root  83441032 Nov 11 01:48 put_the_wine_bottle_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  66778504 Nov 11 01:48 turn_on_the_stove_demo.h5
+=== copy-siglip2-noise exit code 0
+Wed Nov 11 01:48:55 UTC 2026
+[extract] encoder=c-radiov4 hf_id=nvidia/C-RADIOv4-SO400M res=448 device=cuda
+[extract] open_the_middle_drawer_of_the_cabinet_demo.hdf5: 2666 frames in 38.7s (68.8 frames/s)
+[extract] open_the_top_drawer_and_put_the_bowl_inside_demo.hdf5: 4046 frames in 59.3s (68.3 frames/s)
+[extract] push_the_plate_to_the_front_of_the_stove_demo.hdf5: 2946 frames in 43.6s (67.6 frames/s)
+[extract] put_the_bowl_on_the_plate_demo.hdf5: 1896 frames in 28.2s (67.3 frames/s)
+[extract] put_the_bowl_on_the_stove_demo.hdf5: 2048 frames in 30.4s (67.3 frames/s)
+[extract] put_the_bowl_on_top_of_the_cabinet_demo.hdf5: 2058 frames in 30.5s (67.5 frames/s)
+[extract] put_the_cream_cheese_in_the_bowl_demo.hdf5: 2208 frames in 32.7s (67.5 frames/s)
+[extract] put_the_wine_bottle_on_the_rack_demo.hdf5: 3556 frames in 52.4s (67.9 frames/s)
+[extract] put_the_wine_bottle_on_top_of_the_cabinet_demo.hdf5: 2262 frames in 33.5s (67.4 frames/s)
+[extract] turn_on_the_stove_demo.hdf5: 1810 frames in 26.9s (67.3 frames/s)
+=== extract-c-radiov4-noise exit code 0
+Wed Nov 11 01:55:23 UTC 2026
+meta ok: c-radiov4 noise 10 files; checked keys ['encoder', 'hf_id', 'resolution', 'rotate180', 'dtype', 'grid', 'frame_stride', 'cams'] frames per camera {'agentview_rgb': 12748, 'eye_in_hand_rgb': 12748}
+=== meta-c-radiov4-noise exit code 0
+Wed Nov 11 01:55:24 UTC 2026
+total 1090489
+drwxr-xr-x 2 root root        10 Nov 11 01:55 .
+drwxr-xr-x 3 root root         1 Nov 11 01:55 ..
+-rw-r--r-- 1 root root 116761480 Nov 11 01:55 open_the_middle_drawer_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root 177172360 Nov 11 01:55 open_the_top_drawer_and_put_the_bowl_inside_demo.h5
+-rw-r--r-- 1 root root 129018760 Nov 11 01:55 push_the_plate_to_the_front_of_the_stove_demo.h5
+-rw-r--r-- 1 root root  83053960 Nov 11 01:55 put_the_bowl_on_the_plate_demo.h5
+-rw-r--r-- 1 root root  89707912 Nov 11 01:55 put_the_bowl_on_the_stove_demo.h5
+-rw-r--r-- 1 root root  90145672 Nov 11 01:55 put_the_bowl_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  96712072 Nov 11 01:55 put_the_cream_cheese_in_the_bowl_demo.h5
+-rw-r--r-- 1 root root 155722120 Nov 11 01:55 put_the_wine_bottle_on_the_rack_demo.h5
+-rw-r--r-- 1 root root  99075976 Nov 11 01:55 put_the_wine_bottle_on_top_of_the_cabinet_demo.h5
+-rw-r--r-- 1 root root  79289224 Nov 11 01:55 turn_on_the_stove_demo.h5
+=== copy-c-radiov4-noise exit code 0
+Wed Nov 11 01:55:26 UTC 2026
+=== exit codes: worst 0
+Wed Nov 11 01:55:26 UTC 2026
+copied reports to /mnt/proxy/pf-main/phase-b/reports/pfb-recover-20261110-223131
+-rw-r--r-- 1 root root 17010 Nov 11 01:55 /work/pfb-recover.tgz
+=== BEGIN PFB_TGZ_B64
+H4sIAAAAAAAAA+xdW4/jRnb28wD5D0QDi9jINLvul9kYG8f2bhz4lrV3k4VhyMWqYjd31KSWpLrH
+if0eBEHylh+YX5JTvOhKqaUetUYdq+aiZpE851TVqe87p1hUx1fvPXlBUCTnzSeU1c/mZ8yJZJIx
+gQnUS0n4exF/etPee29a1aaMovfKoqi3XffQ+Wda4qvK19PJZZanxSXjMq7fHLyZYYAFY5vGH1OB
+u/HHXMLPUIPhdIQObchQ+YWPf+nvsior8ui6KK7H/qrKrsfZhFyOTXntLyemtjdYXFLFIpwwIpTS
+3giScCNJkmpFNULa4AQrlqRWWyxVVPq/TLPSu53veDEzIr/LXGauPr78/UeffPbVHbv85iuG0BeR
+ReCaKXeWCGsw46nmzDqWWp4kAmPmuUTcOBW9X3pblA6UZ3k0uTGVjz56tfPtv47qGx/5N3VpbF2U
+0STLqyirq6i4zz948Ycqy68jE1Xj4j7Kbs21jyZlYX1VwaWmin6YVn6Umqr+IcqqaJrDxIpM7vo7
+5tfew8WVuQMj77P6BnTC5beF8+N4LuPDb8up/wEuGI+jxDd2OZ+a6biGwxtzl4EcaOIdizl5Gfk7
+n0dZ2lzWSFrVsWpDHH0btDbiS18FsSDtNstBrMvS1Jc+hytDZTGtJ9O6iqM/FdO/hsururPJJGMw
+rIjA5IE2Bq3z1vzWjCv/Q/yiAZuoeB29Dxbfwah88CqC3s6rtChvfVlF0B4Ziyif3k5+jEhM4GcY
+CXsDP8sY/42dYqKiGw4naYxFjKKb6fU1jEtqrB/dTJMIxVTEJOr8OJqY0txWkVJYcWAX8eJdT7gT
+K4v4/xTYH8oD+I8A+nv8F0JQwH8CE/KM/8cof/V5YVzAtXufXd/U1asoitCvfopm5acIXTHMo+8Q
+eoXQ3/7mZfSbrL6qvl+/ETj7Vz/97//8+5a/P0UgalFc8//LSApOY80awTOMWEEGHmMF8/3xyBDu
+QYBueXFHo+rGRN4ooAQlqOU48cgQwRKTKIIk8tQrRUWCiOO4BfvRrTd59D6KmeIvAWYYF80HEh/0
+KEMRxUQLhJ4PysRXHd1dth1zaQ30tonHxfXBdDww/4mQffxPEKJh/jNO2Hn+H6MccP5HGHfz/7/n
+NzM5MN0Z0zFlm8QQPoeR/5wJwogNSOJYxgptkkTVEiD9x0wWF0OyEIm12CSLswFw+69WHiF0SB5V
+sdaHB0vFRIxbuS++62bv9xHEaxD4lR92+HaTjjL3YcC+pCheX3WT+y6rxxDOT0oPd2X55fjOYaH0
+bYgBPySEQYx5l1n/oZ06syC7mPh8BLHl6DZzbuxHrjT3vhwVaVNpTZLlvh45f1vENy7lryICPB6l
+gIltCElYTKrofYwhOOuqr6oPhhTUxaSXDqHzCALPpjop7scjCMYz5xfVMMQW1UDgxzs1elDNZFrd
+NPImY1MHZc1BWhZ53Temqou7JR1EL+kgMmZBB4LPDToWTC7yBXULQrHSi0LBiXUjlMdqZ6HrliKm
+FoXqzlIei92EQt9vGVLEV6TznaTb0pvbkb3xHnKBLJ9rXJRN0KJsgmPUyR52l172PRgJwuoafLLr
+Fbjg9aJoyvmSi9BYdqK3D9+q6O19QwRZtl80SlgsB5XU0zLfOIxYYbTsG3RA2KHwf43/xwGgDkr/
+D/I/wWzG/4zywP8M0TP/H6OcRvwvCEexQM+M02RHBMOYfSBO66lBbKSGQ3Ca3o8pduE0FeMOt/gh
+Oa3tdLqR4d+O03QnfRi3347TWjYmD1j+CE5jHRVD3vt0nEY6TiaH4TTZCaNPwGnnsntZ4/8EnO26
+LKa5O1gQ8DD/857/AS7gOswZxmf+P0Y5Df7HMOQoRvhZBQC8TWo3suaBAoCelPDGjOXtAwA1w+OD
+BgC8E7p7pvxQAEBQF1WEpdyDBwAgnXTStzPp4wIAMcB5BwoA1E5mv2UAgLfa/8gAgJwDgHdZ5vzf
+P/m3Y2/yo67/MyFm/E9Fk/9DAHDm/2OU86aGt9/UsB6v9LsP2oDlwa01IVAJn08TqPRLtVQ8aaBC
+dEtwoObpVt9xyxuU75r/7xKosJbZgEZ3F/rgSgXvhD7N6nsXe4L0gwcqWLQLznTfJfKHAxUyF02e
+LFAB+3sfGV4x2ytQoe2yzYrF7xq1D1cG+P/gGwD24X+JQv7PwseZ/49Qzvz/y+F/uSFnPjj/P92T
+ijn/7/5QYQf+RzuR6SP5f8fVjz35n3Yhy8GfVAB/9pS3fYnlrfh/vzWQR/L/ARYqaDd3lp9ivWvU
+PlxZ5//DbwDYg/+htPv/xHn/71HKmf9/Cfzfoq7awG8H4//tYcYh+V/suvy/H//v/vRjB/7fLUN/
+W/7fvmHw5PL/vlO2hy1vyf9i6xrRo/L/5bWhd43ahyvr/H/4DQD78D9ngf85l/zM/8coZ/7/5fC/
+3ACIB+f/TYu7h+D/fo1h91T9Xef/T7P+3/P/wXffL/D/frsJTmf9v/eRg+T/dCBiedeofbgy5397
+WRqXFXfs4DsAHuB/LFn//Q+Eds//w9eFnPn/CGWdu2Z+0LHXpu9kCKTFAPOehrQgWQ17moR60t31
+vF2zFpv28B+AshhtG7KZFfdnLKKarERsXmnfn7AoalJrkLk9NXsUX4FwtYvBj6ArShv2FptXHR7L
+Vpz0I/d0r4pR2nfM2+eqRDYhx0onPzD/B/H/wE+A98B/RkI95hif13+PUk4W/9s3fTbC5sHwv9Oy
+CfQOgf/6CfCf7oJ5vyT837zr7C3wv3OO7c+a/9/h/6GfAO6B/xxh1MT/Qp7x/xjlhPGftPH/U+5Z
+4e2aldi0MnYY/Je7RJF74j/eV+YO+N91xRM8rwLhXZ61fd/HY/B/FqUf+rUawH9xBPzf2jF74j9a
+H8EH5v8Q/h/6CdA++C+a/R8Cnd//PE45YfxHLf4/5TcGzdd/nhv+k72weq/4f8c1pT3xX+6SsDwO
+//UufXHa6z+bOuYI8X/pc5j2l6WfFGV9mRdZ5eM/V0V+OIzZiv+cMIxJ//3fVNBm/z+n5+//OUr5
+txfRRQUT7tZcgEO9DEeTcVbDwUXtq/oi1Ngid1mdFXmobRykqb41bxpvrKA6n47Hoa7Ixz+uVU6y
+cREkpuF5eajIi3qUFuWoeV8/y68Xz4GyNAs1YBkY471r4B0q0MtZTWtEXwVMlP1rOLwwgB8X7WXT
+rG6qxlniy2J0XZhxewYUVFlVA921loaLwueIovaCfJRmYx8agDv55n5U3RgITjqzoJ0701sQTxDh
+xEqbamUdOLlEAqcyJQgZLxNhE0GwTk2SOE4T8H3hUmOUSZwRJpFUNnYtKN2R84JqnHDktDaIUyM9
+40xabby21hFPwRgRdtw4IhMvVUoYSjFlDDlpPFPwn+pU70WEQS8VCfM4sd4x7UjK0lQkJLVeJJhr
+YQTVUnnMsNaecAyWIJdK7DFYkjJpxEzvNnYMirzQnKgE2RSDCMt1QpDQIJt4S0yaWkRTqpSkSCPK
+HPWJZNZY6q0GpkbbFC23KE2ldDRJUaq0wUw6RqhiyNvEKUasE9RSy7nx3jiNU6VcYpHG0LNMUq/1
+JkXDdNE0DTOrmE+sIshg6lNtNLFGESNTxJKEaJ0i7zW4SxhRjWQC7oKNT4hQNCErGreSa6PPc2Wk
+k8RiBt6CkxRDgCck8xJBVxkrpcIWO5wkGAyCPpeGWwE9Dm6a+HRF3zbGbTpUI02MkUhSllqGFPSS
+hBFUliYw2VIlrcDMYUWJwIo4B+oY5ykyCXOG+AfUbe5X6SwC55bgiI5bsJxqlgqFE4INguGCGUDB
+o5w1khrLKLJE09TDYGAYcGY6xcPc3Di/gnZgBIQmtEgUct4I75SDKZ94Y7AI34RPjMdYcpQAAUIX
+gBtRaqCPqeMXIP/nF9HPczyc48+F0WBMgmB0LGdgJSdGM2WU40gqyggTVnvGUu8S5z3yEDpCVyqn
+Eu2xTFUH6YARS5h2MUlHbSgQT35s9MCMwpga7RVLJUEpTB2RSAJyU5cmBmPFIcyTXLBEg91cEwQT
+WUueIG5oixyt1CW5zChBjZLcQ1tlQlSKEumtpwi8iHHvkJZgOeUCUQt+nWKjuPOKEEAomEozudVt
+8dp3QlMHQGol3EYT7KwSWktrIaggCPAFxtEqsJkCJGFKLeSXTMMMAWxMXILAvVqhkOdc50VVZ7bq
+5aaAVzxh1imbIKQwhbYygA5oqeCcptgb4pBnhkhrwJ8IdJAy1oMOp1Ry0Y2ihywKwPLW5/WM2oq0
+vgfCmnEKMFVpyqxhnqYGKHb658K2LhXTuJvQQEhFUswIDscsRv2Z5tux21oiYtZXf52Nx8V9U09j
+NL88fF12Kz18Y3ZfW9msF4Ihplyofp3Vl80mwXAWxWRBcyAne9cMcIxBRaxm2v8ZSKq9QcSYzmz6
+8Su45Xefd/rhpvmZP330RVMPRs1bPfmxvmljELgcL0j6LFj0hbnO7OtwduEwErGGay8Fiv4Ji+iN
+EiPBIDkh+BLhS8Kjm7qeVK+urppG3Tb3xEV5HSZgM3DRLICYjKfVyBa3t21wxLQUzlKEiPIK8TRV
+AJEJ5xxhIHFimUrBB1SPwZ2QqpiWFngTYh5fTsqs8YYLzF1KqYRJSqhODBCacgxTIYxVwGcQI3MG
+jMI1Sh3RSFlAZZgUPkmBbKTudSTTPIQir30zdhqUp+Cv4L56+QKIdxfgRAmTJimXXqROEyAWBIBP
+UiKAKlML0wlBAwURHCg8oBPQOYVpBUmYBpBB3SBctF+R7rLrEDS+agYrfDn7Vff5d63CVzAtUmYl
+A9Z3GpgL2gxIYF0qrGXw6ZwBfjEUjHGOSuycSAkVEJYkwhPTN7WdF6PrcUNb8PGiG66LG1O6pVnV
+Ll8AWGTzaXU9mY5ySJDC3V/+8bNPPvso+p3/Ldjpo99/+y9RCBV633JldgdhFvyrugBYYB7LRXfN
+RyCvGoVfYZKMg0y84D2NiZ3aO4DBolxQ+nFRQtJlmtC6n9oNVPpyi2lXX3/8mb/65ptPZzNjwToW
+h1cjujvnpjYWzToJ4u8GZb7b4OARfEBOCeHdbfT516OPv/rii8++jYoyar6af1Rlt3F1E70fNuaC
+MyVmPI5uTBXlRRRfZ/UHv442unvYRBxugygEZmeRNwdtuN32FwDlqPXToMK/CUlpI7mtbG+sprev
+orm7B6Hh977cQijgXdi1HKRWtswmdeSKkB3XL6M1749ySCWq6NMv/zj6+z98+cnnn46++YePSLME
+AO0OIv6xCAAefd+BeJ8WNPC9VwbQumKwcOwb1K7Lqe8mpWkymd3kdZ20lqJFm5K0qM1tZoPdpTps
+7t/NIV4+JMuHdPmQLR/y5UOxfCiXD9XyoW4c8/vW0DR7AyGVX7A1hUi/C63w6BZyxf7uJtZrgsmV
++gLimnzW+93JBR05pI556LXg6RPAiUBMDHXd6usaXLVaCrYYIsYpKTl2KQHi56lPKIVAyyAFWGmZ
+YxCwcgi/LQQFAFfIKCQlYCjkA/0YtMsxcyToBwGwgumVkYA6yleGI9ShlTGBOqJXBiZcJ1ZGZ12e
+aO6lK+MU6sTKYAX7yMqIhevUAsJNwEsX3XyxdW3FQvtnzYWZPskqGK35VTA6HSbvNrfuMn8/QvAH
+I9R8ZnlWV3VIDlG7QjAivb8FhgJgfRNMULMq8JSbIrONZX07G0AE/5j7QAIsizVmXEqMEwyJAPaC
+eQ2xn7YesnTKDYKgHKJVyJuByhNIMIB3MQHqhqTtopX7c9/w1jTbtp301ly0u64WuyNg4WRh7kKB
+EIor8XJ+iGY/41hgxLqj72eNad6XGBaD6WZBlK9JCub8ZWrqFUFUIQheNMaCUU3lgkiKIE6BFA5i
+BsQ4IrudWhW4oUXDlswHt1PCtxy3N6zJh74aNWtbWZqCBh6jWcEQimHhL9FMzEWwY/FyCNQVFxxp
+iNmkDr/dZOny0IlpcRdCNMbnnX5RF2MY/dw2q1pBI56dal9dqRYWydp6gMWyDGs906qBseWzY5P4
+8e6TKczZq27iXrX0seK2lQ8UU41CC5pVp9JP2kALx3z1otmEh0YKQVdP9+t3DCJ5Tl4s6FmAwXXw
+oPyY4DHjvQXw6BH3NMCD0TN4nMHjpMADPwI88Gb4gEArFrPmrOEHjEHM1QB+kGH8QMfED8zW8YOd
+EnxgdoaPM3ycFHyQR8CHUJvhI54N7xp2hBVSPAAddBA6yFHzFqzXoeOkIg+sz9Bxho6Tgg66P3RQ
+voYO88Qlnk/5VeggMRNyADrYcNQhjgkdlA9kLeiUsGOexZ2xY1jgGTuOjB1sf+xgWG7EDhLL+aRf
+BQ8UKykGwIOfwJLHOWU5Y8fG4zN2DGIHf0TcsR5aLKQsRG3JWSgfCjzEIHYQelTsGAg8+Elhxznu
+OGPHaWGHeMxyx+achcaYrC2GzLGDoaFHLXIYO46atBA88JyWnBJ4EHwGjzN4nBR4yEeAB92StCA4
+vfFJLVYxlUNPWtQgfMxm6VHgQ6yjBz2pXR7iDB5n8Dgp8FD7g4dim7FDx1RvjDyIjBkbSlv0cOih
+jokdZAA8sDgl8CBn9Dijx2mhh94fPQTenLcIGnO58WmLwDEVXebyYqaumwyjpSbC/A4D3m32razP
+ffMy56jZNj6bODCrV/cA43577WyH8MVsY3C0vsd1YJNrPwrt+6wzp9u4iTmc27CPuTm1cSvzkicW
+07p537PbPD0KwNR0wcrQrG2rew7mkudlLn1e5rLnZS5/XuaK52WufF7mqudlrj51c18sGH1RBKYM
+bygtsG1HyiHYkSJuo8Lm9aOGF0elN27h/RZTlub/2Du3XMdxJA2/exVGLYAgg/fejSiKmAK6Kws9
+NWjM7keyz7FdVFCWaMti5sRDo3CcbZsipd9x+yL+98GczKijHDvKuaMcPMrJoxw9ytmjHD7K6aO/
+40ff2/TbZcjExV74aVZ+Oj9yfRUNIraQac8/lfi009ID+34+TfTK8MF1gVsVQ2e6LnWxA4Bw4eG9
+1KKLwQ/aBRl6MwihU5dsiCZyaUx4zqc5k53E+Jq12XFM0UOZnclUJCizg5leU9npTLF1lx3RpeNV
+dk7j/0/z7LAujaZmIQXg9Xya25T3WPGcrSnZuqnLc0rt7vNlIQhlwXprhiRcGt125TswUmkVoxZg
+9HjcYYgycdkbBW68QVKfBMBgYzRTZ4flkq1b4TyFIPAPLFwRhSC2hiBW/nTVs2rSzUqz7kWfjkE5
+gzptBfd/M5WWaDVrSUqu30pSQlLSvJRsJteA8YUaUGWYK3JrU1NQhRVjoNzazbb6pJIIpCSjUJFx
+jJAIqsggIWlRSCoYNmsWhISBLpdlsC9nZxXE5o/QESS/WkivHqQjlF4lHWlRRyqANrNQ36WZVrMK
+jjvRphWmIzjR5tXndWRLN45jhIS6cZCQnFsUkhq6zS0IiTbM2tm/f0uJ1sDU1z23gnC7BX8/KiYI
+qyJFU2JCsAqJSYtiUoG76TkMe/duYLrninGSqYEpJiU48OY2Nekg/4aUhJTkfJiSVMBvZR3RDGy5
+AJ0p1LtB0bdblpnyNpS3IRlpXkYqMDiEVXmsRbe+WIuuPVMa6xqGYnC34pSPSgkWKGnKt5EUKCEp
+aVFKKqA47Wa5mYfMjRRFJRlVSGIZYJSJA35AkIQ8G9KR4t+kIws6UoHHyaWAK3OyGCIBZvxXTdrp
+9mUEx11PmeC4ZpZLcNyeyyU4bs/lEhy353J/JThOCOvZ1fwgOu7wlZ/Oj3Tc1hnGK9C4tR9JXNxp
+6Vl9PxeXoonBuGmWr+1UCIMfPSbdeR6F8D6Kvgc7JBW9HjwkUIGbac7mwJ0SHXDxnIsDm53EFLCf
+c3H5jLYLF/ddGP7IxWVz1q5z20R2RNNrNjun6b1zLk44yE7sIk4PorWNi4M1MMvqJ2xNiQYSfQC8
+F/EtnjgLP3TRWBPd6HpGF4zhIuihG0B7qd14h1gXku9VB8bEKHuAmLpgo9VDsKB46JZLNCj8QOGH
+857hh02/WPVEHPhyax6QjilfbGYOcprvtn6Cm/u0jEisvRfelvggGZEkIyQjzclIxRw3ZE7bQ2di
+D8Xic8GEx7BafIjbqklMb7VEkCGygCdCjrJEaIgsSUhzElLBwcmF5uaggPlyqej4lDBuFCIjOAt3
+h3M/JCMYUIuXZRykIgTUkoqcm1ORGgqOl3OpcrzdiuiKGBVEIgqCU3Crepy/U0EAmc6E14gepCBA
+05lIQZpTkAr8TZpypTmMV7rQ6xyYsViv88J4t09bIRQPIREhEdkuIlXY2+KEyGJzIM6cwsIhOPMm
+P56YQVCVwoDZo8IhhKqQgjSnIBW4m5w3/nlQELc0Y9ZzzJHBZ73dn5dPSQgy3v6WYG5DQmi+PUlI
+cxJSg7qpsoSM3gcTuhhRFeCYRUdG4jPf3KfjIRJJzIimZERSYoZkpDkZqcHc1FJI1fFZ2uYxt4tZ
+IvjoN/FxZ4YsEZKQ4t8kISUJqSDclJhZGvcHn/vRYylbItwyp76w+9PtC4lyux4zUW7NLJcotz2X
+S5Tbnsslym3P5f5KlJt1nF1/rAlyO3zlp/PfIbeHzgQ//niw67ZQbYXPIIzttPQw7oCxdSqGoKwR
+zkoVU7TCm0GE0eN0enzFQpIxhd45JbvBiM5wpQZtlZddP3D/FGPLpqyJ+UsXiI1DdiJTdFBnxzK+
+1WVHM711PtvNuuyM/nH2kJ3TbB3+8vkPcrSJX1vVGbT87Kwp70TabhWyosUx8gaMV74zOnjdQ3IC
+uqhSP4Q0cHA8JKVB+CBlJ3sj/eCDHpyXDpLyJtmZO/b38k7qukWBhPO+gYSl354XJraJcrs+YByK
+01E4s2jfT5RN218isK7jhc58B2kEdR0njTgfrxEV8Bn4GV52jy4az5wu42dmii5iSQocQOPr8pyv
+2BJ2LhQF9P0gW8KSTpBOHK4TFYSZNmWdkIyLoi0xvhWd/YrTZaD31ghAMpeiKWMCKHNJInG8SFQA
+ZFKXSXYlGSwMdhVMcAz/QBEyt6ar72sqgRRrF8obDhIJqtUmkTheJCoYMW3LlZWSLRkSDp0ggANi
+qxp/v+ZsIFWUBSDsIGeDiihJIo6XiAoCTMqljjiwMBvAgkEkAiXA7P5GBFZn3VRuA0giSCKOl4ga
+xAvKEgGKcVusrAYYVQIzJFDIy+8etKSABKkEqcQKlaihuBZAUAnsYfBprhKSM+2xrlgow7V/DhQR
+icLg5YNEgjSCNOJ4jahAtKSZicDDkHUmyw0ngDOBDmxHIa39g5YKKaW6DVJrQiQU1VKRShyvEjVz
+xuZ1EA+drYCpecjiJhOaT/981YnT7QuJwrqeK1FYzSyXKKw9l0sU1p7LJQprz+X+ShSWtpxGjbWy
+8tP5GYW1fbZY4TOIwjotPYzvp7C4NgBDkKnTanQgdQjD0AURI0RQtuuHKLgdrHTGqRicVd0QuBi4
+UsZY3fXPh4kJlZ3EP85eZacxvmSzE5ms5fkoseydev7OyyAxMaew8nVM4u55dljTl+oHQdo2R0zc
+3I+N0YPXWrrcwwSP0QO4BxWy6AHvu0H0UQnBp/nkvet71YeopVVGqTj41LkohLAObBy4jTH4wXiV
+Eojn0QOKMVL04Pzp6ME7JoXJhWZy3DA9r5u8t3BRTKOQBQpj+d1lQiAygQ/1OUglBKkEqcTxKlEz
+CAzKvKZkwIvN8wVzcvUgML+uV9wLEgFIr3w8DXGQRAC1yieJOF4iqgZ9lSVCOSahOKNHmWnrEZHA
+Qaz7TMK9VEJj/fBxWvMgmdDEWJBMHC8TFSCWnpNW999/zbQs1j15yazCahpQEGt/dwPr/VCoaTgq
+KkG9H0gljleJGhJLlad1jc8CU64MY1kz2SKITqA41v4+BzLiTzQVlqARf6QSx6tEDYxlyy6HAAbz
+2OY9dsk8akvgE7lEbYEkBSa+/ySV+NsbSSXqVKKGx7qbwTOV0JYV/Q2tmVMYs4mP3No/Dbq+H+VR
++Q2qoSaNOF4jqmZqLTCbTBfTG6MZoTFXA0WxPN9bIQAJSeDjxI+yIigiQQpxvELUsFhlT0MyY8qe
+BjAhsfZR+Lis+8Sc3TRidf+oozSCchukEcdrRA2JZZaaw9hylcSoEf7L0zjdvoworOuZEoXVzHKJ
+wtpzuURh7blcorD2XO4vRWFJ92WGEIV1+MpP50UK68ef3wNNv2+QF3Cs2YcRl3Vaejzfz2Vp33XA
+VYJgPMTAYxSj19NF3yuh/Og5qiHJTkjeyV4NvE+ql3p0DSQfvSMpxFMuy5vsICbDWGanMQOuJrvH
+I8OxfHYys6lXFyxL2eyIpmyBz85pRnT5y0sPArWJyvK3dN2WOML8aVpT34D0kpR41FHd6x6yiEKI
+XdcPVot+ECr1idvgU9DJ8CFwnZKMCqIAa30c/c2gXafE0AnBnbOjRyyXCxyolyRFFM4fjSjgv0v1
+mBbYhYIoN16MnyU57wVRlnmBFTugnNZNDj8gHRIrtMZ7xx0kHZKCkSQdDUlHBbu11NUeDLOi3I9W
+Mb+B3qoqgKjSDQzQUE3pBgEapBvnhnSjAuhSC33lnGN83sD2WzecYeNBI7qBAl2+KuVZZ28AYm/g
+jSSOsjeAdIN0ox3dqCG81EKtBPO+WHA5nQBWb4kP2qrqa01eytetTqpBqnF5fRfVqCC+pJq5IXcv
+BZgt12CCYCAB0Q2c96qamlGlG4A1vcbncB2kG0AF26QbDelG1UCuhSnhktmyuTERYhrzUnAGTFWB
+onUZFcTgKIzUOCqjQgYHCUdDwlGFhS21tOKu2K6GM2+xrncFLOxzfsq9puJBNvDS7qNkw5JskGy0
+Ixs1pNgCKAaGifnwv/t0P8kUCp3jtNjn7A2kgEPh7a4O0g2q3yDZaEg2avCxhWSK8EyJorkhHOOY
+l4LyYx8UDcrBkmyQbGyRjarZXkXV8ILxmabcMrB+NFS+ZoSebl9GRNn1cIkoa2a5RJTtuVwiyvZc
+LhFley73VyLKjHPs+ltNRNnhKz+dMaKsH4/jX5PNM4wOxO9/3M267TxZ6aOIJjstPZrvp8lEkn5I
+LgVle8etgi5pbw0EHqFTqhcuDGLgHQwgtQswiOh9krwTybkU7fMpX3I+5SuDwuCSBBDZkcyps8uY
+L5edzfRWBCgTMjul6ePmQFm+uuugL/GgUNsGfcktBd7F52lNwRXSDBPwlrnqnt/IQgt+ML0ZPPfj
+JYeQBjXEAXyIw7h9NnQQusGG5OV4D4DtzGCM6UYX1HSuc1Y6v1xwRd0wKbRw/kRoYfF36YWxXwtN
+MYH5chaDM8+xdlYoS7apSPMVxcBGfxUQ1GMEg0Z/kWCcmxGMCopMziXhsVyiTJ8yC6sRspuhRCYG
+mRikGJfX21CMmoFgvoysAzYu7G5iWNgwDmwLrv6SZCBlEtCUkSGpToIkoxnJqEDHyjUSU4fMIm86
+7j7mkuBzwbaM8nhFLhQy90fqluRC0eAfkotm5KKGGTPlIIZw4yXOyyfuVVXArMVUA6XGhNiCjb0k
+G0gLf9mUY0JTBUk2zs3IRgUyps0CairGe6lsaQD3jHuM/igMDvuUc4KEM24YfhOqQdEMEo1mRKMC
+F9NzkPSxgNstmRoMtEAkAwfG+KdyJmRpkGiQaKwXjRpYzJVFAwRnbqH3Hh9lA0ucoLDYB2szsGY4
++BTCo6KghH2QajSjGjWs2EKvX6mYlMWWFlIwb7BWOIVhY5/KtgI2A70p9wQoFkqi0Yxo1JBiakaQ
+3h90y9ycP735J4Zx95VvPd2+jlix6+ESK9bMcokV23O5xIrtuVxixfZc7q/Eilmu2dV6Ilbs8JWf
+zhgrdrlfwo+//hotn6/xsZe7ZzsqVvgkIsVOSw/m+0mx6IxMoy9mY5CR97aLTniXeAdJDSqa5DrN
+u4FHY1QQxujYdaNnFJT2zumknpNi3z79g6UojMuOY/KKbXYm03tddjDTa5CdzpRocNkRjX6tRlix
+bJTZhRVTLjuxaX3yQaG2sWL3EMaK0ELpeaoEP+5jy/8WWLj3+c8CC7L3yvYQQ1KKO+3l+J8gxeB7
+Dg5k6oXtg46x54OeXEppRpe5T70VyXARewI/KLDQQGBh6VfphcFjptzN3zAxT3DcYpFMyfVDx8yW
+sswX9GJL+uIYwaD0BQnGuRXBqAHFTLmKW42ioIuKoTgbLTBEMnBWTG7pdfeKiSEQyWhJMe7QHCkG
+/oGkGB9TjBpQbJFFt2JhYJD1CtELHBSzZGKQiUGC0ZpgVGBiUpQFY7xAXy6QUMCcw9hSlBW7BVn2
+lgysl26pc/8xkkG9dEkyzq1IRgUqphbab5vxQly5PEJbhna8wUEx9ykrAxn2UWpgcZCVQcM+SDJa
+kYwaTGyOgT10vHG+2L9imkeI6AVKiIHeQoi9oBeAdK8QTZkYQN0rSC9a0YuagWKmDHtYz6Qvsh5W
+jT4LFsjACbFNA9Mp8EmKQYrxAcWowMMWMA/mdbEFp2BCYzEMnAxTH3JI0GnHTckFTTsmuTi3IhdV
+M8SWZg+ycp5EeGYMRqDjWJj5kEuCAuiFCWLHKAYB6KQY51YUowYK8wtNe7kdFWVmgtzKt7hkVn3F
+MU63LyQs7Hq6hIU1s1zCwvZcLmFhey6XsLA9l/srYWHGc3Y13wgLO3zlp/MaLAwfBvt9XHWA2Owz
+CRU7LT2s70fFDI8yBS14b5NORo4OUpC208FZ0ENKQrnBdcKHNFiphPXautH5VCYELpJfMVQsG+V1
+QcXAZMcxFUCb7EymocDZuczmkV1AMbDZAU1xQpGd0rQSkx3V7BsunJjQD5K1jRPb1O3u+QO2JuqA
+xCkB78st7939s6iD7cCY1MfRBe5jF6SQvQE3SJGsTqOHPHTSpi4GH61WUQgfwfpBeCWN5WDjctSB
+4pQUdTgfEXVYHF9eA4+VM6JSAOPllKjknhmsigLHx+AV3LRORhDwtBC8PEpGiDwlGWlPRiqQsjky
+9tBh2zGnZ62vbpkPYZg2BtGRAlP2eR1B6rIkb0pHqC6LdKQ9HakAzfTCvBDQemnEEGhggq+eSua3
+dNZ8i45guVS8+uIgGaFUKqlIeypSQZ+ZedPux06bXBRzqkIza7A6T5Q+2zQ8+S0aIhCmBC8RP0hD
+BCElJCLtiUjN6DK/YIqMhspC8Sd4rMM3TqPBKz0y6jQEafWtmtIQ6vRNGtKehlQAaksYvGRiSUIM
+1pkLH2GmPu7KYIXkTSVoKD9DCtKegtQga1BGUEAxY8vxEGCWbxhq9vG4qkDiqviw9qPsEAqrkoq0
+pyIVGJta4FLGTRFFERHMytUg2+dDqigyj08tOkhDCJknDTm3pyE1bJssB1XBMaWKQVUwzEksw4vD
+bXef6WPuDBJVFXiP8qP8GQqrkoy0JyMVwNt9b/GwarFQZJrF+pWZOd2+jGC36xkT7NbMcgl223O5
+BLvtuVyC3fZc7q8Eu1knv5rjEOx2+MpP50fYbTzaP747FFxvpfVQ2+y9BK+dlh6+98Nr0sleqASj
+VxCt9cFPHhD0PR9f6/rx7yQ7C0qlwK2UvNO+V6NnGfvkxxd8egqvZaPFxPylyeByCLkG2aFcaruz
+k5mUITud2TunXxk759a+G/w+qKXzD+KzCVtb1YFv/qSsKQfH2vri5eBwjyFkwYJkQFrnVHQGOslT
+kJ1zrlPGydGdHf8OWkXonXXBdsqBknF0nFLolYvdYNJyOTgFCyhYcN4zWID/xLxAoS0EBcTUmXPe
+uPOWobCWweopZvvJAiADAvDKzINU4aZRpAqFDyRV2FEVaqCyeY3lY9ZSLpRPeb+aKHNrCh+qJAFN
+K+DEx0GaQGkF0oTzcZpQM4ms3PFfMDufhHrPHmhMEXA0bM1MIVKEr9uYFIEU4fL6OxShAvYCX66Q
+FMyVxx+PG85Xo17iXgz4blEQiOfQVDxBkOdAmnCcJlSwW+DKnsN4ScDL4wdloRsFSm+tGlhaJQpI
+YSM0FU6gukbShOM0oYbFundJwUgKZYvhBJBMofMFURxrP+8BaSABeLHzQZpADSRIE47ThBq6Ss3K
+DR/mhDK30CjCjnaCRzQBpavsbjFGykaSKpAqLKhCBS0lFyYRK7PUg0qoyZDAmmKiwNR9pPHbTQUk
+pgB4k4ejbAUKKpAsHCcLFQCU1uXcg+NMq2JQwXrGUWMBBaBWdZWqizQiHXHxgeRHRRqpIS6JwnGi
+UIEzLfV34XxGTD5y1V9FS6fbVxHMdD1JgpmaWS7BTHsul2CmPZdLMNOey/2VYCYtPLtangQzHb7y
+09fhjf+bDuq31P3+z29IZ7qs3+K/u/98H8xvP/4crsbcv36PcbSKpn8cLZvnM1K+cahvh2rdB23o
+SXMv8Lpa4di05Ny5Ct0wCC+UtlaIINKgxGDU4NM0LXnoQpS6495L2Q/RdjHJYGMvhRYQOB/SZQuv
+ENjmfRF778v3DXSPR/mfYV9g7335bsea9WJtfFvk7tvis235Ke4Wtfe2SJ0/Rfxn2BdNT9FSQ8j9
+tiW/XfTPsC12999okf9Gw8+wL27vfTHZtsifwnTxu98u+b581QUctC9TT6ava7mEI786N4Uf//nn
+uPiLU7TF4F3xcWt+mPgas1ege6QsWG/NkIRLRkjlO5imtqoYx20wOnIZhigTl71R4ABC6pMAGGyM
+Rg7BvLxHT41f2qPnhvB79kjk0owpc6Nb9NQoftMW5XKEqVGjW/TUQH7PFq1zNhvdo6fG8pv2KLcN
+v4Dan2KPnlrO9Kg9taLpR+25Rf2mPZrJ0U/0qD01r3+hR+3P//nv/7os/s9/Tmv768flj/TvH3/8
+9e03FPud5Puz+rPWaHW+OYDEN77Y6Hx3umisiU5wHV0whough24A7aV20UTrQpp6SIExMcoeIKZu
+9EGsHoIFxUP32u6UTOt37o6c+WdImKPJ3SkZ1W+9d/KEBCBPVpO7U7Kn37k7M38DUeYmN6dkSb9z
+cyCPqiI/7U1uTsmEJtVZMp7fqjq5WYglKprcnZLd/NbdybNbX3Bv+7tTspjf+mTNUug/y+6UbOVf
+8d55sPK/CmqvF7fKNC69ec0vdu5MYcKCB+MNGD96B0YHr3tITkAXVeqHkAYOjoekNAgfpOxGV0H6
+wY/b47x0kJQ3yQ4bL79s+75w+bOwDeZLtnH9Zev2leO3zzO9bVx+2Xx94fIhf/pFs8dftlBfuf7c
+rsDEr4nLL9ugr9z9+U8jZnM2cfllI/OV059ZBs2Kf9mM/P/x9JcNxReuP798LGXRxuWXLcFXfvtz
+00cgaa1Drn9DVLT05irTF8kOf6f6suvnfTeIPioh+BQM7l3fqz5ELa0ySsXBp85FIYR1YOPAbYzB
+D+OWpQSi4vq32H6bAc6lGHkbl7/F9FsfjsojLsjd/3/sXeuO40Z2nt8G8g5EA8HsAm523S+TGJuN
+17txYHud2LvJxjDaxbp0c62WGqK6Zwbx/s8T5AHzJDlFUhIlFSVKas9wZkxopGle6tQ5dS7fqQtr
+HOwfA/2OXtS/dxBgHPwfA/2GW/925pPyfuPg/xjsN5z/AbPQxsH+MdjvPbT+Y6DfcN8/oNtjHOwf
+g/yGt/628SeGIsbB/jHI7+jtJfalvW+e/b2bgw5GgCft2bszqpmcqyySEimcMdZLjq3HAIEDkoUO
+BQ8C+QLxEKhjxGEipXac44Irw7A3ID+lpKaSniqRwZjwtF2Md+BBapLJuCQyGCaeJJEdwMTGL5HB
+yPE0HSEDEqiRSWQwlvxgrGYwujxJImSnkyG1aGhcEhkMOE+LNds6kpwpOy6JDMagp0lkexCGJvDI
+yCQyGJaeJJFtOMJSCxDHJZDBQPU9CL527s1dfGeSh6qV0zV/RwDW3jJOmSyUmoTXvip1WxqAxq3w
+GmmMcFEEz7zzRBfOY0xlYUhhvCyCpqrwRBrhhRAGcS6MMkpSpU+TxiGweo40dvoxU9h9TMI4hFM/
+LNU4hFHPksbObNWx68YhfHqONNh2nx9NYbExSeMQNj1LGjsrlsZuKYdw6TnS2HYbjI5cGIcg6Yel
+Gofg6FlOdMjk21FJ4xAWPUcaO7PY8du0lPrNZ8VssZj4ZS9w/R60I4BoXxE/72t1qNVMWuKKwBhS
+XFP4KWh8jQEiitBgsbQFd84iz+M7X6nAAttgJQbcjp09SRSHUOgZohhmJCOSxSEQeo5aDFl1PyJR
+HEKgH5JaHMKfZ8hiJ4dPdvOMSBaH0Oc5erHd5ZVM00Yki0PY8wxZ7E7DHLleHIKeH5DrPIQ7z1GL
+nZGDkcviEOo8QxbD3q7xtmRx1sD94cJOekNLaia7SspHxgVKwTqqqXUGJEOtIMpTHCQPClFvqAzG
+FdpJzhzG2hGpPdaMComIdGfK51hMepp8Bk11HqV8jsWpTzT/I7USYJTyORa8njb8si2ehCsep3iO
+xbMniWdnFVlqGdEoxXMsxD1NPANepzpO8RyLek+bNDJk5f8oxXMsED5Ne7Z9c+q1EaMUz7Hg+LQJ
+NjvZU6I/cpzyORYwn2Zd2745ucrp55bP3p2i+iDyWXu47u1x6pnc+xTbsQ3gtw/ynsTvGXOZ3xC7
+fQj2JHZ31Xn4orU3xG8fIn1f+e2DmKftqritzqOz3j7IeBK7O/MzRme9fRDwtJ10t9lNxOq3y24f
+pHtfY1EfRjtro+RT1lS+IX77MNdZW8CesIL4SdhtN3WCSs0X3l0/LGwsmiAiLjG+xOhbQl8w+gLx
+/4r1vJj76uHOQ90XnQ2g6p0vVztAzc3LtpLXN2bR7EHWCOreVPGuuO1Xw5CfmmJS743ZbgXWSH/u
+QRbzazNpdsqq+guYrm7AqMvNaicxibiq9wS9WJR367qsN/fFRLIauTanriczgMjr54WSJG82AF7t
+GRp36qxvjqEl51RjyjFXjAtCmh3E631Ui4dy4rr7ky6LBRS+MHHzU8xoLhrijTIUr5cb7zb8kvUe
+dOsac9luvto+tK4sFjKPLb86aOrGrfoTTbnmjAngQFMl611Q2x3ZOttNdui342wJ+lBAjmTy8gZV
+EClVnElOFMcSY0Q6RDFLEKWa9BCluVJD+ERIa8QFJoQxpaXmuktTJwUt+xjFOVnumrufKCQy8YMk
+44RSLTs0KU/QxLRPuChXAyQb+RSMYSwFi7qvCO02KE7SJEn5xSs5Q0m577CJqVZUrr5EhybBSZq9
+SqRy8GoDiGLGFdgCI8vvDk2RIEl4ssUu6q2OhR5EUmqCpGKQxUrCWVeDSIokZb2SFaC3bEh7MikF
+WAmF1JhTymlXg1BSsqqPT4p0rsAMVscQFSagvVoSKYhgXGPW1aZUy0rc17IsJ2lN29FgrrRC4JI0
+kVSyLss4JWauUQ9J8IeDmESYIgbRlCgFzpxr2qXJUkYje6WMmcI5UknfsUEWg+cSknJEsWIS0w2r
+oSnX2+N06rIoHWSp4B205AKtvjb8fUq6mPS5QfAtuRCHyQKjHKgJojXBhGu1wWiyRUWf4cSIOUyJ
+BGdYMiQk0xyadIPPVFyloi+uComGNigEGC2E5HFrddn19iQV1Uivf6Aql2KI5mLgjACPENLAQ9AN
+Y2Ep/9BClKQODY4wAiIppQoRhYVGuEszFUlB5XpdL5goJ2vIkqzcVgXACSsCDFPwxOArui6Jplq2
+3yMCy2lNS2gTFYoRjEDaFNBe1yelTbU/qEo0TMyKIaoZAi8hwFejDZoyZam6T4MBcKHktR0/yAQ4
+CAI/XEPYUV2aJNW0BPc1rYyMDiFKwfeC6nIGoFAiMJ8uzbQKJ4N1tNQcdfHvMJ4J0goaVbXHBi5M
+qhPusyCaMzFEgREWWAkNagTJGUdsg+WUlJsMJNWw4AHooDBOIFsEX8EjBpa62648JWPO+mQMJeQ9
+0HjHTkmEaKBRgH35hjtMecNeJ4GhKDbIGQL4gXgK2RgTkJbJDU1KRfFe4IAJyHUIj5hCTt05NkIb
+SZHs80UoF2nwn3C/msmOO+pymfRFrI9NivN0YrXD5UZcSTkf0itLDvgai8P4OsYfDfYnOCSFADtp
+V0lThohlL6KHzCWtTttmQSUgknUWsaGjSSXtMwusSC4HmEUMORz15C00JVnAk73+BiLhQJUBnaGq
+/e5ymcwI0xArUqTgrodETBAHhgSfoZgNQvTc4DJFkvXGLjIwjoBT7bruZHKE+5qP0ZyLIeZHIStB
+gH2ALwQxueHro6bv6aO/PfvleAeP/ApauiqrhZ/a15dzfz+bLy5rJcj/Ws2mT0IjwhHB2LMWmWz9
+Eggd9BnmRDJIeAWF+3DsT3yWoSehfuB4iP2/WfZsPpst9t136Po7evx33bMd/Bzav+7Kv7qbLq7u
+57NXr6/uw+WdKadX97em8pfmqumcrjvD43BAvLseFmiWqRzoSMcvMG060v30sZzPpnd+umj91EU1
+C4uXZr7u/p2UxdzMy3UHeHZx9/DXma2JgiPO25cHQeVnxax6KBd15SH25Wh5Zfpwd/+6OUtEzpan
+vy4nk9nL+jzN0fr2W97cTcGbrs9WtlwWgmWOO6d/LBeX5Z25qQnHzqL1Q3E7MvsYz7McEBzK1Yr6
+f5ipax4Q+fI1elCn13+ER/7wRUs/x2h95S+//bI+D5Vac33/enE7m7a3405Jn8cafWluSvtjvNr5
+EzIEDfdeCpT9GxbZKyWuBQMUTfAlwpeEZ7eLxX314uqqZuqufiafzW8uOpEFmsXPZ9f3k4fq2s7u
+7spFzaSWwllIPojyKr4TQyHNCjBrhB2nxDIVvIWoeLFRSDV7mFt/HcrpjZ/fz8taGy4wd4FSCckB
+obowQnPlAA8JYaziukCIc6Zx4BoFB7hLWQYYwShfBOO91EsaxcM0brP8o6/bTgPxoDAkr1xv3gAq
+2xlWUsKEInDpRXCayIBiFwoJRDjqg6W0QMCgIIKzEIyVlGlHOSGARDRjAa2m4kUBXrvyxlc1T9BY
+s7m9vWp//6kh+MJiEZiVTHvitIecU0JOxK0LwloGv84Z7LChUBnnAKw5JwIBRBFwITwxS1Ybu7i+
+icMqFx5+PloOJt2auduwKjA8V5rr6q5cm9XN/cP1chjvqz9//rvPf5v9wf8e6umzf//2P2PH6UoX
+3bx8BEAA/6qyUT6BeS676jq9hvKq68eyKotJjfk62lNXsSX7CL5kNu8Q/XQ2h9hjFrHkpWnX/sbP
+91Tt6utPP/dX33zz2coyOrVjYGMoa59cV3UFW2ohrcbzehQ8gx9fZWE+u8u++Pr60z9++eXn32az
+eVb5xcP9dVXe5dVt9qvFrc9AmQozmWTgLrPpLMtvysWv/yHrVfesrLL4WD2GmM2m9R/NoF4jr2Yo
+LeppJOFfxdhcl9ycbB6sHu5eZGt1j4XOAb3d3T+AL85MQ6Ky8/J+kbkZcFIuPs52tD+beu+q7LOv
+/nz9z3/66ndffHb9zb/8Np6v+Y5F/OusiJL7vh1nXMwmfm6amFG78Dvz6toUFah9CBft1mURfdpF
+0xrYXyLePhxH+uobm7BTXccaz109HBrbob4huw/XjQbk969fZKsglT1XPA7zOAJpkpHMSEh3lTVI
+B2cogl9vHQneW+aN1ogV1PmgaYFR7GYBo3uePUYxvsyeGxswxtRor1iQBIW4BWMhiXdFcKEwAJo5
+QVxywQoNFs8BAGNqteQF4oaq53VLdaqbrrATjlnrHZOea48KBnZPoD5eaA+1C8gTLxH8V4CXciIO
+VKBglCxoYZDQZl1hZpSgcIV7cD+yICqgQnrrKRKmYNw7pGXhPOUCUes1sGcUd14RIlWAzPk5tGEz
+cD2bhvJm7fua8esuEADZ0VAgXATLWYEcJ0YzZZSDFE5RRpiw2oPbA1k575GH7DWAC3Oq0B7L0MzN
+AfN6+SSFtZoDwAQ8R9S7aJ73ABGqWrsaFLGY3V+0I/ORmQ2dWrvD7GaSL13LRjO1nuILtvYqa8kf
+dEDPW6vtkmmd0QaVlFdCutPESa+1U/ral+ebfnmDWKL8QUUuo0JaPgel8rx2FXUzVE1s+W47LPeF
+4UQI7cUeh/DE6nqDJfMuONq+1sLCndNLZLZ7oQZm26drfLd9soaW2ydbPLt9ukGt22dbRLl9uoWB
+26fXmHj7ygZuTVxckV6jik0lyWutrmP31oWO9myhgJUuPExBR8tQNka5DCX35Ss/Wc2hWW3le1e6
+qBrtbr6JeeArWFM6SCVKW08sCWZStTNkXpaL2/h6jk6kWk+fiQV0kotlHrM8AR7rBgqtZzHNb4r1
++T5qhwg24GgZ8xYXq6mozYVHM3moYYgQlPN2olvWiaCbj+YKKcY0kqz5xOAqVs+kQnFLp+kO2iiM
+NVf/1t514V/XbzW5jdN3fibWxcmc6xwxQhinEtWfyLg8kXHRMv7R6rvFqXdlVTUTpppQsot2emkl
+EM+qWNB9V9o6I9gR1wqOHrsxdtII1mr+Bmxgo52P0wOU0gMtKUFa7NcDSKr7Wh3tb3V0mrq/o1y+
+Bd1eS22l1EdtX/muu/Wkb9MUMUr2tzbOGSMaY6Y5kVgJKc5wbvjNe3V6Mucsp0RJypjiCkPqQuQT
+cD4qt75/n673z4lzSJP5ckbLe+vE3xCXY3Hi+zYcGYHXfvLWJVwTMTYdPsdD85PZ1DlHgLepUFQh
+JAg9w0GTd8JBp9cej0DNnxycDPJiONeaCUw005QJhvg5GvAWwMnIOB+l7u99Oer7h1GYIGg1n3I0
+/v0d5XJcGGXf+9ZG4MKfuo0lF3Gy9Mg0+SykIk/mU+acIgpptOJUaXFO1ygZtbse9raU99BvKyEQ
+G5u2v6NcjsNvpxedv4eeepyY4xxPzU5mU+WCSybi8i1BMUH8Pcop26HN5eDo3skub2Rews86LeHp
+ZyX8XJMS6rkv+xovXk+Zxh6ruAjltKxuD7xCYqQT5PN2Vu9lM/2infq9ePWUc533z/9GBCO5nv/N
+6DOEGZL4l/nfb+LwTAjtPFfKaKlowSzgDm6x40558MnM6kJ5HoRC3CHJCqKl88zwoLHXBmXZ8Akb
++a0L/COvhAIiSheUSMO44D4YLeILXArPDWOMY8VcEJooh6FaXmPHEEVeBs5o6FAcOEa+pKsh3LiC
+KI8FclQDd8L7ehm6sdwXCsonALucxCQIb4PDAv6ilhr4r8yyo4YxG6LBI62VprqQQoLTktIrYpDi
+0kkrpNNOCFI4uIaIldYzXjgnlDTKU+Usj0T3jRw1VKQusNCYFk4FzygNzNDAOQtxqrRxAhHqvESF
+w95qjoRFFiOFMY1C9dalqWzzEl9NaLWk1hIZF3IZEAsYrKU2SOUMxkQSGxAl2BOuMCPeRhmyoDU3
+KtgElXTK0opOYYkMEwX1lBMPIkG44FYF5C0NtqBOC2A0gByBEQbS5EpSRx2P0wyZXJPb26/VShA0
+zAaQvgClKzRiVFGkqKHOWR2sdARZ0ElFGFiLVB4Z4oKzzENgsUGQNbF9XQ8NLSUR4pKiQgspQ7AW
+Wi7ouOqPCELi8kaBlBTeacJBgEoUhICloGgEJCDWT2ufOKXkpvDaAhNF4QJ2HkzKSiMRIBOknETM
+AcscwY0Y3HDh4QsJx4h1GFmRZWmQ3pT+tt3YL8eJR37lXy0izr105XT2SFsAMJndPB2NQ/GfYLKM
+/4wIHOM/w7+s/3ojx999MTPQ8jfZS1/e3C6qF5DdoL//KVsdP2XoimGefYfQC4T+8TcfZ78pF1fV
+97sPYgQP/t///s+ez08ZFNUtrv7+OBOC8ZzyuuCPvms18vsMEP4MsOknjWpmt+G6dJ8EY30xm/14
+1SrsY7mYYHF5P/fwVDm9nDzGuK3vIEmoPgF/mjn/WFr/iX1wplP2kbAl7rEj4nKImHpm5TQjLMdV
+9iuMUb48fVX9OkXgGJQCqTNiXTJU5iySQSonSTLHg5K4YH2DBlE5r2nQnPfQOIhB4spp3S0Uq1zV
+haJcDy50t6aIqW5NUU7rQiFTHFbonpBYv1Roq3TWlo72ln4YUMS122ijbNKoC4hjf9kH8UPceJVv
+qAhvq40ONN8RcCHWX5DN+gsgonVPa+4BB1E1MNpUDdKU1a3v2/aEH+axjv9VeTMp78nPAAAOxX9I
+QVfxX8TzmPFf8v83c/wp9o5mJqsms5dZvSwku5/PrK+q2TyuHvzhAVxcMNXih7iy8GFa+UUGUWz5
+xPrel3BzZR69y2JPWba4hdvvIHpP8nUZn3w7f/A/wA2TSVb4elmhg+T/YbKAP2/NYwnlgH94ZDkn
+H2f+0U+zMtS31SVt09iuQ559G6nWxce3tUKxUNodwIR51umAjSdnDwvwilWe/WX28BxurxZtneJb
+WbPFLIMqJ3iMVNfc/D72Df6QJwBLa0stYrmZzW4m/mppYBMzv/GX92Zh/7+ds9dNGIai8BMRfH1t
+Jx4rWDogJHgElm5IDH3+Xv8kHSAJDjGVqvMtbMfg2P6OhZQv6S3cmdhUwmedpkI++UGqBFdsKtrH
+U524a0y1pkLDT1mxqXDjY6gbaXJLmgrZRuXQJ+tPSVORdMrp0z1oQVMhl5/jXHZ5U9FumJS2WlOR
+72/zIN3rVYVT4ZQw/S+7yq//L5ubXOiu32b1BjDjf2oN9f634eKvyCpl4f93cO+uYR1ke6U/4La7
+zelj/3mU5XE+GqUOUVpGzrw60gpvAZWN57qRTbyOs6yP21tGeWzGFZQVXnQehmgL5DJnLJ0uUG5M
+6EuExeny+3xmia8k3KbwaW0v0BXrtFDmosttZXU/I9MGf0VWzP3EPO5MJa4Su/r7J/jXBwwAAAAA
+AAAAAAAAAAAAAAAA4G38AGHpRLkAcAMA
+=== END PFB_TGZ_B64
+=== done; exiting with 0 (0 only if every stage passed)
