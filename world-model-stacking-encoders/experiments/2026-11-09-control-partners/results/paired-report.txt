@@ -132,3 +132,135 @@
   gain(C-RADIOv4|DINOv3) point is +0.037096; the paired difference is larger than it: True (point), interval lower end above it: True.
 
 Checks failed: none
+
+======================================================================
+STAGE 2: seeds 1 and 2 of the random controls (paired with the stage 1 C-RADIOv4 rerun draws)
+======================================================================
+5.1 File integrity (stage 2)
+  log control-partners-s2-20261111.log: 507515 bytes, sha256 963c4c3edb356b9e8961551ab5d8a29c79003370c8142e6f048509b8360ef2e3
+  volume listing: 20 files hashed in the log (6 npz, 6 input JSON, 8 target JSON)
+  [pass] tarball decoded from the log has the printed sha256 (100b1a60f486...)
+  [pass] tarball holds exactly the 6 npz files on the volume
+  [pass] tar member input-draws-noise-4608-s1.npz matches the volume's printed sha256
+  [pass] committed draws-s2/input-draws-noise-4608-s1.npz is byte-identical to the tar member
+  [pass] tar member input-draws-noise-4608-s2.npz matches the volume's printed sha256
+  [pass] committed draws-s2/input-draws-noise-4608-s2.npz is byte-identical to the tar member
+  [pass] tar member input-draws-randproj-dinov3-4608-s1.npz matches the volume's printed sha256
+  [pass] committed draws-s2/input-draws-randproj-dinov3-4608-s1.npz is byte-identical to the tar member
+  [pass] tar member input-draws-randproj-dinov3-4608-s2.npz matches the volume's printed sha256
+  [pass] committed draws-s2/input-draws-randproj-dinov3-4608-s2.npz is byte-identical to the tar member
+  [pass] tar member input-draws-shuffle-dinov3-s1.npz matches the volume's printed sha256
+  [pass] committed draws-s2/input-draws-shuffle-dinov3-s1.npz is byte-identical to the tar member
+  [pass] tar member input-draws-shuffle-dinov3-s2.npz matches the volume's printed sha256
+  [pass] committed draws-s2/input-draws-shuffle-dinov3-s2.npz is byte-identical to the tar member
+  committed stage 2 result JSONs versus the volume's printed sha256 (trailing newline):
+  [pass] input-libero_goal-dinov3-noise-4608-s1.json: repo file minus its final newline hashes to the volume value
+  [pass] input-libero_goal-dinov3-noise-4608-s2.json: repo file minus its final newline hashes to the volume value
+  [pass] input-libero_goal-dinov3-randproj-dinov3-4608-s1.json: repo file minus its final newline hashes to the volume value
+  [pass] input-libero_goal-dinov3-randproj-dinov3-4608-s2.json: repo file minus its final newline hashes to the volume value
+  [pass] input-libero_goal-dinov3-shuffle-dinov3-s1.json: repo file minus its final newline hashes to the volume value
+  [pass] input-libero_goal-dinov3-shuffle-dinov3-s2.json: repo file minus its final newline hashes to the volume value
+  [pass] target-libero_goal-dinov3-noise-4608-0.3-s1.json: repo file minus its final newline hashes to the volume value
+  [pass] target-libero_goal-dinov3-noise-4608-0.3-s2.json: repo file minus its final newline hashes to the volume value
+  [pass] target-libero_goal-dinov3-noise-4608-s1.json: repo file minus its final newline hashes to the volume value
+  [pass] target-libero_goal-dinov3-noise-4608-s2.json: repo file minus its final newline hashes to the volume value
+  [pass] target-libero_goal-dinov3-randproj-dinov3-4608-s1.json: repo file minus its final newline hashes to the volume value
+  [pass] target-libero_goal-dinov3-randproj-dinov3-4608-s2.json: repo file minus its final newline hashes to the volume value
+  [pass] target-libero_goal-dinov3-shuffle-dinov3-s1.json: repo file minus its final newline hashes to the volume value
+  [pass] target-libero_goal-dinov3-shuffle-dinov3-s2.json: repo file minus its final newline hashes to the volume value
+  14 of 14 JSONs differ from the volume copy only by one trailing newline
+  [pass] input-draws-noise-4608-s1.npz: keys ['dinov3|noise:4608|global', 'noise:4608|dinov3|global'], each float64 x 1000
+  [pass] input JSON noise:4608 seed 1: n_boot 1000, bootstrap seed 0, test demos 100, synthetic seed 1
+  [pass] input-draws-randproj-dinov3-4608-s1.npz: keys ['dinov3|randproj:dinov3:4608|global', 'randproj:dinov3:4608|dinov3|global'], each float64 x 1000
+  [pass] input JSON randproj:dinov3:4608 seed 1: n_boot 1000, bootstrap seed 0, test demos 100, synthetic seed 1
+  [pass] input-draws-shuffle-dinov3-s1.npz: keys ['dinov3|shuffle:dinov3|global', 'shuffle:dinov3|dinov3|global'], each float64 x 1000
+  [pass] input JSON shuffle:dinov3 seed 1: n_boot 1000, bootstrap seed 0, test demos 100, synthetic seed 1
+  [pass] input-draws-noise-4608-s2.npz: keys ['dinov3|noise:4608|global', 'noise:4608|dinov3|global'], each float64 x 1000
+  [pass] input JSON noise:4608 seed 2: n_boot 1000, bootstrap seed 0, test demos 100, synthetic seed 2
+  [pass] input-draws-randproj-dinov3-4608-s2.npz: keys ['dinov3|randproj:dinov3:4608|global', 'randproj:dinov3:4608|dinov3|global'], each float64 x 1000
+  [pass] input JSON randproj:dinov3:4608 seed 2: n_boot 1000, bootstrap seed 0, test demos 100, synthetic seed 2
+  [pass] input-draws-shuffle-dinov3-s2.npz: keys ['dinov3|shuffle:dinov3|global', 'shuffle:dinov3|dinov3|global'], each float64 x 1000
+  [pass] input JSON shuffle:dinov3 seed 2: n_boot 1000, bootstrap seed 0, test demos 100, synthetic seed 2
+
+5.2 Saved draws reproduce the CIs in the stage 2 JSONs (np.quantile 0.025 / 0.975, as in section 2)
+  control                seed array                              JSON ci95                  from draws                 max abs diff
+  noise:4608                1 dinov3|noise:4608|global           [-0.027431, -0.021949] [-0.027431, -0.021949] 0.00e+00
+  [pass] noise:4608 seed 1: CI of dinov3|noise:4608|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  noise:4608                1 noise:4608|dinov3|global           [+0.599161, +0.648508] [+0.599161, +0.648508] 0.00e+00
+  [pass] noise:4608 seed 1: CI of noise:4608|dinov3|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  [pass] noise:4608 seed 1: CI of (gain(X|D) draws - gain(D|X) draws) equals the JSON asym_ci95 (diff 0.00e+00)
+  noise:4608                1 mean of gain draws -0.024506 against point value -0.024356
+  randproj:dinov3:4608      1 dinov3|randproj:dinov3:4608|global [-0.000096, +0.003289] [-0.000096, +0.003289] 0.00e+00
+  [pass] randproj:dinov3:4608 seed 1: CI of dinov3|randproj:dinov3:4608|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  randproj:dinov3:4608      1 randproj:dinov3:4608|dinov3|global [+0.002818, +0.005345] [+0.002818, +0.005345] 0.00e+00
+  [pass] randproj:dinov3:4608 seed 1: CI of randproj:dinov3:4608|dinov3|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  [pass] randproj:dinov3:4608 seed 1: CI of (gain(X|D) draws - gain(D|X) draws) equals the JSON asym_ci95 (diff 0.00e+00)
+  randproj:dinov3:4608      1 mean of gain draws +0.001513 against point value +0.001595
+  shuffle:dinov3            1 dinov3|shuffle:dinov3|global       [-0.004357, -0.003202] [-0.004357, -0.003202] 0.00e+00
+  [pass] shuffle:dinov3 seed 1: CI of dinov3|shuffle:dinov3|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  shuffle:dinov3            1 shuffle:dinov3|dinov3|global       [+0.621342, +0.668927] [+0.621342, +0.668927] 0.00e+00
+  [pass] shuffle:dinov3 seed 1: CI of shuffle:dinov3|dinov3|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  [pass] shuffle:dinov3 seed 1: CI of (gain(X|D) draws - gain(D|X) draws) equals the JSON asym_ci95 (diff 0.00e+00)
+  shuffle:dinov3            1 mean of gain draws -0.003744 against point value -0.003726
+  noise:4608                2 dinov3|noise:4608|global           [-0.028727, -0.024188] [-0.028727, -0.024188] 0.00e+00
+  [pass] noise:4608 seed 2: CI of dinov3|noise:4608|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  noise:4608                2 noise:4608|dinov3|global           [+0.597877, +0.647223] [+0.597877, +0.647223] 0.00e+00
+  [pass] noise:4608 seed 2: CI of noise:4608|dinov3|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  [pass] noise:4608 seed 2: CI of (gain(X|D) draws - gain(D|X) draws) equals the JSON asym_ci95 (diff 0.00e+00)
+  noise:4608                2 mean of gain draws -0.026236 against point value -0.026004
+  randproj:dinov3:4608      2 dinov3|randproj:dinov3:4608|global [-0.000413, +0.003456] [-0.000413, +0.003456] 0.00e+00
+  [pass] randproj:dinov3:4608 seed 2: CI of dinov3|randproj:dinov3:4608|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  randproj:dinov3:4608      2 randproj:dinov3:4608|dinov3|global [+0.003024, +0.005429] [+0.003024, +0.005429] 0.00e+00
+  [pass] randproj:dinov3:4608 seed 2: CI of randproj:dinov3:4608|dinov3|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  [pass] randproj:dinov3:4608 seed 2: CI of (gain(X|D) draws - gain(D|X) draws) equals the JSON asym_ci95 (diff 0.00e+00)
+  randproj:dinov3:4608      2 mean of gain draws +0.001440 against point value +0.001522
+  shuffle:dinov3            2 dinov3|shuffle:dinov3|global       [-0.004300, -0.003032] [-0.004300, -0.003032] 0.00e+00
+  [pass] shuffle:dinov3 seed 2: CI of dinov3|shuffle:dinov3|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  shuffle:dinov3            2 shuffle:dinov3|dinov3|global       [+0.620889, +0.669112] [+0.620889, +0.669112] 0.00e+00
+  [pass] shuffle:dinov3 seed 2: CI of shuffle:dinov3|dinov3|global from draws equals the JSON gain_ci95 (diff 0.00e+00 < 1e-09)
+  [pass] shuffle:dinov3 seed 2: CI of (gain(X|D) draws - gain(D|X) draws) equals the JSON asym_ci95 (diff 0.00e+00)
+  shuffle:dinov3            2 mean of gain draws -0.003600 against point value -0.003559
+
+5.3 Are the stage 2 draws paired with the stage 1 C-RADIOv4 rerun draws?
+  Same code path as section 3: bootstrap seed 0 and 100 test demos in every JSON (checked above and in sections 1 to 3), so one weight matrix, rebuilt above as w.
+  Weaker checks: the DINOv3-alone global probe R2 and its bootstrap CI across all 18 input runs (stage 1 and 2). Stage 2 ran on another node, so exact equality is not required of
+  the R2 value (floating point), but the CI is a function of the same weights:
+  DINOv3 alone: stage 1 R2 0.649879934, CI [0.622966637, 0.670880824]; max abs difference over all runs: R2 2.23e-08, CI ends 2.42e-08
+  [pass] DINOv3-alone R2 and CI agree to under 1e-6 across stage 1 and stage 2 runs (not required to be bit-equal: another node)
+  Data-level test (d) on the 12 stage 2 arrays: same regression of each saved array on the rebuilt weight matrix, same criterion as section 3 (in order above 0.8; 20 permuted orders and shift-by-one below 0.2):
+      control                seed array                             in order  best of 20 permuted  shifted by 1
+      noise:4608                1 dinov3|noise:4608|global            0.9457              -0.0546       -0.0416
+      noise:4608                1 noise:4608|dinov3|global            0.9654              -0.0957       -0.2040
+      randproj:dinov3:4608      1 dinov3|randproj:dinov3:4608|global    0.9669              -0.0795       -0.1880
+      randproj:dinov3:4608      1 randproj:dinov3:4608|dinov3|global    0.9841              -0.0994       -0.2343
+      shuffle:dinov3            1 dinov3|shuffle:dinov3|global        0.9721               0.0076       -0.2190
+      shuffle:dinov3            1 shuffle:dinov3|dinov3|global        0.9699              -0.0858       -0.2031
+      noise:4608                2 dinov3|noise:4608|global            0.9324              -0.0670       -0.1738
+      noise:4608                2 noise:4608|dinov3|global            0.9664              -0.1005       -0.2052
+      randproj:dinov3:4608      2 dinov3|randproj:dinov3:4608|global    0.9629              -0.0281       -0.1851
+      randproj:dinov3:4608      2 randproj:dinov3:4608|dinov3|global    0.9892              -0.0955       -0.2004
+      shuffle:dinov3            2 dinov3|shuffle:dinov3|global        0.9669              -0.0968       -0.1912
+      shuffle:dinov3            2 shuffle:dinov3|dinov3|global        0.9697              -0.0931       -0.2089
+  [pass] all 12 stage 2 arrays: in-order out-of-sample R2 above 0.8 and permuted/shifted below 0.2
+  Same limit as in section 3: statistical, not bit-exact per draw; bit-exact identity rests on the code (one generator and call, same demo order).
+
+5.4 Paired difference gain(C-RADIOv4|DINOv3) minus gain(control, seed s|DINOv3), per draw; C-RADIOv4 draws are the stage 1 rerun's (a real encoder: one value for every seed)
+  gain(C-RADIOv4|DINOv3): point +0.037096, CI from draws [+0.032483, +0.042330]
+  control                seed  gain(ctrl|D) point  paired diff point        95% interval from draws  mean of draws  share of draws > 0
+  noise:4608                0           -0.026900          +0.063996         [+0.058410, +0.070880]      +0.064359               1.000
+  noise:4608                1           -0.024356          +0.061452         [+0.056761, +0.067691]      +0.061755               1.000
+  noise:4608                2           -0.026004          +0.063100         [+0.057922, +0.069247]      +0.063485               1.000
+  randproj:dinov3:4608      0           +0.001104          +0.035993         [+0.031451, +0.041356]      +0.036240               1.000
+  randproj:dinov3:4608      1           +0.001595          +0.035501         [+0.030779, +0.040920]      +0.035737               1.000
+  randproj:dinov3:4608      2           +0.001522          +0.035574         [+0.031152, +0.040621]      +0.035810               1.000
+  shuffle:dinov3            0           -0.003106          +0.040202         [+0.035454, +0.045579]      +0.040393               1.000
+  shuffle:dinov3            1           -0.003726          +0.040822         [+0.036167, +0.046143]      +0.040994               1.000
+  shuffle:dinov3            2           -0.003559          +0.040655         [+0.035958, +0.046106]      +0.040849               1.000
+  (seed 0 rows repeat section 4 for these three controls.)
+  PLAN note (input side): for noise below -0.005 with CI under 0, R's +0.037 is information on top of a width penalty (paired difference larger than +0.037). Interval lower end above +0.037096:
+    noise:4608 seed 0: paired difference +0.063996, interval [+0.058410, +0.070880], lower end above gain(C-RADIOv4|DINOv3): True
+    noise:4608 seed 1: paired difference +0.061452, interval [+0.056761, +0.067691], lower end above gain(C-RADIOv4|DINOv3): True
+    noise:4608 seed 2: paired difference +0.063100, interval [+0.057922, +0.069247], lower end above gain(C-RADIOv4|DINOv3): True
+  As in stage 1: per draw this is the same statement as 'the noise control's gain is below 0'; the 'Capacity floor above zero' clause, the only clause that uses a paired difference, fires on no seed (collect-report.txt).
+
+Stage 2 checks failed: none

@@ -230,3 +230,141 @@ if fails:
     for f in fails:
         say("  - " + f)
     sys.exit(1)
+
+# ================================================================ 5. STAGE 2 (seeds 1 and 2), appended; nothing above was edited
+say()
+say("=" * 70)
+say("STAGE 2: seeds 1 and 2 of the random controls (paired with the stage 1 C-RADIOv4 rerun draws)")
+say("=" * 70)
+LOG2 = HERE / "control-partners-s2-20261111.log"
+NPZDIR2 = HERE / "draws-s2"
+fails2 = []
+
+
+def check2(ok, what):
+    say(f"  [{'pass' if ok else 'FAIL'}] {what}")
+    if not ok:
+        fails2.append(what)
+
+
+raw2 = LOG2.read_bytes()
+lines2 = raw2.decode("utf-8").split("\n")
+say("5.1 File integrity (stage 2)")
+say(f"  log {LOG2.name}: {len(raw2)} bytes, sha256 {sha(raw2)}")
+j0 = lines2.index("=== sha256 of every output file (regular files only)")
+j1 = next(i for i in range(j0 + 1, len(lines2)) if lines2[i].startswith("=== "))
+printed2 = {}
+for ln in lines2[j0 + 1:j1]:
+    if re.match(r"[0-9a-f]{64}  ", ln):
+        h, nm = ln.split(None, 1)
+        printed2[nm.strip().removeprefix("./")] = h
+say(f"  volume listing: {len(printed2)} files hashed in the log (6 npz, 6 input JSON, 8 target JSON)")
+tar2 = next(re.match(r"([0-9a-f]{64})\s+/work/input-draws-s2\.tgz", l).group(1) for l in lines2 if re.match(r"[0-9a-f]{64}\s+/work/input-draws-s2\.tgz", l))
+c0 = lines2.index("=== BEGIN input-draws-s2.tgz base64")
+c1 = lines2.index("=== END input-draws-s2.tgz base64")
+tgz2 = base64.b64decode("".join(lines2[c0 + 1:c1]))
+check2(sha(tgz2) == tar2, f"tarball decoded from the log has the printed sha256 ({sha(tgz2)[:12]}...)")
+members2 = {}
+with tarfile.open(fileobj=io.BytesIO(tgz2), mode="r:gz") as tf:
+    for m in tf.getmembers():
+        if m.isfile():
+            members2[m.name.removeprefix("./")] = tf.extractfile(m).read()
+check2(sorted(members2) == sorted(n for n in printed2 if n.endswith(".npz")), "tarball holds exactly the 6 npz files on the volume")
+for name, b in sorted(members2.items()):
+    check2(sha(b) == printed2[name], f"tar member {name} matches the volume's printed sha256")
+    check2((NPZDIR2 / name).read_bytes() == b, f"committed draws-s2/{name} is byte-identical to the tar member")
+say("  committed stage 2 result JSONs versus the volume's printed sha256 (trailing newline):")
+n_nl2 = 0
+for name in sorted(n for n in printed2 if n.endswith(".json")):
+    b = (HERE / name).read_bytes()
+    minus_nl = b.endswith(b"\n") and sha(b[:-1]) == printed2[name]
+    n_nl2 += minus_nl
+    check2(minus_nl and sha(b) != printed2[name], f"{name}: repo file minus its final newline hashes to the volume value")
+say(f"  {n_nl2} of {sum(n.endswith('.json') for n in printed2)} JSONs differ from the volume copy only by one trailing newline")
+
+S2C = {"noise:4608": "noise-4608", "randproj:dinov3:4608": "randproj-dinov3-4608", "shuffle:dinov3": "shuffle-dinov3"}
+draws2, js2 = {}, {}
+for sd in (1, 2):
+    for c, stem in S2C.items():
+        z = np.load(NPZDIR2 / f"input-draws-{stem}-s{sd}.npz")
+        draws2[(c, sd)] = {k: z[k] for k in z.files}
+        js2[(c, sd)] = json.loads((HERE / f"input-libero_goal-dinov3-{stem}-s{sd}.json").read_text())
+        jj = js2[(c, sd)]
+        expect = {f"dinov3|{c}|global", f"{c}|dinov3|global"}
+        check2(set(draws2[(c, sd)]) == expect and all(v.shape == (N_BOOT,) and v.dtype == np.float64 for v in draws2[(c, sd)].values()),
+               f"input-draws-{stem}-s{sd}.npz: keys {sorted(draws2[(c, sd)])}, each float64 x {N_BOOT}")
+        check2(jj["n_boot"] == N_BOOT and jj["seed"] == SEED and jj["n_test_demos"] == N_TEST_DEMOS and jj["encoders"][c]["seed"] == sd,
+               f"input JSON {c} seed {sd}: n_boot {jj['n_boot']}, bootstrap seed {jj['seed']}, test demos {jj['n_test_demos']}, synthetic seed {jj['encoders'][c]['seed']}")
+
+say()
+say("5.2 Saved draws reproduce the CIs in the stage 2 JSONs (np.quantile 0.025 / 0.975, as in section 2)")
+say(f"  {'control':22s} seed {'array':34s} {'JSON ci95':26s} {'from draws':26s} max abs diff")
+for sd in (1, 2):
+    for c in S2C:
+        for k, d in draws2[(c, sd)].items():
+            pr = js2[(c, sd)]["pairs"][k]
+            got = ci(d)
+            diff = max(abs(got[0] - pr["gain_ci95"][0]), abs(got[1] - pr["gain_ci95"][1]))
+            say(f"  {c:22s} {sd:4d} {k:34s} [{pr['gain_ci95'][0]:+.6f}, {pr['gain_ci95'][1]:+.6f}] [{got[0]:+.6f}, {got[1]:+.6f}] {diff:.2e}")
+            check2(diff < tol, f"{c} seed {sd}: CI of {k} from draws equals the JSON gain_ci95 (diff {diff:.2e} < {tol:g})")
+        g1 = draws2[(c, sd)][f"dinov3|{c}|global"]
+        g2 = draws2[(c, sd)][f"{c}|dinov3|global"]
+        ac = ci(g1 - g2)
+        aj = js2[(c, sd)]["pairs"][f"dinov3|{c}|global"]["asym_ci95"]
+        diff = max(abs(ac[0] - aj[0]), abs(ac[1] - aj[1]))
+        check2(diff < tol, f"{c} seed {sd}: CI of (gain(X|D) draws - gain(D|X) draws) equals the JSON asym_ci95 (diff {diff:.2e})")
+        pt = js2[(c, sd)]["pairs"][f"dinov3|{c}|global"]["gain_B_given_A"]
+        say(f"  {c:22s} {sd:4d} mean of gain draws {g1.mean():+.6f} against point value {pt:+.6f}")
+
+say()
+say("5.3 Are the stage 2 draws paired with the stage 1 C-RADIOv4 rerun draws?")
+say("  Same code path as section 3: bootstrap seed 0 and 100 test demos in every JSON (checked above and in sections 1 to 3), so one weight matrix, rebuilt above as w.")
+say("  Weaker checks: the DINOv3-alone global probe R2 and its bootstrap CI across all 18 input runs (stage 1 and 2). Stage 2 ran on another node, so exact equality is not required of")
+say("  the R2 value (floating point), but the CI is a function of the same weights:")
+d_all = [js["c-radiov4"]["probes"]["dinov3|global"]] + [js[c]["probes"]["dinov3|global"] for c in CONTROLS] + [js2[k]["probes"]["dinov3|global"] for k in js2]
+mx_r2 = max(abs(x["r2_mean"] - d0["r2_mean"]) for x in d_all)
+mx_ci = max(max(abs(x["r2_ci95"][0] - d0["r2_ci95"][0]), abs(x["r2_ci95"][1] - d0["r2_ci95"][1])) for x in d_all)
+say(f"  DINOv3 alone: stage 1 R2 {d0['r2_mean']:.9f}, CI [{d0['r2_ci95'][0]:.9f}, {d0['r2_ci95'][1]:.9f}]; max abs difference over all runs: R2 {mx_r2:.2e}, CI ends {mx_ci:.2e}")
+check2(mx_r2 < 1e-6 and mx_ci < 1e-6, "DINOv3-alone R2 and CI agree to under 1e-6 across stage 1 and stage 2 runs (not required to be bit-equal: another node)")
+say("  Data-level test (d) on the 12 stage 2 arrays: same regression of each saved array on the rebuilt weight matrix, same criterion as section 3 (in order above 0.8; 20 permuted orders and shift-by-one below 0.2):")
+say(f"      {'control':22s} seed {'array':32s} {'in order':>9s} {'best of 20 permuted':>20s} {'shifted by 1':>13s}")
+all_ok2 = True
+for sd in (1, 2):
+    for c in S2C:
+        for k, y in draws2[(c, sd)].items():
+            r_in = oos_r2(y)
+            r_perm = max(oos_r2(y[np.random.default_rng(i).permutation(N_BOOT)]) for i in range(N_PERM))
+            r_sh = oos_r2(np.roll(y, 1))
+            all_ok2 &= bool(r_in > IN_MIN and r_perm < PERM_MAX and r_sh < PERM_MAX)
+            say(f"      {c:22s} {sd:4d} {k:32s} {r_in:9.4f} {r_perm:20.4f} {r_sh:13.4f}")
+check2(all_ok2, f"all 12 stage 2 arrays: in-order out-of-sample R2 above {IN_MIN} and permuted/shifted below {PERM_MAX}")
+say("  Same limit as in section 3: statistical, not bit-exact per draw; bit-exact identity rests on the code (one generator and call, same demo order).")
+
+say()
+say("5.4 Paired difference gain(C-RADIOv4|DINOv3) minus gain(control, seed s|DINOv3), per draw; C-RADIOv4 draws are the stage 1 rerun's (a real encoder: one value for every seed)")
+say(f"  gain(C-RADIOv4|DINOv3): point {pR:+.6f}, CI from draws [{ci(gR)[0]:+.6f}, {ci(gR)[1]:+.6f}]")
+say(f"  {'control':22s} seed {'gain(ctrl|D) point':>19s} {'paired diff point':>18s} {'95% interval from draws':>30s} {'mean of draws':>14s} {'share of draws > 0':>19s}")
+res2 = {}
+for c in S2C:
+    for sd in (0, 1, 2):
+        if sd == 0:
+            gc = draws[c][f"dinov3|{c}|global"]
+            pc = js[c]["pairs"][f"dinov3|{c}|global"]["gain_B_given_A"]
+        else:
+            gc = draws2[(c, sd)][f"dinov3|{c}|global"]
+            pc = js2[(c, sd)]["pairs"][f"dinov3|{c}|global"]["gain_B_given_A"]
+        d = gR - gc
+        lo, hi = ci(d)
+        res2[(c, sd)] = (pc, pR - pc, lo, hi)
+        say(f"  {c:22s} {sd:4d} {pc:+19.6f} {pR - pc:+18.6f} {'[%+.6f, %+.6f]' % (lo, hi):>30s} {d.mean():+14.6f} {(d > 0).mean():19.3f}")
+say("  (seed 0 rows repeat section 4 for these three controls.)")
+say(f"  PLAN note (input side): for noise below -0.005 with CI under 0, R's +0.037 is information on top of a width penalty (paired difference larger than +0.037). Interval lower end above {pR:+.6f}:")
+for sd in (0, 1, 2):
+    say(f"    noise:4608 seed {sd}: paired difference {res2[('noise:4608', sd)][1]:+.6f}, interval [{res2[('noise:4608', sd)][2]:+.6f}, {res2[('noise:4608', sd)][3]:+.6f}], lower end above gain(C-RADIOv4|DINOv3): {res2[('noise:4608', sd)][2] > pR}")
+say("  As in stage 1: per draw this is the same statement as 'the noise control's gain is below 0'; the 'Capacity floor above zero' clause, the only clause that uses a paired difference, fires on no seed (collect-report.txt).")
+say()
+say("Stage 2 checks failed: " + (str(len(fails2)) if fails2 else "none"))
+if fails2:
+    for f in fails2:
+        say("  - " + f)
+    sys.exit(1)
