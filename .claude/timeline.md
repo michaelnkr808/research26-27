@@ -347,6 +347,14 @@
 - Open loops: PR #23 merge OK; recovery Job and SAM 3 background Pending (GPU check about 45 min after start; typed 3090 twin is an option if the wait drags); control-partners stage 2 collection overnight (then tell planning); sizing Job after stage 2 frees michael-persistent; SAM 3 noise, VGGT-Omega and the final Job once noise is published.
 - See: world-model-stacking-encoders/experiments/2026-11-06-perturbed-frames/jobs/PHASE-B.md (section 11), world-model-stacking-encoders/experiments/2026-11-06-perturbed-frames/LOG.md, world-model-stacking-encoders/experiments/2026-11-10-feature-overlap/PLAN.md (amendment), https://github.com/michaelnkr808/research26-27/pull/23
 
+## 2026-11-11: vis-meetings, slide prep for the 11/11 mentor meeting
+
+- Went through four versions of the user's deck and wrote short, paste-ready lines for the new 11/11 slides (noise check status, our copy vs the paper's model, disturbed scenes, feature overlap); planning fact-checked every line and seven were fixed.
+- Found out the proxy DINOv3 copies finish about 8% of LIBERO-Plus (and about 1 in 5 clean) vs the paper's 84%; the likely reason is the paper's pretrained Wan 2.2 start, but a pipeline bug is not ruled out. The paper trains 10 epochs at batch 128 like ours and states no model size.
+- Made the "ours vs paper" figure (writing/figures/2026-11-11-ours-vs-paper.png, Desktop copy).
+- Open loops: after the meeting, log the mentor's answers in the direction LOG and send planning one line; user decides on the two proposed proxy bug checks (implementation window) before the 16-layer retrain; PR #25 (control partners stage 2) and PR #23 (overlap sizing) await the user's OK.
+- See: world-model-stacking-encoders/LOG.md (2026-11-11 vis-meetings entry), world-model-stacking-encoders/writing/figures/make_ours_vs_paper.py
+
 ## 2026-11-11: stacking-encoders implementation, PRs 24 and 25 merged, SAM 3 done, /doctor cleanup
 
 - Merged PR #25 (control-partners stage 2: the two labels hold on all three seeds) and PR #24 (RTX 3090 backup Jobs for SAM 3) on the user's OK.
