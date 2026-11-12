@@ -362,3 +362,18 @@
 - /doctor: install healthy and current; turned off the unused clangd-lsp and swift-lsp plugins and made auto mode the default permission mode (both in ~/.claude/settings.json).
 - Open loops: VGGT-Omega and the feature-overlap sizing Job are on hold until the user says go; then the final phase B Job and the 16-layer DINOv3 retrain; turn off the Google Calendar connector in /mcp (user); pick 3-worker cap vs uncapped (global CLAUDE.md vs memory); push main.
 - See: world-model-stacking-encoders/LOG.md (2026-11-11 implementation lead close), world-model-stacking-encoders/experiments/2026-11-06-perturbed-frames/LOG.md (2026-11-11 [agent, lead])
+
+## 2026-11-11: stacking-encoders draft, paper setup section written, reviewed twice, merged (PR #20)
+
+- Drafted the paper's setup section (source result, encoders, data, our proxy WAM, rules fixed in advance) in its own worktree; a fresh reviewer checked every sentence against the repo, the code and the arXiv PDF in two rounds. All paper numbers matched; nine overstatements fixed (mainly Fast-WAM's choices listed as the paper's, and Amendment (c) written as done).
+- Found: SigLIP 2 Large in the frozen-feature tests vs So400m in the proxy, with no decision record; the paper states it; told the user and planning.
+- User decisions: merge PR #20; seed-noise approval note in the supplement only; LIBERO and LIBERO-Plus cited (the user read both; relayed to the literature session for the bib notes); trimming the section (about 1.45 pages) waits on the mentor's length answer.
+- Open loops: method halves of sections 4 to 6, limitations and the supplement trail, each by PR with a fresh reviewer; after the mentor meeting, record the framing, PLAN Next 5 and length answers and trim the setup if the paper is short; title and contributions still held for the mentor gate.
+- See: world-model-stacking-encoders/writing/paper/sec/3_setup.tex, world-model-stacking-encoders/LOG.md (2026-11-10 [agent, lead, draft] setup section merged), PR #20 review comments
+
+## 2026-11-11: stacking-encoders review session, control-partners stage 1 read requested, plan presented, not dispatched
+
+- After a /clear, the planning lead resent its request for an independent read of the control-partners stage 1 result (labels vs the locked rule, the shuffled-DINOv3 caveat, what one seed can say). Read the standards, the experiment PLAN, README, both result reports and its LOG.
+- Presented a plan (one review worker recomputing the rule from the raw JSONs, Codex review, one fresh fact-check reviewer, report in reviews/ by PR). The user closed the session before answering, so nothing was dispatched and no report exists.
+- Open loops: re-ask the user's OK for the stage 1 read in the review session window (the relayed planning approval does not count), then run it; tell the planning lead when posted. Stage 2 of control-partners was still running at close.
+- See: world-model-stacking-encoders/experiments/2026-11-09-control-partners/README.md, memory review-session-and-reviews-folder.md
