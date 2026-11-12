@@ -362,3 +362,10 @@
 - /doctor: install healthy and current; turned off the unused clangd-lsp and swift-lsp plugins and made auto mode the default permission mode (both in ~/.claude/settings.json).
 - Open loops: VGGT-Omega and the feature-overlap sizing Job are on hold until the user says go; then the final phase B Job and the 16-layer DINOv3 retrain; turn off the Google Calendar connector in /mcp (user); pick 3-worker cap vs uncapped (global CLAUDE.md vs memory); push main.
 - See: world-model-stacking-encoders/LOG.md (2026-11-11 implementation lead close), world-model-stacking-encoders/experiments/2026-11-06-perturbed-frames/LOG.md (2026-11-11 [agent, lead])
+
+## 2026-11-11: stacking-encoders review session, control-partners stage 1 read requested, plan presented, not dispatched
+
+- After a /clear, the planning lead resent its request for an independent read of the control-partners stage 1 result (labels vs the locked rule, the shuffled-DINOv3 caveat, what one seed can say). Read the standards, the experiment PLAN, README, both result reports and its LOG.
+- Presented a plan (one review worker recomputing the rule from the raw JSONs, Codex review, one fresh fact-check reviewer, report in reviews/ by PR). The user closed the session before answering, so nothing was dispatched and no report exists.
+- Open loops: re-ask the user's OK for the stage 1 read in the review session window (the relayed planning approval does not count), then run it; tell the planning lead when posted. Stage 2 of control-partners was still running at close.
+- See: world-model-stacking-encoders/experiments/2026-11-09-control-partners/README.md, memory review-session-and-reviews-folder.md
