@@ -377,3 +377,11 @@
 - Presented a plan (one review worker recomputing the rule from the raw JSONs, Codex review, one fresh fact-check reviewer, report in reviews/ by PR). The user closed the session before answering, so nothing was dispatched and no report exists.
 - Open loops: re-ask the user's OK for the stage 1 read in the review session window (the relayed planning approval does not count), then run it; tell the planning lead when posted. Stage 2 of control-partners was still running at close.
 - See: world-model-stacking-encoders/experiments/2026-11-09-control-partners/README.md, memory review-session-and-reviews-folder.md
+
+## 2026-11-12: stacking-encoders planning session, mentor's notes, move to a pretrained Wan 2.2 start, Runpod and Modal set up
+
+- Read the mentor's written notes on half the deck (fusion questions, start from pretrained weights at 8 layers, clean training and testing first) and answered the factual ones from the paper note. Rechecked that the paper still has no released code or weights.
+- User decisions: drop the 16-layer from-scratch retrain; cheap tests are no longer the focus but may run in the background on Nautilus; start from the pretrained Wan 2.2 video transformer; investigate how the encoders are combined first; pay at most about $30 a month for short cloud jobs, keep long training on Nautilus, ask the PI for compute; applied for Modal academic credits.
+- Set up Runpod (official plugin, signed in, empty account confirmed) and Modal (CLI installed, token verified). Nothing created or billed.
+- Open loops: the plan is proposed but not dispatched, it needs the user's go in a planning session: (1) decisions/005 plus a dollar budget rule in STANDARDS, (2) a sizing check design for a pretrained 8-layer model, to run on Modal's free credit, ideally before the PI meeting. The rest of the mentor's notes have not arrived. PR #16 is still open. Local main is ahead of origin, unpushed.
+- See: world-model-stacking-encoders/LOG.md (2026-11-12 [agent, lead, planning]), world-model-stacking-encoders/PLAN.md (Now, proxy item, 2026-11-11 line), memory paid-cloud-compute-runpod.md and stacking-encoders-mentor.md
