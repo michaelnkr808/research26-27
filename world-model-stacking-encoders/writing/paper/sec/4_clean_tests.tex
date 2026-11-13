@@ -15,19 +15,24 @@
 % Frames, data and split: Tally lines 6, 18-22 (63,728 time steps, 100 test demos, both cameras, ridge probe to
 % the 7-d action, global features primary). Encoders as in Sec. 3: Tally lines 9-15.
 We ask whether frozen features of DINOv3 and a partner show any trace of the harm the source paper reports for DINOv3 + C-RADIOv4.
-Both tests use the LIBERO-Goal demonstrations and encoders of Sec.~\ref{sec:setup}, with features computed once per encoder; no model is trained.
+Both tests use the LIBERO-Goal demonstrations and encoders of Sec.~\ref{sec:setup}, with features computed once per encoder; no world model is trained, and only linear maps on frozen features are fit.
+% Pointer to the supplement subsection (review finding 8): its label cannot be referenced (subsection*), so it is named.
+Full cells, the target-side readings and the caveats are in the supplement (Clean-frame tests: detail).
 
 % Input side. CKA: debiased linear, per camera, Tally line 19; gain definition and bootstrap: Tally lines 21-22;
 % no decision rule: Tally line 3 ("No hypothesis is chosen or argued here"); no CKA intervals: Tally line 79.
 % Observations: Tally lines 77, 80 (R highest CKA in all six cells), 86 (R largest gain, CI overlaps S's), 87.
 % Numbers: Table rows, Tally lines 39-42 (global). Paper change: Tally lines 39-42, last column.
 \paragraph{Input side.}
-For each partner $B$ we measure its similarity to DINOv3 as debiased linear CKA~\TODO{cite Kornblith et al. 2019}, per camera.
+For each partner $B$ we measure its similarity to DINOv3 as debiased linear CKA~\TODO{cite Kornblith et al. 2019 (CKA) and the debiased estimator: Song et al. 2012 / Nguyen et al. 2021, once read and in the bib}, per camera.
 We measure its complementarity as gain($B$|DINOv3): the increase in test $R^2$ of a ridge probe to the recorded action when $B$'s global features are added to DINOv3's.
 Intervals are 95\% demonstration-level bootstrap intervals over the 100 test demonstrations; none were computed for CKA.
 This test fixed its design before it ran but has no decision rule.
-C-RADIOv4 is the most similar to DINOv3 in every feature-type and camera cell and adds the most (gain $+0.037$), although its interval overlaps SAM~3's.
-SigLIP~2's CKA is nearly as high as C-RADIOv4's on the agent view (Table~\ref{tab:clean}).
+% Similarity vs the paper: README.md line 17 (0.576 vs 0.583 global agent view; SigLIP 2 is the best of our four partners in the
+% paper's table, not the paper's best pair, README.md line 30); Tally line 78 (margin 0.007), line 79 (no CKA intervals),
+% line 82 (CKA does not follow the paper's order beyond C-RADIOv4 first), line 86 (gain interval overlaps SAM 3's), line 87.
+C-RADIOv4 is the most similar to DINOv3 in every cell, but on global agent-view features SigLIP~2, the best of our four partners in the paper's table, is within 0.007 (CKA has no intervals here), and similarity does not otherwise order the partners as the paper does (Table~\ref{tab:clean}).
+Complementarity places C-RADIOv4 at the top (gain $+0.037$), although its interval overlaps SAM~3's.
 Every partner's gain is positive and small.
 
 % Target side. Definition and rule: Target lines 19-24 (T2, rank 64, k in {4,16,32}, primary a', global, mean over k,
@@ -35,8 +40,9 @@ Every partner's gain is positive and small.
 \paragraph{Target side.}
 In the world model each encoder's future features are also a prediction target.
 We fit a rank-64 linear map from DINOv3's and $B$'s current features to each encoder's change over $k\in\{4,16,32\}$ steps, and define interference($B$) as the drop in $R^2$ for DINOv3's change when $B$'s change is added as a co-target; positive means harm.
-The decision rule was fixed in advance: if C-RADIOv4 does not interfere the most, the target-side explanation fails at this level.
-VGGT-Omega interferes the most; C-RADIOv4 is second, narrowly above SigLIP~2 (Table~\ref{tab:clean}), so the rule is not met.
+The decision rule was fixed in advance: if C-RADIOv4 does not interfere the most, the hypothesis that C-RADIOv4 harms DINOv3 as a co-target fails at this level.
+% Hypothesis H-E: Target line 24 and LOG.md 2026-10-21 (i).
+VGGT-Omega interferes the most; C-RADIOv4 is second, narrowly above SigLIP~2 (Table~\ref{tab:clean}), so by this rule the target-side hypothesis fails at this level.
 
 % Verdict: README.md lines 16 and 20; Tally line 87 ("does not single out D+R"); Target line 40.
 % "The orderings do not follow the paper's" is a judgment on four pairs (writing plan, do-not-repeat list;
@@ -51,7 +57,7 @@ With four partners we claim no significance, and we read the orderings as not fo
 \begin{table}[t]
 \centering
 \footnotesize\setlength{\tabcolsep}{2.5pt}
-\caption{DINOv3 with each partner. Paper: change in LIBERO-Plus success against DINOv3 alone, in points. CKA: global features, agent view / wrist. Gain: $R^2$ gain with 95\% interval. Interf.: $R^2$ lost on DINOv3's future features.}
+\caption{DINOv3 with each partner. Paper: change in LIBERO-Plus success against DINOv3 alone, in points. CKA: global features, agent view / wrist. Gain: $R^2$ gain with 95\% interval. Interf.: $R^2$ lost on the change in DINOv3's features over $k$ steps (mean over $k$).}
 \label{tab:clean}
 \begin{tabular}{@{}lrccc@{}}
 \toprule

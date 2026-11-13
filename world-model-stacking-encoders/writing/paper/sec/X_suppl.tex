@@ -9,7 +9,8 @@
 
 \TODO{Test-set use: the early load of the stove test demos before the loader was fixed (no number came from it; synthesis decision 5).}
 
-\TODO{Full result tables for the clean-frame tests, the control partners, the perturbed frames (all twelve slices) and the proxy runs.}
+% Clean-frame tables are in the subsection at the end of this file (2026-11-12); control-partner results stay open.
+\TODO{Full result tables for the control partners, the perturbed frames (all twelve slices) and the proxy runs.}
 
 \TODO{Compute used, from the experiment LOGs; encoder checkpoints and licenses; training curves (A1) and compute cost (A2), restyled.}
 
@@ -26,11 +27,17 @@ The 63,728 frames split by demonstration into 38,464 training, 12,416 validation
 % Tally line 23: alpha tuned on validation separately for every probe and pair, grid 1e-2..1e5, refit on train+val.
 The ridge strength was tuned on validation separately for every probe and pair (grid $10^{-2}$ to $10^{5}$) and the probe refit on training plus validation data.
 % Tally line 23: alpha hit the bottom edge (0.01) for SigLIP 2 global, C-RADIOv4 mean, VGGT-Omega global and mean.
-It reached the bottom edge of the grid (0.01) for the SigLIP~2 and VGGT-Omega probes on global features, for C-RADIOv4 on mean features and for VGGT-Omega on mean features.
+% Tally line 19: CKA on 5,000 frames, seed 0. Tally lines 14-15: SAM 3 has no summary token so its global features are its patch mean; VGGT-Omega's are its camera token.
+CKA uses a fixed subsample of 5,000 frames (seed 0).
+SAM~3's global features are the mean over its patch tokens, and VGGT-Omega's are its camera token.
+% Tally line 23 (continued):
+The ridge strength reached the bottom edge of the grid (0.01) for the SigLIP~2 and VGGT-Omega probes on global features, for C-RADIOv4 on mean features and for VGGT-Omega on mean features.
 
 % fp32 vs fp16: Tally line 107 and lines 11-15 (dtype column); Setup, "Rules fixed in advance".
 \paragraph{Deviation from the pre-registration.}
-DINOv3's features are 32-bit floating point and the partners' 16-bit (C-RADIOv4 and VGGT-Omega under autocast), because DINOv3 in 16-bit gave non-finite features on the first batch, which deviates from the pre-registration.
+DINOv3's features are 32-bit floating point and the partners' 16-bit (C-RADIOv4 and VGGT-Omega under autocast), because DINOv3 in 16-bit gave non-finite features on the first batch.
+% Tally line 107, LOG.md 2026-10-19 (e) (line 194): the pre-registration fixed 16-bit features.
+This deviates from the pre-registration, which fixed 16-bit features.
 The target-side test reads the same caches.
 
 % No matched-dimension control: Tally line 17 ("pre-registered"), line 103; Target lines 18, 57 (dimension confound).
@@ -42,13 +49,15 @@ On the target side the two widest partners, VGGT-Omega (4,096 dimensions for bot
 % Renderer caveat: README.md line 29 (perturbed-frames PLAN Amendment 2026-11-09, around line 314); the "orderings
 % within the tally are unaffected" inference is the lead's and not verified there (README.md line 29).
 \paragraph{Renderer.}
-Absolute probe numbers are specific to the stored frames: the same DINOv3 probe lost about 0.05 $R^2$ between the stored frames and our re-render of the same moments (perturbed-frames plan, Amendment 2026-11-09).
+Absolute probe numbers are specific to the stored frames: the same DINOv3 probe lost about 0.05 $R^2$ between the stored frames and our re-render of the same moments.
+% Source: experiments/2026-11-06-perturbed-frames/PLAN.md, Amendment 2026-11-09 (internal reference, kept out of the printed text).
 We therefore compare orderings, not absolute values.
 All tally probes used the stored frames.
 
 % Input-side design without a rule: Tally line 3; Tally lines 43-45, 110-115 (skipped encoders).
 \paragraph{Input side: no decision rule.}
-The input-side test fixed its choices (encoders, feature types, the global features as primary and mean features as secondary, the bootstrap) before running, but states no hypothesis and no rule; it is a sanity check on four pairs, not evidence (Tally line 3).
+The input-side test fixed its choices (encoders, feature types, the global features as primary and mean features as secondary, the bootstrap) before running, but states no hypothesis and no rule; it is a sanity check on four pairs, not a statistical test.
+% Tally line 3 and line 102 (n = 4 pairs, no significance reported).
 Three of the paper's seven DINOv3 partners (V-JEPA~2.1, UniTok, HRP) were not run.
 
 % Full CKA and gain tables. CKA: Tally lines 39-42 (global), 51-54 (mean), 56 (grid). Gain mean: Tally lines 51-54.
@@ -79,16 +88,19 @@ C-RADIOv4 & CKA & .583 / .854 & .766 / .863 & .929 / .898 \\
 % secondary prediction: Target lines 24, 40.
 \paragraph{Target side.}
 The primary reading is the reduced-rank ridge interference with rank 64, the per-block scaling $w=1/d$ (a$'$), global features and the mean over the three horizons.
-Intervals are demonstration-level bootstrap intervals (1,000 paired draws, seed 0) with the fitted models held fixed, so they exclude fitting variance and say nothing about the trained world model.
+% Input side: Tally line 22 and src/diagnostics.py (review finding 9: probes kept fixed, test demos resampled). Target: Target lines 23, 56, 60.
+In both tests the intervals are demonstration-level bootstrap intervals (1,000 paired draws, seed 0) with the fitted models held fixed, so they exclude fitting variance.
+The target-side test is a linear, reduced-rank stand-in for the world model's flow-matching objective on clean frames; it tests whether the mechanism shows up in the features, not what happened inside the paper's model.
 The reference $R^2$ for DINOv3's change alone is 0.364 to 0.372 across pairs.
 The outcome rule and a secondary prediction (that C-RADIOv4's interference shrinks when block variances are equalized) were both fixed in advance; the secondary prediction also fails, since C-RADIOv4's interference grows from $+0.0151$ under a$'$ to $+0.0251$ under equalized variance (b).
 Table~\ref{tab:suppl-target} gives the other readings.
-Two further diagnostics, T1a (the $R^2$ for predicting $B$'s change from both encoders' features) and T1b (the gain of $B$ as an input for DINOv3's change), are reported and do not decide.
+% T0: Target line 22 ("B's share of the initial loss"); table values Target lines 33-36.
+Three further diagnostics, T0 ($B$'s share of the initial, predict-the-mean loss), T1a (the $R^2$ for predicting $B$'s change from both encoders' features) and T1b (the gain of $B$ as an input for DINOv3's change), are reported and do not decide.
 
 \begin{table*}[t]
 \centering
 \small
-\caption{Target side. a$'$: primary interference with 95\% interval; b: equalized block variance; a$''$: pooled; Share: $B$'s share of the loss under a$'$; T1a, T1b as in the text.}
+\caption{Target side. a$'$: primary interference with 95\% interval; b: equalized block variance; a$''$: pooled; Share (T0): $B$'s share of the initial (predict-the-mean) loss under a$'$; T1a, T1b as in the text.}
 \label{tab:suppl-target}
 \begin{tabular}{@{}lcccccc@{}}
 \toprule
