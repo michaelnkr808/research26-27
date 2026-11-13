@@ -1,0 +1,30 @@
+# 006 — The research question is the user's, the 13 proxy runs are parked, "done" is staged
+- **Date:** 2026-11-12
+- **Status:** proposed (the user's "go" in chat 2026-11-12; accepted on the user's merge OK)
+- **Context:** Decision 005 (accepted 2026-11-12) left three items open: the research question, the other 13 proxy runs, and what "done" looks like. The direction `README.md` still carries decision 004's narrower question and a "What done looks like" written for the proxy replication. In the planning window on 2026-11-12 the user said (verbatim, the source for this record):
+  - "since we aren't doing the smaller replication of the model what do you think should happen with the 13 proxy runs, we still don't know what \"done\" looks like"
+  - "We already have a research question though i feel like you might be making to specific, the research question we already have is why do some encoder pairings work while others make it worse in the context of vae-grid feature concatentation"
+  - "go", to the lead's proposal (the user's question as the question; park the 13 proxy runs with the reason recorded; "done" in stages with a helpful pairing set against the harmful one; seeds fixed after the sizing check; the Vast.ai correction).
+  - "I already have a vast.ai account"
+- **Options considered:** none written out. The lead proposed, and the user accepted by "go", the single package below. The lead's first proposed question wording named DINOv3 + C-RADIOv4; the user rejected it as too specific (user's words above).
+- **Decision & rationale:** three parts.
+  - **(a) The research question is the user's.** "Why do some encoder pairings work while others make it worse, in the context of VAE-grid feature concatenation?" (the user's sentence is quoted verbatim in Context). It replaces the question text of decision 004. DINOv3 + C-RADIOv4 (the pair the paper reports as harmful, -5.41 in liu2026what Table 10, per the README key findings) is a test case inside this question, not the question.
+  - **(b) The remaining 13 proxy runs are parked:** `dinov3` seed 2 and three seeds each of `none`, `c-radiov4`, `dinov3+c-radiov4`, `dinov3+siglip2` (as decision 005 lists them). Not run, not deleted from the plan. Reason (the lead's reasoning, accepted by the user's "go"): the runs would answer the old question on a from-scratch model whose two trained DINOv3 seeds sit far below the paper's range (verified, proxy PLAN Amendment 2026-11-09 (c): means of 8.315 and 7.155 points on LIBERO-Plus against the paper's DINOv3 total of 84.0), and they would take Nautilus time the new direction needs (speculative). The two trained DINOv3 seeds, their evaluations and the seed-noise read stay in the record as they are. The pre-registered outcome rule is not applied: no DINOv3 + C-RADIOv4 proxy result exists and none is claimed.
+  - **(c) "Done" is provisional and staged (the lead's proposal, accepted by "go").** Each stage gets its own experiment PLAN, with predictions and a pass bar or decision rule, written before it runs.
+    1. The pretrained-start model with no extra encoder, clean training and clean testing on LIBERO, clears a pass bar written before it runs.
+    2. Pairings fused the paper's way (channel-wise concatenation on the VAE latent grid): DINOv3 alone, one pairing the paper reports as helpful and the one it reports as harmful, on clean LIBERO first and then on LIBERO-Plus, where the paper's drop was measured, before any claim about the reported harm. The lead's suggestion for the helpful pairing is DINOv3 + SigLIP 2 (+1.83 in Table 10 per the README key findings; features already cached). The harmful one is DINOv3 + C-RADIOv4 (-5.41).
+    3. One or two fusion variants on those pairings. Which ones is decided in that stage's PLAN; the suspects are in direction `PLAN.md` Next 2 (scale, double counting, grid mismatch).
+    4. The existing frozen-feature results reported as supporting evidence.
+  - Nothing here is a result. No number in this record was measured this session; the numbers are quoted from the files named.
+- **Consequences:**
+  - `README.md` top block: the question, the pointer line and "What done looks like" are replaced (old texts kept in one line each, marked superseded), and 006 is added to the `decisions/` entry. Status line, Goal line and Key findings are not touched here.
+  - `STANDARDS.md`: Scope "Research question" points to 006; the Paid compute candidate-providers line records that the user has a Vast.ai account (nothing set up or billed, no prices read).
+  - Dated notes appended to `decisions/004-paper-framing-case-study.md` (question superseded; option C framing not re-decided) and `decisions/005-pretrained-start-fusion-study.md` (first three open items taken up here; Vast.ai account exists).
+  - Proxy calibration experiment: PLAN Amendment 2026-11-12 (e) records the early stop, and its README gets one dated line. The sizing check's PLAN gets a dated Amendments entry for the Vast.ai account.
+  - The direction `LOG.md`, `PLAN.md` and README Status line are written by the lead, not by this change.
+- **Open, for the user (not decided here):**
+  - Training seeds per configuration. To be fixed once the sizing check gives a measured cost. `_standards/07` asks for at least 3 seeds for any reported comparison and `STANDARDS.md` asks for at least 3 training seeds per combo, so fewer would need a stated override.
+  - The cost of LIBERO-Plus evaluation on the new model. Not estimated.
+  - Whether single-encoder runs of the partner encoders are part of stage 2 (the mentor suggested testing other encoders on their own).
+  - The paper's framing, title and contributions under the new question. Decision 004's option C framing is not re-decided here; this is the draft session's gate.
+  - Which fusion variants stage 3 tests.

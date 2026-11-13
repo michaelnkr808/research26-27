@@ -30,3 +30,4 @@
   - What "done" looks like now (the README's "What done looks like" was written for the proxy replication).
   - Which 8 of the 30 layers to keep (30 is the Wan2.2-TI2V-5B video transformer's `num_layers`, "its config", verified in direction `LOG.md` 2026-11-11 [agent, lead, vis-meetings]; the first 8 is one reading of "8 layers"; the LOG entry does not say).
   - Whether the first 8 pretrained layers keep the benefit of pretraining (unknown).
+- **Note 2026-11-12 (dated; the text above is unchanged):** the first three open items above (the question and framing, the 13 proxy runs, what "done" looks like) are taken up by `decisions/006-research-question-and-done.md`. The user has a Vast.ai account (said 2026-11-12), so "No account yet" under Providers is out of date.
