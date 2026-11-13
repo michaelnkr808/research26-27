@@ -3,7 +3,7 @@
 > These rules extend the general standards in `../_standards/`. A rule that *relaxes* a general rule must name it and say why.
 
 ## Scope
-- **Research question:** see `README.md` (decided 2026-11-09, decisions/004).
+- **Research question:** see `README.md` (decisions/006, 2026-11-12).
 - **In scope / out of scope:**
   - **In:** frozen vision encoders; feature-level combination (concatenation); cheap pre-training diagnostics (CKA, conditional probe gain); LIBERO / LIBERO-Plus.
   - **In:** the fusion step of a world action model that starts from the pretrained Wan 2.2 video transformer (decisions/005).
@@ -57,7 +57,7 @@
     - No paid launch without the user's go in chat in the launching session, with the hourly price and the estimated total stated first.
     - Log estimated vs. actual dollars per run in the experiment `LOG.md`.
     - Stop or delete paid resources when the run ends.
-  - Candidate providers: Runpod, Modal, Vast.ai. Vast.ai is under consideration (source: the user in chat, planning session, 2026-11-12 ('can we also consider vast.ai?'); to be recorded in that session's direction LOG entry); no account, no prices read.
+  - Candidate providers: Runpod, Modal, Vast.ai. Vast.ai: the user has an account (user in chat, 2026-11-12), nothing set up or billed, no prices read.
 - Checkpoint storage location: CephFS PVC `stacking-encoders-proxy` (1Ti, `rook-cephfs`), proxy training checkpoints at `/mnt/proxy/runs/<config>-s<seed>/ckpt.pt` and rollout records at `/mnt/proxy/rollouts/*.jsonl` (`experiments/2026-10-27-proxy-calibration/RUN.md` steps 10 and 11, `jobs/pvc-proxy.yaml`). Cached features are on that PVC and on `stacking-encoders-features` (see `data/README.md`). Checkpoints stay out of git. The personal PVC `michael-persistent` is only 20Gi (`experiments/2026-10-18-extract-libero-goal/job.yaml` line 5). CephFS is not archival (purged after 6 months unaccessed; `data/pvc-features-cephfs.yaml`).
 
 ## Conventions
