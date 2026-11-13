@@ -1,20 +1,73 @@
-% Owner: the draft session drafts; the user edits. State: measurements ready; the reading waits on the
-% control-partners run (M2) and the README headline sign-off (M6).
-% Sources: experiments/2026-10-19-feasibility-tally/README.md (lines 3, 17, 79, 107, 108),
-% experiments/2026-10-21-target-diagnostics/README.md, writing/2026-11-09-blind-baselines.md (lines 5-7),
-% experiments/2026-11-09-control-partners/PLAN.md (rule lines 79-91; proposed mapping line 95, capacity floor line 81),
-% README.md key findings (renderer caveat line 28).
-% Do not repeat: target-diagnostics README line 12 calls SigLIP 2 the paper's best partner; wrong.
-% About 1.25 pages.
+% Owner: the draft session drafts; the user edits. First draft 2026-11-12 (draft session, short version).
+% State: the two signed-off measurements are written; red TODOs are open slots (control partners, blind baselines).
+% Paths below are relative to world-model-stacking-encoders/. "Tally" = experiments/2026-10-19-feasibility-tally/README.md
+% (line numbers are from that file at e867db4); "Target" = experiments/2026-10-21-target-diagnostics/README.md.
+% Sign-off: input side 2026-10-21, target side 2026-10-27 (README.md line 15, verified).
+% Framing-neutral on purpose (decisions/005 open): no claim that these tests are the contribution, no explanation of
+% why DINOv3 + C-RADIOv4 hurts, no mention of fusion or the pretrained start.
+% Terms: "similarity" = CKA, "complementarity" = gain(B|DINOv3), never swapped (STANDARDS.md line 64).
+% Do not repeat: Target line 12 calls SigLIP 2 the paper's best partner; wrong (README.md line 30). The paper's
+% best pair is DINOv3 + UniTok; SigLIP 2 is the best of our four partners.
+% About 0.5 page (short version; the supplement subsection holds the detail).
 \section{Clean-frame tests on frozen features}
 \label{sec:clean}
 
-\TODO{Input side: how much action information the partner adds on top of DINOv3 (gain), with demo-level bootstrap intervals; similarity (CKA), without intervals (none were computed). The tally fixed its design in advance but had no decision rule; DINOv3 features are fp32, the partners' fp16 (a deviation from its pre-registration). Pairs differ in input width; no matched-dimension control was run.}
+% Frames, data and split: Tally lines 6, 18-22 (63,728 time steps, 100 test demos, both cameras, ridge probe to
+% the 7-d action, global features primary). Encoders as in Sec. 3: Tally lines 9-15.
+We ask whether frozen features of DINOv3 and a partner show any trace of the harm the source paper reports for DINOv3 + C-RADIOv4.
+Both tests use the LIBERO-Goal demonstrations and encoders of Sec.~\ref{sec:setup}, with features computed once per encoder; no model is trained.
 
-\TODO{Target side: how much adding the partner's future features as a co-target interferes with predicting DINOv3's future features (decision rule fixed in advance).}
+% Input side. CKA: debiased linear, per camera, Tally line 19; gain definition and bootstrap: Tally lines 21-22;
+% no decision rule: Tally line 3 ("No hypothesis is chosen or argued here"); no CKA intervals: Tally line 79.
+% Observations: Tally lines 77, 80 (R highest CKA in all six cells), 86 (R largest gain, CI overlaps S's), 87.
+% Numbers: Table rows, Tally lines 39-42 (global). Paper change: Tally lines 39-42, last column.
+\paragraph{Input side.}
+For each partner $B$ we measure its similarity to DINOv3 as debiased linear CKA~\TODO{cite Kornblith et al. 2019}, per camera.
+We measure its complementarity as gain($B$|DINOv3): the increase in test $R^2$ of a ridge probe to the recorded action when $B$'s global features are added to DINOv3's.
+Intervals are 95\% demonstration-level bootstrap intervals over the 100 test demonstrations; none were computed for CKA.
+This test fixed its design before it ran but has no decision rule.
+C-RADIOv4 is the most similar to DINOv3 in every feature-type and camera cell and adds the most (gain $+0.037$), although its interval overlaps SAM~3's.
+SigLIP~2's CKA is nearly as high as C-RADIOv4's on the agent view (Table~\ref{tab:clean}).
+Every partner's gain is positive and small.
 
-\TODO{Table T1: the paper's numbers for our four partners next to these measures and the blind baselines (single-encoder score, the paper's overlap reasoning as a label, random ranking). Say the baselines were computed after the tally and the label is not blind to the paper's numbers. The gain column waits on M2 (a capacity floor above zero would re-read every gain against matched-width noise).}
+% Target side. Definition and rule: Target lines 19-24 (T2, rank 64, k in {4,16,32}, primary a', global, mean over k,
+% bootstrap 1,000 draws seed 0). Rule quoted at line 24; outcome line 40. Numbers: Target lines 33-36.
+\paragraph{Target side.}
+In the world model each encoder's future features are also a prediction target.
+We fit a rank-64 linear map from DINOv3's and $B$'s current features to each encoder's change over $k\in\{4,16,32\}$ steps, and define interference($B$) as the drop in $R^2$ for DINOv3's change when $B$'s change is added as a co-target; positive means harm.
+The decision rule was fixed in advance: if C-RADIOv4 does not interfere the most, the target-side explanation fails at this level.
+VGGT-Omega interferes the most; C-RADIOv4 is second, narrowly above SigLIP~2 (Table~\ref{tab:clean}), so the rule is not met.
 
-\TODO{Caveat: absolute probe numbers depend on the renderer; orderings are what we compare.}
+% Verdict: README.md lines 16 and 20; Tally line 87 ("does not single out D+R"); Target line 40.
+% "The orderings do not follow the paper's" is a judgment on four pairs (writing plan, do-not-repeat list;
+% reviews/2026-11-09-synthesis.md, P2), so it is worded as one.
+Neither test singles out DINOv3 + C-RADIOv4.
+With four partners we claim no significance, and we read the orderings as not following the paper's.
 
-\TODO{Slot, control partners (waits on M2). Each test's outcome comes from the control-partners PLAN's rule. What the outcomes mean for the finding is the mapping proposed in that PLAN, explicitly not decided there: floor near zero and size-explained: ``the cheap checks cannot flag a bad partner'', ``no evidence either way about D + R''; can go negative and partner-specific: the finding stands and is stronger, and the controls give a floor to report next to each real number; mixed: report each test separately. If the input side shows a capacity floor above zero, every real partner is re-read as gain minus the matched-width noise gain. Wording must match the README headline the user signs off, not stronger. Figure F2: control partners next to the real partners.}
+% Table T1. Paper change = Table 10 mean minus DINOv3 alone (84.0, Table 1): Tally line 33 and the last column of
+% lines 39-42; Table 10 CSV D+L 85.83, D+R 78.59, D+S 84.49, D+G 84.40; Table 1 CSV DINOv3 total 84.0.
+% CKA: Tally lines 39-42 (global, agentview / wrist). Gain: Tally lines 39-42. Interference: Target lines 33-36
+% (a', r = 64, global, mean over k). Row order is the paper's order.
+\begin{table}[t]
+\centering
+\footnotesize\setlength{\tabcolsep}{2.5pt}
+\caption{DINOv3 with each partner. Paper: change in LIBERO-Plus success against DINOv3 alone, in points. CKA: global features, agent view / wrist. Gain: $R^2$ gain with 95\% interval. Interf.: $R^2$ lost on DINOv3's future features.}
+\label{tab:clean}
+\begin{tabular}{@{}lrccc@{}}
+\toprule
+Partner & Paper & CKA & Gain & Interf. \\
+\midrule
+SigLIP~2 & $+1.83$ & .576 / .792 & $+.017$ [.013, .021] & $+.0141$ \\
+SAM~3 & $+0.49$ & .559 / .643 & $+.033$ [.027, .038] & $+.0032$ \\
+VGGT-Omega & $+0.40$ & .213 / .267 & $+.014$ [.010, .018] & $+.0343$ \\
+C-RADIOv4 & $-5.41$ & .583 / .854 & $+.037$ [.032, .042] & $+.0151$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% Blind baselines: writing/2026-11-09-blind-baselines.md lines 5-7 (not cleared for the paper by the user yet).
+\TODO{Blind baselines (single-encoder score, the paper's overlap reasoning as a label, random ranking), source \texttt{writing/2026-11-09-blind-baselines.md}. Not cleared for the paper by the user yet. When added, say they were computed after the tally and the label is not blind to the paper's numbers (that file, lines 5--7).}
+
+% Control partners: experiments/2026-11-09-control-partners/ (PLAN rule lines 79-91, proposed mapping line 95,
+% capacity floor line 81); not signed off as a finding.
+\TODO{Control partners (noise, duplicate, dimension-matched), source \texttt{experiments/2026-11-09-control-partners/}. Not signed off as a finding; wording must match the README headline the user signs off. If the input side shows a capacity floor above zero, every gain in Table~\ref{tab:clean} is re-read against it.}
