@@ -48,13 +48,16 @@
   - Utilization above 40% of requested GPUs; requests and limits within 20% of each other; start on 1 GPU. What NRP's rule is (rechecked 2026-11-07, `../_standards/08`, verified): the policy allows a user no more than 4 pods outside the ranges (GPU above 40% of the request, CPU 20-200%, RAM 20-150%) at once, the portal checks running pods every 10 minutes and skips pods younger than 30 minutes, and NRP says admins "will ban namespaces with under-utilized resources requests" and that namespaces that keep requesting more than they use "risk being banned". No source says what happens above 4 pods. The docs document no averaging window, further grace period, warning, or kill. NRP's portal backend code (`prp/k8s_portal` at `5b2e3ce8`, read 2026-11-07, [NRP code] in 08; the 1-day, 6-hour and 40% values are hardcoded and apply if the deployed build matches `master`, the 3 h warning threshold, 180-minute minimum runtime and other timings are configurable code defaults, and the live config is not public) does: the Violations page averages GPU utilization over 1 day, an hourly job emails the owner once the pod's average has been under 40% (not only near 0%) for about 3 h, and the admin idle list averages over 6 h but can list a pod from about 3 h of age (the 6 h is a window, not a delay). The 10-minute Violations-page check runs only if `portal.enable_watch_usage` is on (no default in the source; the docs suggest it is). These are separate paths, so a pod can pass one and be flagged on another. An admin delete of an idle pod that emails the identified owner is recorded as a `gpu_idle` violation (counted per user across namespaces, no time limit; admins can delete the rows), with a three-strikes email text (flagged for review and potential suspension on the third). The strike rule is therefore in NRP's own code and email template, not only lab-reported; the ban itself is manual. The user said 2026-11-06 to keep assuming 1 of 3. Our own operating rule on this threshold is unchanged by this note.
   - **Gate (stop and ask):** more than 8 GPUs at once, or a sweep of more than 20 Jobs.
   - Log estimated vs. actual GPU-hours per run anyway, for planning.
-- Paid compute (decisions/005, proposed 2026-11-12; only what the user decided):
-  - Budget: about $30 a month out of the user's own pocket (user, 2026-11-12).
-  - Short jobs only; long training stays on Nautilus.
-  - No paid launch without the user's go in chat in the launching session, with the hourly price and the estimated total stated first.
-  - Log estimated vs. actual dollars per run in the experiment `LOG.md`.
-  - Stop or delete paid resources when the run ends.
-  - Candidate providers: Runpod, Modal, Vast.ai (Vast.ai is under consideration, no account yet).
+- Paid compute (decisions/005, proposed 2026-11-12):
+  - The user's decisions (source: direction `LOG.md` 2026-11-12 [agent, lead, planning], user decision (e), chat 2026-11-11 and 2026-11-12):
+    - Budget: about $30 a month out of the user's own pocket.
+    - Short jobs only.
+    - Long training stays on Nautilus.
+  - Proposed by the planning lead, in force once the user gives the merge OK on PR #26:
+    - No paid launch without the user's go in chat in the launching session, with the hourly price and the estimated total stated first.
+    - Log estimated vs. actual dollars per run in the experiment `LOG.md`.
+    - Stop or delete paid resources when the run ends.
+  - Candidate providers: Runpod, Modal, Vast.ai. Vast.ai is under consideration (source: the user in chat, planning session, 2026-11-12 ('can we also consider vast.ai?'); to be recorded in that session's direction LOG entry); no account, no prices read.
 - Checkpoint storage location: CephFS PVC `stacking-encoders-proxy` (1Ti, `rook-cephfs`), proxy training checkpoints at `/mnt/proxy/runs/<config>-s<seed>/ckpt.pt` and rollout records at `/mnt/proxy/rollouts/*.jsonl` (`experiments/2026-10-27-proxy-calibration/RUN.md` steps 10 and 11, `jobs/pvc-proxy.yaml`). Cached features are on that PVC and on `stacking-encoders-features` (see `data/README.md`). Checkpoints stay out of git. The personal PVC `michael-persistent` is only 20Gi (`experiments/2026-10-18-extract-libero-goal/job.yaml` line 5). CephFS is not archival (purged after 6 months unaccessed; `data/pvc-features-cephfs.yaml`).
 
 ## Conventions
