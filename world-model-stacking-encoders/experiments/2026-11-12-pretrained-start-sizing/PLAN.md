@@ -143,7 +143,7 @@ The implementation session writes the code (a new script beside `src/proxy_wam.p
 Any claim about model quality; overfitting tests; evaluation rollouts; more than one encoder at once; fusion variants; depths other than 8; gradient checkpointing; multi-card runs; downloading or using a Fast-WAM LIBERO checkpoint.
 
 ## Status
-Design only, written 2026-11-12. Not signed off by the user. No code, no run, no results.
+Design only, written 2026-11-12. Signed off by the user 2026-11-12 (merge OK on PR #27, planning session, "2. yes"); the choices under "Open, for the user" are not settled. No code, no run, no results.
 
 ## Amendments
 <!-- ### YYYY-MM-DD: what changed, why, and whether any results had been seen yet -->
