@@ -12,3 +12,94 @@
 \TODO{Full result tables for the clean-frame tests, the control partners, the perturbed frames (all twelve slices) and the proxy runs.}
 
 \TODO{Compute used, from the experiment LOGs; encoder checkpoints and licenses; training curves (A1) and compute cost (A2), restyled.}
+
+% ---- Clean-frame tests (draft 2026-11-12). Sources: Tally = experiments/2026-10-19-feasibility-tally/README.md;
+% Target = experiments/2026-10-21-target-diagnostics/README.md (line numbers at e867db4). Paths relative to
+% world-model-stacking-encoders/.
+\subsection*{Clean-frame tests: detail}
+\label{sec:suppl-clean}
+
+% Config: Tally lines 6, 17-23; Target lines 17-18.
+\paragraph{Setup.}
+% Tally line 6: 63,728 time steps, split 38,464 / 12,416 / 12,848 frames, 100 test demos.
+The 63,728 frames split by demonstration into 38,464 training, 12,416 validation and 12,848 test frames, with 100 test demonstrations.
+% Tally line 23: alpha tuned on validation separately for every probe and pair, grid 1e-2..1e5, refit on train+val.
+The ridge strength was tuned on validation separately for every probe and pair (grid $10^{-2}$ to $10^{5}$) and the probe refit on training plus validation data.
+% Tally line 23: alpha hit the bottom edge (0.01) for SigLIP 2 global, C-RADIOv4 mean, VGGT-Omega global and mean.
+It reached the bottom edge of the grid (0.01) for the SigLIP~2 and VGGT-Omega probes on global features, for C-RADIOv4 on mean features and for VGGT-Omega on mean features.
+
+% fp32 vs fp16: Tally line 107 and lines 11-15 (dtype column); Setup, "Rules fixed in advance".
+\paragraph{Deviation from the pre-registration.}
+DINOv3's features are 32-bit floating point and the partners' 16-bit (C-RADIOv4 and VGGT-Omega under autocast), because DINOv3 in 16-bit gave non-finite features on the first batch, which deviates from the pre-registration.
+The target-side test reads the same caches.
+
+% No matched-dimension control: Tally line 17 ("pre-registered"), line 103; Target lines 18, 57 (dimension confound).
+\paragraph{No matched-dimension control.}
+The concatenated global probe inputs have 4,096 dimensions for DINOv3 with SigLIP~2 or SAM~3, 6,144 with VGGT-Omega and 6,656 with C-RADIOv4.
+Ridge strength is tuned per probe, but nothing equalizes capacity, and no matched-dimension control was run in this test.
+On the target side the two widest partners, VGGT-Omega (4,096 dimensions for both cameras) and C-RADIOv4 (4,608), are first and second under the primary measure; this confound was not tested further.
+
+% Renderer caveat: README.md line 29 (perturbed-frames PLAN Amendment 2026-11-09, around line 314); the "orderings
+% within the tally are unaffected" inference is the lead's and not verified there (README.md line 29).
+\paragraph{Renderer.}
+Absolute probe numbers are specific to the stored frames: the same DINOv3 probe lost about 0.05 $R^2$ between the stored frames and our re-render of the same moments (perturbed-frames plan, Amendment 2026-11-09).
+We therefore compare orderings, not absolute values.
+All tally probes used the stored frames.
+
+% Input-side design without a rule: Tally line 3; Tally lines 43-45, 110-115 (skipped encoders).
+\paragraph{Input side: no decision rule.}
+The input-side test fixed its choices (encoders, feature types, the global features as primary and mean features as secondary, the bootstrap) before running, but states no hypothesis and no rule; it is a sanity check on four pairs, not evidence (Tally line 3).
+Three of the paper's seven DINOv3 partners (V-JEPA~2.1, UniTok, HRP) were not run.
+
+% Full CKA and gain tables. CKA: Tally lines 39-42 (global), 51-54 (mean), 56 (grid). Gain mean: Tally lines 51-54.
+% No CIs for CKA: Tally line 79.
+\begin{table*}[t]
+\centering
+\small
+\caption{Input side, all cells. CKA is debiased linear CKA with DINOv3, agent view / wrist; no intervals were computed. Gain is gain($B$|DINOv3) with a 95\% demonstration-level bootstrap interval.}
+\label{tab:suppl-input}
+\begin{tabular}{@{}llccc@{}}
+\toprule
+Partner & & Global & Mean & Grid ($4{\times}4$) \\
+\midrule
+SigLIP~2 & CKA & .576 / .792 & .672 / .782 & .830 / .868 \\
+ & Gain & $+.017$ [.013, .021] & $+.034$ [.030, .038] & \\
+SAM~3 & CKA & .559 / .643 & .665 / .665 & .896 / .802 \\
+ & Gain & $+.033$ [.027, .038] & $+.035$ [.031, .040] & \\
+VGGT-Omega & CKA & .213 / .267 & .268 / .399 & .452 / .484 \\
+ & Gain & $+.014$ [.010, .018] & $+.016$ [.013, .019] & \\
+C-RADIOv4 & CKA & .583 / .854 & .766 / .863 & .929 / .898 \\
+ & Gain & $+.037$ [.032, .042] & $+.037$ [.033, .042] & \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+% Target-side details. Measures and scalings: Target lines 19-23. Table: Target lines 31-36 (a' with CI, b, a'',
+% B loss share) and 44-49 (T1a, T1b). Reference R2_D: Target line 38. Caveats: Target lines 56, 60. Outcome and
+% secondary prediction: Target lines 24, 40.
+\paragraph{Target side.}
+The primary reading is the reduced-rank ridge interference with rank 64, the per-block scaling $w=1/d$ (a$'$), global features and the mean over the three horizons.
+Intervals are demonstration-level bootstrap intervals (1,000 paired draws, seed 0) with the fitted models held fixed, so they exclude fitting variance and say nothing about the trained world model.
+The reference $R^2$ for DINOv3's change alone is 0.364 to 0.372 across pairs.
+The outcome rule and a secondary prediction (that C-RADIOv4's interference shrinks when block variances are equalized) were both fixed in advance; the secondary prediction also fails, since C-RADIOv4's interference grows from $+0.0151$ under a$'$ to $+0.0251$ under equalized variance (b).
+Table~\ref{tab:suppl-target} gives the other readings.
+Two further diagnostics, T1a (the $R^2$ for predicting $B$'s change from both encoders' features) and T1b (the gain of $B$ as an input for DINOv3's change), are reported and do not decide.
+
+\begin{table*}[t]
+\centering
+\small
+\caption{Target side. a$'$: primary interference with 95\% interval; b: equalized block variance; a$''$: pooled; Share: $B$'s share of the loss under a$'$; T1a, T1b as in the text.}
+\label{tab:suppl-target}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+Partner & a$'$ [95\% CI] & b & a$''$ & Share & T1a & T1b \\
+\midrule
+SigLIP~2 & $+.0141$ [.0138, .0145] & $+.0288$ & $+.0141$ & .288 & .495 & $+.0004$ \\
+SAM~3 & $+.0032$ [.0030, .0035] & $+.0207$ & $+.0032$ & .116 & .486 & $+.0073$ \\
+VGGT-Omega & $+.0343$ [.0332, .0354] & $+.0228$ & $+.0462$ & .717 & .433 & $+.0014$ \\
+C-RADIOv4 & $+.0151$ [.0147, .0155] & $+.0251$ & $+.0283$ & .352 & .536 & $+.0103$ \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\TODO{Control-partner result for this subsection (source \texttt{experiments/2026-11-09-control-partners/}, not signed off as a finding) and the blind-baseline detail (source \texttt{writing/2026-11-09-blind-baselines.md}, not cleared for the paper by the user).}
