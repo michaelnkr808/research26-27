@@ -1,0 +1,143 @@
+# Plan: sizing check for a pretrained-start world action model (8 of 30 Wan 2.2 layers)
+
+Written 2026-11-12 by an agent (planning worker) as a design for the user to sign off. Design only: no code, no Job or pod file, nothing run, no cluster or paid-compute action, nothing downloaded. Claims are labelled verified (checked against the file named), recalled (from memory, not checked here), or speculative (reasoning or arithmetic not yet measured). Predictions are speculative by definition. Once the check starts, this design is locked and changes become dated amendments at the bottom (`../../../_standards/04`). Paths are relative to `world-model-stacking-encoders/`.
+
+## In plain words
+Before any real training run on the pretrained Wan 2.2 video transformer, the user needs to know what one run costs. This check builds the model the way a real run would (Fast-WAM's joint model, cut to 8 layers, Wan 2.2 weights loaded, input layer widened for an encoder's features), feeds it a few real cached LIBERO batches, and times it. What comes out is a price tag and a list of cards the model fits on. It says nothing about whether the pretrained start or any encoder helps.
+
+Background (verified, direction `LOG.md` entry "2026-11-12 [agent, lead, planning]"): the from-scratch 8-layer proxy (`src/proxy_wam.py`) scored far below the paper; the user decided on 2026-11-11/12 to start from the pretrained Wan 2.2 video transformer, at 8 layers first as the mentor suggested; Fast-WAM at commit `7faa711` loads `Wan-AI/Wan2.2-TI2V-5B`; the lead's cost arithmetic for an 8-layer run was "over a hundred card-hours", explicitly not measured for a truncated model. This check replaces that arithmetic with a measurement.
+
+## Question
+Can Fast-WAM's joint model (`FastWAMJoint`: Wan video expert plus action expert in a mixture of transformers), cut to 8 of its 30 layers and loaded with the `Wan-AI/Wan2.2-TI2V-5B` weights, with the input projection widened for extra encoder channels, load and take training steps on one card, and what does a step cost in peak GPU memory and in seconds?
+
+## Design
+
+### What is built
+- **Model.** `FastWAMJoint` from Fast-WAM `7faa711`, built as the proxy builds it (`src/proxy_wam.py` `build_model`, lines 372-387, verified) but at the full Wan 2.2 TI2V-5B width instead of the proxy's 384: video expert width, FFN size, head count and head size, text dimension 4096, frequency dimension 256 and patch (1, 2, 2) as in Fast-WAM's own config for this checkpoint; action expert at Fast-WAM's own width (the proxy keeps the paper's 3:1 video-to-action ratio, `experiments/2026-10-27-proxy-calibration/PLAN.md` line 129, verified). The proxy's code comment gives Fast-WAM's FFN ratio as 14336/3072 (`src/proxy_wam.py` line 373, verified), which suggests width 3072 and FFN 14336; the implementation session takes the exact numbers from Fast-WAM's config at `7faa711`, not from this sentence. Both experts get 8 layers (the proxy builds both with the same `layers`, line 383, verified; whether `MoT` requires equal depth is recalled, not checked).
+- **Inputs, as the proxy feeds them:** cached Wan 2.2 VAE latents (48 channels on a 14 x 28 grid, 3 latent steps, 294 video tokens; proxy PLAN line 121, verified), cached umT5-XXL context (128 tokens) plus one proprio token, 32-step action chunks; no VAE and no T5 inside the step (`LatentsOnly`, `src/proxy_wam.py` lines 366-369, verified). Extra encoder features are channel-concatenated per grid cell, [VAE 48 | source], and the patch embedding and output head are widened to match (proxy design, PLAN line 129, verified).
+- **Training recipe, as the proxy's:** fp32 weights with bf16 autocast, AdamW (lr 1e-4, betas 0.9/0.95, weight decay 0.01), grad clip 1.0, Fast-WAM's loss with the video term split per source (`src/proxy_wam.py` lines 396-427, 474-502, verified). This precision choice sets most of the memory; see Open item 4.
+- **Two configurations:** `none` (input 48 channels) and one extra encoder (input 48 + that encoder's channels; DINOv3 is 1,024, C-RADIOv4 and SigLIP 2 are 1,152, `data/README.md` lines 71-73, verified). Which encoder is Open item 3.
+
+### Step 1: the day's prices (before anything is created)
+Read the current hourly price of a suitable card (Open item 2) on Runpod, Modal and Vast.ai on the day, and write the three prices, with date, card and on-demand or spot/preemptible terms, into this folder's `LOG.md`. Then tell the user the provider, card, hourly price and estimated total for this check (see "Cost and time cap") and wait for the user's go in the implementation session's chat.
+
+### Step 2: reading, no download (can run before step 1)
+- **Fast-WAM's loading path at `7faa711`.** Fast-WAM's source is not in this repository (only `src/proxy_wam.py` imports it), so this design does not know: which file Fast-WAM reads for the DiT weights (Hugging Face `Wan-AI/Wan2.2-TI2V-5B` or a ModelScope converted copy, as it does for the VAE, proxy PLAN line 127, verified), the parameter-name mapping, how the action expert is initialised (from scratch, copied from the video expert, or from a separate checkpoint), and whether the loader can take a subset of blocks. The implementation session reads this first and records the answers in this folder's `LOG.md`.
+- **Does Fast-WAM publish a trained LIBERO checkpoint?** Read Fast-WAM's README at `7faa711` and its Hugging Face pages (the dataset `yuanty/LIBERO-fastwam` is theirs, proxy PLAN line 43, verified). Record: whether a trained LIBERO checkpoint exists, its URL, licence, size, which parts it holds (video expert, action expert, proprio encoder) and its depth. Do not download it in this check. Why it matters: a trained checkpoint would give a pretrained action expert, which the paper's model had and our proxy did not (`src/proxy_wam.py` docstring lines 12-13, verified). Whether to use it is the user's decision after this check.
+- **Licence and size of `Wan-AI/Wan2.2-TI2V-5B`** from its model page (licence recalled as permissive, not checked; size not in any file read here). Recorded in `LOG.md` and, if used later, in `data/README.md` (`../../../_standards/07`, models).
+
+### Step 3: data slice
+- **Real cached batches, the proxy's own caches** on PVC `stacking-encoders-proxy` under `/mnt/proxy/feats/` (`vae`/`vae_b`, the chosen encoder's folder, `t5`, `meta`; `data/README.md` lines 67-75, verified).
+- **Slice:** one proxy buffer, 16 episodes (`--buffer-episodes 16`, `src/proxy_wam.py` line 531, verified), drawn with seed 0 from the training episodes of the four suites, with their VAE latents, the chosen encoder's features, their `.stats.npy` files, their T5 files and a meta file listing only those episodes. Size (speculative arithmetic from the stored shapes, `data/README.md` lines 71 and 74, and the mean episode length 277,713 frames / 1,712 episodes = about 162, proxy PLAN line 43): about 18 MB of VAE latents and about 130 MB of DINOv3 features per episode, so about 2.5 GB for 16 episodes (a little more for a 1,152-channel encoder).
+- **Getting it to a paid provider** needs a copy off Nautilus (a small CPU-only pod on the user's go, or the existing copy route the implementation session uses); copies through `kubectl exec` have broken at about 100 MB before and need chunking with sha256 checks (recalled from earlier sessions, not in a file read here). If the check runs on Nautilus instead (Open item 2), no copy is needed.
+- **Deviation, accepted for sizing:** z-score statistics come from the 16-episode slice, not the whole training set. Shapes, and therefore memory and time, are unchanged.
+
+### Step 4: load and report (both configurations)
+Build the 8-layer model, load the Wan 2.2 weights into the kept blocks (which 8 is Open item 1; the check uses the user's choice, or the first 8 if not settled, see Open item 1), and write to `results/load-<config>.json`:
+- every parameter name of the built model, tagged `loaded` (with the source tensor name), `new` (newly initialised) or `partly loaded` (the widened patch embedding and head: the 48 VAE-channel slice loaded, extra-channel slice new);
+- every checkpoint tensor not used, tagged `skipped` (the 22 dropped blocks are expected here; anything else is listed and explained);
+- counts of parameters in each tag, total and trainable;
+- for every `loaded` tensor, a check that it equals the source tensor (max absolute difference 0, after any dtype cast that Fast-WAM's own loader applies);
+- how the `new` and `partly loaded` parameters were initialised (Open item 5; the cost does not depend on it).
+A shape mismatch in a kept block, or an unexplained missing key, stops the check here (see "Decision rule").
+
+### Step 5: sanity items (`../../../_standards/07`, sanity checks)
+On the first batch of each configuration, before timing, print and save to `results/sanity-<config>.json`:
+- **Inputs inspected:** shapes and dtypes of every tensor fed to the model; per-channel mean and std of the VAE channels and of the z-scored source channels (source channels should sit near 0 and 1 on the slice); action and proprio ranges (inside [-1, 1] apart from clamped outliers up to plus or minus 5); counts of padded action steps and padded latent steps; the task strings of the batch. The frames behind these caches were already checked upright by eye (proxy PLAN line 122, verified), so no image is decoded here.
+- **Loss at start:** the total loss and each part (video VAE channels, video source channels, action) at step 0, and the same parts for a zero prediction on the same batch and the same noise draws (the "predict zero" baseline). Expected: finite, and of the same order as the zero baseline (speculative, see Predictions). A NaN or infinite loss stops the check.
+- **One overfit run is not part of this check.** It belongs to the first real run's plan (the direction's "clean training and clean testing" step, `LOG.md` 2026-11-12), which writes its own pass bar.
+
+### Step 6: measurement
+For each configuration, in one process each (no `torch.compile` and no VAE inside the step, so the batch-size crash of the 2026-10-16 benchmark, which came from its compiled VAE encode, should not recur; `experiments/2026-10-16-fastwam-step-bench/README.md` line 62, verified):
+- **Micro-batch sweep, ascending:** micro-batch m = 1, 2, 4, 8, 16, 32, 64, 128, stopping at the first out-of-memory. For each m: empty the cache and reset peak memory stats, 3 warm-up micro-steps (forward and backward), then 10 timed micro-steps with `torch.cuda.synchronize()` around each. Record median and spread of seconds per micro-step, seconds per sample, `torch.cuda.max_memory_allocated` and `max_memory_reserved` after warm-up, and `nvidia-smi` used memory once per m.
+- **Full optimizer steps at the proxy's batch:** global batch 128 (`src/proxy_wam.py` line 530, verified), built as 128 / m* accumulated micro-batches, where m* is the largest power of two that fit with at least 10% of the card's memory free. 1 warm-up optimizer step, then 2 timed ones, each including gradient clipping and the AdamW update. Record seconds per optimizer step and peak memory (the AdamW states exist only from the first update, so this is the true peak; the sweep above runs the update once before timing so its peaks include the states too).
+- **Data time kept separate:** batches for the whole check are assembled once into host memory before timing, so the step time is GPU time only. Host assembly time per batch is logged separately (the paid machine's disk is not CephFS, so it does not transfer to Nautilus).
+- **Written to `results/`:** `measure-<config>.json` with the sweep rows, the optimizer-step times, card name and memory, driver, CUDA and PyTorch versions, Fast-WAM commit, this repo's commit, the layer indices kept, the encoder, the seed, and wall-clock time of each phase; the raw process log as `results/run.log`. A failed or killed run keeps its log and is noted in `LOG.md`, not deleted (`../../../_standards/07`, tracking).
+
+### Test-set use
+None. Only training episodes are read, and no evaluation is run.
+
+## Predictions
+Written before running. All speculative. The only measured source is the 2026-10-16 one-card benchmark: full 30-layer Fast-WAM, random weights, synthetic batch, forward and backward only, no optimizer step, RTX A6000, two points (`experiments/2026-10-16-fastwam-step-bench/README.md` lines 55-61, verified): micro-batch 1 took 0.808 s with 23.9 GiB peak, micro-batch 2 took 1.525 s with 29.0 GiB peak; VAE encode inside the step was 0.251 s and 0.479 s; 6.021B trainable parameters, 12.5 GiB of resident bf16 weights; about 5.1 GiB more per extra sample (README line 66, derived there).
+
+1. **Loading.** The 8 kept video blocks, the text and time embeddings, the norms and the 48-channel slice of the patch embedding and head load with matching shapes; the 22 dropped blocks are skipped; the extra-channel slices, the proprio encoder and (unless Fast-WAM's loader or a published LIBERO checkpoint supplies it) the whole action expert are new. Source: the proxy's model structure (`src/proxy_wam.py` lines 372-387) and the 2026-10-16 trainable set "MoT (video + action experts) + proprio" (bench README line 8).
+2. **Trainable parameters:** about 1.6B to 1.9B. Source: 8/30 of 6.021B is 1.61B; parts that do not scale with depth (embeddings, head, proprio encoder) add an unknown amount.
+3. **Static memory (weights, gradients, AdamW states) under the proxy's fp32 recipe:** about 16 bytes per parameter, so about 24 to 28 GiB. Source: arithmetic on prediction 2. With bf16 weights and gradients instead it would be lower (Open item 4).
+4. **Activation memory per sample:** between about 0.45 and 1.4 GiB. Source: 5.1 GiB per sample x 8/30 = 1.36 GiB; the benchmark fed 33 synthetic frames (bench README line 7) and its own FLOPs basis counts 882 video tokens (bench README line 38), while the proxy's batch has 294 (proxy PLAN line 121), so if the benchmark's sequence was 3 times longer than a real training sample, the true figure is nearer a third of that. That the benchmark overstated the sequence length is my reading, not checked.
+5. **Peak memory and fit, `none` configuration:** about 26 to 30 GiB at micro-batch 1. Does not fit a 24 GB card at any micro-batch under the fp32 recipe; fits a 48 GB card at a micro-batch somewhere between 8 and 32; an 80 GB card allows a micro-batch at least twice as large. Source: predictions 3 and 4.
+6. **Speed, `none` configuration, on an A6000-class card:** between about 0.05 and 0.14 s per sample for forward and backward, so about 6 to 18 s per optimizer step of 128 samples. Source: the LOG entry's arithmetic, (1.525 - 0.479) / 2 = 0.52 s per sample without the VAE, x 8/30 = about 0.14 s; the lower end applies the 3 times sequence correction of prediction 4. The AdamW update for about 1.7B parameters adds well under a second per optimizer step (speculative). Cards other than the A6000 differ by a factor not measured in this repo.
+7. **One full training run** (21,696 optimizer steps of 128, the proxy's 10 epochs, proxy PLAN line 287, verified): about 36 to 108 card-hours on an A6000-class card. The LOG entry gave about 107 A6000-hours and "roughly $40 to $90 on Runpod and $150 or more on Modal per run" (direction `LOG.md` 2026-11-12, its own arithmetic, speculative there). Evaluation is not included in either figure.
+8. **One extra encoder** (about 1,024 to 1,152 more input channels): adds a few percent at most to time and memory, since only the patch embedding, the head and the loss over the extra channels grow; the 294-token sequence and the 8 blocks are unchanged. Source: the proxy's input design (`src/proxy_wam.py` lines 15-16, 377).
+9. **Loss at start:** finite in both configurations; the video part close to, or above, the predict-zero baseline, because the truncated stack no longer forms the computation its blocks were trained in. No decision rests on this prediction.
+
+## Decision rule
+Fixed before running. **This check produces a cost and a fit list, not a research finding.** It says nothing about whether the pretrained start, the 8-layer cut, or any encoder helps, and nothing from it goes into the README key findings.
+
+**Load outcome (step 4):**
+- Every kept block loads with zero difference, and the only `new` and `skipped` tensors are the expected ones (prediction 1): go on to the measurement.
+- A shape mismatch, an unexplained missing or unused tensor, or a nonzero difference: stop, record it in `LOG.md`, and fix only code (loading or name mapping). One rerun is allowed inside the same paid session's cap. A second failure goes back to the lead and the user; no timing is reported from a model that did not load as intended.
+
+**Fit list (from the sweep's peaks):**
+- The model "fits" a card of memory M at micro-batch m if the measured `max_memory_reserved` at that m, after the first optimizer update, is at most 0.9 x M (10% left for fragmentation and other processes). For each configuration the report lists, for 24 GB, 48 GB and 80 GB cards, the largest m that fits; cards of a size not measured get the linear fit of peak memory against m, labelled as an extrapolation.
+- Fits 48 GB at m* of 1 or more: full runs can use the 48 GB class (A40, RTX A6000, L40, L40S), the class Nautilus has (bench README line 12, verified).
+- Fits only 80 GB: full runs need A100 80 GB-class cards, or a memory change (Open item 4; gradient checkpointing was refused by Fast-WAM's compiled path in the 2026-10-16 benchmark, bench README line 63, verified). Which one is the user's call.
+- Does not fit 80 GB at m = 1: stop; back to the lead and the user with the measured peak.
+
+**Cost of one full training run (filled in from the measurement):**
+
+card-hours = S x t_step / 3600, and dollars = card-hours x p
+
+- S = optimizer steps in one full run = 21,696 (10 epochs at global batch 128 over the 1,712 training episodes; proxy PLAN line 287, verified). If the real-run plan changes epochs or batch, S changes with it.
+- t_step = measured seconds per optimizer step at global batch 128, on the card type that would run the full run, at the m* that card allows (step 6, "Full optimizer steps"). A t_step measured on a different card type is not transferred by an assumed ratio; it is reported as "measured on X" and the full-run card is named.
+- p = that card's hourly price on the day it is read (step 1); p = 0 for Nautilus, whose cost is queue time and the utilisation rules instead (`STANDARDS.md`, compute budget).
+- Excluded and stated next to the figure: evaluation (LIBERO and LIBERO-Plus rollouts), data loading stalls, checkpoint writes, startup, and failed runs. These come on top.
+
+**What the cost leads to:**
+- If dollars for one full run on the cheapest suitable paid card exceed the user's paid budget of about $30 a month, full runs do not go on the user's own money: they go to Nautilus (free; user decision (e) of 2026-11-12 as the direction `LOG.md` records it: paid compute "for short jobs only, long training stays on Nautilus") or to compute from the PI ask, and the figure goes into that ask. If it is under the budget, whether to pay for a run is still the user's decision, asked per run.
+- The card-hours figure, with the `none` and one-encoder numbers side by side, is the measured cost per run the user wanted before the PI meeting (direction `LOG.md` 2026-11-12, Next).
+
+## Cost and time cap
+The user's condition is that this check is fast and cheap.
+
+- **One short run, hard cap 60 minutes of wall clock, enforced in the command.** On a Linux container the whole script runs under `timeout --signal=TERM --kill-after=60 3600` (GNU coreutils, recalled), and the provider-side limit is set as well: on Modal the function's `timeout` argument at 3,600 s (recalled); on Runpod the command ends by stopping the pod from inside (`runpodctl stop pod "$RUNPOD_POD_ID"`, recalled; a Runpod pod keeps billing after its process exits unless stopped, recalled), and the implementation session checks with `list-pods` that it is stopped; on Vast.ai the equivalent is read from its docs on the day. A run that hits the cap writes what it has (each sweep row is written as it finishes).
+- **Estimated duration: about 30 to 45 minutes** of paid wall clock. How it was reached (speculative throughout): container start and environment install about 8 minutes (pod startup on Nautilus was about 8 minutes, proxy PLAN line 166, verified; a paid provider's may differ); weight download of the TI2V-5B checkpoint, size unknown here (a 5B-parameter model in bf16 would be about 10 GB, arithmetic), a few minutes; copying in the 2.5 GB data slice, a few minutes; two model builds and loads, a few minutes; measurement per configuration about 5 minutes at the slow end of prediction 6 (13 micro-steps at each m up to 64 is 1,651 samples, about 4 minutes at 0.14 s per sample, plus 3 optimizer steps of 128 at about 18 s each), so about 10 minutes for both. If step 2 shows the weight file is much larger than 10 GB, the estimate is revised in `LOG.md` before asking for the go.
+- **Dollar ceiling at the cap** (prices read 2026-11-12, direction `LOG.md`; the day's prices replace these in step 1): Runpod community A40 $0.35 per hour, so at most about $0.35; Runpod community A100 80GB PCIe $1.19, at most about $1.19; Modal L40S about $1.95 per hour and A100 80 GB about $2.50 per hour at base price, at most about $1.95 or $2.50, and 3 times that for non-preemptible execution (LOG, Modal pricing line). Modal's Starter plan includes $30 a month of credits (LOG), so on Modal the check may cost nothing out of pocket. Vast.ai: no account and no price read yet; its price is read in step 1. Every option is far inside the user's paid budget of about $30 a month (user, 2026-11-12, LOG). Storage or volume charges on Runpod are not priced here and are read in step 1 if a volume is used.
+- **No paid launch without the user's go,** given in the implementation session's chat after that session states the provider, card, hourly price and estimated total for this run (direction `LOG.md` 2026-11-12).
+- **Where to run** is Open item 2.
+
+## Open, for the user
+Design choices this plan does not make. Each has options and a recommendation; none is decided.
+
+1. **Which 8 of the 30 layers to keep.**
+   - First 8 (blocks 0-7). Each kept block still receives the kind of input it was trained on from the blocks before it, up to block 7; the top of the stack is gone. Simplest reading of the mentor's "pre-trained weights on 8 layers".
+   - Evenly spaced (for example blocks 0, 4, 8, 12, 17, 21, 25, 29). Keeps blocks from the whole depth, but every block after the first sees inputs from a different block than in training.
+   - Other (last 8; first 4 plus last 4; first 8 then grow toward 30 in later runs, as the mentor suggested increasing depth).
+   - Memory and speed should not depend on the choice: all 30 blocks have the same shapes, so any 8 cost the same. **This is the worker's reasoning, not verified** (no block-level measurement exists in this repo, and Fast-WAM's config is not read here). So the sizing check can run before the choice is settled, using the first 8 by default; the loss-at-start figure is the only output that depends on the choice, and it carries no decision.
+   - Recommendation: first 8 for the first real run, because each kept block's input stays closest to what it saw in training (speculative), and growing depth from there follows the mentor's suggestion.
+2. **Provider (and card) for this check.**
+   - Modal: the lead's proposal; $30 a month of Starter credits may cover it at no cost; L40S (48 GB) or A100 80 GB; the Modal CLI and token are set up (LOG). Container and data upload go through Modal's own volume or image mechanism, which the implementation session has not used yet in this repo.
+   - Runpod: account and plugin set up; cheapest listed price (A40 community $0.35 per hour on 2026-11-12) but availability was LOW for A40 and NONE for A6000 and L40S that day (LOG); a pod must be stopped explicitly.
+   - Vast.ai: asked about by the user on 2026-11-12; no account, no price read, would need setup first.
+   - Nautilus (not paid, listed for completeness): the data is already there, so no copy; but queues of hours are common and the paid accounts exist precisely for short jobs like this one (LOG 2026-11-12).
+   - Card size: a 48 GB card answers the 48 GB fit question and gives t_step for the card class Nautilus has; an 80 GB card measures a wider micro-batch range but its speed does not stand in for a 48 GB card's.
+   - Recommendation: Modal, one L40S (48 GB), because the Starter credit likely covers it and the 48 GB class is what a full run on Nautilus would use; fall back to Runpod A40 community if Modal's credit or setup is a problem. Vast.ai only if the day's price is clearly lower and the user wants to make an account.
+3. **Which extra encoder for the one-encoder case.**
+   - DINOv3 (1,024 channels): the paper's base encoder, and the first single-encoder real run will likely use it.
+   - C-RADIOv4 or SigLIP 2 (1,152 channels each): the widest single encoder we have cached, so an upper bound for one-encoder cost.
+   - All three caches exist in the proxy's format (`data/README.md` lines 71-73, verified).
+   - Recommendation: C-RADIOv4, as the widest cached encoder it bounds every single-encoder run, and prediction 8 says the difference from DINOv3 is small; if the user prefers to measure the encoder of the first real run, DINOv3.
+4. **Precision recipe** (sets most of the memory). Options: the proxy's fp32 weights with bf16 autocast and fp32 AdamW (what the code does now); bf16 weights and gradients with fp32 optimizer states; an 8-bit optimizer. Recommendation: measure the proxy's recipe, since it is the one the current code and its tests use, and treat the others as fixes only if the fit list forces one.
+5. **Initialisation of the new parts** (does not change cost). For the widened input: copy the pretrained 48-channel slice and set the extra-channel slice to zero, so the model starts as the pretrained one; or initialise the extra slice randomly. For the action expert: as Fast-WAM does (step 2), or from a published LIBERO checkpoint if one exists. Recommendation: zero for the extra input slice and Fast-WAM's own action-expert initialisation, decided in the first real run's plan, not here.
+6. **A second depth point** (for example 16 layers) would let the cost of growing the depth be read from a line instead of guessed. Recommendation: not in this check; the cap and the user's "fast" condition come first, and depth growth gets its own sizing when it is planned.
+
+## Hand-off
+The implementation session writes the code (a new script beside `src/proxy_wam.py` that reuses its data, loss and model-building functions, with tests for the loading report: a built model whose kept blocks equal the source tensors, and a widened projection whose VAE slice equals the source slice) and the provider-side run command, lands them by PR, and runs the check **only on the user's own go in that session**, after stating the provider, card, day's hourly price and estimated total. Step 2 (reading) and step 3 (the data slice copy, which on Nautilus also needs the user's go for the copy pod) come first. The lead writes the direction `LOG.md` entry; the implementation session writes this folder's `LOG.md` and fills `README.md` with the results.
+
+## Not in scope
+Any claim about model quality; overfitting tests; evaluation rollouts; more than one encoder at once; fusion variants; depths other than 8; gradient checkpointing; multi-card runs; downloading or using a Fast-WAM LIBERO checkpoint.
+
+## Status
+Design only, written 2026-11-12. Not signed off by the user. No code, no run, no results.
+
+## Amendments
+<!-- ### YYYY-MM-DD: what changed, why, and whether any results had been seen yet -->
