@@ -28,9 +28,21 @@ from pathlib import Path
 import modal
 from modal.volume import FileEntryType
 
+CONTAINER_SRC = Path("/root/src")          # where the image puts the src files (add_local_file below)
+
+
+def _paths(here, local):
+    """(src folder, requirements.txt) for this module's folder. On the user's machine they sit two levels up in the
+    repo; inside the container Modal mounts this file at /root/modal_app.py (no repo above it), so the src folder is
+    the image's /root/src and requirements.txt is not needed (the image is never rebuilt there)."""
+    if not local:
+        return CONTAINER_SRC, None
+    root = Path(here).parents[1]
+    return root / "src", root / "experiments" / "2026-10-27-proxy-calibration" / "requirements.txt"
+
+
 HERE = Path(__file__).resolve().parent
-SRC = HERE.parents[1] / "src"
-REQS = HERE.parents[1] / "experiments" / "2026-10-27-proxy-calibration" / "requirements.txt"
+SRC, REQS = _paths(HERE, modal.is_local())
 
 VOLUME_NAME = "stacking-sizing"
 MOUNT = "/vol"
@@ -79,7 +91,7 @@ run_image = (
     .env({"PYTHONUNBUFFERED": "1"})
 )
 for _f in SRC_FILES:
-    run_image = run_image.add_local_file(SRC / _f, f"/root/src/{_f}")
+    run_image = run_image.add_local_file(SRC / _f, f"{CONTAINER_SRC}/{_f}")
 
 hf_image = modal.Image.debian_slim(python_version="3.11").pip_install("huggingface_hub==0.36.2")  # requirements.txt pin
 

@@ -114,8 +114,30 @@ def check_load(d):
     c = rep["counts"]
     assert c["loaded"]["elements"] + c["partly loaded"]["elements"] + c["new"]["elements"] == rep["total_params"]
     assert c["partly loaded"]["new_elements"] == EXTRA * 48 * 4 + EXTRA * 4 * 48 + EXTRA * 4
+    assert all(e.get("checked_against", "").startswith("tensor re-read") for e in rep["parameters"].values()
+               if e["tag"] != "new")
+    # the check compares with the file, not with what was copied: a changed loaded value or a nonzero extra slice
+    # after loading is caught
+    ents = rep["parameters"]
+    with torch.no_grad():
+        p = params["video_expert.blocks.1.ffn.0.weight"]
+        p[0, 0] += 1e-6
+        try:
+            S.verify_against_file(model, d, ents)
+            raise AssertionError("changed loaded value not caught")
+        except S.LoadError:
+            pass
+        p[0, 0] = file_sd["blocks.1.ffn.0.weight"][0, 0]
+        S.verify_against_file(model, d, ents)
+        params["video_expert.patch_embedding.weight"][0, 48] = 0.5
+        try:
+            S.verify_against_file(model, d, ents)
+            raise AssertionError("nonzero extra slice not caught")
+        except S.LoadError:
+            pass
+        params["video_expert.patch_embedding.weight"][0, 48] = 0.0
     print(f"2 ok: load report (loaded {c['loaded']['tensors']}, partly {c['partly loaded']['tensors']}, "
-          f"new {c['new']['tensors']}, skipped {len(sk)}), only shard 1 read")
+          f"new {c['new']['tensors']}, skipped {len(sk)}), only shard 1 read, checked against the file")
     return model
 
 
@@ -210,8 +232,10 @@ def check_classify():
 
 
 def check_m_star():
-    """7. m* = largest power of two with an ok sweep row and peak reserved <= 0.9 M; fit list uses the larger of the
-    sweep and optimizer-step peaks at m*."""
+    """7. m* = largest power of two with an ok sweep row and peak reserved <= 0.9 M. Fit list: the peak at m is the
+    largest of the sweep peak, the sweep's own full-step peak and a global-batch run's peak at m; an oom in the
+    global-batch run at m* means m* does not fit and the m*/2 retry decides; t_step only at an m that fits, else
+    flagged; the linear fit uses sweep peaks only and the update's extra memory is a separate constant."""
     M = 1000
     row = lambda m, pk, out="ok": {"m": m, "peak_reserved_bytes": pk, "outcome": out}
     rows = [row(1, 500), row(2, 700), row(4, 900), row(8, 901)]
@@ -222,10 +246,35 @@ def check_m_star():
     assert S.m_star([row(1, 100), row(2, 100, "error")], M) == 1
     assert S.m_star([row(1, 100), row(2, 100)], M, global_batch=1) == 1
     assert S.m_star([row(1, 100), row(2, 999)], None) == 2            # CPU smoke: largest ok m
-    fit = S.fit_summary(rows, [row(4, 950)], M, 4)
-    assert fit["peak_reserved_by_m"][4] == 950 and fit["largest_m_that_fits"] == 2 and fit["fits_at_m1"]
-    assert abs(fit["linear_fit_peak_vs_m"]["bytes_per_sample"] - np.polyfit([1, 2, 4, 8], [500, 700, 950, 901], 1)[0]) < 1e-6
-    print("7 ok: m* rule and fit list")
+
+    def srow(m, pk, full):
+        return {**row(m, pk), "full_step_peak_reserved_bytes": full}
+
+    def orow(m, pk, out="ok", sec=5.0):
+        return {**row(m, pk, out), "sec_per_opt_step": {"mean": sec}, "global_batch": 128}
+
+    sweep = [srow(1, 500, 560), srow(2, 700, 760), srow(4, 850, 880), srow(8, 901, None)]
+    slope = np.polyfit([1, 2, 4, 8], [500, 700, 850, 901], 1)[0]
+    # A: global-batch run at m* = 4 ok but above the limit: 4 does not fit, no t_step at an m that fits (flagged)
+    fit = S.fit_summary(sweep, [orow(4, 950)], M, 4)
+    assert fit["peak_reserved_by_m"][4]["peak_reserved_bytes"] == 950 and fit["largest_m_that_fits"] == 2
+    assert fit["t_step"] is None and "no full-optimizer-step time" in fit["t_step_flag"]
+    assert abs(fit["linear_fit_sweep_peak_vs_m"]["bytes_per_sample"] - slope) < 1e-6
+    ex = fit["optimizer_update_extra_bytes"]
+    assert ex["by_m_sweep_full_step"] == {1: 60, 2: 60, 4: 30} and ex["by_m_global_batch_steps"] == {4: 100}
+    assert ex["constant"] == 100
+    # B: oom at m* = 4, the m*/2 retry ok within the limit: 4 does not fit (oom), t_step from m = 2
+    fit = S.fit_summary(sweep, [orow(4, None, "oom"), orow(2, 800, sec=3.0)], M, 4)
+    assert fit["largest_m_that_fits"] == 2 and "out of memory" in fit["does_not_fit"][4]
+    assert fit["t_step"] == {"m": 2, "sec_per_opt_step": 3.0, "global_batch": 128}
+    assert fit["peak_reserved_by_m"][2]["peak_reserved_bytes"] == 800
+    # C: global-batch run at m* = 4 ok within the limit: 4 fits, t_step from 4
+    fit = S.fit_summary(sweep, [orow(4, 890)], M, 4)
+    assert fit["largest_m_that_fits"] == 4 and fit["t_step"]["m"] == 4 and fit["fits_at_m1"]
+    # D: the sweep's own full-step peak alone can push m over the limit
+    fit = S.fit_summary([srow(1, 500, 560), srow(2, 880, 905)], [], M, 2)
+    assert fit["largest_m_that_fits"] == 1 and fit["does_not_fit"][2] == "peak above 0.9 x total memory"
+    print("7 ok: m* rule and fit list (full-step peaks, oom at m*, t_step only where it fits, update extra)")
 
 
 def check_sanity(feats):
@@ -285,6 +334,7 @@ def check_launcher(root, feats):
         assert res["keep"] == [0, 1] and res["keep_tag"] == S.KEEP_TAG and res["fastwam_commit"] == S.FASTWAM_COMMIT
         assert res["rows"][1]["in_dim"] == in_dim and len(res["rows"][1]["sec_per_micro_step"]["all"]) == S.TIMED
         assert "host_assembly_s_per_batch" in res["rows"][0] and "phase_seconds" in res["rows"][0]
+        assert all("full_step_peak_reserved_bytes" in x for x in res["rows"])   # None on CPU, bytes on CUDA
         ld = json.loads((out / f"load-{cfg}.json").read_text())
         assert ld["all_loaded_diffs_zero"] and ld["keep_tag"] == S.KEEP_TAG
         assert (ld["counts"]["partly loaded"]["tensors"] == 0) == (cfg == "none")
@@ -303,8 +353,46 @@ def check_launcher(root, feats):
     print("9 ok: launcher end to end on CPU (two configs, sweep 1-2, optimizer steps at m*), broken load stops")
 
 
+MODAL_APP = Path(__file__).resolve().parents[1] / "experiments" / "2026-11-12-pretrained-start-sizing" / "modal_app.py"
+
+
+def check_modal_app_container_import():
+    """10. modal_app.py's module-level code runs as it would inside the Modal container: the file mounted at
+    /root/modal_app.py (no repo above it) and modal.is_local() False. Paths resolve to the image's /root/src and no
+    local file is read. Needs the modal package (1.6.4); without it, only the path function is checked."""
+    import ast
+    src = MODAL_APP.read_text()
+    try:
+        import modal
+    except ImportError:
+        modal = None
+    if modal is not None:
+        is_local = modal.is_local
+        modal.is_local = lambda: False
+        try:
+            g = {"__file__": "/root/modal_app.py", "__name__": "modal_app"}
+            exec(compile(src, "/root/modal_app.py", "exec"), g)
+        finally:
+            modal.is_local = is_local
+        assert g["SRC"] == Path("/root/src") and g["REQS"] is None and g["TORCH_PINS"] == []
+        how = "whole module executed (modal installed)"
+    else:
+        fn = next(n for n in ast.parse(src).body if isinstance(n, ast.FunctionDef) and n.name == "_paths")
+        g = {"Path": Path, "CONTAINER_SRC": Path("/root/src")}
+        exec(compile(ast.Module([fn], []), "modal_app.py", "exec"), g)
+        assert g["_paths"](Path("/root"), False) == (Path("/root/src"), None)
+        how = "_paths only (modal not installed)"
+    try:
+        Path("/root").parents[1]
+        raise AssertionError("expected the old HERE.parents[1] to fail at /root")
+    except IndexError:
+        pass
+    print(f"10 ok: modal_app imports as in the container ({how})")
+
+
 def main():
     torch.manual_seed(0)
+    check_modal_app_container_import()
     check_full_size_names()
     check_classify()
     check_m_star()

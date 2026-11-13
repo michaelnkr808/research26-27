@@ -30,13 +30,15 @@ Normal output of the last line: the folders `meta`, `vae` (and `vae_b` if the sl
 ```
 modal run modal_app.py::stage
 ```
+This first `modal run` also builds both images, the small Hugging Face image and the torch run image (Python 3.11, torch 2.7.1 + torchvision 0.22.1 CUDA 12.8 wheels, the rest of `experiments/2026-10-27-proxy-calibration/requirements.txt`, Fast-WAM `7faa711` from its GitHub tarball with the pinned sha256, `--no-deps`), even though only the CPU staging function runs. `modal run` creates every function in the app, whichever entrypoint is named, and creating a function builds its image (checked in the Modal 1.6.4 client source: `runner.py` `_create_all_objects` loads every function of the app; `_functions.py` `_deps` lists the function's image). Later runs reuse the cached images. Whether Modal bills image builds is read on the day (PLAN "Cost and time cap").
+
 Downloads from Hugging Face `Wan-AI/Wan2.2-TI2V-5B` (Apache-2.0) only `config.json`, the safetensors index and the shards that hold blocks 0-7 and the non-block tensors: shard 1, 9,825,014,472 bytes (`step2-reading.md` Q1, Q7). Checks the size, writes `wan/Wan2.2-TI2V-5B/manifest.json` on the volume with the resolved Hugging Face revision and each file's sha256. Copy the revision and sha256 into `LOG.md` (and into `data/README.md` if the weights are used later, `_standards/07`). Time: a few minutes (not measured).
 
 ## 5. Preflight (CPU only, on the run image)
 ```
 modal run modal_app.py::check
 ```
-The first call builds the run image (Python 3.11, torch 2.7.1 + torchvision 0.22.1 CUDA 12.8 wheels, the rest of `experiments/2026-10-27-proxy-calibration/requirements.txt`, Fast-WAM `7faa711` from its GitHub tarball with the pinned sha256, `--no-deps`). Whether Modal bills image builds is read on the day. Normal output: a JSON with the Wan revision, `"missing": []`, for `none` and `dinov3` the slice's suites, 16 episodes and dims (`dinov3: 1024`), and `local_disk_free_gib`. If the free disk is under 40 GiB, stop: the saved model + AdamW state (about 20 GB) won't fit and the GPU run would refuse to start (set `ephemeral_disk` on `run_sizing` then).
+The run image was already built in step 4, so this starts a CPU container on it straight away; it is the first time code runs inside that image. Normal output: a JSON with the Wan revision, `"missing": []`, for `none` and `dinov3` the slice's suites, 16 episodes and dims (`dinov3: 1024`), and `local_disk_free_gib`. If the free disk is under 40 GiB, stop: the saved model + AdamW state (about 20 GB) won't fit and the GPU run would refuse to start (set `ephemeral_disk` on `run_sizing` then).
 
 ## 6. The run (one L40S, bills GPU, CPU and memory)
 ```

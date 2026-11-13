@@ -124,24 +124,55 @@ def _check_config(cfg, video, n_vae):
         raise LoadError(f"checkpoint config.json differs from the built model (checkpoint, model): {bad}")
 
 
-def _copy_widened(p, name, src, n_vae, patch):
-    """Copy the 48-channel source into the widened parameter, zero elsewhere. Returns (max |diff| on the loaded
-    slice, max |value| on the extra slice). patch_embedding.weight: (H, C_in, 1, 2, 2), input channels on dim 1.
-    head.head: rows ordered (x y z c), c innermost (WanVideoDiT.unpatchify), so rows view as (patch positions, C_out)."""
+def _widened_views(p, name, src_shape, n_vae, patch):
+    """(loaded slice of p, extra slice of p, shape to view the 48-channel source as) for a widened parameter.
+    patch_embedding.weight: (H, C_in, 1, 2, 2), input channels on dim 1. head.head: rows ordered (x y z c), c innermost
+    (WanVideoDiT.unpatchify), so rows view as (patch positions, C_out)."""
+    src_shape = tuple(src_shape)
     if name == "patch_embedding.weight":
-        if src.shape[1] != n_vae or p.shape[0] != src.shape[0] or p.shape[2:] != src.shape[2:] or p.shape[1] <= n_vae:
-            raise LoadError(f"{name}: cannot widen source {tuple(src.shape)} into {tuple(p.shape)}")
-        p.zero_()
-        p[:, :n_vae].copy_(src)
-        return float((p[:, :n_vae] - src).abs().max()), float(p[:, n_vae:].abs().max())
+        if src_shape[1] != n_vae or p.shape[0] != src_shape[0] or tuple(p.shape[2:]) != src_shape[2:] \
+                or p.shape[1] <= n_vae:
+            raise LoadError(f"{name}: cannot widen source {src_shape} into {tuple(p.shape)}")
+        return p[:, :n_vae], p[:, n_vae:], src_shape
     k = math.prod(patch)
     rest = tuple(p.shape[1:])
-    if src.shape[0] != n_vae * k or p.shape[0] % k or p.shape[0] // k <= n_vae or tuple(src.shape[1:]) != rest:
-        raise LoadError(f"{name}: cannot widen source {tuple(src.shape)} into {tuple(p.shape)}")
-    pv, sv = p.view((k, p.shape[0] // k) + rest), src.view((k, n_vae) + rest)
-    pv.zero_()
-    pv[:, :n_vae].copy_(sv)
-    return float((pv[:, :n_vae] - sv).abs().max()), float(pv[:, n_vae:].abs().max())
+    if src_shape[0] != n_vae * k or p.shape[0] % k or p.shape[0] // k <= n_vae or src_shape[1:] != rest:
+        raise LoadError(f"{name}: cannot widen source {src_shape} into {tuple(p.shape)}")
+    pv = p.view((k, p.shape[0] // k) + rest)
+    return pv[:, :n_vae], pv[:, n_vae:], (k, n_vae) + rest
+
+
+@torch.no_grad()
+def verify_against_file(model, wan_dir, entries, n_vae=P.VAE_DIM):
+    """Re-read every loaded or partly loaded tensor from its safetensors file, cast as Fast-WAM's loader casts on read
+    (value.to(torch_dtype), helpers/io.py:131-135, torch_dtype = the parameter's dtype), and compare with the parameter
+    as it now is: max |difference| on the loaded part, max |value| on a widened parameter's extra slice. Writes both
+    into `entries`; raises LoadError if any is nonzero."""
+    from safetensors import safe_open
+    wan_dir = Path(wan_dir)
+    index = json.loads((wan_dir / WAN_INDEX).read_text())["weight_map"]
+    params = dict(model.named_parameters())
+    patch = tuple(model.video_expert.patch_size)
+    by_shard = {}
+    for n, e in entries.items():
+        if e["tag"] in ("loaded", "partly loaded"):
+            by_shard.setdefault(index[e["source"]], []).append(n)
+    for sh, ns in sorted(by_shard.items()):
+        with safe_open(str(wan_dir / sh), framework="pt", device="cpu") as f:
+            for n in ns:
+                e, p = entries[n], params[n].detach()
+                ref = f.get_tensor(e["source"]).to(p.dtype)
+                if e["tag"] == "loaded":
+                    e["max_abs_diff"] = float((p - ref.to(p.device)).abs().max())
+                else:
+                    lv, xv, shape = _widened_views(p, n[len("video_expert."):], ref.shape, n_vae, patch)
+                    e["max_abs_diff"] = float((lv - ref.view(shape).to(p.device)).abs().max())
+                    e["extra_slice_max_abs"] = float(xv.abs().max())
+                e["checked_against"] = "tensor re-read from the safetensors file, cast to the parameter dtype"
+    bad = {n: e for n, e in entries.items() if e["tag"] != "new"
+           and (e.get("max_abs_diff") != 0 or e.get("extra_slice_max_abs", 0) != 0)}
+    if bad:
+        raise LoadError(f"nonzero difference after loading: {list(bad.items())[:10]}")
 
 
 @torch.no_grad()
@@ -194,19 +225,22 @@ def load_wan(model, wan_dir, keep, n_vae=P.VAE_DIM, log=print):
                      "source_dtype": str(src.dtype).replace("torch.", ""), "dtype": str(p.dtype).replace("torch.", "")}
                 if tuple(p.shape) == tuple(src.shape):
                     p.copy_(src_c)
-                    e.update(tag="loaded", max_abs_diff=float((p - src_c).abs().max()))
+                    e.update(tag="loaded")
                 elif d in WIDENED:
-                    diff, extra = _copy_widened(p, d, src_c, n_vae, patch)
-                    e.update(tag="partly loaded", max_abs_diff=diff, extra_slice_max_abs=extra,
-                             loaded_elements=src.numel(), new_elements=p.numel() - src.numel(),
+                    lv, xv, shape = _widened_views(p, d, src.shape, n_vae, patch)
+                    xv.zero_()
+                    lv.copy_(src_c.view(shape))
+                    e.update(tag="partly loaded", loaded_elements=src.numel(), new_elements=p.numel() - src.numel(),
                              init=INIT_NOTE["partly loaded"])
                 else:
                     raise LoadError(f"shape mismatch: checkpoint {s} {tuple(src.shape)} vs model {d} {tuple(p.shape)}")
                 entries["video_expert." + d] = e
+                del src, src_c
         log(f"[load] read {sh} in {time.time() - t0:.1f}s")
-    bad = {n: e for n, e in entries.items() if e["max_abs_diff"] != 0 or e.get("extra_slice_max_abs", 0) != 0}
-    if bad:
-        raise LoadError(f"nonzero difference after loading: {list(bad.items())[:10]}")
+    # independent check: re-read every used tensor from its file and compare with the parameter as loaded
+    t0 = time.time()
+    verify_against_file(model, wan_dir, entries, n_vae)
+    log(f"[load] every loaded tensor re-read from its file and compared (max |diff| 0) in {time.time() - t0:.1f}s")
     for n, p in model.named_parameters():
         if n in entries:
             continue
@@ -344,25 +378,65 @@ def m_star(rows, total_mem, global_batch=GLOBAL_BATCH):
 
 
 def fit_summary(rows, opt_rows, total_mem, mstar):
-    """Fit list for the measured card (PLAN "Decision rule"): the peak at m is the sweep peak, and at m* the larger of
-    the sweep peak and the optimizer-step peak at m*. Plus a linear fit of sweep peak against m, for extrapolating to
-    cards not measured (an extrapolation, not a measurement)."""
+    """Fit list for the measured card (PLAN "Decision rule", with the PR #31 review's fixes).
+    The peak at m is the largest of: the sweep's micro-step peak, the full optimizer step that every sweep process runs
+    at m (full_step_peak_reserved_bytes), and the full-optimizer-step run at global batch if one ran at m. m fits only
+    if that peak is <= 0.9 x M and no full-optimizer-step run at m ended in oom (so an oom at m* means m* does not fit,
+    and the m*/2 retry decides for m*/2). t_step is reported only from an ok full-optimizer-step run at an m that fits;
+    otherwise it is None and flagged. The linear fit uses sweep micro-step peaks only; the optimizer update's extra
+    memory (full-step peak minus sweep peak at the same m) is a separate constant to add on top. Both are an
+    extrapolation basis for cards not measured, not a measurement."""
     if total_mem is None:
         return {"note": "no CUDA memory figures"}
-    peaks = {r["m"]: r["peak_reserved_bytes"] for r in rows if r.get("outcome") == "ok"}
-    opt_at = [r for r in opt_rows if r.get("outcome") == "ok" and r["m"] == mstar]
-    if mstar in peaks and opt_at:
-        peaks[mstar] = max(peaks[mstar], opt_at[0]["peak_reserved_bytes"])
     limit = FIT_FRACTION * total_mem
-    fits = sorted(m for m, pk in peaks.items() if pk <= limit)
-    out = {"total_memory_bytes": total_mem, "limit_bytes": limit, "peak_reserved_by_m": peaks,
-           "largest_m_that_fits": max(fits, default=None),
-           "fits_at_m1": bool(1 in fits)}
-    if len(peaks) >= 2:
-        ms = sorted(peaks)
-        slope, icpt = np.polyfit(ms, [peaks[m] for m in ms], 1)
-        out["linear_fit_peak_vs_m"] = {"bytes_per_sample": float(slope), "intercept_bytes": float(icpt),
-                                       "label": "extrapolation basis for cards not measured, not a measurement"}
+    sweep = {r["m"]: r for r in rows if r.get("outcome") == "ok" and r.get("peak_reserved_bytes") is not None}
+    opt_by_m = {}
+    for r in opt_rows:
+        opt_by_m.setdefault(r["m"], []).append(r)
+    peaks, fits, why = {}, [], {}
+    extra_sweep, extra_opt = {}, {}
+    for m, r in sorted(sweep.items()):
+        cand = {"sweep_micro_steps": r["peak_reserved_bytes"]}
+        if r.get("full_step_peak_reserved_bytes") is not None:
+            cand["sweep_full_step"] = r["full_step_peak_reserved_bytes"]
+            extra_sweep[m] = r["full_step_peak_reserved_bytes"] - r["peak_reserved_bytes"]
+        oom_at_m = False
+        for o in opt_by_m.get(m, []):
+            if o.get("outcome") == "ok" and o.get("peak_reserved_bytes") is not None:
+                cand["global_batch_steps"] = max(cand.get("global_batch_steps", 0), o["peak_reserved_bytes"])
+                extra_opt[m] = o["peak_reserved_bytes"] - r["peak_reserved_bytes"]
+            elif o.get("outcome") == "oom":
+                oom_at_m = True
+        peaks[m] = {"peak_reserved_bytes": max(cand.values()), "from": cand}
+        if oom_at_m:
+            why[m] = "full optimizer steps at global batch ran out of memory at this m"
+        elif peaks[m]["peak_reserved_bytes"] > limit:
+            why[m] = "peak above 0.9 x total memory"
+        else:
+            fits.append(m)
+    out = {"total_memory_bytes": total_mem, "limit_bytes": limit, "m_star": mstar, "peak_reserved_by_m": peaks,
+           "does_not_fit": why, "largest_m_that_fits": max(fits, default=None), "fits_at_m1": bool(1 in fits)}
+    timed = [o for m in fits for o in opt_by_m.get(m, []) if o.get("outcome") == "ok"]
+    if timed:
+        best = max(timed, key=lambda o: o["m"])
+        out["t_step"] = {"m": best["m"], "sec_per_opt_step": best["sec_per_opt_step"]["mean"],
+                         "global_batch": best.get("global_batch")}
+    else:
+        out["t_step"] = None
+        out["t_step_flag"] = ("no full-optimizer-step time was measured at an m that fits; runs measured: "
+                              + json.dumps({o["m"]: o.get("outcome") for o in opt_rows}))
+    if len(sweep) >= 2:
+        ms = sorted(sweep)
+        slope, icpt = np.polyfit(ms, [sweep[m]["peak_reserved_bytes"] for m in ms], 1)
+        out["linear_fit_sweep_peak_vs_m"] = {"bytes_per_sample": float(slope), "intercept_bytes": float(icpt),
+                                             "label": "sweep micro-step peaks only; extrapolation basis for cards "
+                                                      "not measured, not a measurement"}
+    allx = list(extra_sweep.values()) + list(extra_opt.values())
+    out["optimizer_update_extra_bytes"] = {
+        "constant": max(0, max(allx)) if allx else None,
+        "by_m_sweep_full_step": extra_sweep, "by_m_global_batch_steps": extra_opt,
+        "label": "full-step peak minus sweep micro-step peak at the same m; the constant (largest seen) is added on "
+                 "top of the linear fit when extrapolating"}
     return out
 
 
@@ -515,6 +589,11 @@ def _child(args, row, phases, log):
         if not math.isfinite(row["first_step_loss"]):
             raise SanityError(f"non-finite loss {row['first_step_loss']}")
         phases["first_opt_step"] = time.time() - t
+        # peak of this full optimizer step at m (weights, gradients, both AdamW moments and the update's own
+        # temporaries), read before the reset below; peaks were reset just before the step
+        fs = _mem(dev)
+        row["full_step_peak_reserved_bytes"] = fs["peak_reserved_bytes"]
+        row["full_step_peak_allocated_bytes"] = fs["peak_allocated_bytes"]
         if args.from_wan:
             t = time.time()
             save_state(sp, model, opt)
