@@ -1,7 +1,8 @@
+# Bare Pod, not a Job, because a Job that sleeps is banned (_standards/08).
 # Sizing check Step 3: build and pack the 16-episode data slice (PLAN.md Step 3; steps in RUN-slice.md).
 # CPU-only, no GPU. This is a bare Pod, not a Job, on purpose: it must stay alive after the work so the user can copy
 # the chunks off, and _standards/08 bans `sleep` (or a script ending in sleep) in a Job but allows it in a bare Pod
-# (max life 6 h; here 2 h of sleep and a hard deadline). The file keeps the name job-slice.yaml as assigned.
+# (max life 6 h; here 2 h of sleep and a hard deadline).
 # Requests are at or under NRP's exempt size (1 CPU, 2 GB), so the CPU/RAM range rule is not applied to it (docs
 # threshold, recheck before submitting); limits within 20% of requests. Sizing (speculative, arithmetic from stored
 # shapes, PLAN Step 3): slice ~2.5 GB (DINOv3 only) written to local disk, chunks ~2.5 GB more, so ~5 GB of

@@ -6,12 +6,12 @@ What it does, in plain words: a small CPU-only pod reads 16 training episodes ou
 
 Facts the plan rests on (speculative until the run prints them): the slice is about 2.5 GB with DINOv3 (PLAN Step 3 arithmetic), so about 30 pieces. The script prints the chosen episode ids and the true size. Z-score stats: the slice carries each episode's own `.stats.npy`, so `proxy_wam.Data` computes them over these 16 episodes only (the accepted deviation in PLAN Step 3).
 
-Encoder: the pod copies DINOv3 only (`ENCODERS=dinov3` in `job-slice.yaml`; the Open item 3 choice of encoder is not made here). For another encoder, edit that env value in a rendered copy (comma-separated for several) and raise `ephemeral-storage` and the `emptyDir` size as the comment in the yaml says.
+Encoder: the pod copies DINOv3 only (`ENCODERS=dinov3` in `pod-slice.yaml`; the Open item 3 choice of encoder is not made here). For another encoder, edit that env value in a rendered copy (comma-separated for several) and raise `ephemeral-storage` and the `emptyDir` size as the comment in the yaml says.
 
 Why a Pod and not a Job: the copy needs the files to stay up after the work, and `_standards/08` bans `sleep` in a Job but allows it in a bare Pod (6 h cap; this one has a 2.5 h `activeDeadlineSeconds`).
 
 ## 0. Commit first
-Commit the branch with `src/make_sizing_slice.py` and `job-slice.yaml`, and note `git rev-parse HEAD` for the LOG. Run the local test once more: from `src/`, `/opt/homebrew/bin/python3.11 test_make_sizing_slice.py` (expects `all ok`).
+Commit the branch with `src/make_sizing_slice.py` and `pod-slice.yaml`, and note `git rev-parse HEAD` for the LOG. Run the local test once more: from `src/`, `/opt/homebrew/bin/python3.11 test_make_sizing_slice.py` (expects `all ok`).
 
 ## 1. Check (read-only)
 ```
@@ -26,7 +26,7 @@ kubectl create configmap stacking-encoders-sizing-slice-src -n aria-world --from
 
 ## 3. Submit (cluster change)
 ```
-kubectl apply -f experiments/2026-11-12-pretrained-start-sizing/job-slice.yaml
+kubectl apply -f experiments/2026-11-12-pretrained-start-sizing/pod-slice.yaml
 ```
 (Add `--dry-run=client` first if you want a syntax check only.) Start-up is the image pull plus scheduling, about 8 minutes on Nautilus in past runs (recalled).
 
