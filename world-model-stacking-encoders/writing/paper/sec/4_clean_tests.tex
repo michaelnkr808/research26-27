@@ -31,7 +31,8 @@ This test fixed its design before it ran but has no decision rule.
 % Similarity vs the paper: README.md line 17 (0.576 vs 0.583 global agent view; SigLIP 2 is the best of our four partners in the
 % paper's table, not the paper's best pair, README.md line 30); Tally line 78 (margin 0.007), line 79 (no CKA intervals),
 % line 82 (CKA does not follow the paper's order beyond C-RADIOv4 first), line 86 (gain interval overlaps SAM 3's), line 87.
-C-RADIOv4 is the most similar to DINOv3 in every cell, but on global agent-view features SigLIP~2, the best of our four partners in the paper's table, is within 0.007 (CKA has no intervals here), and similarity does not otherwise order the partners as the paper does (Table~\ref{tab:clean}).
+% "High similarity goes with both the best and the worst": README.md line 17 (PR #28 round 2 review, finding 1).
+C-RADIOv4 is the most similar to DINOv3 in every cell, but on global agent-view features SigLIP~2, the best of our four partners in the paper's table, is within 0.007 (CKA has no intervals here), so high similarity goes with both the best and the worst of the four (Table~\ref{tab:clean}).
 Complementarity places C-RADIOv4 at the top (gain $+0.037$), although its interval overlaps SAM~3's.
 Every partner's gain is positive and small.
 

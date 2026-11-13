@@ -90,11 +90,12 @@ C-RADIOv4 & CKA & .583 / .854 & .766 / .863 & .929 / .898 \\
 The primary reading is the reduced-rank ridge interference with rank 64, the per-block scaling $w=1/d$ (a$'$), global features and the mean over the three horizons.
 % Input side: Tally line 22 and src/diagnostics.py (review finding 9: probes kept fixed, test demos resampled). Target: Target lines 23, 56, 60.
 In both tests the intervals are demonstration-level bootstrap intervals (1,000 paired draws, seed 0) with the fitted models held fixed, so they exclude fitting variance.
-The target-side test is a linear, reduced-rank stand-in for the world model's flow-matching objective on clean frames; it tests whether the mechanism shows up in the features, not what happened inside the paper's model.
+The target-side test is a linear, reduced-rank stand-in for the world model's flow-matching objective on clean frames; it tests whether co-target interference shows up in the features, not what happened inside the paper's model.
 The reference $R^2$ for DINOv3's change alone is 0.364 to 0.372 across pairs.
 The outcome rule and a secondary prediction (that C-RADIOv4's interference shrinks when block variances are equalized) were both fixed in advance; the secondary prediction also fails, since C-RADIOv4's interference grows from $+0.0151$ under a$'$ to $+0.0251$ under equalized variance (b).
 Table~\ref{tab:suppl-target} gives the other readings.
-% T0: Target line 22 ("B's share of the initial loss"); table values Target lines 33-36.
+% T0: Target line 22 ("B's share of the initial loss"); "predict-the-mean": src/target_diagnostics.py line 190 at 52d1226;
+% table values Target lines 33-36.
 Three further diagnostics, T0 ($B$'s share of the initial, predict-the-mean loss), T1a (the $R^2$ for predicting $B$'s change from both encoders' features) and T1b (the gain of $B$ as an input for DINOv3's change), are reported and do not decide.
 
 \begin{table*}[t]
