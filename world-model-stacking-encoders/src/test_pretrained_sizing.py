@@ -255,9 +255,19 @@ def check_m_star():
 
     sweep = [srow(1, 500, 560), srow(2, 700, 760), srow(4, 850, 880), srow(8, 901, None)]
     slope = np.polyfit([1, 2, 4, 8], [500, 700, 850, 901], 1)[0]
-    # A: global-batch run at m* = 4 ok but above the limit: 4 does not fit, no t_step at an m that fits (flagged)
-    fit = S.fit_summary(sweep, [orow(4, 950)], M, 4)
+    # m* uses the larger of the sweep peak and that m's own full-step peak
+    assert S.m_star(sweep, M) == 4
+    assert S.m_star([srow(1, 500, 560), srow(2, 700, 760), srow(4, 850, 905)], M) == 2
+    # retry at m*/2: on oom, or on an ok run whose peak is above the limit; not on an ok run within it or an error
+    assert S.needs_retry(orow(4, 950), M) and S.needs_retry(orow(4, None, "oom"), M)
+    assert not S.needs_retry(orow(4, 890), M) and not S.needs_retry(orow(4, None, "error"), M)
+    # A: global-batch run at m* = 4 ok but above the limit, so retried at 2: 4 does not fit, t_step from the retry
+    fit = S.fit_summary(sweep, [orow(4, 950), orow(2, 800, sec=3.0)], M, 4)
     assert fit["peak_reserved_by_m"][4]["peak_reserved_bytes"] == 950 and fit["largest_m_that_fits"] == 2
+    assert fit["does_not_fit"][4] == "peak above 0.9 x total memory"
+    assert fit["t_step"] == {"m": 2, "sec_per_opt_step": 3.0, "global_batch": 128}
+    # A': same, if the retry were missing, t_step is None and flagged
+    fit = S.fit_summary(sweep, [orow(4, 950)], M, 4)
     assert fit["t_step"] is None and "no full-optimizer-step time" in fit["t_step_flag"]
     assert abs(fit["linear_fit_sweep_peak_vs_m"]["bytes_per_sample"] - slope) < 1e-6
     ex = fit["optimizer_update_extra_bytes"]

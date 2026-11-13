@@ -21,7 +21,8 @@ Process layout (PLAN Step 6): every micro-batch size and the full-optimizer-step
       save model + AdamW state to --state-dir (local disk), then measure;
   sweep m=2, 4, ... 128: load the saved state, one optimizer step at m, measure; stop at the first oom or error;
   optstep at m*: global batch 128 as 128/m* accumulated micro-batches, 1 warm-up + 2 timed optimizer steps;
-      repeated once at m*/2 in a fresh process if it ends in oom.
+      repeated once at m*/2 in a fresh process if it ends in oom or its peak is above 0.9 x total memory.
+      m* is picked from the larger of each m's sweep peak and that process's own full-optimizer-step peak.
 Each process ends as ok, oom (only torch.cuda.OutOfMemoryError) or error (type and message), never confused.
 
 Example (inside the 3,600 s inner limit, as the Modal app runs it):
@@ -368,13 +369,26 @@ def classify(e):
 
 
 def m_star(rows, total_mem, global_batch=GLOBAL_BATCH):
-    """Largest power of two m whose sweep row is ok with peak max_memory_reserved <= 0.9 x total_mem (PLAN Step 6),
-    and that divides the global batch. total_mem None (no CUDA, CPU smoke test only): largest ok m."""
+    """Largest power of two m whose sweep row is ok, with the larger of its micro-step peak max_memory_reserved and its
+    own full-optimizer-step peak (full_step_peak_reserved_bytes) <= 0.9 x total_mem (PLAN Step 6; the full-step peak
+    added after the PR #31 review), and that divides the global batch. total_mem None (no CUDA, CPU smoke test only):
+    largest ok m."""
     ok = [r for r in rows if r.get("outcome") == "ok" and r["m"] & (r["m"] - 1) == 0 and global_batch % r["m"] == 0]
     if total_mem is not None:
         ok = [r for r in ok if r.get("peak_reserved_bytes") is not None
-              and r["peak_reserved_bytes"] <= FIT_FRACTION * total_mem]
+              and max(r["peak_reserved_bytes"], r.get("full_step_peak_reserved_bytes") or 0)
+              <= FIT_FRACTION * total_mem]
     return max((r["m"] for r in ok), default=None)
+
+
+def needs_retry(opt_row, total_mem):
+    """Whether the global-batch run at m* is repeated once at m*/2: it ended in oom, or it was ok but its peak
+    max_memory_reserved is above 0.9 x total_mem (so m* does not fit and would leave no t_step)."""
+    if opt_row.get("outcome") == "oom":
+        return True
+    pk = opt_row.get("peak_reserved_bytes")
+    return (opt_row.get("outcome") == "ok" and total_mem is not None and pk is not None
+            and pk > FIT_FRACTION * total_mem)
 
 
 def fit_summary(rows, opt_rows, total_mem, mstar):
@@ -436,7 +450,8 @@ def fit_summary(rows, opt_rows, total_mem, mstar):
         "constant": max(0, max(allx)) if allx else None,
         "by_m_sweep_full_step": extra_sweep, "by_m_global_batch_steps": extra_opt,
         "label": "full-step peak minus sweep micro-step peak at the same m; the constant (largest seen) is added on "
-                 "top of the linear fit when extrapolating"}
+                 "top of the linear fit when extrapolating, so it is an upper bound on the update's extra memory, "
+                 "and an extrapolated fit using it is on the safe side"}
     return out
 
 
@@ -751,8 +766,10 @@ def launch(args):
         total = res.get("total_memory_bytes")
         mstar = m_star(res["rows"], total, args.global_batch)
         res["m_star"] = mstar
-        res["m_star_rule"] = (f"largest power of two m with an ok sweep row and peak max_memory_reserved <= "
-                              f"{FIT_FRACTION} x total memory" if total is not None else
+        res["m_star_rule"] = (f"largest power of two m with an ok sweep row whose larger of the micro-step peak and "
+                              f"the full-optimizer-step peak (max_memory_reserved) is <= {FIT_FRACTION} x total "
+                              f"memory; the global-batch run is retried once at m*/2 on oom or a peak above that"
+                              if total is not None else
                               "no CUDA memory figures (CPU smoke test): largest ok m")
         write()
         first_ok = bool(res["rows"]) and res["rows"][0]["outcome"] == "ok"
@@ -760,7 +777,7 @@ def launch(args):
             row = run_process(args, "optstep", config, mstar)
             res["optimizer_steps"].append(row)
             write()
-            if row["outcome"] == "oom" and mstar > 1 and not _current["stop"]:
+            if needs_retry(row, total) and mstar > 1 and not _current["stop"]:
                 res["optimizer_steps"].append(run_process(args, "optstep", config, mstar // 2))
                 write()
         res["fit"] = fit_summary(res["rows"], res["optimizer_steps"], total, mstar)
