@@ -48,17 +48,19 @@ mkdir -p sizing-slice && cd sizing-slice
 kubectl exec stacking-encoders-sizing-slice -n aria-world -- cat /work/chunks/SHA256SUMS > SHA256SUMS
 kubectl exec stacking-encoders-sizing-slice -n aria-world -- cat /work/chunks/tar.sha256 > tar.sha256
 for f in $(awk '{print $2}' SHA256SUMS); do
+  good=0
   for try in 1 2 3; do
     kubectl exec stacking-encoders-sizing-slice -n aria-world -- cat /work/chunks/$f > $f
     want=$(grep " $f\$" SHA256SUMS | awk '{print $1}')
     got=$(shasum -a 256 $f | awk '{print $1}')
-    [ "$want" = "$got" ] && { echo "ok $f"; break; }
+    [ "$want" = "$got" ] && { echo "ok $f"; good=1; break; }
     echo "BAD $f try $try"
   done
+  [ $good = 1 ] || { echo "ERROR: $f failed 3 tries, stopping"; break; }
 done
 shasum -a 256 -c SHA256SUMS
 ```
-The last line must print `OK` for every piece. A piece that fails 3 tries: stop and report which one. Resume by rerunning the loop (it fetches everything again; to skip finished pieces, add `[ -f $f ] && continue` after the `for f` line only if you trust them, the final `shasum -c` re-checks all).
+The last line must print `OK` for every piece. A piece that fails 3 tries stops the loop with an `ERROR:` line naming it (the `shasum -c` line then also fails); report which one. Resume by rerunning the loop (it fetches everything again; to skip finished pieces, add `[ -f $f ] && continue` after the `for f` line only if you trust them, the final `shasum -c` re-checks all).
 
 ## 6. Reassemble and verify
 ```
@@ -69,7 +71,7 @@ mkdir slice && tar -xf slice.tar -C slice
 (cd slice && shasum -a 256 -c MANIFEST.sha256)     # every file OK
 cat slice/slice.json | head -c 1500
 ```
-The two tar hashes must match, and `MANIFEST.sha256` lists the sha256 of every file in the slice (each one hashed on the pod right after it was copied). The slice loads as `proxy_wam.Data(slice, <suites_in_slice from slice.json>, ["dinov3"], slice/t5)`. Record the folder size (`du -sh slice`) and, for the LOG, the chosen episode ids from `slice.json`. Delete `slice.tar` and the pieces once `slice/` is verified if disk is tight.
+The two tar hashes must match, and `MANIFEST.sha256` lists the sha256 of every file in the slice (hashed on the pod from the slice's destination files, after all copying; so the check verifies the transfer to the Mac, not the copy from the PVC, which is a plain byte copy that this check does not re-verify). The slice loads as `proxy_wam.Data(slice, <suites_in_slice from slice.json>, ["dinov3"], slice/t5)`. Record the folder size (`du -sh slice`) and, for the LOG, the chosen episode ids from `slice.json`. Delete `slice.tar` and the pieces once `slice/` is verified if disk is tight.
 
 ## 7. Clean up (cluster change)
 ```
