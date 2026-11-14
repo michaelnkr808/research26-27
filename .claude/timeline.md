@@ -385,3 +385,11 @@
 - Set up Runpod (official plugin, signed in, empty account confirmed) and Modal (CLI installed, token verified). Nothing created or billed.
 - Open loops: the plan is proposed but not dispatched, it needs the user's go in a planning session: (1) decisions/005 plus a dollar budget rule in STANDARDS, (2) a sizing check design for a pretrained 8-layer model, to run on Modal's free credit, ideally before the PI meeting. The rest of the mentor's notes have not arrived. PR #16 is still open. Local main is ahead of origin, unpushed.
 - See: world-model-stacking-encoders/LOG.md (2026-11-12 [agent, lead, planning]), world-model-stacking-encoders/PLAN.md (Now, proxy item, 2026-11-11 line), memory paid-cloud-compute-runpod.md and stacking-encoders-mentor.md
+
+## 2026-11-14: stacking-encoders implementation session (background copy) closed after the 2026-11-10 duplicate-lead overlap
+
+- This session's context was reset on 2026-11-10 while it was the implementation lead. On waking it reconstructed the day's three cluster submissions (fetch-draws, control-partners stage 2, the A6000 render twin) from the cluster, decoded the stage 1 draw files with matching hashes, and pushed a direct-merge chore with LOG, PLAN and README entries plus the two rendered manifests (merge 767c790). Cluster use was read-only.
+- The user's live session (vis-implementation-agent) then messaged that it was the real lead with the same work in flight. This session stood down, stopped its watcher, and the other session kept 767c790 as the record and added its own follow-up. No revert.
+- Decisions: vis-implementation-agent is the implementation lead; this copy is closed. Memory updated with the lesson (check ListAgents and git log after a context reset before logging).
+- Open loops: none for this session. Phase B and control-partners work continue in vis-implementation-agent.
+- See: world-model-stacking-encoders/LOG.md (2026-11-10 [agent, implementation lead] A6000 twin entry), memory duplicate-lead-sessions.md
