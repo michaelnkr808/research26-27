@@ -1821,3 +1821,34 @@ Reviews were read-only; findings reported by subagents, spot-checked by the lead
 **Test-set use:** none.
 **Next:** the user decides whether to keep the Modal volume `stacking-sizing` (about $1.1/month); download Job finishes and its manifest is checked against the published sha256; planning writes the stage 1 PLAN with the measured cost.
 **Open questions:** t_step on Nautilus's A40/A6000/L40 is not measured; Runpod/Vast.ai prices for one full run not read.
+
+## 2026-11-15 [agent, lead, planning] (the mentor's written notes, verbatim; the paper's depth; sizing result relayed)
+**Goal:** store the mentor's notes word for word, check the 2026-11-12 record against them, and answer the user's question on the paper's depth.
+**Did (verified unless marked):**
+- **The mentor's message, pasted by the user in the planning window on 2026-11-15 as "her exact message" (verbatim, spelling and punctuation as pasted):**
+
+  > I think the most interesting findings to me would be:
+  >
+  > 1. What exact layer output/embedding are they concatenating at the end?.
+  > 2. How is the concatenation/fusion taking place? If we change the fusion strategy, can we do better?.
+  > 3. In their fusion mechanism, does downsampling etc make them lose some information? What if we don’t downsample? Do we get better performance at the cost of more compute?.
+  > 4. What exactly “helpful information” is? Is it measured at the very end of the robot task completion or we have some separate way of measuring the encoders’ usefulness?.
+  > a. For example: If we measure the fusion success in some other way, and our fusion mechanism/suitable encoders perform good on this metrics, but fail at the final robot task, does that mean (a) our metric is wrong, or (b) our metric is good but information is being lost till it reaches the final robot task, or (c) the best way is to measure it on the final task?.
+  >
+  > Additional Comments:
+  >
+  > 1. Are these two encoders trained separately and then combined, or was there combined training?.
+  > 2. Start with pre-trained weights (on 8 layers, as tested. Then increase depth. Q: What depth did they use?).
+  > 3. Note down the exact metrics they are using..
+  > 4. We would also need to test separate performances of other encoders (SigLip, Vggt ect).
+  > 5. Start with clean training and clean testing. (But the problem here is since we dont have Liu et al. 2026 weights, we cannot directly run their paper on the ‘clean’ test set. I’ll have a look at their codebase and see what we can salvage. But if we somehow have their code/architecture, we can run it ourselves and compare).
+
+- **Check of the 2026-11-12 record (first entry of that date, "Mentor's notes") against this text.** The record agrees in substance on every point. Two things it did not carry: (i) "Then increase depth" is the mentor's own wording (the record quoted only "on 8 layers, as tested"); (ii) additional comment 5 gives a reason the record shortened: without the paper's weights the paper's model cannot be run on the clean test set for a direct comparison, and with their code or architecture we could run it ourselves and compare. Whether this paste is the version the mentor edited after 2026-11-11 was not asked; the user called it "her exact message".
+- **The paper's depth** (the user's question; from `literature/notes/liu2026-what-visual-representations-wams.md`, an agent's extraction whose numbers still need a check against the PDF, per the note's line 4): the action expert has 30 blocks (note line 67, paper p14: gated cross-attention "in each of the 30 action-expert blocks"); the feature-expert mechanism has "its own 30-block transformer" (line 56); the REPA study aligns at video-expert blocks 8, 15 and 22 (line 66), so the video expert has at least 22; the Wan 2.2 TI2V-5B transformer's config has 30 layers (this LOG, 2026-11-11 [agent, lead, vis-meetings]). The lead's reading, told to the user: the paper trains at the full 30-layer depth; our start is 8 of those 30.
+- **Clean-test numbers in the paper** (same note, lines 31, 34, 35): single encoders have clean-LIBERO results in App. D, Table 8, near saturation (about 97 to 99%; C-RADIOv4 alone 98.2); no clean-LIBERO number exists for any composition. So for single encoders a comparison against the paper's reported clean numbers is possible without its weights; for pairs it is not (the lead's reading of comment 5's concern).
+- **Sizing check, as relayed by the implementation session** (its report and PR #33, read by the lead; the experiment's own LOG has the numbers): the 8-layer pretrained-start model fits a 48 GB card at micro-batch 8 with a small margin, with or without DINOv3; one full 10-epoch run is about 24 L40S-hours; about $46 at Modal's price and about $18 to $19 at the day's Runpod or Vast.ai L40S price (the implementation session's read, 2026-11-15), leaving out evaluation, startup and storage of the caches. Step time on A40, A6000 and L40 is not measured. The user's words on paid runs: "okay so we know that paying for runs is actually feasible now". The whole-transformer download to Nautilus runs from PR #32's branch. PRs #32 and #33 were open when this was written; the user's "merge" and "delete it" (the Modal volume) were relayed twice and the implementation session holds them for the user's word in its own window.
+**PR:** none; this entry: direct (chore).
+**Found:** nothing measured by planning.
+**Test-set use:** none.
+**Next:** on the user's go, planning has the experiment PLAN for stage 1 of decision 006 written (design only, by PR with a fresh reviewer): the 8-layer pretrained-start model with no extra encoder, clean training and clean testing on LIBERO, pass bar fixed before training.
+**Open questions:** where stage 1 trains (Nautilus, the lead's recommendation, or one paid run); how the pass bar is set, given the paper's clean numbers are for a 30-layer model; decision 006's open items; the sizing PLAN's Status section still says "design only" (left to planning by the implementation session; a dated note goes with the next planning PR).
