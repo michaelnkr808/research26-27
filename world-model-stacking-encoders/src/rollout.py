@@ -562,12 +562,17 @@ def record(job, res, config, train_seed, checkpoint):
             "final_state": res["final_state"], "worker_peak_rss_mb": res.get("worker_peak_rss_mb")}
 
 
-def done_keys(path):
+def done_keys(path, timing_only=None):
+    """Keys already in `path`. With timing_only set, a file holding rows of the other kind (timing-only rows in a normal
+    run or the reverse) is refused: those rows would silently count as finished jobs."""
     keys = set()
     if Path(path).exists():
         for line in Path(path).read_text().splitlines():
             if line.strip():
                 r = json.loads(line)
+                if timing_only is not None and bool(r.get("timing_only")) != timing_only:
+                    raise SystemExit(f"{path} holds {'timing-only' if r.get('timing_only') else 'normal'} rows; "
+                                     f"use another --out for a {'timing-only' if timing_only else 'normal'} run")
                 keys.add((r["benchmark"], r["suite"], int(r["episode_id"]), int(r["eval_seed"])))
     return keys
 
@@ -578,7 +583,7 @@ def run_jobs(jobs, act, n_envs, out, meta, env_spec="rollout:libero_env", mujoco
     Appends one record per finished job to `out`; returns (records written, errors).
     timing_only: episodes ignore the done signal and run to the step limit; records and log lines hold no outcome.
     monitor_s > 0: log the pod's GPU, CPU and memory use every monitor_s seconds."""
-    todo = deque(j for j in jobs if job_key(j) not in done_keys(out))
+    todo = deque(j for j in jobs if job_key(j) not in done_keys(out, timing_only))
     log(f"{len(jobs)} jobs, {len(jobs) - len(todo)} already in {out}, {len(todo)} to run on {n_envs} envs")
     if not todo:
         return 0, 0

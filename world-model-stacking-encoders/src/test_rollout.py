@@ -328,6 +328,14 @@ def main():
         n_rec, _ = R.run_jobs(jobs8, fake_act, 1, Path(d, "early.jsonl"), meta, env_spec="test_rollout:early_env",
                               mujoco_gl=None, log=lambda m: None, timing_only=True)
         assert n_rec == 0
+        # the two kinds of file are never mixed: timing-only rows would silently count as finished evaluations
+        for f, flag in (("early.jsonl", False), ("normal.jsonl", True)):
+            try:
+                R.run_jobs(jobs8, fake_act, 1, Path(d, f), meta, env_spec="test_rollout:early_env", mujoco_gl=None,
+                           log=lambda m: None, timing_only=flag)
+                raise RuntimeError("mixed resume accepted")
+            except SystemExit as e:
+                assert "rows" in str(e)
     print("8 ok: timing-only (early-success and never-success envs give identical records and log lines, "
           "both run 430 env steps, no outcome fields; normal mode still stops at success)")
 
