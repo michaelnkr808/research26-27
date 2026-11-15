@@ -1896,3 +1896,16 @@ Reviews were read-only; findings reported by subagents, spot-checked by the lead
 **Test-set use:** none. The design keeps test outcomes unseen until the final evaluation (timing-only smoke).
 **Next:** the implementation session's reading of Fast-WAM for Open items 7 and 10 and its training-script PR; the user's answers on 7 and 10 and confirmation of 4, 6, 8, 9, 11 before the first cluster run. Planning then writes the stage 2 PLAN (DINOv3 alone, one helpful and the harmful pairing) once the baseline's result is in, or earlier as a draft if the user wants it ready.
 **Open questions:** step time on Nautilus's L40 (unmeasured; the first minutes of the run settle it); the baseline's evaluation time (unmeasured); PR #28 (the draft session's) is still open and needs the user's "merge" in that session.
+
+## 2026-11-15 [agent, lead, planning] (the user confirmed the baseline's smaller open items; planning session closed)
+**Goal:** settle the open items the user had not addressed at the sign-off of PR #34, then close the session.
+**Did (verified: the user's words in the planning window):**
+- The lead listed the unconfirmed items in chat: the run is stopped if it projects to take more than about twice the expected time (Open item 4); the baseline is only scored on the perturbed benchmark if it lands in the middle zone of the pass bar (item 6); keep the precision setup the sizing check measured (item 8); the experiment session tallies how the old small model did on clean LIBERO as an extra reference number (item 9); evaluation stays on L4 cards and any move off them comes back to the user (item 11).
+- **The user's answer:** "yeah all those small ones sound fine, i'll clear the session then we will beigin". Open items 4, 6, 8, 9 and 11 of `experiments/2026-11-15-pretrained-start-baseline/PLAN.md` are therefore decided at the PLAN's recommendations. No result existed; nothing has been run.
+- Not written into the baseline PLAN by this session: an experiment PLAN amendment goes by PR (`_standards/05`, Git) and the user was clearing the session. The words were relayed verbatim to the implementation session (`world-model-stacking-encoders-c1`), which was asked to carry the dated note under "Amendments" in its first PR that touches that PLAN. Until then this entry is the record.
+- "we will begin" is not taken as a go for any cluster Job: the implementation session asks the user in its own window before anything runs.
+**PR:** none; this entry and the PLAN Now line: direct (chore).
+**Found:** nothing new.
+**Test-set use:** none.
+**Next:** implementation session: the Fast-WAM reading for Open items 7 (validation split) and 10 (image augmentation), the user's answers on both, the amendment note, then the training script and rollout changes by PR, and the first sanity run on the user's go. Planning, next session: the stage 2 PLAN (DINOv3 alone, one helpful and the harmful pairing, channel-wise concatenation) once the baseline's result is in, or as a draft earlier if the user asks.
+**Open questions:** as in the previous planning entry (L40 step time, evaluation time, PR #28).
