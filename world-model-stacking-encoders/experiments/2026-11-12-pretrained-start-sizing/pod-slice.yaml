@@ -1,0 +1,66 @@
+# Bare Pod, not a Job, because a Job that sleeps is banned (_standards/08).
+# Sizing check Step 3: build and pack the 16-episode data slice (PLAN.md Step 3; steps in RUN-slice.md).
+# CPU-only, no GPU. This is a bare Pod, not a Job, on purpose: it must stay alive after the work so the user can copy
+# the chunks off, and _standards/08 bans `sleep` (or a script ending in sleep) in a Job but allows it in a bare Pod
+# (max life 6 h; here 2 h of sleep and a hard deadline).
+# Requests are at or under NRP's exempt size (1 CPU, 2 GB), so the CPU/RAM range rule is not applied to it (docs
+# threshold, recheck before submitting); limits within 20% of requests. Sizing (speculative, arithmetic from stored
+# shapes, PLAN Step 3): slice ~2.5 GB (DINOv3 only) written to local disk, chunks ~2.5 GB more, so ~5 GB of
+# ephemeral storage; the script streams files (copy, hash, tar | split), so RAM stays small. For 2 or 3 encoders
+# (ENCODERS env) raise ephemeral-storage by about 4 GB per extra encoder and the emptyDir sizeLimit with it.
+# Reads the PVC read-only; writes nothing to it. Code from ConfigMap stacking-encoders-sizing-slice-src (RUN-slice.md).
+apiVersion: v1
+kind: Pod
+metadata:
+  name: stacking-encoders-sizing-slice
+  namespace: aria-world
+  labels: {app: stacking-encoders-sizing-slice}
+spec:
+  restartPolicy: Never
+  activeDeadlineSeconds: 9000          # 2.5 h hard stop: the work (minutes) + 2 h wait for the copy
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}   # keep off GPU nodes
+          - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+  containers:
+  - name: main
+    image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime      # used for numpy only (08: CPU-only Jobs use it)
+    command: ["bash", "-c"]
+    args:
+    - |
+      set -euo pipefail
+      echo "=== start $(date -u)"
+      python /src/make_sizing_slice.py --feats /mnt/proxy/feats --out /work/sizing-slice \
+        --n 16 --seed 0 --encoders "$ENCODERS"
+      head -c 1500 /work/sizing-slice/slice.json; echo
+      mkdir -p /work/chunks
+      tar -cf - -C /work/sizing-slice . | split -b 80M -d -a 3 - /work/chunks/slice.tar.part
+      cd /work/chunks
+      cat slice.tar.part* | sha256sum > tar.sha256
+      sha256sum slice.tar.part* > SHA256SUMS
+      ls slice.tar.part* | wc -l
+      du -sh /work/sizing-slice /work/chunks
+      touch READY
+      echo "=== READY $(date -u): copy the chunks now (RUN-slice.md); this pod sleeps 2 h, then exits"
+      sleep 7200
+      echo "=== done $(date -u)"
+    env:
+    - {name: ENCODERS, value: "dinov3"}
+    - {name: PYTHONUNBUFFERED, value: "1"}
+    resources:
+      requests: {cpu: 500m, memory: 1Gi, ephemeral-storage: 12Gi}
+      limits:   {cpu: 600m, memory: 1200Mi, ephemeral-storage: 14Gi}
+    volumeMounts:
+    - {name: work, mountPath: /work}
+    - {name: src, mountPath: /src, readOnly: true}
+    - {name: proxy, mountPath: /mnt/proxy, readOnly: true}
+  volumes:
+  - name: work
+    emptyDir: {sizeLimit: 14Gi}
+  - name: src
+    configMap: {name: stacking-encoders-sizing-slice-src}
+  - name: proxy
+    persistentVolumeClaim: {claimName: stacking-encoders-proxy, readOnly: true}
