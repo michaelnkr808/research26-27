@@ -52,6 +52,9 @@ import multiprocessing as mp
 import os
 import random
 import re
+import shutil
+import subprocess
+import threading
 import time
 import traceback
 from collections import deque
@@ -371,8 +374,10 @@ def resolve(spec):
     return getattr(importlib.import_module(mod), fn)
 
 
-def run_episode(job, env_factory, ask):
-    """One closed-loop episode (Fast-WAM's run_single_episode without video saving). ask(request) -> chunk."""
+def run_episode(job, env_factory, ask, timing_only=False):
+    """One closed-loop episode (Fast-WAM's run_single_episode without video saving). ask(request) -> chunk.
+    timing_only: the env's done signal is never read, so the episode always runs max_steps + NUM_STEPS_WAIT env steps,
+    and the result holds nothing computed from the outcome (no success, no step count at success, no final state)."""
     seed = int(job["eval_seed"])
     random.seed(seed)
     np.random.seed(seed)
@@ -385,7 +390,9 @@ def run_episode(job, env_factory, ask):
         max_steps, t, done, pending = MAX_STEPS[job["suite"]], 0, False, []
         while t < max_steps + NUM_STEPS_WAIT:
             if t < NUM_STEPS_WAIT:
-                obs, _, done, _ = env.step(DUMMY)
+                obs, _, wait_done, _ = env.step(DUMMY)
+                if not timing_only:
+                    done = wait_done
                 t += 1
                 continue
             if not pending:
@@ -393,15 +400,20 @@ def run_episode(job, env_factory, ask):
                 chunk = ask({"agent": agent, "wrist": wrist, "state": state, "instruction": instruction,
                              "eval_seed": seed})
                 pending = [list(map(float, a)) for a in chunk[:REPLAN]]
-            obs, _, done, _ = env.step(pending.pop(0))
-            if done:
-                break
+            obs, _, step_done, _ = env.step(pending.pop(0))
+            if not timing_only:
+                done = step_done
+                if done:
+                    break
             t += 1
-        final = process_obs(obs)[2]
+        final = None if timing_only else process_obs(obs)[2]
     finally:
         close = getattr(env, "close", None)
         if close is not None:
             close()
+    if timing_only:
+        return {"steps": t, "instruction": instruction, "wall_s": round(time.time() - t0, 2),
+                "worker_peak_rss_mb": peak_rss_mb()}
     return {"success": bool(done), "steps": t, "instruction": instruction, "wall_s": round(time.time() - t0, 2),
             "final_state": [round(float(x), 6) for x in final], "worker_peak_rss_mb": peak_rss_mb()}
 
@@ -438,7 +450,79 @@ def cgroup_mem_gb():
     return tuple(out)
 
 
-def worker_main(conn, env_spec, mujoco_gl):
+def rss_mb():
+    """This process's current RSS (VmRSS) in MB, or None where /proc is missing."""
+    try:
+        for line in Path("/proc/self/status").read_text().splitlines():
+            if line.startswith("VmRSS:"):
+                return round(int(line.split()[1]) / 1024)
+    except OSError:
+        return None
+
+
+def cgroup_cpu_usec():
+    """Cumulative CPU time of this container's cgroup in microseconds (cgroup v2 cpu.stat), or None."""
+    try:
+        for line in Path("/sys/fs/cgroup/cpu.stat").read_text().splitlines():
+            if line.startswith("usage_usec"):
+                return int(line.split()[1])
+    except (OSError, ValueError):
+        pass
+    return None
+
+
+def parse_gpu_stats(text):
+    """nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total (csv, noheader, nounits) -> [(util %, used MiB,
+    total MiB)] per GPU."""
+    out = []
+    for line in text.splitlines():
+        if line.strip():
+            u, used, tot = (int(x) for x in line.split(","))
+            out.append((u, used, tot))
+    return out
+
+
+def gpu_stats():
+    """Per-GPU (util %, used MiB, total MiB) from nvidia-smi, or None when it is absent or fails (CPU pods)."""
+    exe = shutil.which("nvidia-smi")
+    if exe is None:
+        return None
+    try:
+        r = subprocess.run([exe, "--query-gpu=utilization.gpu,memory.used,memory.total", "--format=csv,noheader,nounits"],
+                           capture_output=True, text=True, timeout=10)
+        return parse_gpu_stats(r.stdout) if r.returncode == 0 else None
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
+
+
+def monitor_resources(log, every, stop, sample_s=5.0, sampler=gpu_stats):
+    """Log the pod's resource use every `every` s until `stop` is set: GPU utilisation (mean of samples taken every
+    sample_s) and memory (max), pod CPU cores used (cgroup CPU time over the window), this process's RSS, cgroup
+    memory. The GPU part is left out silently without nvidia-smi. Holds nothing about episodes."""
+    t_prev, cpu_prev = time.time(), cgroup_cpu_usec()
+    gpu_samples = []
+    while not stop.wait(min(sample_s, every)):
+        g = sampler()
+        if g:
+            gpu_samples.append(g)
+        now = time.time()
+        if now - t_prev < every:
+            continue
+        parts = []
+        if gpu_samples:
+            for k in range(len(gpu_samples[-1])):
+                col = [s[k] for s in gpu_samples if len(s) > k]
+                parts.append(f"gpu{k} util mean {sum(c[0] for c in col) / len(col):.0f}% max {max(c[0] for c in col)}%, "
+                             f"mem max {max(c[1] for c in col)}/{col[-1][2]} MiB ({len(col)} samples)")
+        cpu = cgroup_cpu_usec()
+        if cpu is not None and cpu_prev is not None:
+            parts.append(f"pod cpu {(cpu - cpu_prev) / 1e6 / (now - t_prev):.2f} cores of {pod_cpus()}")
+        parts.append(f"main rss {rss_mb()} MB, cgroup memory now/peak GB {cgroup_mem_gb()}")
+        log("resources: " + "; ".join(parts))
+        t_prev, cpu_prev, gpu_samples = now, cpu, []
+
+
+def worker_main(conn, env_spec, mujoco_gl, timing_only=False):
     if mujoco_gl:
         os.environ["MUJOCO_GL"] = mujoco_gl
         os.environ["PYOPENGL_PLATFORM"] = mujoco_gl
@@ -455,7 +539,7 @@ def worker_main(conn, env_spec, mujoco_gl):
         if job is None:
             return
         try:
-            conn.send(("done", (job, run_episode(job, env_factory, ask))))
+            conn.send(("done", (job, run_episode(job, env_factory, ask, timing_only))))
         except Exception:
             conn.send(("error", (job, traceback.format_exc())))
 
@@ -465,6 +549,13 @@ def worker_main(conn, env_spec, mujoco_gl):
 # ---------------------------------------------------------------------------
 
 def record(job, res, config, train_seed, checkpoint):
+    if "success" not in res:        # timing-only result: no outcome field, so lp_eval cannot read or score the file
+        assert job["benchmark"] in (lp_eval.LP, lp_eval.CLEAN), job["benchmark"]
+        return {"benchmark": job["benchmark"], "suite": job["suite"], "episode_id": int(job["episode_id"]),
+                "category": job["category"], "config": config, "train_seed": int(train_seed),
+                "eval_seed": int(job["eval_seed"]), "checkpoint": str(checkpoint), "subset_id": job["subset_id"],
+                "timing_only": True, "steps": res["steps"], "instruction": res["instruction"],
+                "wall_s": res["wall_s"], "worker_peak_rss_mb": res.get("worker_peak_rss_mb")}
     row = lp_eval.result_row(job["benchmark"], job["suite"], job["episode_id"], job["category"], config, train_seed,
                              job["eval_seed"], checkpoint, job["subset_id"], res["success"])
     return {**row, "steps": res["steps"], "instruction": res["instruction"], "wall_s": res["wall_s"],
@@ -482,9 +573,11 @@ def done_keys(path):
 
 
 def run_jobs(jobs, act, n_envs, out, meta, env_spec="rollout:libero_env", mujoco_gl="egl", gather_s=0.05,
-             log=print, log_every=60.0):
+             log=print, log_every=60.0, timing_only=False, monitor_s=0.0):
     """Run jobs on n_envs simulator processes; batch their inference requests through act(list) -> chunks.
-    Appends one record per finished job to `out`; returns (records written, errors)."""
+    Appends one record per finished job to `out`; returns (records written, errors).
+    timing_only: episodes ignore the done signal and run to the step limit; records and log lines hold no outcome.
+    monitor_s > 0: log the pod's GPU, CPU and memory use every monitor_s seconds."""
     todo = deque(j for j in jobs if job_key(j) not in done_keys(out))
     log(f"{len(jobs)} jobs, {len(jobs) - len(todo)} already in {out}, {len(todo)} to run on {n_envs} envs")
     if not todo:
@@ -493,7 +586,7 @@ def run_jobs(jobs, act, n_envs, out, meta, env_spec="rollout:libero_env", mujoco
     conns, procs = [], []
     for _ in range(min(n_envs, len(todo))):
         a, b = ctx.Pipe()
-        p = ctx.Process(target=worker_main, args=(b, env_spec, mujoco_gl), daemon=True)
+        p = ctx.Process(target=worker_main, args=(b, env_spec, mujoco_gl, timing_only), daemon=True)
         p.start()
         conns.append(a)
         procs.append(p)
@@ -503,6 +596,9 @@ def run_jobs(jobs, act, n_envs, out, meta, env_spec="rollout:libero_env", mujoco
     t_start = t_log = time.time()
     first_wait = None
     errf = Path(str(out) + ".errors.jsonl")
+    mon_stop = threading.Event()
+    if monitor_s > 0:
+        threading.Thread(target=monitor_resources, args=(log, monitor_s, mon_stop), daemon=True).start()
     with open(out, "a") as fo:
         while live:
             for c in wait(list(live), timeout=gather_s):
@@ -526,6 +622,8 @@ def run_jobs(jobs, act, n_envs, out, meta, env_spec="rollout:libero_env", mujoco
                     fo.write(json.dumps(record(job, res, **meta)) + "\n")
                     fo.flush()
                     n_rec += 1
+                    if timing_only:
+                        log(f"episode {job_key(job)}: {res['steps']} steps, wall {res['wall_s']:.1f}s")
                 elif kind == "error":
                     job, tb = payload
                     with open(errf, "a") as fe:
@@ -550,6 +648,7 @@ def run_jobs(jobs, act, n_envs, out, meta, env_spec="rollout:libero_env", mujoco
                     f"{3600 * n_rec / el:.0f} episodes/h; mean batch {stats['items'] / max(1, stats['calls']):.1f}; "
                     f"policy busy {stats['act_s'] / el:.0%}; cgroup memory now/peak GB {cgroup_mem_gb()}")
                 t_log = time.time()
+    mon_stop.set()
     for p in procs:
         p.join(timeout=30)
     el = time.time() - t_start
@@ -595,8 +694,9 @@ def first_frame(job, env_factory=libero_env):
     return {"agent": agent, "wrist": wrist, "state": state, "raw": raw, "instruction": instruction}
 
 
-def smoke_jobs(classification, clean, per_cell=1, eval_seed=41):
-    """The lowest-id episode(s) of every (suite, category) cell, plus trial 0 of the first clean task per suite."""
+def smoke_jobs(classification, clean, per_cell=1, eval_seed=41, include_clean=True):
+    """The lowest-id episode(s) of every (suite, category) cell, plus (include_clean) trial 0 of the first clean task
+    per suite. include_clean=False is the LIBERO-Plus timing shard: one episode per cell, nothing else."""
     eps = []
     for s in SUITES:
         by = {}
@@ -605,7 +705,8 @@ def smoke_jobs(classification, clean, per_cell=1, eval_seed=41):
         for c in sorted(by):
             eps += [{"suite": s, "id": e["id"], "name": e["name"], "category": c} for e in by[c][:per_cell]]
     sub = {"subset_id": "smoke", "episodes": eps}
-    return make_jobs(sub, 1, {s: clean[s][:1] for s in SUITES}, eval_seeds=(eval_seed,), clean_seed=eval_seed)
+    return make_jobs(sub, 1 if include_clean else 0, {s: clean[s][:1] for s in SUITES}, eval_seeds=(eval_seed,),
+                     clean_seed=eval_seed)
 
 
 def clean_tasks(tasks):
@@ -649,6 +750,14 @@ def main():
     s2.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     s2.add_argument("--cuda-graph", action="store_true", help="replay the denoising loop from CUDA graphs")
     s2.add_argument("--torch-threads", type=int, default=pod_cpus(), help="main process (default: the pod's CPU quota)")
+    s2.add_argument("--timing-only", action="store_true", help="ignore the done signal: every episode runs to its "
+                    "step limit and records and logs hold no outcome (success, step count at success, final state), "
+                    "only job key, wall time, fixed steps, errors, resource use; for smoke evaluations")
+    s2.add_argument("--lp-timing-shard", default=None, metavar="CLASSIFICATION", help="jobs = one LIBERO-Plus episode "
+                    "per (suite, category) cell, as smoke_jobs (eval seed = --clean-seed); needs --timing-only, "
+                    "replaces --subset and --clean")
+    s2.add_argument("--monitor-s", type=float, default=60.0, help="log GPU, CPU and memory use every this many "
+                    "seconds (0 = off)")
     s2.add_argument("--out", required=True, help="JSONL, one writer per file")
     args = p.parse_args()
     t0 = time.time()
@@ -722,19 +831,26 @@ def main():
         return
 
     i, n = map(int, args.shard.split("/"))
-    sub = lp_eval.load_subset(args.subset) if args.subset else None
     clean = json.loads(Path(args.tasks).read_text())["clean"]
-    jobs = order_jobs(make_jobs(sub, args.clean, clean, tuple(int(x) for x in args.eval_seeds.split(",")),
-                                args.clean_seed), args.order_seed)[i::n]
+    if args.lp_timing_shard:
+        if not args.timing_only or args.subset or args.clean:
+            raise SystemExit("--lp-timing-shard needs --timing-only and replaces --subset and --clean")
+        cls = json.loads(Path(args.lp_timing_shard).read_text())
+        all_jobs = smoke_jobs(cls, clean, eval_seed=args.clean_seed, include_clean=False)
+    else:
+        sub = lp_eval.load_subset(args.subset) if args.subset else None
+        all_jobs = make_jobs(sub, args.clean, clean, tuple(int(x) for x in args.eval_seeds.split(",")), args.clean_seed)
+    jobs = order_jobs(all_jobs, args.order_seed)[i::n]
     check_resume(jobs, args.out)
     torch.set_num_threads(args.torch_threads)
     policy = Policy.load(args.run_dir, args.t5, args.vae_path, args.device, cuda_graph=args.cuda_graph)
     cfg = policy.cfg
     log(f"checkpoint {args.run_dir}: config {cfg['config']} seed {cfg['seed']} commit {cfg['git_commit']}; "
-        f"{len(jobs)} jobs in shard {i}/{n}, order seed {args.order_seed}; torch threads {args.torch_threads}, cuda graph {args.cuda_graph}")
+        f"{len(jobs)} jobs in shard {i}/{n}, order seed {args.order_seed}; torch threads {args.torch_threads}, cuda graph {args.cuda_graph}, timing only {args.timing_only}")
     meta = {"config": cfg["config"], "train_seed": int(cfg["seed"]), "checkpoint": str(args.run_dir)}
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    n_rec, n_err = run_jobs(jobs, policy.act, args.envs, args.out, meta, log=log, gather_s=args.gather_s)
+    n_rec, n_err = run_jobs(jobs, policy.act, args.envs, args.out, meta, log=log, gather_s=args.gather_s,
+                            timing_only=args.timing_only, monitor_s=args.monitor_s)
     if n_err:
         raise SystemExit(f"{n_err} episodes raised; see {args.out}.errors.jsonl")
 

@@ -2,6 +2,9 @@
 
 import json
 import math
+import os
+import re
+import threading
 import tempfile
 from pathlib import Path
 
@@ -53,6 +56,34 @@ def fake_env(job):
     env = FakeEnv(job)
     env.seed(job["eval_seed"])                     # as rollout.libero_env
     return env, target, f"task {job['episode_id'] % 3}", ""
+
+
+class CountEnv(FakeEnv):
+    """For timing-only tests: reports done from step `success_at` on (None = never), counts env steps, writes the count
+    to $ROLLOUT_TEST_DIR/<episode id> on close. Its observations do not depend on the done signal."""
+    success_at = None
+
+    def reset(self):
+        self.n = 0
+
+    def step(self, a):
+        self.n += 1
+        return self.obs(), 0.0, self.success_at is not None and self.n >= self.success_at, {}
+
+    def close(self):
+        Path(os.environ["ROLLOUT_TEST_DIR"], str(self.job["episode_id"])).write_text(str(self.n))
+
+
+class EarlyEnv(CountEnv):
+    success_at = 35
+
+
+def early_env(job):
+    return EarlyEnv(job), 0.0, f"task {job['episode_id'] % 3}", ""
+
+
+def never_env(job):
+    return CountEnv(job), 0.0, f"task {job['episode_id'] % 3}", ""
 
 
 def fake_act(reqs):
@@ -256,6 +287,82 @@ def main():
                                   mujoco_gl=None, log=lambda m: None)
         assert (n_rec, n_err) == (0, 3), (n_rec, n_err)
     print(f"7 ok: run_jobs ({len(jobs)} jobs; same records with 1 or 3 envs; errors kept apart; resumable)")
+
+    # 8. Timing-only mode: an env that reports success early and one that never does give identical records and log
+    #    lines (wall-time fields masked), both run every step (30 wait + 400), and the records hold no outcome field.
+    sub8 = {"subset_id": "t8", "episodes": [{"suite": "libero_goal", "id": i, "name": f"t{i}", "category": "c"}
+                                            for i in [1, 2]]}
+    jobs8 = R.make_jobs(sub8, 1, {"libero_goal": ["a"]}, eval_seeds=(41,))
+    mask = lambda line: re.sub(r"wall \S+|in \d+s \(\d+ episodes/h\)|policy busy \d+%|cgroup memory now/peak GB .*"
+                               r"|\[rollout +\d+s\] ", "", line)
+    got = {}
+    with tempfile.TemporaryDirectory() as d:
+        for tag in ("early", "never"):
+            cnt = Path(d, tag + "-counts")
+            cnt.mkdir()
+            os.environ["ROLLOUT_TEST_DIR"] = str(cnt)       # inherited by the spawned simulator process
+            out, lines = Path(d, tag + ".jsonl"), []
+            R.run_jobs(jobs8, fake_act, 1, out, meta, env_spec=f"test_rollout:{tag}_env", mujoco_gl=None,
+                       log=lines.append, timing_only=True)
+            rows = [json.loads(x) for x in out.read_text().splitlines()]
+            assert len(rows) == len(jobs8)
+            for r in rows:
+                assert not ({"success", "final_state"} & set(r)) and r["timing_only"] and r["steps"] == 430, r
+                assert not set(L.FIELDS) <= set(r)           # lp_eval cannot read a timing-only file as results
+            assert {p.read_text() for p in cnt.iterdir()} == {"430"} and len(list(cnt.iterdir())) == len(jobs8)
+            for r in rows:
+                r.pop("wall_s"), r.pop("worker_peak_rss_mb")
+            got[tag] = (rows, [mask(x).replace(str(out), "OUT") for x in lines])
+        assert got["early"] == got["never"], got
+        assert any(x.startswith("episode ") for x in got["early"][1]) and not any("success" in x for x in got["early"][1])
+        # normal mode on the same env does read done: the early one stops at 35 env steps and is marked a success
+        cnt = Path(d, "normal-counts")
+        cnt.mkdir()
+        os.environ["ROLLOUT_TEST_DIR"] = str(cnt)
+        out = Path(d, "normal.jsonl")
+        R.run_jobs(jobs8, fake_act, 1, out, meta, env_spec="test_rollout:early_env", mujoco_gl=None, log=lambda m: None)
+        rows = [json.loads(x) for x in out.read_text().splitlines()]
+        assert all(r["success"] == 1 and "final_state" in r and r["steps"] == 34 for r in rows), rows
+        assert {p.read_text() for p in cnt.iterdir()} == {"35"}
+        # resume still works on a timing-only file
+        n_rec, _ = R.run_jobs(jobs8, fake_act, 1, Path(d, "early.jsonl"), meta, env_spec="test_rollout:early_env",
+                              mujoco_gl=None, log=lambda m: None, timing_only=True)
+        assert n_rec == 0
+    print("8 ok: timing-only (early-success and never-success envs give identical records and log lines, "
+          "both run 430 env steps, no outcome fields; normal mode still stops at success)")
+
+    # 9. Layouts: clean LIBERO one trial per base task = 40 jobs; LIBERO-Plus timing shard = one episode per
+    #    (suite, category) cell, no clean jobs; the full smoke layout still adds the first clean task per suite.
+    clean9 = {s: [f"{s}_task{k}" for k in range(10)] for s in R.SUITES}
+    j40 = R.make_jobs(None, 1, clean9)
+    assert len(j40) == 40 and {j["benchmark"] for j in j40} == {L.CLEAN} and len({R.job_key(j) for j in j40}) == 40
+    assert {j["suite"] for j in j40} == set(R.SUITES) and {j["trial"] for j in j40} == {0}
+    cls9 = {s: [{"id": 10 * c + k + 1, "name": f"{s}_c{c}_{k}", "category": f"cat{c}"} for c in range(3)
+                for k in range(4)] for s in R.SUITES}
+    shard = R.smoke_jobs(cls9, clean9, include_clean=False)
+    assert len(shard) == 4 * 3 and {j["benchmark"] for j in shard} == {L.LP}
+    assert {(j["suite"], j["category"]) for j in shard} == {(s, f"cat{c}") for s in R.SUITES for c in range(3)}
+    assert all(j["episode_id"] == 10 * int(j["category"][3:]) + 1 for j in shard)   # the lowest id of each cell
+    assert {j["eval_seed"] for j in shard} == {41} and len({R.job_key(j) for j in shard}) == 12
+    full = R.smoke_jobs(cls9, clean9)
+    assert len(full) == 12 + 4 and sum(j["benchmark"] == L.CLEAN for j in full) == 4
+    print("9 ok: layouts (clean 40 jobs; LIBERO-Plus timing shard one per suite-category cell; smoke layout unchanged)")
+
+    # 10. Resource monitor: nvidia-smi output parsed; log line carries GPU mean/max and memory; no GPU = no GPU part.
+    assert R.parse_gpu_stats("55, 12000, 24564\n7, 300, 24564\n") == [(55, 12000, 24564), (7, 300, 24564)]
+    for samples, want in ((iter([[(50, 100, 1000)], [(70, 200, 1000)], [(60, 150, 1000)]]), "gpu0 util mean 60% max 70%, mem max 200/1000"),
+                          (None, None)):
+        lines, stop = [], threading.Event()
+        sampler = (lambda it=samples: next(it, [(70, 200, 1000)])) if samples is not None else (lambda: None)
+        th = threading.Thread(target=R.monitor_resources, args=(lines.append, 0.25, stop, 0.1, sampler))
+        th.start()
+        while not lines:
+            stop.wait(0.05)
+        stop.set()
+        th.join()
+        assert "resources: " in lines[0] and "main rss" in lines[0]
+        assert (want in lines[0]) if want else ("gpu0" not in lines[0]), lines[0]
+    print("10 ok: resource monitor (GPU parse, mean/max over the window, silent without a GPU)")
     print("all checks passed")
 
 
