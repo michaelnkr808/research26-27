@@ -1,0 +1,59 @@
+Sun Nov 15 07:54:19 UTC 2026
+Filesystem                                                                                                                                                      Size  Used Avail Use% Mounted on
+csi-cephfs-node@90a5afad-c313-4e49-9b5f-317100c6930e.nautilusfs=/volumes/csi/csi-vol-9fc6b0fe-e947-4528-a5c5-c5e80fc7d70d/9f0765b7-9592-498f-ae6c-7f42cf4c5f62  1.0T  790G  235G  78% /mnt/proxy
+
+downloading diffusion_pytorch_model-00001-of-00003.safetensors
+ok diffusion_pytorch_model-00001-of-00003.safetensors 9825014472 720b06c4ade5e87c1246bba8ac95b664c638749cd9b102cf84d823bb44c026a1 (matches published)
+downloading diffusion_pytorch_model-00002-of-00003.safetensors
+ok diffusion_pytorch_model-00002-of-00003.safetensors 9995661736 09ec5ef720d8396f6cfa51fbdcbdb2327e37722afd6e89fd38f1e7e5e782c283 (matches published)
+downloading diffusion_pytorch_model-00003-of-00003.safetensors
+ok diffusion_pytorch_model-00003-of-00003.safetensors 178558176 6306f7894c345de9093ad588771c2abfaeb668a81f7a6d9a918bd26ba3568e49 (matches published)
+downloading diffusion_pytorch_model.safetensors.index.json
+ok diffusion_pytorch_model.safetensors.index.json 72865 bfa2337f1163e195d24151a72298daf34a620543898109be47e414c8daa5b3fe (computed, no published sha256)
+downloading config.json
+ok config.json 251 d1fea36899d00c2501b836c13ad65af56e2f9529ba622e50886d3f5c3e6c02bc (computed, no published sha256)
+{
+  "repo_id": "Wan-AI/Wan2.2-TI2V-5B",
+  "revision": "921dbaf3f1674a56f47e83fb80a34bac8a8f203e",
+  "files": [
+    {
+      "name": "diffusion_pytorch_model-00001-of-00003.safetensors",
+      "bytes": 9825014472,
+      "sha256": "720b06c4ade5e87c1246bba8ac95b664c638749cd9b102cf84d823bb44c026a1"
+    },
+    {
+      "name": "diffusion_pytorch_model-00002-of-00003.safetensors",
+      "bytes": 9995661736,
+      "sha256": "09ec5ef720d8396f6cfa51fbdcbdb2327e37722afd6e89fd38f1e7e5e782c283"
+    },
+    {
+      "name": "diffusion_pytorch_model-00003-of-00003.safetensors",
+      "bytes": 178558176,
+      "sha256": "6306f7894c345de9093ad588771c2abfaeb668a81f7a6d9a918bd26ba3568e49"
+    },
+    {
+      "name": "diffusion_pytorch_model.safetensors.index.json",
+      "bytes": 72865,
+      "sha256": "bfa2337f1163e195d24151a72298daf34a620543898109be47e414c8daa5b3fe"
+    },
+    {
+      "name": "config.json",
+      "bytes": 251,
+      "sha256": "d1fea36899d00c2501b836c13ad65af56e2f9529ba622e50886d3f5c3e6c02bc"
+    }
+  ]
+}
+total 19530576
+drwxr-xr-x 3 root root          7 Nov 15 08:26 .
+drwxr-xr-x 3 root root          1 Nov 15 08:26 ..
+drwxr-xr-x 3 root root          1 Nov 15 07:54 .cache
+-rw-r--r-- 1 root root        251 Nov 15 08:26 config.json
+-rw-r--r-- 1 root root 9825014472 Nov 15 07:55 diffusion_pytorch_model-00001-of-00003.safetensors
+-rw-r--r-- 1 root root 9995661736 Nov 15 08:11 diffusion_pytorch_model-00002-of-00003.safetensors
+-rw-r--r-- 1 root root  178558176 Nov 15 08:26 diffusion_pytorch_model-00003-of-00003.safetensors
+-rw-r--r-- 1 root root      72865 Nov 15 08:26 diffusion_pytorch_model.safetensors.index.json
+-rw-r--r-- 1 root root       1014 Nov 15 08:26 manifest.json
+Filesystem                                                                                                                                                      Size  Used Avail Use% Mounted on
+csi-cephfs-node@90a5afad-c313-4e49-9b5f-317100c6930e.nautilusfs=/volumes/csi/csi-vol-9fc6b0fe-e947-4528-a5c5-c5e80fc7d70d/9f0765b7-9592-498f-ae6c-7f42cf4c5f62  1.0T  805G  220G  79% /mnt/proxy
+Sun Nov 15 08:26:37 UTC 2026
+=== done

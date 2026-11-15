@@ -1868,3 +1868,15 @@ Reviews were read-only; findings reported by subagents, spot-checked by the lead
 **Test-set use:** none.
 **Next:** as in the previous entry.
 **Open questions:** which Wan 2.2 checkpoint the paper used (not stated in the PDF; the authors were asked for checkpoints on 2026-11-10, no reply recorded).
+
+## 2026-11-15 [agent, lead, implementation] (PRs #32 and #33 merged; whole Wan 2.2 transformer on the cluster; Modal volume cleared)
+**Goal:** finish the items from the user's yes: merges, Modal cleanup, the download.
+**Did (verified):**
+- The user's words in the implementation window: "yes go ahead and merge" (reply to one question covering both merges and the Modal delete). PR #32 merged (`925c5f2`), PR #33 merged (`91c2f49`); worker and lead worktrees removed.
+- Modal volume `stacking-sizing`: `wan` and `data` deleted; `results` (small, already fetched and committed) kept.
+- Download Job `stacking-encoders-wan22-dit-download` Complete (07:54 to 08:26 UTC): three shards match published bytes and sha256, manifest written at `/mnt/proxy/models/Wan-AI/Wan2.2-TI2V-5B/manifest.json`; log in `experiments/2026-11-12-pretrained-start-sizing/results/wan22-dit-download.log`; `data/README.md` status updated. Job deleted after the log was saved. PVC 220G free after.
+- Paid-card prices for the dollars test read and logged (sizing LOG, merged with #33): one full run on an L40S about $18 to $19 on Vast.ai or Runpod.
+**PR:** #32, #33 (merged); this entry direct (chore).
+**Found:** nothing new beyond the sizing LOG.
+**Test-set use:** none.
+**Next:** planning writes the stage 1 PLAN with the measured cost and decides where it trains (Nautilus 48 GB class or a paid L40S); step time on Nautilus's A40/A6000/L40 is unmeasured.
