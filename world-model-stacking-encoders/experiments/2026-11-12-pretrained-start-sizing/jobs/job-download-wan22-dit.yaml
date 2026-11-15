@@ -4,7 +4,8 @@
 #     diffusion_pytorch_model-0000{1,2,3}-of-00003.safetensors (9.83 + 10.00 + 0.18 GB, about 20.0 GB total),
 #     diffusion_pytorch_model.safetensors.index.json, config.json, manifest.json
 # Shards are checked for byte size and sha256 against the values HF publishes; mismatch fails the Job (bad file deleted).
-# The two small files have no published sha256: theirs is computed and printed. Rerun skips files already correct.
+# The two small files have no published sha256: theirs is computed and printed. On a rerun only the shards already
+# correct (size + sha256) are skipped; the two small files are always re-fetched.
 # Prints df -h /mnt/proxy first and exits non-zero if under 30 GB free.
 # Follows _standards/08: Job, real command that exits, no sleep, no GPU, off GPU nodes, us-west, limits within 20%.
 apiVersion: batch/v1
@@ -68,7 +69,7 @@ spec:
                   print("have", name, flush=True)
               else:
                   print("downloading", name, flush=True)
-                  hf_hub_download(REPO, name, revision=REV, local_dir=D)
+                  hf_hub_download(REPO, name, revision=REV, local_dir=D, force_download=True)
                   if exp is not None:
                       size, h = os.path.getsize(p), sha(p)
                       if size != exp[0] or h != exp[1]:
@@ -78,14 +79,17 @@ spec:
               print("ok", name, size, h, "(computed, no published sha256)" if exp is None else "(matches published)", flush=True)
               out.append({"name": name, "bytes": size, "sha256": h})
           man = {"repo_id": REPO, "revision": REV, "files": out}
-          with open(f"{D}/manifest.json", "w") as f:
+          with open(f"{D}/manifest.json.tmp", "w") as f:
               json.dump(man, f, indent=2)
+          os.replace(f"{D}/manifest.json.tmp", f"{D}/manifest.json")
           print(json.dumps(man, indent=2))
           PY
           ls -la $D; df -h /mnt/proxy; date -u; echo "=== done"
         env:
         - {name: PYTHONUNBUFFERED, value: "1"}
         - {name: HF_HOME, value: /work/hf}
+        # Plain HTTP download: hf-xet's chunk cache could fill the 9Gi emptyDir or exceed the 1800Mi memory limit.
+        - {name: HF_HUB_DISABLE_XET, value: "1"}
         # Network-bound and may run > 30 min, so requests stay within NRP's exempt size (1 CPU core, 2GB memory)
         # to avoid low-utilization flags; same sizing as the proxy download Job (limits within 20% of requests).
         resources:
