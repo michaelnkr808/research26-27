@@ -143,7 +143,7 @@ Written before running. All speculative.
 
 ## Pass bar and decision rule
 
-**The pass bar is the user's decision. It is not chosen here.** The options below are fixed before any result exists. The bar applies to the four-suite average success on clean LIBERO, final checkpoint, 2,000 rollouts, protocol above. **Once the user signs off on a pass bar and this rule, both are locked** and change only by a dated amendment that states whether any result had been seen.
+**The pass bar is the user's decision. It is not chosen here.** (2026-11-15, later: the user chose option 4 and signed off; the bar and this rule are locked, see "Amendments". No result existed.) The options below are fixed before any result exists. The bar applies to the four-suite average success on clean LIBERO, final checkpoint, 2,000 rollouts, protocol above. **Once the user signs off on a pass bar and this rule, both are locked** and change only by a dated amendment that states whether any result had been seen.
 
 **Source numbers behind the options** (all verified in the files named):
 - The paper's VAE-only reference (no extra encoder; the reference row at the top of Table 8, shared by all five integration mechanisms): clean LIBERO average 97.9, LIBERO-Plus total 74.7 (paper Table 8, p19; direction `LOG.md` line 1863). Every single encoder with channel-wise concatenation lies between 98.0 and 99.1 on clean LIBERO (Table 8's channel-wise block, p20; same LOG line). This model is taken to be 30 layers deep (inferred, LOG line 1862) and trained with the paper's full recipe.
@@ -171,7 +171,7 @@ Written before running. All speculative.
   Any of these is a new run with its own PLAN or amendment and its own bar; none is started without the user's choice.
 
 ## Compute and cost
-- **Where it runs: Open item 3.** The lead's recommendation is Nautilus 48 GB-class cards, with one paid L40S run as a fallback; the user has not decided.
+- **Where it runs: Open item 3.** The lead's recommendation is Nautilus 48 GB-class cards, with one paid L40S run as a fallback; the user has not decided. (2026-11-15, later: the user chose Nautilus, see "Amendments".)
 - **Card-hours (sizing basis):** 21,696 steps x 3.907 s = 23.54 L40S-hours of training steps for `none` (sizing LOG line 41, verified). Not included: checkpoint writes, startup, data waits on CephFS, the sanity runs, failed or resumed runs, evaluation (sizing LOG line 41).
 - **Step time on A40, RTX A6000 and L40 is not measured** (sizing LOG line 41, verified: "not transferred to A40/A6000/L40"). **How the first minutes settle it:** the training script logs seconds per optimizer step, data wait and peak memory from the first steps; after a short warm-up (for example 20 optimizer steps) the implementation session computes the projected training time (21,696 x the measured step time) and writes it in the experiment `LOG.md`. If the projection exceeds the time limit agreed at the go, the run is stopped and the user decides. The same first minutes show whether micro-batch 8 fits on that card. GPU use is checked about 15 minutes in (recalled lesson from earlier runs, not in a file read here).
 - **Nautilus card access:** L40 and L40S are requested by `gpu.product`; A40 and RTX A6000 are NRP special resources (`nvidia.com/a40`, `nvidia.com/rtxa6000`) that a plain GPU request never reaches, and "A named-resource variant ... is added only with the user's OK" (proxy PLAN Amendment 2026-11-06 (b), lines 251-257, verified). Part of Open item 3.
@@ -185,6 +185,8 @@ Written before running. All speculative.
 
 ## Open, for the user
 Design choices this plan does not make. Each has options and a recommendation labelled as the worker's; none is decided.
+
+**2026-11-15, later:** the user answered items 1, 2, 3 and 5; the answers and the state of the other items are under "Amendments". The text below is kept as written before the answers.
 
 1. **The pass bar** (options 1 to 4 under "Pass bar and decision rule"). Recommendation: option 4 (two zones at 90 and 36); option 3 if one line is preferred.
 2. **Action expert initialisation.**
@@ -229,7 +231,24 @@ The implementation session (a lead with its own workers) does the following, cod
 Any extra encoder or pairing (stage 2); fusion variants (stage 3); LIBERO-Plus scoring other than as option 4's condition or by the user's choice on Open item 6; depths other than 8; other block sets; gradient checkpointing; multi-card runs; Fast-WAM's released LIBERO checkpoint; tuning any hyperparameter; Job manifests.
 
 ## Status
-Design only, written 2026-11-15. Not signed off. No code, no run, no results.
+Design only, written 2026-11-15. **Signed off by the user 2026-11-15** (merge go for PR #34 in the planning window, with the answers recorded under "Amendments"). The pass bar (option 4) and the decision rule are locked from that sign-off. The rest of the design locks at the first cluster or paid run, as written under "Order of work"; before that lock, Open items 7 and 10 need the Fast-WAM reading and the user's answers, and items 4, 6, 8, 9 and 11 need the user's confirmation (see "Amendments"). No code, no run, no results.
 
 ## Amendments
 <!-- ### YYYY-MM-DD: what changed, why, and whether any results had been seen yet -->
+
+### 2026-11-15: sign-off and the user's answers on the open items (nothing run, no result seen)
+Recorded by the planning lead on the PR #34 branch before the merge. The design text above is unchanged apart from three dated pointers to this entry and the Status section.
+
+**The user's words (planning window, 2026-11-15), in answer to the lead's list of choices:** "yeah i go ahead on the merge 1. yep i like that pass bar 2. yeah derive from wan 2.2 weights 3. yeah on nautilus sounds good 4. sure go with run one baseline now and then the other two alongside the pairing runs". The numbers 1 to 4 are the lead's chat list (pass bar, action expert, where it trains, seeds), which map to Open items 1, 2, 3 and 5.
+
+**Decided by the user (verified: the words above):**
+- **Open item 1, pass bar: option 4.** Four-suite clean average B >= 90 is a pass; 36 <= B < 90 is a conditional pass, which proceeds to stage 2 only if this checkpoint reaches a LIBERO-Plus total of at least 27 points under the full protocol fixed under option 4 (all 10,030 episodes under each of evaluation seeds 41, 42 and 43); B < 36 is a fail. The lead had presented it in chat as: 90% or above a clear pass, below 36% a fail with no encoder runs, in between the baseline first has to score at least 27 on the full perturbed benchmark. With this sign-off the bar and "What happens for each outcome" are locked; they change only by a dated amendment that states whether any result had been seen.
+- **Open item 2, action expert: Fast-WAM's recipe**, the action expert's weights derived from the Wan 2.2 video weights of blocks 0-7 (`scripts/preprocess_action_dit_backbone.py` rerun at 8 layers), not fresh.
+- **Open item 3, where it trains: Nautilus.** The lead's reading of the scope (not the user's words): L40 and L40S by `gpu.product`, as recommended. The named A40 and RTX A6000 resources are not approved by this answer; that OK is asked if the queue stalls. No paid training run; "long training stays on Nautilus" stands.
+- **Open item 5, seeds: one baseline seed now (seed 0)**; seeds 1 and 2 of `none` train alongside stage 2's pairing runs. The stage 1 result is reported as one seed.
+
+**Not answered in the user's message (speculative as decisions until the user confirms):** Open items 4 (time limit: about twice the projection), 6 (LIBERO-Plus scoring only as option 4's condition or as stage 2's first step), 8 (keep the measured fp32-weights, bf16-autocast recipe), 9 (tally the proxy's clean-LIBERO level: yes) and 11 (evaluation on L4 only; leaving L4 goes back to the user). The lead's chat list gave these as "the smaller ones, where I'd take the plan's recommendations" and ended "You can answer 'take your recommendations and merge', or change any of them"; the user gave the merge go and changed none. The lead's reading: the recommendations stand. That reading is not the user's statement, so each is confirmed or changed by the user before the lock (Order of work step 3), and the confirmation is recorded here as a dated note.
+
+**Still open by design:** Open items 7 (validation split) and 10 (image augmentation) wait on the implementation session's reading of Fast-WAM `7faa711`, then the user's answers, recorded here before the lock.
+
+**Precondition met since the plan was written:** the whole Wan 2.2 TI2V-5B transformer is on the cluster at `/mnt/proxy/models/Wan-AI/Wan2.2-TI2V-5B/`, all three files matching their published checksums, as reported by the implementation session (direction `LOG.md`, 2026-11-15 [agent, lead, implementation], merge `87a219c`; recalled from that report, not rechecked by the planning lead).
