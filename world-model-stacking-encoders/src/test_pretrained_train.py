@@ -141,7 +141,13 @@ def main():
         hB = json.loads((d / "B" / "train.json").read_text())["history"]
         assert [h["step"] for h in hB] == [0, 1, 2, 3] and [h["loss"] for h in hA] == [h["loss"] for h in hB]
         assert (d / "A" / "ckpt.pt").exists() and (d / "B" / "ckpt.pt").exists()
-        print("3 ok: resume at the same micro-batch reproduces the straight run bit for bit; ckpt.pt kept")
+        try:
+            run(argv(d, "B", "--max-steps", "4", "--ckpt-every", "2", "--epochs", "2"))
+            raise AssertionError("a resume with a different plan was accepted")
+        except SystemExit as e:
+            assert "different run" in str(e) and "epochs" in str(e), e
+        print("3 ok: resume at the same micro-batch reproduces the straight run bit for bit; ckpt.pt kept; a resume "
+              "with a different plan is refused")
 
         # 4 (PLAN test 3). Lost pod at step 2 with micro-batch 8, resumed at micro-batch 4: matches the straight run
         #    within TOL (on the weights' change from their initial values); the change is logged and recorded.
@@ -193,8 +199,17 @@ def main():
             P.training_loss = orig
         assert rc == 2 and "STOP" in logN and not (d / "N" / "model.pt").exists() and not (d / "N" / "ckpt.pt").exists()
         assert "NonFiniteLoss" in json.loads((d / "N" / "train.json").read_text())["stopped"]
+        P.training_loss = lambda *a, **k: (lambda l, p: (l * float("nan"), p))(*orig(*a, **k))
+        try:
+            rc1, _ = run(argv(d, "N1", "--max-steps", "2", "--first-batch-report"))
+            rc2, _ = run(argv(d, "N2", "--overfit-steps", "3"))
+        finally:
+            P.training_loss = orig
+        assert rc1 == 2 and "NonFiniteLoss" in json.loads((d / "N1" / "first-batch.json").read_text())["stopped"]
+        assert rc2 == 2 and "NonFiniteLoss" in json.loads((d / "N2" / "overfit.json").read_text())["stopped"]
         print(f"7 ok: first-batch report written; overfit mode (action loss {first['loss/action']:.3f} -> "
-              f"{last['loss/action']:.3f}); a non-finite loss stops before any step or checkpoint")
+              f"{last['loss/action']:.3f}); a non-finite loss stops (training, first-batch report, overfit) before any "
+              f"step or checkpoint")
     print("all checks passed")
 
 

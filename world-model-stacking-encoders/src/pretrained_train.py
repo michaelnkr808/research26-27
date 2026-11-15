@@ -41,6 +41,7 @@ Example (the full run):
 """
 
 import argparse
+import hashlib
 import json
 import math
 import sys
@@ -331,7 +332,7 @@ def read_history(path):
 def save(ckpt, model, opt, step, args, micro_hist, log):
     t = time.time()
     P.save_ckpt(ckpt, model, opt, step, micro_batch=args.micro_batch, global_batch=args.global_batch, seed=args.seed,
-                micro_batch_history=micro_hist)
+                micro_batch_history=micro_hist, run_identity=args.run_identity)
     log(f"[ckpt] step {step} written to {ckpt} in {time.time() - t:.0f}s")
 
 
@@ -368,6 +369,23 @@ def parser():
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     p.add_argument("--out", required=True)
     return p
+
+
+def run_identity(args, keep, data, plan, model_kw):
+    """Everything that fixes the batches, the draws, the LR schedule and the model's shape. A resume must match it
+    (--max-steps, the micro-batch, thread counts and paths may differ)."""
+    return {"config": args.config, "suites": args.suites, "epochs": args.epochs, "buffer_episodes": args.buffer_episodes,
+            "global_batch": args.global_batch, "seed": args.seed, "keep": keep, "model_kw": model_kw,
+            "in_dim": data.in_dim, "n_episodes": len(data.episodes),
+            "n_frames": int(sum(n for _, _, n, _ in data.episodes)), "steps": len(plan),
+            "plan_sha256": hashlib.sha256(np.ascontiguousarray(plan).tobytes()).hexdigest()}
+
+
+def _stop(out, name, e, log, **extra):
+    """A non-finite loss: write the stop report and return exit code 2."""
+    _write_json(out / name, {"stopped": f"NonFiniteLoss: {e}", **extra})
+    log(f"STOP: {e}")
+    return 2
 
 
 def _write_json(path, obj):
@@ -418,23 +436,29 @@ def main(argv=None):
         w = plan[0][:args.overfit_batch]
         keys = {data.episodes[ei][:2] for ei in np.unique(w[:, 0])}
         hb = data.assemble(w, {k: {src: data.load_file(k, src) for src in [P.VAE] + data.sources} for k in keys})
-        res = overfit(model, opt, hb, data, args, device, log)
+        try:
+            res = overfit(model, opt, hb, data, args, device, log)
+        except NonFiniteLoss as e:
+            return _stop(out, "overfit.json", e, log, windows=w.tolist(), config=cfg)
         res["windows"] = w.tolist()
         _write_json(out / "overfit.json", {**res, "config": cfg})
         log(f"[overfit] first {res[next(k for k in res if k.startswith('first_'))]}, "
             f"last {res[next(k for k in res if k.startswith('last_'))]}, predict-zero {res['predict_zero']}")
         return 0
 
-    _write_json(out / "config.json", cfg)
+    args.run_identity = cfg["run_identity"] = run_identity(args, keep, data, plan, mk["model_kw"])
     ckpt = out / "ckpt.pt"
     start, micro_hist = 0, [{"step": 0, "micro_batch": args.micro_batch}]
     if ckpt.exists():
         state = torch.load(ckpt, map_location="cpu", weights_only=False)
-        for k in ("global_batch", "seed"):
-            if state.get(k) != getattr(args, k):
-                raise SystemExit(f"checkpoint {k} {state.get(k)} differs from --{k.replace('_', '-')} "
-                                 f"{getattr(args, k)}")
+        old = state.get("run_identity")
+        if old != args.run_identity:
+            diff = {k: (old.get(k) if old else None, v) for k, v in args.run_identity.items()
+                    if not old or old.get(k) != v}
+            raise SystemExit(f"{ckpt} was written by a different run (checkpoint, now): {diff}; use a new --out")
         start = state["step"]
+        # config.json of the first process is kept; each resume writes its own
+        _write_json(out / f"config-resume-step{start}.json", cfg)
         micro_hist = list(state.get("micro_batch_history", micro_hist))
         model = S.build(data.in_dim, device, len(keep), mk["_build"], args.seed)
         model.load_state_dict(state["model"])
@@ -451,6 +475,7 @@ def main(argv=None):
                 f"gradients equal up to floating-point order)")
             micro_hist.append({"step": start, "micro_batch": args.micro_batch})
     else:
+        _write_json(out / "config.json", cfg)
         model, rep = build_and_init(data, args, device, log)
         _write_json(out / "load.json", rep)
         log(f"[load] {rep['counts_by_tag']}")
@@ -461,8 +486,12 @@ def main(argv=None):
     if args.first_batch_report:
         hb0 = data.assemble(plan[0], {k: {src: data.load_file(k, src) for src in [P.VAE] + data.sources}
                                       for k in {data.episodes[ei][:2] for ei in np.unique(plan[0][:, 0])}})
-        rep = first_batch_report(model, hb0, data, draw_step(model, args.seed, 0, len(plan[0]), lat_shape_of(data)),
-                                 args.micro_batch, device)
+        try:
+            rep = first_batch_report(model, hb0, data,
+                                     draw_step(model, args.seed, 0, len(plan[0]), lat_shape_of(data)),
+                                     args.micro_batch, device)
+        except NonFiniteLoss as e:
+            return _stop(out, "first-batch.json", e, log)
         rep["note"] = "model state at the time of the report: " + (f"resumed at step {start}" if start else "initial")
         _write_json(out / "first-batch.json", rep)
         log(f"[first batch] loss at start {rep['loss_at_start']}")
@@ -471,10 +500,8 @@ def main(argv=None):
         hist, finished = train(model, opt, data, plan, args, device, log, ckpt, start, stop, micro_hist, hist,
                                out / "history.jsonl")
     except NonFiniteLoss as e:
-        _write_json(out / "train.json", {"stopped": f"NonFiniteLoss: {e}", "history": hist,
-                                         "micro_batch_history": micro_hist, "seconds": time.time() - t0})
-        log(f"STOP: {e}")
-        return 2
+        return _stop(out, "train.json", e, log, history=hist, micro_batch_history=micro_hist,
+                     seconds=time.time() - t0)
     if not finished:
         return 3
     n_params = sum(q.numel() for q in model.parameters())
