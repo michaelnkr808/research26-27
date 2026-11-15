@@ -1,4 +1,5 @@
 {
+  "note": "subset_id clean1 (src/rollout.py line 135, f\"clean{clean_per_task}\", --clean 1): one trial per base task (init state 0), 10 per suite, 40 per checkpoint, eval seed 41. Not comparable with a full 50-per-task clean-LIBERO number. One rollout = 2.5 points of four-suite average; the s0/s1 gap is one rollout. Checkpoints: the path is all we know (proxy-calibration LOG.md lines 429, 501-505 show Wave-1 training outputs; full-length not verified). Duplicates are counted, not removed.",
   "n_clean_records": 80,
   "n_all_records": 60260,
   "n_non_clean_ignored": 60180,
@@ -32,7 +33,7 @@
               "rate": 0.1
             }
           },
-          "four_suite_avg": 0.17500000000000002,
+          "four_suite_avg": 0.175,
           "n_total": 40,
           "duplicates": [],
           "uneven_counts": false,

@@ -37,6 +37,28 @@ class Tally(unittest.TestCase):
         self.assertEqual(s41["duplicates"][0]["count"], 2)
         self.assertEqual(t["checkpoints"][0]["eval_seeds"][1]["duplicates"], [])
 
+    def test_missing_suite_gives_none_average(self):
+        recs = [rec("libero_spatial", 1, 1), rec("libero_object", 1, 1), rec("libero_goal", 1, 1)]
+        e = T.tally(recs)["checkpoints"][0]["eval_seeds"][0]
+        self.assertIsNone(e["four_suite_avg"])
+        self.assertEqual(e["missing_suites"], ["libero_10"])
+
+    def test_duplicate_inflates_n_but_is_flagged(self):
+        # Counting behaviour: duplicates are NOT removed, so n counts both rows.
+        recs = [rec("libero_spatial", 1, 1), rec("libero_spatial", 1, 1)]
+        e = T.tally(recs)["checkpoints"][0]["eval_seeds"][0]
+        self.assertEqual(e["per_suite"]["libero_spatial"]["n"], 2)
+        self.assertEqual(len(e["duplicates"]), 1)
+
+    def test_bad_success_raises(self):
+        with self.assertRaises(ValueError):
+            T.tally([rec("libero_spatial", 1, 2)])
+
+    def test_rates_rounded(self):
+        recs = [rec("libero_spatial", i, int(i == 0)) for i in range(3)]
+        e = T.tally(recs)["checkpoints"][0]["eval_seeds"][0]
+        self.assertEqual(e["per_suite"]["libero_spatial"]["rate"], 0.3333)
+
 
 if __name__ == "__main__":
     unittest.main()
