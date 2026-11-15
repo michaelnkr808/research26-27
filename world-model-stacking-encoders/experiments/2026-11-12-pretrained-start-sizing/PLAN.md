@@ -150,3 +150,6 @@ Design only, written 2026-11-12. Signed off by the user 2026-11-12 (merge OK on 
 
 ### 2026-11-12: the user has a Vast.ai account
 The user said in the planning window on 2026-11-12 that they already have a Vast.ai account, so the "no account" statements above (Cost and time cap, Open item 2) are out of date. No price was read, nothing has run and no results had been seen.
+
+### 2026-11-15: the "design only" status is out of date
+The Status section above ("Design only ... No code, no run, no results") and the header's "Design only" are out of date: the check's run1 finished on 2026-11-15 on Modal, one L40S. Results are in this folder's `README.md` and `LOG.md` (2026-11-15 entries) and in `results/run1/`, landed by PR #33. This note changes no design text and was written after those results had been seen; it records status only.
