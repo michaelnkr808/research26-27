@@ -1,0 +1,65 @@
+✓ Initialized. View run at 
+https://modal.com/apps/minarami/main/ap-UUORxV1znmAQbneCS0O3AX
+✓ Created objects.
+├── ✓ Uploaded 
+│   /Users/michaelr808/Desktop/research/research26-27/world-model-stacking-encod
+│   ers/experiments/2026-11-12-pretrained-start-sizing/modal_app.py
+├── ✓ Uploaded 
+│   /Users/michaelr808/Desktop/research/research26-27/world-model-stacking-encod
+│   ers/src/t5_cache.py
+├── ✓ Uploaded 
+│   /Users/michaelr808/Desktop/research/research26-27/world-model-stacking-encod
+│   ers/src/diagnostics.py
+├── ✓ Uploaded 
+│   /Users/michaelr808/Desktop/research/research26-27/world-model-stacking-encod
+│   ers/src/proxy_wam.py
+├── ✓ Uploaded 
+│   /Users/michaelr808/Desktop/research/research26-27/world-model-stacking-encod
+│   ers/src/pretrained_sizing.py
+├── ✓ Created Function stage_weights.
+├── ✓ Created Function preflight.
+└── ✓ Created Function run_sizing.
+{
+ "fastwam_commit": "7faa71108368fbb3b6885649f112af607427a2d4",
+ "wan": {
+  "revision": "921dbaf3f1674a56f47e83fb80a34bac8a8f203e",
+  "shards_needed": [
+   "diffusion_pytorch_model-00001-of-00003.safetensors",
+   "diffusion_pytorch_model-00003-of-00003.safetensors"
+  ],
+  "missing": []
+ },
+ "none": {
+  "suites": [
+   "libero_10",
+   "libero_goal",
+   "libero_object",
+   "libero_spatial"
+  ],
+  "episodes": 16,
+  "frames": 2686,
+  "dims": {
+   "vae": 48
+  },
+  "tasks": 15
+ },
+ "dinov3": {
+  "suites": [
+   "libero_10",
+   "libero_goal",
+   "libero_object",
+   "libero_spatial"
+  ],
+  "episodes": 16,
+  "frames": 2686,
+  "dims": {
+   "vae": 48,
+   "dinov3": 1024
+  },
+  "tasks": 15
+ },
+ "local_disk_free_gib": 511.99345779418945
+}
+Stopping app - local entrypoint completed.
+✓ App completed. View run at 
+https://modal.com/apps/minarami/main/ap-UUORxV1znmAQbneCS0O3AX

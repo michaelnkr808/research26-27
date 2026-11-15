@@ -2,4 +2,6 @@
 
 A short, capped check of what one training run of the pretrained-start world action model costs: Fast-WAM's joint model cut to 8 of its 30 layers, loaded with the Wan 2.2 TI2V-5B weights, with the input layer widened for one encoder's features, run for a handful of training steps on real cached LIBERO batches on one card, to measure peak GPU memory and seconds per step and turn them into card-hours and dollars per full run. It produces a cost, not a research finding. Design in `PLAN.md`.
 
-Design only. No code, no run, no results yet.
+Status 2026-11-15: run1 done on Modal, one L40S (details and every number in `LOG.md`; raw results in `results/run1/`).
+
+Result (verified, run this session): the 8-layer model loaded from Wan 2.2 TI2V-5B (blocks 0-7, the user's choice) fits a 48 GB card at micro-batch 8 under the proxy's fp32 recipe, with or without DINOv3 (peak about 38 to 39 GiB). One optimizer step of 128 samples takes about 3.9 s (`none`) and 4.0 s (`dinov3`) on the L40S, so one full 10-epoch run (21,696 steps) is about 24 L40S-hours, about $46 at Modal's $1.95/h. That is above the user's ~$30/month paid budget, so by the PLAN's decision rule full runs go to Nautilus (48 GB class) or the PI ask. Evaluation, startup and full-cache storage are not included. The check itself cost $0.34, covered by Modal credit.

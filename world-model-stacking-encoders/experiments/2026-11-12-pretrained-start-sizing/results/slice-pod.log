@@ -1,0 +1,73 @@
+=== start Sun Nov 15 07:52:53 UTC 2026
+chosen episodes (suite, id, length): [('libero_spatial', 28, 168), ('libero_spatial', 69, 120), ('libero_spatial', 128, 158), ('libero_spatial', 298, 97), ('libero_object', 24, 153), ('libero_object', 89, 150), ('libero_object', 426, 180), ('libero_object', 434, 148), ('libero_goal', 146, 106), ('libero_goal', 190, 90), ('libero_goal', 217, 98), ('libero_goal', 357, 100), ('libero_10', 63, 235), ('libero_10', 119, 388), ('libero_10', 234, 244), ('libero_10', 336, 251)]
+suites in slice: ['libero_spatial', 'libero_object', 'libero_goal', 'libero_10']; frames 2686; tasks 15; files 68; size 2.476 GB (2.306 GiB)
+{
+ "seed": 0,
+ "n_episodes": 16,
+ "encoders": [
+  "dinov3"
+ ],
+ "suites_in_slice": [
+  "libero_spatial",
+  "libero_object",
+  "libero_goal",
+  "libero_10"
+ ],
+ "pool_size": 1712,
+ "episodes": [
+  {
+   "suite": "libero_spatial",
+   "episode_id": 28,
+   "length": 168,
+   "task": "pick up the black bowl between the plate and the ramekin and place it on the plate"
+  },
+  {
+   "suite": "libero_spatial",
+   "episode_id": 69,
+   "length": 120,
+   "task": "pick up the black bowl from table center and place it on the plate"
+  },
+  {
+   "suite": "libero_spatial",
+   "episode_id": 128,
+   "length": 158,
+   "task": "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate"
+  },
+  {
+   "suite": "libero_spatial",
+   "episode_id": 298,
+   "length": 97,
+   "task": "pick up the black bowl on the cookie box and place it on the plate"
+  },
+  {
+   "suite": "libero_object",
+   "episode_id": 24,
+   "length": 153,
+   "task": "pick up the alphabet soup and place it in the basket"
+  },
+  {
+   "suite": "libero_object",
+   "episode_id": 89,
+   "length": 150,
+   "task": "pick up the bbq sauce and place it in the basket"
+  },
+  {
+   "suite": "libero_object",
+   "episode_id": 426,
+   "length": 180,
+   "task": "pick up the tomato sauce and place it in the basket"
+  },
+  {
+   "suite": "libero_object",
+   "episode_id": 434,
+   "length": 148,
+   "task": "pick up the tomato sauce and place it in the basket"
+  },
+  {
+   "suite": "libero_goal",
+   "episode_id": 146,
+   "length": 1
+30
+2.4G	/work/sizing-slice
+2.4G	/work/chunks
+=== READY Sun Nov 15 07:57:07 UTC 2026: copy the chunks now (RUN-slice.md); this pod sleeps 2 h, then exits

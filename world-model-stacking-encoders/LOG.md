@@ -1809,3 +1809,15 @@ Reviews were read-only; findings reported by subagents, spot-checked by the lead
 **Test-set use:** none.
 **Next:** the user's "yes" in the implementation session's window; that session then merges #29 and #31, submits the download Job and the copy pod, runs the sizing check and reports to planning. With a measured cost per run, planning writes the experiment PLAN for stage 1 of decision 006.
 **Open questions:** as in the previous entry.
+
+## 2026-11-15 [agent, lead, implementation] (PRs #29 and #31 merged; sizing check run1 done on Modal L40S; slice pod done and deleted; Wan 2.2 whole-transformer download Job submitted, PR #32 open)
+**Goal:** carry out the user's "yes" (implementation window, 2026-11-14 local): merge #29 and #31, run the slice copy pod, run the sizing check on Modal (one L40S, $1.95/h stated, $2 to $3 estimated), prepare and submit the whole-transformer download Job.
+**Did (verified):**
+- PRs #29 and #31 merged (main `7f58dbf`).
+- Slice pod on Nautilus: 16 episodes, 2.3 GB, copied with every chunk sha256-checked; pod and ConfigMap deleted. Sizing check stage, preflight and run1 on Modal; details, prices and every number in `experiments/2026-11-12-pretrained-start-sizing/LOG.md`.
+- Download Job `stacking-encoders-wan22-dit-download` written by a worker, reviewed (PR #32 comment: hf-xet chunk cache could fill the pod's 9Gi disk; fixed with `HF_HUB_DISABLE_XET=1`, `force_download=True`, atomic manifest), submitted ~07:54 UTC from PR #32's branch commit `14d1683` before merge (the user's yes covered submitting; the merge is still the user's call). At ~08:15 UTC shard 1 verified, shard 2 downloading; PVC had 235G free.
+**PR:** #32 (download Job, open); this entry and the sizing results by PR (this branch).
+**Found (verified, run this session):** the 8-layer pretrained start fits a 48 GB card at micro-batch 8 (peak about 38 to 39 GiB), with or without DINOv3; about 3.9 to 4.0 s per optimizer step of 128 on the L40S; one full 10-epoch run about 24 L40S-hours, about $46 at Modal's price, above the ~$30/month paid budget, so by the PLAN's rule full runs go to Nautilus or the PI ask. The check cost $0.34, covered by credit.
+**Test-set use:** none.
+**Next:** the user decides whether to keep the Modal volume `stacking-sizing` (about $1.1/month); download Job finishes and its manifest is checked against the published sha256; planning writes the stage 1 PLAN with the measured cost.
+**Open questions:** t_step on Nautilus's A40/A6000/L40 is not measured.
