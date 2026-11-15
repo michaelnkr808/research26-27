@@ -60,7 +60,7 @@ def fake_env(job):
 
 class CountEnv(FakeEnv):
     """For timing-only tests: reports done from step `success_at` on (None = never), counts env steps, writes the count
-    to $ROLLOUT_TEST_DIR/<episode id> on close. Its observations do not depend on the done signal."""
+    to $ROLLOUT_TEST_DIR/<episode id> on close. After success it also changes its reward, info dict and robot state."""
     success_at = None
 
     def reset(self):
@@ -68,7 +68,10 @@ class CountEnv(FakeEnv):
 
     def step(self, a):
         self.n += 1
-        return self.obs(), 0.0, self.success_at is not None and self.n >= self.success_at, {}
+        ok = self.success_at is not None and self.n >= self.success_at
+        if ok:
+            self.x += 1.0      # robot state, hence the observation and anything read from it, differs after success
+        return self.obs(), (1.0 if ok else 0.0), ok, ({"success": True} if ok else {})
 
     def close(self):
         Path(os.environ["ROLLOUT_TEST_DIR"], str(self.job["episode_id"])).write_text(str(self.n))
@@ -295,6 +298,8 @@ def main():
     jobs8 = R.make_jobs(sub8, 1, {"libero_goal": ["a"]}, eval_seeds=(41,))
     mask = lambda line: re.sub(r"wall \S+|in \d+s \(\d+ episodes/h\)|policy busy \d+%|cgroup memory now/peak GB .*"
                                r"|\[rollout +\d+s\] ", "", line)
+    TIMING_KEYS = {"benchmark", "suite", "episode_id", "category", "config", "train_seed", "eval_seed", "checkpoint",
+                   "subset_id", "timing_only", "steps", "instruction", "wall_s", "worker_peak_rss_mb"}   # exact set
     got = {}
     with tempfile.TemporaryDirectory() as d:
         for tag in ("early", "never"):
@@ -307,7 +312,7 @@ def main():
             rows = [json.loads(x) for x in out.read_text().splitlines()]
             assert len(rows) == len(jobs8)
             for r in rows:
-                assert not ({"success", "final_state"} & set(r)) and r["timing_only"] and r["steps"] == 430, r
+                assert set(r) == TIMING_KEYS and r["timing_only"] and r["steps"] == 430, r
                 assert not set(L.FIELDS) <= set(r)           # lp_eval cannot read a timing-only file as results
             assert {p.read_text() for p in cnt.iterdir()} == {"430"} and len(list(cnt.iterdir())) == len(jobs8)
             for r in rows:
@@ -336,6 +341,16 @@ def main():
                 raise RuntimeError("mixed resume accepted")
             except SystemExit as e:
                 assert "rows" in str(e)
+        # the same refusal happens in check_resume, which main runs before the model load
+        jl = R.make_jobs(sub8, 1, {"libero_goal": ["a"]}, eval_seeds=(41,))
+        for f, flag in (("early.jsonl", False), ("normal.jsonl", True)):
+            try:
+                R.check_resume(jl, Path(d, f), flag)
+                raise RuntimeError("mixed resume accepted by check_resume")
+            except SystemExit as e:
+                assert "rows" in str(e)
+        R.check_resume(jl, Path(d, "early.jsonl"), True)
+        R.check_resume(jl, Path(d, "normal.jsonl"), False)
     print("8 ok: timing-only (early-success and never-success envs give identical records and log lines, "
           "both run 430 env steps, no outcome fields; normal mode still stops at success)")
 

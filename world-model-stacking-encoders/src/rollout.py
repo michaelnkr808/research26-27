@@ -152,11 +152,11 @@ def order_jobs(jobs, order_seed):
     return jobs
 
 
-def check_resume(jobs, out):
+def check_resume(jobs, out, timing_only=None):
     """Refuse to resume a file that holds records outside this shard's job list. `done_keys` is per file, so a file
     written under another order seed, shard count or Python version would make this pod rerun jobs that other pods'
     files already hold (duplicates). Raises SystemExit; run_jobs is untouched."""
-    stray = done_keys(out) - {job_key(j) for j in jobs}
+    stray = done_keys(out, timing_only) - {job_key(j) for j in jobs}
     if stray:
         raise SystemExit(f"{out} holds {len(stray)} records that are not in this shard's {len(jobs)} jobs (example "
                          f"{sorted(stray)[0]}). Likely cause: a different --order-seed, --shard count, subset/--clean "
@@ -761,7 +761,7 @@ def main():
     s2.add_argument("--lp-timing-shard", default=None, metavar="CLASSIFICATION", help="jobs = one LIBERO-Plus episode "
                     "per (suite, category) cell, as smoke_jobs (eval seed = --clean-seed); needs --timing-only, "
                     "replaces --subset and --clean")
-    s2.add_argument("--monitor-s", type=float, default=60.0, help="log GPU, CPU and memory use every this many "
+    s2.add_argument("--monitor-s", type=float, default=600.0, help="log GPU, CPU and memory use every this many "
                     "seconds (0 = off)")
     s2.add_argument("--out", required=True, help="JSONL, one writer per file")
     args = p.parse_args()
@@ -846,7 +846,7 @@ def main():
         sub = lp_eval.load_subset(args.subset) if args.subset else None
         all_jobs = make_jobs(sub, args.clean, clean, tuple(int(x) for x in args.eval_seeds.split(",")), args.clean_seed)
     jobs = order_jobs(all_jobs, args.order_seed)[i::n]
-    check_resume(jobs, args.out)
+    check_resume(jobs, args.out, args.timing_only)      # before the model load: a mixed-mode file fails fast
     torch.set_num_threads(args.torch_threads)
     policy = Policy.load(args.run_dir, args.t5, args.vae_path, args.device, cuda_graph=args.cuda_graph)
     cfg = policy.cfg
