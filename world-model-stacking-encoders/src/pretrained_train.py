@@ -32,6 +32,9 @@ Sanity modes (PLAN sanity checks 1-3):
   --max-steps N        a short run: the first N optimizer steps of the full run.
   --first-batch-report the first batch of the plan (all 128 windows, step-0 draws): loss of the model and of
                        predict-zero, input shapes, ranges, padding counts and task strings; writes first-batch.json.
+                       Skipped (and logged) if first-batch.json already exists, so a resume keeps the initial report.
+A resume whose checkpoint is at or past the end of this run (--max-steps or the plan end) is refused. After the first
+checkpoint write the projection is logged again with the measured write time times the number of writes.
 A non-finite loss or gradient norm stops the run (exit 2) before the optimizer step; nothing is checkpointed from it.
 
 Example (the full run):
@@ -175,10 +178,21 @@ def build_and_init(data, args, device, log):
     for n, e in arep["parameters"].items():
         if e["kind"] != "fresh":
             rep["parameters"][n] = {"tag": "derived", **e}
-    counts = {t: 0 for t in ("loaded", "partly loaded", "derived", "new")}
-    for e in rep["parameters"].values():
-        counts[e["tag"]] += 1
-    rep["counts_by_tag"] = counts
+    # load_wan's counts were taken before the derivation (every action-expert tensor "new"); keep them under a name
+    # that says so and recompute the counts the run starts from
+    rep["counts_before_derivation"] = rep.pop("counts")
+    plist = dict(model.named_parameters())
+    counts = {t: {"tensors": 0, "elements": 0} for t in ("loaded", "partly loaded", "derived", "fresh")}
+    for n, e in rep["parameters"].items():
+        t = "fresh" if e["tag"] == "new" else e["tag"]
+        counts[t]["tensors"] += 1
+        counts[t]["elements"] += plist[n].numel()
+    for kind in ("copied", "resized"):
+        counts["derived"][kind] = sum(1 for e in rep["parameters"].values()
+                                      if e["tag"] == "derived" and e["kind"] == kind)
+    counts["derived"]["source"] = "Wan 2.2 video blocks via the port of Fast-WAM's preprocess_action_dit_backbone.py"
+    rep["counts"] = counts
+    rep["counts_by_tag"] = {t: c["tensors"] for t, c in counts.items()}
     rep["action_expert_init"] = {k: v for k, v in arep.items() if k != "parameters"}
     rep["init"] = {**rep.get("init", {}),
                    "new": "fresh: action_expert.action_encoder, action_expert.head and proprio_encoder, each module's "
@@ -280,7 +294,7 @@ def train(model, opt, data, plan, args, device, log, ckpt, start, stop, micro_hi
     t_run = time.time()
     loader = P.Loader(data, plan[:stop], start, horizon=args.horizon, read_threads=args.read_threads,
                       assemble_threads=args.assemble_threads)
-    times = []
+    times, ckpt_logged = [], False
     tw = time.time()
     for s, hb in zip(range(start, stop), loader):
         wait = time.time() - tw
@@ -308,7 +322,10 @@ def train(model, opt, data, plan, args, device, log, ckpt, start, stop, micro_hi
             with open(hist_file, "a") as f:
                 f.write(json.dumps(rec) + "\n")
         if ckpt and args.ckpt_every and (s + 1) % args.ckpt_every == 0 and s + 1 < stop:
-            save(ckpt, model, opt, s + 1, args, micro_hist, log)
+            wt = save(ckpt, model, opt, s + 1, args, micro_hist, log)
+            if not ckpt_logged:
+                ckpt_logged = True
+                log(project_with_writes(times, wt, total, s + 1, stop, args.ckpt_every))
         if args.stop_after is not None and s + 1 >= args.stop_after:
             log(f"--stop-after {args.stop_after}: stopping as if the pod were lost (no model.pt)")
             return hist, False
@@ -329,11 +346,30 @@ def read_history(path):
     return [by[k] for k in sorted(by)]
 
 
+def n_writes(a, b, every):
+    """Checkpoint writes after steps s with a < s < b, s a multiple of `every` (the loop writes at s + 1 < stop)."""
+    return 0 if not every else max(0, (b - 1) // every - a // every)
+
+
+def project_with_writes(times, write_s, total, done, stop, every):
+    """The projection re-logged after the first checkpoint write: compute time per step (steps 2.. of this process)
+    plus the checkpoint writes at the measured write time."""
+    per = float(np.mean(times[1:] if len(times) > 1 else times))
+    full_w, rem_w = n_writes(0, total, every), n_writes(done, stop, every)
+    return (f"[projection] with checkpoint writes: first write took {write_s:.1f} s; {per:.3f} s/step over "
+            f"{max(1, len(times) - 1)} steps; full run of {total} steps = {per * total / 3600:.2f} h compute + "
+            f"{full_w} writes x {write_s:.1f} s = {(per * total + full_w * write_s) / 3600:.2f} h; remaining "
+            f"{stop - done} steps of this run + {rem_w} writes = {(per * (stop - done) + rem_w * write_s) / 3600:.2f} h")
+
+
 def save(ckpt, model, opt, step, args, micro_hist, log):
+    """Write the checkpoint; returns the wall time of the write."""
     t = time.time()
     P.save_ckpt(ckpt, model, opt, step, micro_batch=args.micro_batch, global_batch=args.global_batch, seed=args.seed,
                 micro_batch_history=micro_hist, run_identity=args.run_identity)
-    log(f"[ckpt] step {step} written to {ckpt} in {time.time() - t:.0f}s")
+    dt = time.time() - t
+    log(f"[ckpt] step {step} written to {ckpt} in {dt:.1f}s")
+    return dt
 
 
 # ---------------------------------------------------------------------------
@@ -457,6 +493,10 @@ def main(argv=None):
                     if not old or old.get(k) != v}
             raise SystemExit(f"{ckpt} was written by a different run (checkpoint, now): {diff}; use a new --out")
         start = state["step"]
+        if start >= stop:
+            raise SystemExit(f"{ckpt} is at step {start}, at or past the end of this run (step {stop}"
+                             f"{', --max-steps' if args.max_steps and stop == args.max_steps else ', the plan end'}); "
+                             f"nothing to train. Use a new --out or a larger --max-steps")
         # config.json of the first process is kept; each resume writes its own
         _write_json(out / f"config-resume-step{start}.json", cfg)
         micro_hist = list(state.get("micro_batch_history", micro_hist))
@@ -483,7 +523,9 @@ def main(argv=None):
     model.train()
 
     hist = []
-    if args.first_batch_report:
+    if args.first_batch_report and (out / "first-batch.json").exists():
+        log(f"[first batch] skipped: {out / 'first-batch.json'} exists (the report on the initial model is kept)")
+    elif args.first_batch_report:
         hb0 = data.assemble(plan[0], {k: {src: data.load_file(k, src) for src in [P.VAE] + data.sources}
                                       for k in {data.episodes[ei][:2] for ei in np.unique(plan[0][:, 0])}})
         try:

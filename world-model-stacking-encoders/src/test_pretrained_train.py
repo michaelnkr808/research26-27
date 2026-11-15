@@ -122,7 +122,12 @@ def main():
         assert set(kept) == set(vs), set(kept) ^ set(vs)
         assert all(torch.equal(vs[k], wan[k]) for k in kept), [k for k in kept if not torch.equal(vs[k], wan[k])]
         c = rep["counts_by_tag"]
-        assert c["derived"] == 64 and c["new"] == 4 + 2 and c["loaded"] == len(kept), c
+        assert c == {"loaded": len(kept), "partly loaded": 0, "derived": 64, "fresh": 4 + 2}, c
+        assert rep["counts"]["derived"]["copied"] == 20 and rep["counts"]["derived"]["resized"] == 44, rep["counts"]
+        assert sum(1 for e in rep["parameters"].values() if e["tag"] == "derived") == 64
+        assert all(e["tag"] == "new" for n, e in rep["parameters"].items()
+                   if n.startswith(("action_expert.action_encoder.", "action_expert.head.", "proprio_encoder.")))
+        assert "counts_before_derivation" in rep
         w0 = [p.detach().clone() for p in m0.parameters()]
         print(f"5 ok: kept blocks equal the Wan file ({len(kept)} tensors); load report {c}")
 
@@ -130,11 +135,15 @@ def main():
         #    (weights, losses). ckpt.pt is kept at the end.
         rc, _ = run(argv(d, "A", "--max-steps", "4", "--ckpt-every", "2", "--first-batch-report"))
         assert rc == 0
-        rc, _ = run(argv(d, "B", "--max-steps", "4", "--ckpt-every", "2", "--stop-after", "2"))
+        rc, logB0 = run(argv(d, "B", "--max-steps", "4", "--ckpt-every", "2", "--stop-after", "2",
+                             "--first-batch-report"))
+        assert "[projection] with checkpoint writes: first write took" in logB0 and "+ 18 writes x" in logB0 and "+ 0 writes =" in logB0, logB0
         assert rc == 3 and (d / "B" / "ckpt.pt").exists() and not (d / "B" / "model.pt").exists()
         assert torch.load(d / "B" / "ckpt.pt", weights_only=False)["step"] == 2
-        rc, logB = run(argv(d, "B", "--max-steps", "4", "--ckpt-every", "2"))
+        fb_before = (d / "B" / "first-batch.json").read_bytes()
+        rc, logB = run(argv(d, "B", "--max-steps", "4", "--ckpt-every", "2", "--first-batch-report"))
         assert rc == 0 and "resuming" in logB and "MICRO-BATCH CHANGED" not in logB
+        assert "[first batch] skipped" in logB and (d / "B" / "first-batch.json").read_bytes() == fb_before
         A, B = model_pt(d, "A"), model_pt(d, "B")
         assert all(torch.equal(A["model"][k], B["model"][k]) for k in A["model"])
         hA = json.loads((d / "A" / "train.json").read_text())["history"]
@@ -146,8 +155,14 @@ def main():
             raise AssertionError("a resume with a different plan was accepted")
         except SystemExit as e:
             assert "different run" in str(e) and "epochs" in str(e), e
-        print("3 ok: resume at the same micro-batch reproduces the straight run bit for bit; ckpt.pt kept; a resume "
-              "with a different plan is refused")
+        try:
+            run(argv(d, "B", "--max-steps", "2", "--ckpt-every", "2"))
+            raise AssertionError("a resume at or past --max-steps was accepted")
+        except SystemExit as e:
+            assert "at or past the end" in str(e), e
+        print("3 ok: resume at the same micro-batch reproduces the straight run bit for bit; ckpt.pt kept; first-batch "
+              "report kept on resume; projection re-logged with the write time; a resume with a different plan or "
+              "past --max-steps is refused")
 
         # 4 (PLAN test 3). Lost pod at step 2 with micro-batch 8, resumed at micro-batch 4: matches the straight run
         #    within TOL (on the weights' change from their initial values); the change is logged and recorded.
