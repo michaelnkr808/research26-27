@@ -1,0 +1,75 @@
+{
+ "mode": "optstep",
+ "config": "none",
+ "m": 8,
+ "from_wan": false,
+ "keep": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7
+ ],
+ "keep_tag": "first 8, user's choice",
+ "seed": 0,
+ "pid": 161,
+ "device": "cuda",
+ "torch": "2.7.1+cu128",
+ "cuda": "12.8",
+ "fastwam_commit": "7faa71108368fbb3b6885649f112af607427a2d4",
+ "repo_commit": "7f58dbf5b20f0a144f028b24db968c5c51b9b1f5",
+ "card": "NVIDIA L40S",
+ "total_memory_bytes": 47695921152,
+ "driver": "610.57.04",
+ "suites": [
+  "libero_10",
+  "libero_goal",
+  "libero_object",
+  "libero_spatial"
+ ],
+ "n_episodes": 16,
+ "in_dim": 48,
+ "dims": {
+  "vae": 48
+ },
+ "encoder": null,
+ "amp_bf16": true,
+ "disk_read_s": 0.12471175193786621,
+ "accumulation": 16,
+ "host_assembly_s_per_batch": {
+  "median": 0.0010603666305541992,
+  "max": 0.0015377998352050781,
+  "n": 48
+ },
+ "sec_per_opt_step": {
+  "timed": [
+   3.9022634080000103,
+   3.9109529860000123
+  ],
+  "mean": 3.9066081970000113,
+  "warmup": [
+   4.435333364000002
+  ]
+ },
+ "global_batch": 128,
+ "losses": [
+  2.173975706100464,
+  1.9828705787658691,
+  1.896435260772705
+ ],
+ "timing_note": "each optimizer step includes the host->device copies of its micro-batches, backward, grad clipping and the AdamW update; peaks since the state load",
+ "peak_allocated_bytes": 37460734464,
+ "peak_reserved_bytes": 40963670016,
+ "nvidia_smi_used_mib": 39606.0,
+ "outcome": "ok",
+ "phase_seconds": {
+  "data": 0.3658590316772461,
+  "build": 0.19012093544006348,
+  "load_state": 5.858704090118408,
+  "measure": 12.249366521835327
+ },
+ "wall_s": 18.7317373752594
+}

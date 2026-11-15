@@ -1,0 +1,226 @@
+{
+ "inputs": {
+  "latents": {
+   "shape": [
+    16,
+    48,
+    3,
+    14,
+    28
+   ],
+   "dtype": "float32"
+  },
+  "action": {
+   "shape": [
+    16,
+    32,
+    7
+   ],
+   "dtype": "float32"
+  },
+  "action_is_pad": {
+   "shape": [
+    16,
+    32
+   ],
+   "dtype": "bool"
+  },
+  "latent_is_pad": {
+   "shape": [
+    16,
+    2
+   ],
+   "dtype": "bool"
+  },
+  "proprio": {
+   "shape": [
+    16,
+    8
+   ],
+   "dtype": "float32"
+  },
+  "context": {
+   "shape": [
+    16,
+    128,
+    4096
+   ],
+   "dtype": "float32"
+  },
+  "context_mask": {
+   "shape": [
+    16,
+    128
+   ],
+   "dtype": "bool"
+  }
+ },
+ "channels/vae": {
+  "n": 48,
+  "mean": [
+   0.3766813278198242,
+   0.0367344506084919,
+   0.21521197259426117,
+   0.1965329945087433,
+   0.13370142877101898,
+   -0.01309675071388483,
+   -0.22159698605537415,
+   -0.17249943315982819,
+   0.17462529242038727,
+   0.23472197353839874,
+   -0.47957703471183777,
+   -0.25510185956954956,
+   0.021414704620838165,
+   0.002466455101966858,
+   0.03503376990556717,
+   0.13926035165786743,
+   0.349506676197052,
+   0.031307898461818695,
+   -0.080101877450943,
+   -0.48312968015670776,
+   -0.2538776397705078,
+   -0.09080484509468079,
+   0.06721105426549911,
+   -0.15053050220012665,
+   0.28134840726852417,
+   0.061711523681879044,
+   -0.07837607711553574,
+   -0.3107875883579254,
+   0.044613245874643326,
+   -0.051812101155519485,
+   0.11433983594179153,
+   0.2263595163822174,
+   -0.0019230031175538898,
+   -0.01692253164947033,
+   0.08389776945114136,
+   -0.1257254183292389,
+   0.33516329526901245,
+   0.004142410587519407,
+   0.11381512135267258,
+   -0.07643841207027435,
+   -0.2732841670513153,
+   -0.14640678465366364,
+   -0.14443574845790863,
+   0.4779073894023895,
+   -0.3311688303947449,
+   -0.4241064786911011,
+   -0.07616903632879257,
+   -0.12645840644836426
+  ],
+  "std": [
+   0.7980713844299316,
+   0.6291909217834473,
+   0.80210942029953,
+   0.5614321827888489,
+   0.7302360534667969,
+   0.857787549495697,
+   0.8952713012695312,
+   0.8464364409446716,
+   0.646300196647644,
+   0.7040101289749146,
+   0.989317774772644,
+   0.6343271732330322,
+   0.6856652498245239,
+   0.7403517365455627,
+   0.7248967885971069,
+   0.892816424369812,
+   0.6303022503852844,
+   0.930697500705719,
+   0.6410906314849854,
+   0.6757310032844543,
+   0.7699102759361267,
+   0.5843456983566284,
+   0.7362573146820068,
+   0.7381051182746887,
+   0.6518357396125793,
+   0.6534267663955688,
+   0.7193859219551086,
+   0.890262246131897,
+   0.8304117918014526,
+   0.6475690603256226,
+   0.7591560482978821,
+   0.8176416158676147,
+   0.528929591178894,
+   0.6920388340950012,
+   0.6055253744125366,
+   0.6884155869483948,
+   0.7886324524879456,
+   0.6498483419418335,
+   0.79690021276474,
+   0.5658735036849976,
+   0.8540728688240051,
+   0.5738269686698914,
+   0.8918293118476868,
+   0.6507638096809387,
+   0.7820616364479065,
+   0.8613707423210144,
+   0.6884742975234985,
+   0.5546918511390686
+  ],
+  "mean_range": [
+   -0.48312968015670776,
+   0.4779073894023895
+  ],
+  "std_range": [
+   0.528929591178894,
+   0.989317774772644
+  ]
+ },
+ "action_range": [
+  -1.0,
+  1.0
+ ],
+ "action_abs_gt1_fraction": 0.0,
+ "proprio_range": [
+  -0.9997103214263916,
+  0.9823634624481201
+ ],
+ "proprio_abs_gt1_fraction": 0.0,
+ "padded_action_steps": 19,
+ "padded_latent_steps": 0,
+ "tasks": [
+  "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate",
+  "pick up the bbq sauce and place it in the basket",
+  "put the bowl on the plate",
+  "put both the cream cheese box and the butter in the basket",
+  "put the black bowl in the bottom drawer of the cabinet and close it",
+  "put both the cream cheese box and the butter in the basket",
+  "put both moka pots on the stove",
+  "pick up the tomato sauce and place it in the basket",
+  "put the bowl on top of the cabinet",
+  "put both moka pots on the stove",
+  "pick up the tomato sauce and place it in the basket",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "put both the cream cheese box and the butter in the basket",
+  "put the wine bottle on top of the cabinet",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "pick up the black bowl between the plate and the ramekin and place it on the plate"
+ ],
+ "loss_at_start": {
+  "model": {
+   "total": 3.73481822013855,
+   "vae": 2.634310245513916,
+   "action": 1.1005079746246338
+  },
+  "predict_zero": {
+   "total": 2.525766372680664,
+   "vae": 1.4923694133758545,
+   "action": 1.03339684009552
+  }
+ },
+ "loss_parts_note": "'vae' = video loss on the VAE channels; each source name = video loss on that source's channels; 'action' = action loss; predict_zero uses the same batch and draws",
+ "config": "none",
+ "keep": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7
+ ],
+ "keep_tag": "first 8, user's choice",
+ "seed": 0,
+ "batch_size": 16
+}

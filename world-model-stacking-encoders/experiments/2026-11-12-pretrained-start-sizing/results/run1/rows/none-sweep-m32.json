@@ -1,0 +1,55 @@
+{
+ "mode": "sweep",
+ "config": "none",
+ "m": 32,
+ "from_wan": false,
+ "keep": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7
+ ],
+ "keep_tag": "first 8, user's choice",
+ "seed": 0,
+ "pid": 140,
+ "device": "cuda",
+ "torch": "2.7.1+cu128",
+ "cuda": "12.8",
+ "fastwam_commit": "7faa71108368fbb3b6885649f112af607427a2d4",
+ "repo_commit": "7f58dbf5b20f0a144f028b24db968c5c51b9b1f5",
+ "card": "NVIDIA L40S",
+ "total_memory_bytes": 47695921152,
+ "driver": "610.57.04",
+ "suites": [
+  "libero_10",
+  "libero_goal",
+  "libero_object",
+  "libero_spatial"
+ ],
+ "n_episodes": 16,
+ "in_dim": 48,
+ "dims": {
+  "vae": 48
+ },
+ "encoder": null,
+ "amp_bf16": true,
+ "disk_read_s": 0.1280350685119629,
+ "host_assembly_s_per_batch": {
+  "median": 0.002637147903442383,
+  "max": 0.0033257007598876953,
+  "n": 14
+ },
+ "outcome": "oom",
+ "error_type": "OutOfMemoryError",
+ "error_message": "CUDA out of memory. Tried to allocate 56.00 MiB. GPU 0 has a total capacity of 44.42 GiB of which 116.88 MiB is free. Process 1 has 44.29 GiB memory in use. Of the allocated memory 43.51 GiB is allocated by PyTorch, and 288.06 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)",
+ "phase_seconds": {
+  "data": 0.3591439723968506,
+  "build": 0.23410272598266602,
+  "load_state": 6.04924750328064
+ },
+ "wall_s": 7.252745628356934
+}

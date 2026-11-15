@@ -1,0 +1,64 @@
+[modal] run run1 repo 7f58dbf5b20f0a144f028b24db968c5c51b9b1f5 configs none,dinov3 keep 0-7 start 2026-11-15 08:07:46 UTC
+Sun Nov 15 08:07:46 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 610.57.04              KMD Version: 610.57.04     CUDA UMD Version: 13.3     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA L40S                    On  |   00000000:16:00.0 Off |                    0 |
+| N/A   37C    P8             34W /  350W |       7MiB /  46068MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+
+[modal] local disk free for the saved state: 512 GiB
+[modal] timeout --signal=TERM --kill-after=60 3600 /usr/local/bin/python /root/src/pretrained_sizing.py launch --feats /vol/data/sizing-slice --wan-dir /vol/wan/Wan2.2-TI2V-5B --configs none,dinov3 --keep 0-7 --out /vol/results/run1 --state-dir /tmp/sizing-state --device cuda --seed 0
+=== launcher: sweep config=none m=1 (from Wan)
+[sweep none m=1     20s] [load] read diffusion_pytorch_model-00001-of-00003.safetensors in 3.0s
+[sweep none m=1     20s] [load] read diffusion_pytorch_model-00003-of-00003.safetensors in 0.0s
+[sweep none m=1     22s] [load] every loaded tensor re-read from its file and compared (max |diff| 0) in 1.1s
+[sweep none m=1     22s] [load] {'loaded': {'tensors': 231, 'elements': 1399340224}, 'partly loaded': {'tensors': 0, 'elements': 0, 'loaded_elements': 0, 'new_elements': 0}, 'new': {'tensors': 232, 'elements': 281711623}, 'skipped': {'tensors': 594}}
+[sweep none m=1     22s] [sanity] loss at start {'model': {'total': 3.73481822013855, 'vae': 2.634310245513916, 'action': 1.1005079746246338}, 'predict_zero': {'total': 2.525766372680664, 'vae': 1.4923694133758545, 'action': 1.03339684009552}}
+[sweep none m=1     40s] outcome ok
+=== launcher: sweep config=none m=2
+[sweep none m=2      8s] outcome ok
+=== launcher: sweep config=none m=4
+[sweep none m=4      9s] outcome ok
+=== launcher: sweep config=none m=8
+[sweep none m=8     11s] outcome ok
+=== launcher: sweep config=none m=16
+[sweep none m=16     14s] outcome ok
+=== launcher: sweep config=none m=32
+[sweep none m=32      7s] outcome oom: OutOfMemoryError: CUDA out of memory. Tried to allocate 56.00 MiB. GPU 0 has a total capacity of 44.42 GiB of which 116.88 MiB is free. Process 1 has 44.29 GiB memory in use. Of the allocated memory 43.51 GiB is allocated by PyTorch, and 288.06 MiB is reserved by PyTorch but unallocated. If reserved but unallocated m
+=== launcher: optstep config=none m=8
+[optstep none m=8     19s] outcome ok
+=== launcher: sweep config=dinov3 m=1 (from Wan)
+[sweep dinov3 m=1     39s] [load] read diffusion_pytorch_model-00001-of-00003.safetensors in 1.0s
+[sweep dinov3 m=1     39s] [load] read diffusion_pytorch_model-00003-of-00003.safetensors in 0.0s
+[sweep dinov3 m=1     40s] [load] every loaded tensor re-read from its file and compared (max |diff| 0) in 1.3s
+[sweep dinov3 m=1     40s] [load] {'loaded': {'tensors': 228, 'elements': 1398160384}, 'partly loaded': {'tensors': 3, 'elements': 26349760, 'loaded_elements': 1179840, 'new_elements': 25169920}, 'new': {'tensors': 232, 'elements': 281711623}, 'skipped': {'tensors': 594}}
+[sweep dinov3 m=1     41s] [sanity] loss at start {'model': {'total': 5.784067153930664, 'vae': 2.9079442024230957, 'dinov3': 1.8823375701904297, 'action': 0.9937852025032043}, 'predict_zero': {'total': 4.58945894241333, 'vae': 1.7738301753997803, 'dinov3': 1.8823375701904297, 'action': 0.9332912564277649}}
+[sweep dinov3 m=1     59s] outcome ok
+=== launcher: sweep config=dinov3 m=2
+[sweep dinov3 m=2     20s] outcome ok
+=== launcher: sweep config=dinov3 m=4
+[sweep dinov3 m=4     21s] outcome ok
+=== launcher: sweep config=dinov3 m=8
+[sweep dinov3 m=8     22s] outcome ok
+=== launcher: sweep config=dinov3 m=16
+[sweep dinov3 m=16     26s] outcome ok
+=== launcher: sweep config=dinov3 m=32
+[sweep dinov3 m=32     19s] outcome oom: OutOfMemoryError: CUDA out of memory. Tried to allocate 222.00 MiB. GPU 0 has a total capacity of 44.42 GiB of which 146.88 MiB is free. Process 1 has 44.27 GiB memory in use. Of the allocated memory 43.51 GiB is allocated by PyTorch, and 257.55 MiB is reserved by PyTorch but unallocated. If reserved but unallocated 
+=== launcher: optstep config=dinov3 m=8
+[optstep dinov3 m=8     32s] outcome ok
+=== launcher done in 371s
+[modal] launcher exit code 0 after 378s

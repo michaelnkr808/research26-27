@@ -1,0 +1,84 @@
+{
+ "mode": "sweep",
+ "config": "none",
+ "m": 16,
+ "from_wan": false,
+ "keep": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7
+ ],
+ "keep_tag": "first 8, user's choice",
+ "seed": 0,
+ "pid": 116,
+ "device": "cuda",
+ "torch": "2.7.1+cu128",
+ "cuda": "12.8",
+ "fastwam_commit": "7faa71108368fbb3b6885649f112af607427a2d4",
+ "repo_commit": "7f58dbf5b20f0a144f028b24db968c5c51b9b1f5",
+ "card": "NVIDIA L40S",
+ "total_memory_bytes": 47695921152,
+ "driver": "610.57.04",
+ "suites": [
+  "libero_10",
+  "libero_goal",
+  "libero_object",
+  "libero_spatial"
+ ],
+ "n_episodes": 16,
+ "in_dim": 48,
+ "dims": {
+  "vae": 48
+ },
+ "encoder": null,
+ "amp_bf16": true,
+ "disk_read_s": 0.129380464553833,
+ "host_assembly_s_per_batch": {
+  "median": 0.001771092414855957,
+  "max": 0.0025129318237304688,
+  "n": 14
+ },
+ "first_step_loss": 2.4246585369110107,
+ "full_step_peak_reserved_bytes": 44317016064,
+ "full_step_peak_allocated_bytes": 37811294208,
+ "static_allocated_bytes": 26951358976,
+ "sec_per_micro_step": {
+  "median": 0.45980200800000404,
+  "min": 0.459305846999996,
+  "max": 0.4600818990000022,
+  "q25": 0.4595786097500074,
+  "q75": 0.46002142074999597,
+  "all": [
+   0.45955508600000883,
+   0.459305846999996,
+   0.45943813700000646,
+   0.45995976999999755,
+   0.4597192519999993,
+   0.45988476400000877,
+   0.4596491810000032,
+   0.4600818990000022,
+   0.46004197099999544,
+   0.46004236000000276
+  ]
+ },
+ "sec_per_sample": 0.028737625500000252,
+ "warmup_micro_steps": 3,
+ "timed_micro_steps": 10,
+ "peak_allocated_bytes": 44544600064,
+ "peak_reserved_bytes": 45468352512,
+ "nvidia_smi_used_mib": 43902.0,
+ "outcome": "ok",
+ "phase_seconds": {
+  "data": 0.3414187431335449,
+  "build": 0.1866152286529541,
+  "load_state": 6.215589761734009,
+  "first_opt_step": 1.2298517227172852,
+  "measure": 6.020666599273682
+ },
+ "wall_s": 14.296130418777466
+}
