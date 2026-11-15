@@ -1,0 +1,81 @@
+{
+  "n_clean_records": 80,
+  "n_all_records": 60260,
+  "n_non_clean_ignored": 60180,
+  "checkpoints": [
+    {
+      "config": "dinov3",
+      "train_seed": 0,
+      "checkpoint": "/mnt/proxy/runs/dinov3-s0-a40",
+      "eval_seeds": [
+        {
+          "eval_seed": 41,
+          "per_suite": {
+            "libero_spatial": {
+              "n": 10,
+              "succ": 4,
+              "rate": 0.4
+            },
+            "libero_object": {
+              "n": 10,
+              "succ": 2,
+              "rate": 0.2
+            },
+            "libero_10": {
+              "n": 10,
+              "succ": 0,
+              "rate": 0.0
+            },
+            "libero_goal": {
+              "n": 10,
+              "succ": 1,
+              "rate": 0.1
+            }
+          },
+          "four_suite_avg": 0.17500000000000002,
+          "n_total": 40,
+          "duplicates": [],
+          "uneven_counts": false,
+          "missing_suites": []
+        }
+      ]
+    },
+    {
+      "config": "dinov3",
+      "train_seed": 1,
+      "checkpoint": "/mnt/proxy/runs/dinov3-s1",
+      "eval_seeds": [
+        {
+          "eval_seed": 41,
+          "per_suite": {
+            "libero_spatial": {
+              "n": 10,
+              "succ": 5,
+              "rate": 0.5
+            },
+            "libero_object": {
+              "n": 10,
+              "succ": 1,
+              "rate": 0.1
+            },
+            "libero_10": {
+              "n": 10,
+              "succ": 0,
+              "rate": 0.0
+            },
+            "libero_goal": {
+              "n": 10,
+              "succ": 2,
+              "rate": 0.2
+            }
+          },
+          "four_suite_avg": 0.2,
+          "n_total": 40,
+          "duplicates": [],
+          "uneven_counts": false,
+          "missing_suites": []
+        }
+      ]
+    }
+  ]
+}
