@@ -147,3 +147,6 @@ Design only, written 2026-11-12. Signed off by the user 2026-11-12 (merge OK on 
 
 ## Amendments
 <!-- ### YYYY-MM-DD: what changed, why, and whether any results had been seen yet -->
+
+### 2026-11-12: the user has a Vast.ai account
+The user said in the planning window on 2026-11-12 that they already have a Vast.ai account, so the "no account" statements above (Cost and time cap, Open item 2) are out of date. No price was read, nothing has run and no results had been seen.
