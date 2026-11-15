@@ -1,6 +1,6 @@
 # 006 — The research question is the user's, the 13 proxy runs are parked, "done" is staged
 - **Date:** 2026-11-12
-- **Status:** proposed (the user's "go" in chat 2026-11-12; accepted on the user's merge OK)
+- **Status:** accepted 2026-11-14 (proposed 2026-11-12 on the user's "go" in chat; accepted on the user's merge OK on PR #30, "yeah okay merge", 2026-11-14)
 - **Context:** Decision 005 (accepted 2026-11-12) left three items open: the research question, the other 13 proxy runs, and what "done" looks like. The direction `README.md` still carries decision 004's narrower question and a "What done looks like" written for the proxy replication. In the planning window on 2026-11-12 the user said (verbatim, the source for this record):
   - "since we aren't doing the smaller replication of the model what do you think should happen with the 13 proxy runs, we still don't know what \"done\" looks like"
   - "We already have a research question though i feel like you might be making to specific, the research question we already have is why do some encoder pairings work while others make it worse in the context of vae-grid feature concatentation"
