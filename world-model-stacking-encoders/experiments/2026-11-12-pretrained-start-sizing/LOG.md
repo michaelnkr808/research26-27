@@ -62,3 +62,10 @@ The user's go, in the implementation window on 2026-11-14 (local time), after th
 **Not done or deviations**: Runpod/Vast.ai prices not read; revision pinned at stage; slice local copy only in scratchpad. Planned choices, not deviations, but worth stating: the action expert, action encoder and head and proprio encoder are fresh (232 new tensors, `load-*.json`), as RUN.md says, whereas Fast-WAM derives its action expert from the Wan DiT (`step2-reading.md` Q4); this does not change cost but a real run may want Fast-WAM's recipe.
 
 Next: the user decides whether to keep the Modal volume. Planning reads the cost result for the PI meeting and the full-run plan.
+
+## 2026-11-15 (later) [agent, lead, implementation] (paid-card prices read for the dollars test; nothing created)
+Requested by the planning lead. Read-only price lookups, ~08:40 UTC (verified as read; prices move):
+- Runpod (MCP `list-gpu-types`, community cloud, pods): L40S $0.79/h (stock LOW), L40 $0.69 (LOW), RTX 6000 Ada $0.74 (LOW), RTX A6000 $0.33 (NONE), A40 $0.35 (NONE); A100 80GB PCIe $1.19 (NONE), A100 SXM 80GB $1.39 (LOW).
+- Vast.ai (`vastai search offers`, 1 GPU, verified, rentable, `dph_total`): L40S min $0.774 / median $0.801 (5 offers); L40 $0.508 (1); RTX 6000 Ada min $0.601 (8); RTX A6000 min $0.403 (8); A40 min $0.403 (6).
+
+Dollars for one full run on the card that was measured (L40S, t_step from run1; arithmetic run this session): Vast.ai $0.774/h gives about $18.2 (`none`) and $18.6 (`dinov3`); Runpod $0.79/h gives $18.6 and $19.0. Under the ~$30/month budget for one run, not for two in a month. The cheaper Ampere 48 GB cards (A6000, A40 at $0.33 to $0.40/h) have no measured t_step (PLAN: no assumed ratio), so their dollars are not computed. As before, excluded: evaluation, startup, checkpoints, failures, and storage/transfer of the full caches (about 31 GB VAE plus 223 to 251 GB for one encoder) on a paid provider.
