@@ -6,9 +6,12 @@
 #   phase first-batch: src/pretrained_train.py --first-batch-report on the full data's first batch (all 128 windows of plan step
 #     0, step-0 draws): checks 2 (loss at start, model vs predict-zero; non-finite stops with exit 2) and 3 (input shapes,
 #     ranges, padding counts, task strings) -> <out>/first-batch/first-batch.json. pretrained_train.py has no report-only mode:
-#     after the report it trains, so --max-steps 1 limits that to ONE optimizer step (128 windows, m=8 x 16); that step also
-#     writes model.pt (about 6.7 GB, PLAN arithmetic), train.json and history.jsonl there (no ckpt.pt: a checkpoint is written
-#     only at s+1 < stop). The one step's peak_reserved_bytes in history.jsonl is the first m=8 memory reading on this card.
+#     after the report it trains, so --max-steps 20 (lead's decision 2026-11-15) runs the first 20 optimizer steps of the real
+#     run (128 windows each, m=8 x 16, the full run's LR schedule and draws; no test tasks). They give this card's step time,
+#     peak_reserved_bytes per step (history.jsonl; the PLAN's micro-batch rule) and the "[projection] after 20 steps" log line
+#     (pretrained_train.py PROJECT_AFTER = 20). At the end it writes model.pt (about 6.7 GB, PLAN arithmetic), train.json and
+#     history.jsonl there (no ckpt.pt: with --ckpt-every 700 none falls before step 20). model.pt stays on the PVC until the
+#     user OKs deleting it (RUN-sanity.md step 13).
 #   phase overfit: --overfit-steps 300 --overfit-batch 8 --overfit-lr 1e-4: sanity check 1, the first 8 windows of plan step 0,
 #     the draws of step 0 every step, constant LR (paper's peak 1e-4), m=8 (one micro-batch per step) -> <out>/overfit/overfit.json
 #     (first-20 and last-20 step means of each loss term, predict-zero on the same batch and draws, full history). 300 = "a few
@@ -39,9 +42,9 @@
 #   1 pip setup failed, 10 commit not filled, 11 out dir exists, 12 staging size mismatch, 13 sha256 mismatch, other = an error
 #   in python (traceback in the log). After any exit the EXIT trap prints the GPU summary and the small JSON results into the log
 #   between "=== FILE <name> sha256 <hex> bytes <n>" and "=== END <name>" lines, so they come off the cluster with the pod log
-#   (RUN-sanity.md step 8) without a reader pod.
+#   (RUN-sanity.md step 10) without a reader pod.
 # Copied from the template experiments/2026-10-27-proxy-calibration/jobs/job-train-retrain-dinov3-l16-48gb.yaml: image, setup_env.sh
-#   via the ConfigMap stacking-encoders-proxy-src at /src, PVC, feats and T5 paths, env (OMP_NUM_THREADS 3, MALLOC_ARENA_MAX 2,
+#   mounted from a ConfigMap at /src (here the separate stacking-encoders-baseline-src, lead's decision 2026-11-15), PVC, feats and T5 paths, env (OMP_NUM_THREADS 3, MALLOC_ARENA_MAX 2,
 #   HF_HOME, PYTHONPATH), CPU, GPU list L40/L40S by gpu.product (no A40/A6000 named resources: not approved), driver > 569,
 #   region us-west, the two host exclusions, /dev/shm, the guard pattern, the log naming. Differences: not Indexed (one pod), the
 #   two phases, the Wan staging, the GPU sampler, memory and ephemeral sizes, deadline. Nothing waits idle on purpose, no sleep,
@@ -57,8 +60,8 @@
 #     measurement). The basis: (a) the proxy's 22 GiB working set at 500 steps held a 17.8 GiB replay buffer (proxy LOG
 #     2026-11-02 (c), via the template header), so about 4 GiB was not buffer (subtraction); (b) here the model is built on the
 #     GPU (pretrained_sizing.build under torch.device(device)) and load_wan copies one tensor at a time (largest about 0.18 GB,
-#     14336 x 3072 x 4 B by arithmetic); (c) no long-lived buffer: overfit loads at most 8 episodes and the first-batch phase at
-#     most the 16 of plan step 0, VAE only, about 18 MB each (31.4 GB / 1,712 episodes, data/README.md 4b); T5 context 40 x 128 x
+#     14336 x 3072 x 4 B by arithmetic); (c) no long-lived buffer: overfit loads at most 8 episodes and the first-batch phase the
+#     episodes of plan steps 0-19 (one or two 16-episode buffers, at most about 32 episodes), VAE only, about 18 MB each (31.4 GB / 1,712 episodes, data/README.md 4b); T5 context 40 x 128 x
 #     4096 fp32 = 84 MB. Estimate about 4 to 6 GiB (speculative); 16Gi keeps that above NRP's 20% floor (3.2 GiB) and leaves room
 #     for page cache from the 10 GB staging copy and the 6.7 GB model.pt write (reclaimable, but counted in the cgroup).
 #   Ephemeral 30Gi / 34Gi (1.13x): the template's 20Gi for the pip environment (not measured) plus the staged Wan files,
@@ -68,12 +71,12 @@
 #   about 0.2 h or more"); staging about 1 min at 300 MB/s, up to about 6 min at 30 MB/s, plus sha256 about 1 min; per process
 #   the data index of 1,712 episodes on CephFS about 1 to 2 min (sizing: 17 s for 16 episodes on local disk, measured) and the
 #   Wan load and re-read from local disk about 5 s (sizing 4.2 s, measured); first-batch phase: report forward of 2 x 16
-#   micro-batches about 10 s, one optimizer step 3.9 s (L40S, measured), model.pt write 6.7 GB at 30 MB/s up to about 4 min;
+#   micro-batches about 10 s, 20 optimizer steps x 3.9 s = about 1.3 min (L40S, measured per step), model.pt write 6.7 GB at 30 MB/s up to about 4 min;
 #   overfit phase: 300 steps x about 0.48 s (0.229 s per m=8 micro-step forward+backward, measured, plus about 0.25 s for clip
-#   and AdamW: 3.907 - 16 x 0.229, measured difference) = about 2.4 min. Total about 26 min, call it 0.5 h.
+#   and AdamW: 3.907 - 16 x 0.229, measured difference) = about 2.4 min. Total about 27 min, call it 0.5 h.
 #   activeDeadlineSeconds 75600 (21 h, counts from Job creation, queue included) = 2 x 0.5 h run + 20 h for the queue, the
 #   template's rule (2 x run + 20 h; round 1 queued 3 h to 9 h+, proxy LOG 2026-11-06 (a), (c)); the GPU list is two types, so
-#   the queue may be long. ttl 24 h: save the pod log within 24 h (RUN-sanity.md step 7).
+#   the queue may be long. ttl 24 h: save the pod log within 24 h (RUN-sanity.md step 9).
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -138,6 +141,7 @@ spec:
           }
           trap finish EXIT
           nvidia-smi; nproc; df -h $R /work
+          echo "/src = ConfigMap stacking-encoders-baseline-src; sha256 of its keys (must equal the commit's, RUN-sanity.md step 3):"
           sha256sum /src/pretrained_train.py /src/pretrained_sizing.py /src/action_expert_init.py /src/proxy_wam.py /src/diagnostics.py /src/t5_cache.py /src/setup_env.sh
           : > $GPUCSV
           phase setup
@@ -173,8 +177,8 @@ spec:
           echo "staging + sha256 took $(( $(date +%s) - T0 )) s"
           COMMON="--feats $R/feats --suites libero_spatial,libero_object,libero_goal,libero_10 --t5 $R/feats/t5 --config none --seed 0 --wan-dir $WAN --micro-batch 8"
           phase first-batch
-          echo "FLAGS: python /src/pretrained_train.py $COMMON --first-batch-report --max-steps 1 --out $OUT/first-batch"
-          python /src/pretrained_train.py $COMMON --first-batch-report --max-steps 1 --out $OUT/first-batch
+          echo "FLAGS: python /src/pretrained_train.py $COMMON --first-batch-report --max-steps 20 --out $OUT/first-batch"
+          python /src/pretrained_train.py $COMMON --first-batch-report --max-steps 20 --out $OUT/first-batch
           phase overfit
           echo "FLAGS: python /src/pretrained_train.py $COMMON --overfit-steps $OVERFIT_STEPS --overfit-batch 8 --overfit-lr 1e-4 --out $OUT/overfit"
           python /src/pretrained_train.py $COMMON --overfit-steps $OVERFIT_STEPS --overfit-batch 8 --overfit-lr 1e-4 --out $OUT/overfit
@@ -200,7 +204,7 @@ spec:
       - name: work
         emptyDir: {sizeLimit: 16Gi}
       - name: src
-        configMap: {name: stacking-encoders-proxy-src}
+        configMap: {name: stacking-encoders-baseline-src}
       - name: proxy
         persistentVolumeClaim: {claimName: stacking-encoders-proxy}
       - name: dshm
