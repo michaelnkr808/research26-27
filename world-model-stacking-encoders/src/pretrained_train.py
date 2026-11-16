@@ -47,7 +47,9 @@ import argparse
 import hashlib
 import json
 import math
+import os
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -61,6 +63,7 @@ from diagnostics import git_commit
 
 SUITES = "libero_spatial,libero_object,libero_goal,libero_10"
 MICRO_BATCHES = (8, 4)        # PLAN "Parameters set from measurements": the largest of 8 and 4 that fits
+WATCHDOG_EXIT = 17            # exit code of the step watchdog (a hung step); the Job treats it as retryable
 PROJECT_AFTER = 20            # optimizer steps before the projected total time is logged
 
 
@@ -287,6 +290,43 @@ def _peak(device):
     return torch.cuda.max_memory_reserved() if _amp(device) else None
 
 
+def _watchdog_exit(code):
+    os._exit(code)           # a hung main thread cannot be interrupted; tests replace this function
+
+
+class StepWatchdog:
+    """Ends the process (exit WATCHDOG_EXIT) if no optimizer step finishes within limit_s seconds. A daemon thread,
+    armed by the first beat() (so the data-loader start-up and the first step are not covered). It changes nothing in
+    the training: no draws, no saved state. The checkpoint is only ever replaced by a rename, so ending the process
+    during a write leaves the previous checkpoint intact. limit_s 0 disables it."""
+
+    def __init__(self, limit_s, log, exit_fn=None):
+        self.limit, self.log, self.exit_fn = limit_s, log, exit_fn
+        self.last, self.armed, self.fired = None, False, False
+        self.stop_ev = threading.Event()
+        self.thread = None
+        if limit_s and limit_s > 0:
+            self.thread = threading.Thread(target=self._run, daemon=True, name="step-watchdog")
+            self.thread.start()
+
+    def beat(self):
+        self.last = time.monotonic()
+        self.armed = True
+
+    def stop(self):
+        self.stop_ev.set()
+
+    def _run(self):
+        poll = min(5.0, self.limit / 4)
+        while not self.stop_ev.wait(poll):
+            if self.armed and not self.fired and time.monotonic() - self.last > self.limit:
+                self.fired = True
+                self.log(f"[watchdog] no optimizer step finished in {self.limit:.0f} s (a hung loader or a stalled "
+                         f"CephFS read or write); exiting with code {WATCHDOG_EXIT}; the last ckpt.pt is intact and a "
+                         f"retried pod resumes from it")
+                (self.exit_fn or _watchdog_exit)(WATCHDOG_EXIT)
+
+
 def train(model, opt, data, plan, args, device, log, ckpt, start, stop, micro_hist, hist, hist_file=None):
     """Optimizer steps start..stop-1 of the plan. Returns (history of this process, finished). Each step's record is
     also appended to hist_file (history.jsonl in --out), which survives a lost pod."""
@@ -295,6 +335,16 @@ def train(model, opt, data, plan, args, device, log, ckpt, start, stop, micro_hi
     loader = P.Loader(data, plan[:stop], start, horizon=args.horizon, read_threads=args.read_threads,
                       assemble_threads=args.assemble_threads)
     times, ckpt_logged = [], False
+    wd = StepWatchdog(args.step_watchdog_s, log)
+    try:
+        return _train_loop(model, opt, data, plan, args, device, log, ckpt, start, stop, micro_hist, hist, hist_file,
+                           total, t_run, loader, times, ckpt_logged, wd)
+    finally:
+        wd.stop()
+
+
+def _train_loop(model, opt, data, plan, args, device, log, ckpt, start, stop, micro_hist, hist, hist_file, total,
+                t_run, loader, times, ckpt_logged, wd):
     tw = time.time()
     for s, hb in zip(range(start, stop), loader):
         wait = time.time() - tw
@@ -321,8 +371,10 @@ def train(model, opt, data, plan, args, device, log, ckpt, start, stop, micro_hi
         if hist_file is not None:
             with open(hist_file, "a") as f:
                 f.write(json.dumps(rec) + "\n")
+        wd.beat()
         if ckpt and args.ckpt_every and (s + 1) % args.ckpt_every == 0 and s + 1 < stop:
             wt = save(ckpt, model, opt, s + 1, args, micro_hist, log)
+            wd.beat()
             if not ckpt_logged:
                 ckpt_logged = True
                 log(project_with_writes(times, wt, total, s + 1, stop, args.ckpt_every))
@@ -390,6 +442,9 @@ def parser():
     p.add_argument("--read-threads", type=int, default=32)
     p.add_argument("--assemble-threads", type=int, default=3)
     p.add_argument("--ckpt-every", type=int, default=700, help="optimizer steps between checkpoints (PLAN: ~45 min)")
+    p.add_argument("--step-watchdog-s", type=float, default=1800,
+                   help=f"exit {WATCHDOG_EXIT} if no optimizer step finishes within this many seconds (armed after the "
+                        f"first step; 0 = off)")
     p.add_argument("--max-steps", type=int, default=None, help="run only the first N optimizer steps of the full run")
     p.add_argument("--stop-after", type=int, default=None, help="testing: stop after this step as if the pod were lost")
     p.add_argument("--first-batch-report", action="store_true", help="write first-batch.json before training")
