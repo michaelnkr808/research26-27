@@ -26,7 +26,7 @@
 #   - no folder (or empty)                -> fresh start.
 #   A leftover ckpt.pt.tmp from a pod lost mid-write is overwritten by the next write (torch.save truncates it); ckpt.pt itself is
 #   only replaced by the rename, so it is always a complete earlier checkpoint.
-# RETRIES: backoffLimit 2 (_standards/08 line 31: > 0 so a Job survives node reboots), restartPolicy Never. podFailurePolicy:
+# RETRIES: backoffLimit 3, up to 4 pods (round-2 review; the 96 h Job cap is unchanged) (_standards/08 line 31: > 0 so a Job survives node reboots), restartPolicy Never. podFailurePolicy:
 #   FailJob on exit codes 2 (non-finite loss, train.json holds "stopped"), 10 (commit not 40-hex), 13 (Wan sha256 mismatch),
 #   14 (PVC space guard), 15 (nvidia-smi worked but the card is unknown), 18 (the TRAINING step hit its 62 h timeout: 124, or 137 after
 #   the kill grace; a retry would only repeat it), 19 (a /src ConfigMap key differs from the hash written into this manifest at
@@ -38,7 +38,7 @@
 #   (--step-watchdog-first-s 3600: data index, model build, a resume's 20 GB checkpoint load, first step; check 4 took about 1 min to
 #   the first step); PR #47 review S1; the resume costs at most one checkpoint interval).
 #   Ignore (does not count toward backoffLimit) on the DisruptionTarget pod condition (node drain, preemption, eviction).
-#   Everything else (exit 1 Python errors including a CUDA OOM, 12 staging failed, 16, 17, 137 OOMKilled, node loss) counts toward the 2
+#   Everything else (exit 1 Python errors including a CUDA OOM, 12 staging failed, 16, 17, 137 OOMKilled, node loss) counts toward the 3
 #   retries. The Job deadline still caps an endless disruption loop.
 # TIME ARITHMETIC (every input has a source):
 #   Projection, from LOG 2026-11-16 check-4 train entry: L40S 87,175 s compute + 30 writes x 21.5 s = 24.4 h; L40 5.036 s/step
@@ -49,9 +49,9 @@
 #   33 s, staging 91 s, build 50 s in check 4; 1 h allowed) + 223,200 + 60 kill grace + model.pt sha256 900 + 60 + trap 60 = 227,880 s,
 #   rounded up to 230,400, so the inner timeout and the EXIT trap fire first. (When the pod deadline fires, the trap may not run.)
 #   Job activeDeadlineSeconds 345,600 s (96 h), counts from Job creation: queue (check 4 queued 4 min; the sanity Job 72 min; 20 h
-#   allowed, the template's rule) + one run of 31 h + two resumed pods, each redoing at most one interval (about 0.8 h of steps)
-#   plus about 0.1 h of startup and the 20 GB checkpoint load, and each possibly queueing again: 20 + 31 + 2 x 0.9 = 52.8 h
-#   expected worst case; 96 h is the lead's cap (62 h run limit + 20 h queue + room for two resumes = 62 + 20 + 14).
+#   allowed, the template's rule) + one run of 31 h + three resumed pods, each redoing at most one interval (about 0.8 h of steps)
+#   plus about 0.1 h of startup and the 20 GB checkpoint load, and each possibly queueing again: 20 + 31 + 3 x 0.9 = 53.7 h
+#   expected worst case; 96 h is the lead's cap (62 h run limit + 20 h queue + room for three resumes = 62 + 20 + 14).
 #   ttlSecondsAfterFinished 86,400 s: save the pod logs within 24 h of finishing.
 # GPU USE (STANDARDS.md line 48): check 4 train phase mean 89.7%, whole pod 80.8% (LOG 2026-11-16). The idle parts are setup and
 #   staging (about 2 min), checkpoint writes (about 21 s each) and the final model.pt write and sha256. Over 24 to 31 h that is
@@ -90,7 +90,7 @@ metadata:
   name: stacking-encoders-baseline-full-train
   namespace: aria-world
 spec:
-  backoffLimit: 2
+  backoffLimit: 3
   activeDeadlineSeconds: 345600
   ttlSecondsAfterFinished: 86400
   podFailurePolicy:
@@ -166,11 +166,11 @@ spec:
           elif [ -d $OUT ] && [ -n "$(ls -A $OUT)" ]; then
             STALE=$OUT.stale-$D
             echo "STALE: $OUT exists with files but no ckpt.pt (a pod lost before its first checkpoint); moving it to $STALE (nothing deleted):"
-            ls -la $OUT
+            ls -la $OUT || true
             mv $OUT $STALE
           fi
           echo "MODE: $MODE"
-          if [ $MODE = resume ] || [ $MODE = complete ]; then ls -la --time-style=full-iso $OUT; fi
+          if [ $MODE = resume ] || [ $MODE = complete ]; then ls -la --time-style=full-iso $OUT || true; fi
           AV=$(df -BG --output=avail $R | tail -1 | tr -dc 0-9)
           case $MODE in fresh) NEED=70;; resume) NEED=40;; *) NEED=5;; esac
           echo "PVC free: ${AV} GiB (need $NEED for mode $MODE)"

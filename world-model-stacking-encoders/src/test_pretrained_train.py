@@ -253,6 +253,22 @@ def main():
         time.sleep(0.8)
         wd.stop()
         assert codes == [] and logs == [], (codes, logs)
+        # R1: logging blocks forever; the process still exits (timer started before the log call)
+        codes.clear()
+        import threading
+        block = threading.Event()
+        wd = T.StepWatchdog(0.3, lambda m: block.wait(), exit_fn=codes.append, kill_after_s=0.3)
+        wd.beat()
+        time.sleep(1.5)
+        wd.stop()
+        assert codes == [T.WATCHDOG_EXIT], codes
+        block.set()
+        # R4: history.jsonl with a cut-off last line is read, the bad line skipped and counted
+        hp = d / "hist-test.jsonl"
+        hp.write_text('{"step": 0, "loss": 1.0}\n{"step": 1, "loss": 2.0}\n{"step": 2, "lo')
+        hl = []
+        got = T.read_history(hp, hl.append)
+        assert [r["step"] for r in got] == [0, 1] and "skipped 1 unparseable" in hl[0], (got, hl)
         wd = T.StepWatchdog(0, logs.append, exit_fn=codes.append)
         assert wd.thread is None
         codes.clear()

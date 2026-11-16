@@ -302,7 +302,8 @@ class StepWatchdog:
     replaced by a rename, so ending the process during a write leaves the previous checkpoint intact. limit_s 0 disables
     the whole watchdog; first_s 0 or None disables the first deadline."""
 
-    def __init__(self, limit_s, log, exit_fn=None, first_s=None):
+    def __init__(self, limit_s, log, exit_fn=None, first_s=None, kill_after_s=5.0):
+        self.kill_after = kill_after_s
         self.limit, self.first, self.log, self.exit_fn = limit_s, (first_s or None), log, exit_fn
         self.last, self.armed, self.fired, self.stepping = time.monotonic(), self.first is not None, False, False
         self.stop_ev = threading.Event()
@@ -328,9 +329,14 @@ class StepWatchdog:
                                             "checkpoint load, first step)"))
             if time.monotonic() - self.last > lim:
                 self.fired = True
+                # the exit comes first: if logging blocks (a full or stalled stdout pipe), a timer still ends the process
+                t = threading.Timer(self.kill_after, self.exit_fn or _watchdog_exit, args=(WATCHDOG_EXIT,))
+                t.daemon = True
+                t.start()
                 self.log(f"[watchdog] fired in the {phase} phase: no progress for {lim:.0f} s (a hung loader or a "
                          f"stalled CephFS read or write); exiting with code {WATCHDOG_EXIT}; the last ckpt.pt is "
                          f"intact and a retried pod resumes from it")
+                t.cancel()
                 (self.exit_fn or _watchdog_exit)(WATCHDOG_EXIT)
 
 
@@ -395,15 +401,21 @@ def _train_loop(model, opt, data, plan, args, device, log, ckpt, start, stop, mi
     return hist, True
 
 
-def read_history(path):
+def read_history(path, log=None):
     """Step records from history.jsonl, the last record of each step (a step run again after a resume replaces the
-    record a lost pod wrote after its last checkpoint), in step order."""
-    by = {}
+    record a lost pod wrote after its last checkpoint), in step order. A line that does not parse (a write cut short
+    by a lost pod) is skipped and counted in the log."""
+    by, bad = {}, 0
     if Path(path).exists():
         for line in Path(path).read_text().splitlines():
             if line.strip():
-                r = json.loads(line)
-                by[r["step"]] = r
+                try:
+                    r = json.loads(line)
+                    by[r["step"]] = r
+                except (ValueError, KeyError, TypeError):
+                    bad += 1
+    if bad and log:
+        log(f"[history] skipped {bad} unparseable line(s) in {path}")
     return [by[k] for k in sorted(by)]
 
 
@@ -626,7 +638,7 @@ def _main(args, t0, log, wd):
     torch.save({"model": model.state_dict(), "config": cfg}, tmp)
     tmp.replace(out / "model.pt")
     _write_json(out / "train.json", {"n_params": n_params, "start_step_this_process": start, "end_step": stop,
-                                     "micro_batch_history": micro_hist, "history": read_history(out / "history.jsonl"),
+                                     "micro_batch_history": micro_hist, "history": read_history(out / "history.jsonl", log),
                                      "seconds_this_process": time.time() - t0})
     # ckpt.pt is kept (PLAN: deleting it needs the user's OK after evaluation has loaded model.pt once)
     log(f"wrote {out / 'model.pt'} and train.json, {n_params} params; ckpt.pt kept")
