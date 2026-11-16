@@ -90,3 +90,12 @@ Planning lead's read of what that takes (`speculative`, a proposal, nothing deci
 - Does the PI also want a challenge entry (submission deadline 2026-12-10, preliminary)?
 - Where trained checkpoints and results are kept between Vast.ai rentals.
 - Still open from 2026-11-15: whether the 200 dollars is meant to cover a training run; how RMS-AQA connects to the world action model question; whether to start the literature survey.
+
+## 2026-11-16 [agent, lead, planning] (addendum: the lead's approach in the lead's words; literature survey started)
+**Did:**
+- The lead stated the approach (2026-11-16): the question is about "the intersection of world action models and spatial audio", and "the idea is to add an audio encoder to the world action model so it can also make decisions based on audio input". Recorded here in the lead's words. It does not yet say which world action model, which audio encoder, or where spatial audio paired with robot data comes from; those stay open in `README.md`.
+- The lead gave the go for the literature survey ("sure go for the literature survey"). Three workers were dispatched, one per topic, each writing one file under `literature/survey/` on its own branch from `main` at `665839d`: audio as an input to robot policies and vision-language-action models; spatial audio in embodied AI (agents, simulators and datasets, reusable spatial audio encoders); world action models and which could take an audio input (including how the term is defined). Each worker must open every paper's page before listing it and record how much of it was read.
+- The planning lead suggested to the lead one more question for the PI: how the PI sees RMS-AQA (question answering) connecting to world action models.
+**PR:** direct (this entry and the `PLAN.md` status move). The survey files will go by pull request.
+**Not verified:** nothing from the survey yet; the workers had not reported when this was written.
+**Next:** check the three survey files, have a fresh reviewer fact-check them against the sources, then write the summary of what exists and what is missing, and the `references.bib` entries.
