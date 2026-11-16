@@ -66,8 +66,8 @@
 #   cost for a 53x larger model (PLAN "Evaluation time"): about 2,000 policy calls (20,200 steps / replan 10), batched up to 4;
 #   at a guessed 0.3 to 1 s per batched call on an L4 that is 2.5 to 33 min of GPU time. So rollouts about 10 to 40 min, and the
 #   pod about 25 to 55 min in all, GPU-hours about 0.4 to 0.9. A second pass (ENVS2) adds the rollout time again.
-# Deadlines: pod-level activeDeadlineSeconds 7800 s (130 min, from pod start) = about 9 min restore + 5400 s rollout cap + about 900 s
-#   for everything else, under NRP's 180-minute runtime paths (_standards/08); inner `timeout`s: none on the restore (it is
+# Deadlines: pod-level activeDeadlineSeconds 7800 s (130 min, from pod start) = about 9 min restore (540 s) + model load (up to 240 s) + 5400 s
+#   rollout cap = 6,180 s, rounded up with margin to 7,800 s (130 min), under NRP's 180-minute runtime paths (_standards/08); inner `timeout`s: none on the restore (it is
 #   sourced so it cannot be wrapped; measured 7 to 9 min; the pod deadline caps it), each rollout pass 5400 s (a worst-case guess of 3 s per unbatched policy call x 2,000 calls = 100 min is NOT covered; if the
 #   pass times out the records written so far are in the file and the pod ends with 124). Job-level 79200 s = 2 x 55 min (1.83 h) +
 #   20 h of queue = 21.83 h, rounded to 22 h (the rule 2 x run + 20 h of job-sanity.yaml's header; the L4 queue is usually shorter than
@@ -122,7 +122,7 @@ spec:
           R=/mnt/proxy; TAG=baseline-check4-smoke-try$SMOKE_TRY; D=$(date +%Y%m%d-%H%M%S)
           RUN=$R/runs/baseline-check4-none-s0-try$TRAIN_TRY
           ROLL=$R/rollouts/baseline-check4
-          OUT=$ROLL/smoke-try$SMOKE_TRY.jsonl; OUT2=$ROLL/smoke-try$SMOKE_TRY-envs$ENVS2.jsonl
+          OUT=$ROLL/smoke-try$SMOKE_TRY.jsonl; OUT2=$ROLL/smoke-try$SMOKE_TRY-envs${ENVS2:-}.jsonl
           LOG=$R/logs/$TAG-$D.log; GPUCSV=$R/logs/$TAG-gpu-$D.csv
           mkdir -p $R/logs $ROLL
           exec > >(tee -a $LOG) 2>&1
@@ -156,7 +156,7 @@ spec:
           echo "/src = ConfigMap stacking-encoders-baseline-eval-src; sha256 of its keys (must equal the commit's, RUN-check4.md step 3):"
           sha256sum /src/rollout.py /src/lp_eval.py /src/proxy_wam.py /src/t5_cache.py /src/diagnostics.py /src/extract_fastwam.py /src/extract_features.py /src/fastwam_data.py /src/setup_env.sh /src/setup_sim.sh /src/env_bundle.sh
           echo "env bundle key: $(cat /src/setup_env.sh /src/setup_sim.sh /src/env_bundle.sh | sha256sum | cut -c1-12) (the prebuilt bundle is 9182f8131559)"
-          ls -la $RUN/model.pt $RUN/ckpt.pt
+          ls -la $RUN/model.pt
           : > $GPUCSV
           phase restore
           nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv,noheader -l 30 > >(tee -a $GPUCSV | sed -u 's/^/[gpu] /') &
@@ -168,7 +168,7 @@ spec:
           echo "FLAGS: python /src/rollout.py run $COMMON --envs $ENVS --out $OUT"
           timeout --kill-after=60 5400 python /src/rollout.py run $COMMON --envs $ENVS --out $OUT 2>&1 | sed "/using task orders/d"
           if [ -n "${ENVS2:-}" ]; then
-            phase rollout-envs$ENVS2
+            phase rollout-envs${ENVS2}
             echo "FLAGS: python /src/rollout.py run $COMMON --envs $ENVS2 --out $OUT2"
             timeout --kill-after=60 5400 python /src/rollout.py run $COMMON --envs $ENVS2 --out $OUT2 2>&1 | sed "/using task orders/d"
           fi
