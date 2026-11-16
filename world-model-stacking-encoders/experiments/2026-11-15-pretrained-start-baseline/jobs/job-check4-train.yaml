@@ -6,18 +6,17 @@
 #   hundred optimizer steps, its own --out)". Config none, seed 0, micro-batch 8, same flags as job-sanity.yaml's COMMON. The
 #   second half (the timing-only smoke of 40 clean rollouts on L4) is jobs/job-check4-smoke.yaml, submitted only after this Job
 #   succeeds. Design is already locked (the sanity Job ran 2026-11-16); nothing here changes the PLAN.
-# What it runs: python /src/pretrained_train.py ... --max-steps $MAX_STEPS (300) --ckpt-every $CKPT_EVERY (100) --out
+# What it runs: python /src/pretrained_train.py ... --max-steps $MAX_STEPS (300) --ckpt-every $CKPT_EVERY (75) --out
 #   /mnt/proxy/runs/baseline-check4-none-s0-try$TRY, ON THE PVC (checkpoint writes to CephFS are what is being timed, PLAN
 #   "Checkpointing and resume": "Where: --out ... lives on the shared PVC", and the PR #39 review note in LOG: "run sanity check
 #   4 with a small --ckpt-every to time a real CephFS checkpoint write before the time limit is set"). --max-steps N runs the first
 #   N steps of the real 21,696-step plan, LR schedule over the full plan (LOG 2026-11-15 PR #39 "Worker choices"); the LR is
 #   still in warmup at step 300, so model.pt is close to the pretrained start; that is fine for the timing-only smoke.
-# CHECKPOINT WRITE COUNT (lead: look at this): pretrained_train.py writes at step s+1 only when (s+1) % ckpt_every == 0 AND
-#   s+1 < stop (src/pretrained_train.py line 324). With 300 steps and 100 that is TWO writes (steps 100 and 200); step 300 is
-#   the end of the run and writes model.pt instead. THREE writes need CKPT_EVERY 75 (writes at 75, 150, 225) or MAX_STEPS 301+
-#   with 100. Defaults here are the lead's (300 and 100); both are env values (CKPT_EVERY, MAX_STEPS) so the render can change
-#   them with no edit of the script. The deadline arithmetic below allows three writes either way. The second write is the
-#   interesting one: it renames ckpt.pt.tmp over an existing ckpt.pt (what a resume-capable run does), and the PVC holds both
+# CHECKPOINT WRITE COUNT (user's decision: three timed writes): pretrained_train.py writes at step s+1 only when
+#   (s+1) % ckpt_every == 0 AND s+1 < stop (src/pretrained_train.py line 324). With 300 steps and CKPT_EVERY 75 that is THREE
+#   writes (steps 75, 150, 225); step 300 is the end of the run and writes model.pt instead (CKPT_EVERY 100 would give only two).
+#   MAX_STEPS and CKPT_EVERY are env values. The deadline arithmetic below allows three writes. The second and third writes are the
+#   interesting ones: it renames ckpt.pt.tmp over an existing ckpt.pt (what a resume-capable run does), and the PVC holds both
 #   (2 x about 20 GB) while it runs.
 # Outputs on the PVC (all under /mnt/proxy/runs/baseline-check4-none-s0-try$TRY): ckpt.pt (about 20 GB, PLAN arithmetic: 1.68 B
 #   params x 12 bytes), model.pt (about 6.7 GB, PLAN; 6.26 GiB fp32 params by sanity's header arithmetic), config.json, load.json,
@@ -57,7 +56,7 @@
 #                                                rate above; a write may be slower or faster; this Job measures it)
 #   model.pt write (6.7 GB) 250 s, model.pt sha256 read-back 250 s: allowance at the same 30 MB/s (6.7 GB / 30 MB/s = 223 s)
 #   copy/print small files, exit        60 s
-#   TOTAL (worst-case allowance)        4,412 s = 73.5 min. Expected if writes run at 100 MB/s (about 200 s each, model.pt and its sha256 about 70 s each): about 2,350 s = 39 min with two writes (CKPT_EVERY 100), 2,550 s = 42 min with three (speculative).
+#   TOTAL (worst-case allowance)        4,412 s = 73.5 min. Expected if writes run at 100 MB/s (about 200 s each, model.pt and its sha256 about 70 s each): about 2,550 s = 42 min with the three writes (speculative).
 # Deadlines (from the TOTAL): pod-level activeDeadlineSeconds 9000 s = 2 x 4,412 s rounded up, = 150 min, under the 180-minute
 #   runtime of NRP's idle-warning and admin-list paths (_standards/08); counts from pod start; when it fires the EXIT trap may not
 #   run (the PVC log keeps what was written). Job-level 81000 s = 2 x 4,412 s (2.45 h) + 20 h of queue = 22.45 h, rounded to 22.5 h
@@ -207,8 +206,8 @@ spec:
         env:
         - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}
         - {name: TRY, value: "1"}
-        - {name: MAX_STEPS, value: "300"}      # lead's spec: 300 optimizer steps (gives TWO checkpoint writes with CKPT_EVERY 100, see header)
-        - {name: CKPT_EVERY, value: "100"}     # lead's spec; 75 would give three writes at 75, 150, 225
+        - {name: MAX_STEPS, value: "300"}      # lead's spec: 300 optimizer steps
+        - {name: CKPT_EVERY, value: "75"}      # user's decision: three writes, at steps 75, 150, 225
         - {name: MICRO_BATCH, value: "8"}      # measured fit on the L40 (LOG 2026-11-16); 4 only after a CUDA OOM and the user's OK
         - {name: HF_HOME, value: /work/hf}
         - {name: PYTHONUNBUFFERED, value: "1"}

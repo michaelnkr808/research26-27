@@ -47,11 +47,10 @@
 # CHOICES TO CONFIRM (the lead decides):
 #   --envs: starts at 4, the proxy's value (job-eval-dinov3-s1-l4.yaml line 94, "--envs 4 --cuda-graph"; L4 pods averaged about 50%
 #     over a run, proxy PLAN line 260). Env var ENVS. The PLAN's rule is to raise environments per GPU until GPU use is at or above
-#     40% over 10-minute windows (PLAN "Parameters set from measurements"). OPTION, off by default and not decided here: ENVS2, if
-#     set to a number, runs a SECOND pass of the same 40 jobs with --envs $ENVS2 into a separate records file
-#     (<smoke>-envs$ENVS2.jsonl) in the same pod, after the first. Leave ENVS2 empty ("") to run one pass. A second pass costs the
-#     same again in pod time (the restore and model load are paid once) and only helps if CPUs allow: the pod has 4 CPUs, as the
-#     proxy's, so more than 4 environments may not raise GPU use (rollouts are CPU-bound, proxy PLAN line 260).
+#     40% over 10-minute windows (PLAN "Parameters set from measurements"). One pass only (the user dropped a second
+#     in-pod pass): if the GPU is under 40% over 10-minute windows, the lead brings it to the user for a separate smoke Job at more
+#     environments. The pod has 4 CPUs, as the proxy's, so more than 4 environments may not raise GPU use (rollouts are CPU-bound,
+#     proxy PLAN line 260).
 #   --cuda-graph: on, as every proxy rollout Job. Whether capture works and fits at this model size is unmeasured (PLAN "Evaluation on
 #     clean LIBERO"); if capture fails the run errors out (exit 1), and the fallback (no --cuda-graph) is a re-render with CUDA_GRAPH "0".
 #   --monitor-s 600: the 10-minute windows (rollout.py line 764, default 600). A pod may finish in fewer than 600 s of rollouts; the pod
@@ -65,7 +64,7 @@
 #   the proxy's measured throughput of 484 episodes per hour at 4 envs (proxy PLAN line 166), about 5 min for 40 episodes. Policy
 #   cost for a 53x larger model (PLAN "Evaluation time"): about 2,000 policy calls (20,200 steps / replan 10), batched up to 4;
 #   at a guessed 0.3 to 1 s per batched call on an L4 that is 2.5 to 33 min of GPU time. So rollouts about 10 to 40 min, and the
-#   pod about 25 to 55 min in all, GPU-hours about 0.4 to 0.9. A second pass (ENVS2) adds the rollout time again.
+#   pod about 25 to 55 min in all, GPU-hours about 0.4 to 0.9.
 # Deadlines: pod-level activeDeadlineSeconds 7800 s (130 min, from pod start) = about 9 min restore (540 s) + model load (up to 240 s) + 5400 s
 #   rollout cap = 6,180 s, rounded up with margin to 7,800 s (130 min), under NRP's 180-minute runtime paths (_standards/08); inner `timeout`s: none on the restore (it is
 #   sourced so it cannot be wrapped; measured 7 to 9 min; the pod deadline caps it), each rollout pass 5400 s (a worst-case guess of 3 s per unbatched policy call x 2,000 calls = 100 min is NOT covered; if the
@@ -122,16 +121,15 @@ spec:
           R=/mnt/proxy; TAG=baseline-check4-smoke-try$SMOKE_TRY; D=$(date +%Y%m%d-%H%M%S)
           RUN=$R/runs/baseline-check4-none-s0-try$TRAIN_TRY
           ROLL=$R/rollouts/baseline-check4
-          OUT=$ROLL/smoke-try$SMOKE_TRY.jsonl; OUT2=$ROLL/smoke-try$SMOKE_TRY-envs${ENVS2:-}.jsonl
+          OUT=$ROLL/smoke-try$SMOKE_TRY.jsonl
           LOG=$R/logs/$TAG-$D.log; GPUCSV=$R/logs/$TAG-gpu-$D.csv
           mkdir -p $R/logs $ROLL
           exec > >(tee -a $LOG) 2>&1
           TEE=$!
           echo "=== BASELINE SANITY CHECK 4, TIMING-ONLY SMOKE (40 clean rollouts) on $RUN -> $OUT"; date -u
-          echo "SRC_GIT_COMMIT=$SRC_GIT_COMMIT SMOKE_TRY=$SMOKE_TRY TRAIN_TRY=$TRAIN_TRY ENVS=$ENVS ENVS2=${ENVS2:-} CUDA_GRAPH=$CUDA_GRAPH"
+          echo "SRC_GIT_COMMIT=$SRC_GIT_COMMIT SMOKE_TRY=$SMOKE_TRY TRAIN_TRY=$TRAIN_TRY ENVS=$ENVS CUDA_GRAPH=$CUDA_GRAPH"
           [[ "$SRC_GIT_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "ABORT: SRC_GIT_COMMIT is not a 40-hex commit (not filled at submit?)"; exit 10; }
           if [ -e $OUT ]; then echo "ABORT: $OUT exists (an earlier smoke's records; set SMOKE_TRY to a new value)"; exit 11; fi
-          if [ -n "${ENVS2:-}" ] && [ -e $OUT2 ]; then echo "ABORT: $OUT2 exists"; exit 11; fi
           [ -f $RUN/model.pt ] || { echo "ABORT: $RUN/model.pt is missing (did the training Job succeed, and is TRAIN_TRY right?)"; exit 15; }
           phase() { echo "=== PHASE $1 $(date -u +%H:%M:%S)"; echo "#phase $1" >> $GPUCSV; }
           finish() {
@@ -140,7 +138,7 @@ spec:
             echo "#phase end" >> $GPUCSV
             awk -F', ' 'BEGIN{p="start"} /^#phase/{p=$0; sub(/^#phase /,"",p); next} {v=$2; sub(/ %/,"",v); s[p]+=v; n[p]++; S+=v; N++} END{for(k in n) printf "[gpu-summary] %s: %d samples, mean %.1f%%\n", k, n[k], s[k]/n[k]; if(N) printf "[gpu-summary] all: %d samples, mean %.1f%%\n", N, S/N}' $GPUCSV
             echo "[cgroup] memory.peak $(cat /sys/fs/cgroup/memory.peak 2>/dev/null || echo n/a) bytes, memory.current $(cat /sys/fs/cgroup/memory.current 2>/dev/null || echo n/a) bytes"
-            for f in $OUT $OUT.errors.jsonl $OUT2 $OUT2.errors.jsonl; do
+            for f in $OUT $OUT.errors.jsonl; do
               if [ -f $f ]; then
                 echo "=== FILE $(basename $f) sha256 $(sha256sum < $f | cut -d' ' -f1) bytes $(stat -c %s $f) lines $(wc -l < $f)"
                 cat $f
@@ -167,18 +165,12 @@ spec:
           phase rollout-envs$ENVS
           echo "FLAGS: python /src/rollout.py run $COMMON --envs $ENVS --out $OUT"
           timeout --kill-after=60 5400 python /src/rollout.py run $COMMON --envs $ENVS --out $OUT 2>&1 | sed "/using task orders/d"
-          if [ -n "${ENVS2:-}" ]; then
-            phase rollout-envs${ENVS2}
-            echo "FLAGS: python /src/rollout.py run $COMMON --envs $ENVS2 --out $OUT2"
-            timeout --kill-after=60 5400 python /src/rollout.py run $COMMON --envs $ENVS2 --out $OUT2 2>&1 | sed "/using task orders/d"
-          fi
           echo "=== done"
         env:
         - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}
         - {name: SMOKE_TRY, value: "1"}
         - {name: TRAIN_TRY, value: "1"}        # the training Job's TRY: selects /mnt/proxy/runs/baseline-check4-none-s0-try<TRAIN_TRY>
         - {name: ENVS, value: "4"}             # the proxy's value (see header)
-        - {name: ENVS2, value: ""}             # OPTION, off: a number here runs a second pass at that --envs into its own file
         - {name: CUDA_GRAPH, value: "1"}
         - {name: HF_HOME, value: /work/hf}
         - {name: PYTHONUNBUFFERED, value: "1"}
