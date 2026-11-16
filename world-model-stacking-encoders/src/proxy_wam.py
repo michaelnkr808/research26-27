@@ -393,18 +393,24 @@ def _mask(model, batch_size, device):
                                            video_tokens_per_frame=tpf, device=device)
 
 
-def training_loss(model, bt, slices):
+def training_loss(model, bt, slices, draws=None):
     """FastWAM.training_loss on cached latents, with the video loss split by source. Same random draws in the same
-    order (video noise, video t, action noise, action t), so with only VAE channels it equals Fast-WAM's loss."""
+    order (video noise, video t, action noise, action t), so with only VAE channels it equals Fast-WAM's loss.
+    draws: optional (noise_v, tv, noise_a, ta) made by the caller (pretrained_train.py draws them once per optimizer
+    step for the whole accumulated batch and passes each micro-batch its slice); None draws them here as before."""
     x, act = bt["latents"], bt["action"]
     B = x.shape[0]
-    noise_v = torch.randn_like(x)
-    tv = model.train_video_scheduler.sample_training_t(batch_size=B, device=x.device, dtype=x.dtype)
+    if draws is None:
+        noise_v = torch.randn_like(x)
+        tv = model.train_video_scheduler.sample_training_t(batch_size=B, device=x.device, dtype=x.dtype)
+        noise_a = torch.randn_like(act)
+        ta = model.train_action_scheduler.sample_training_t(batch_size=B, device=x.device, dtype=act.dtype)
+    else:
+        noise_v, tv, noise_a, ta = draws
+        assert noise_v.shape == x.shape and noise_a.shape == act.shape and tv.shape == ta.shape == (B,)
     lat = model.train_video_scheduler.add_noise(x, noise_v, tv)
     target_v = model.train_video_scheduler.training_target(x, noise_v, tv)
     lat[:, :, 0:1] = x[:, :, 0:1]
-    noise_a = torch.randn_like(act)
-    ta = model.train_action_scheduler.sample_training_t(batch_size=B, device=x.device, dtype=act.dtype)
     noisy_a = model.train_action_scheduler.add_noise(act, noise_a, ta)
     target_a = model.train_action_scheduler.training_target(act, noise_a, ta)
     ctx, cmask = model._append_proprio_to_context(bt["context"], bt["context_mask"], bt["proprio"])
@@ -512,10 +518,11 @@ def train(data, plan, seed, device, log, model_kw=None, ckpt=None, ckpt_every=0,
     return model, hist
 
 
-def save_ckpt(path, model, opt, step):
+def save_ckpt(path, model, opt, step, **extra):
+    """Model, AdamW, step and RNG states (plus any `extra` entries) to path + .tmp, then renamed over path."""
     tmp = Path(str(path) + ".tmp")
     torch.save({"model": model.state_dict(), "opt": opt.state_dict(), "step": step, "rng_cpu": torch.get_rng_state(),
-                "rng_cuda": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None}, tmp)
+                "rng_cuda": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None, **extra}, tmp)
     tmp.replace(path)
 
 
