@@ -7,6 +7,9 @@ separate margin, fixed (M1) or equivalence-style (M2); precedence H, then N, els
 Assumptions (stated, speculative about the real experiment):
   - Y(c, s) = mu_c + sigma * eps, eps i.i.d. standard normal: training seeds independent, the same seed SD sigma in
     every configuration, evaluation noise folded into sigma, no pairing benefit from shared data order.
+  - Scope: the four-configuration design (Open item b = no). With b = yes, the rule pools sigma_hat over six
+    configurations (2 more degrees of freedom each), which this simulation does not model; its numbers are then a guide
+    only.
   - Four configurations with k seeds each (none, dinov3, dinov3+siglip2, dinov3+c-radiov4); sigma_hat pooled over all
     four with k - 1 degrees of freedom each. Only mu(pair) - mu(dinov3) = delta matters for H and N; mu(dinov3) matters
     only for threshold option 2.
@@ -89,7 +92,7 @@ def main():
                                  "p": simulate(rng, sigma, delta, k, mu_d)})
     print(json.dumps({"what": "simulated outcome probabilities of the stage 2 rule (H, N, I) for the harmful-pair "
                               "comparison, synthetic numbers, assumptions in power_sim.py docstring",
-                      "seed": SEED, "draws": R, "note": "k = 5 rows assume 5 seeds in every configuration (an upper "
+                      "seed": SEED, "draws": R, "scope": "four-configuration design (Open item b = no); sigma_hat pooled over none, dinov3 and the two pairings only, in rows and extension", "note": "k = 5 rows assume 5 seeds in every configuration (an upper "
                       "bound on what the 2-seed extension of dinov3 and dinov3+c-radiov4 buys)",
                       "rows": rows, "extension": ext}, indent=1))
 

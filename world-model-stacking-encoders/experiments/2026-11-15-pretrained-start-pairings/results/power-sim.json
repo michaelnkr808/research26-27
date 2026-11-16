@@ -2,6 +2,7 @@
  "what": "simulated outcome probabilities of the stage 2 rule (H, N, I) for the harmful-pair comparison, synthetic numbers, assumptions in power_sim.py docstring",
  "seed": 0,
  "draws": 200000,
+ "scope": "four-configuration design (Open item b = no); sigma_hat pooled over none, dinov3 and the two pairings only, in rows and extension",
  "note": "k = 5 rows assume 5 seeds in every configuration (an upper bound on what the 2-seed extension of dinov3 and dinov3+c-radiov4 buys)",
  "rows": [
   {
