@@ -4,7 +4,7 @@
 
 **Question:** What benefits does a world action model gain from being given spatial audio? In the lead's own words (2026-11-15): "relating spatial audio to world action models and investigating what benefits can be gained from providing world action models with spatial audio".
 
-**What done looks like:** a paper submitted to Interspeech. The lead gives the deadline as the end of February 2027; this has not been checked against the official call for papers yet. What result the paper has to show is not defined yet, and has to be written down with the PI before any experiment that feeds the paper is designed (`../_standards/01-research-process.md`).
+**What done looks like:** a paper submitted to Interspeech. The official Interspeech 2027 dates page gives the paper submission deadline as 2027-02-09 and the paper update deadline as 2027-02-16 (`verified`, read 2026-11-15; the lead had given "end of February"). The paper format is not checked yet because the call for papers was not open. What result the paper has to show is not defined yet, and has to be written down with the PI before any experiment that feeds the paper is designed (`../_standards/01-research-process.md`).
 
 ## Working definitions
 These are starting points written from memory (`recalled`), not from a source. The literature survey replaces them with cited definitions.
