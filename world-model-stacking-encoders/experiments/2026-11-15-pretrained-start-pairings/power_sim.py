@@ -16,6 +16,8 @@ Assumptions (stated, speculative about the real experiment):
   - Options: T1 = 2.7; T2 = 0.032 x Ybar(dinov3); T3 = max(2.7, 2 sqrt(2/k) sigma_hat); T4 = dbar <= -2.7 and
     dbar + t_{0.95, k-1} s_d / sqrt(k) < 0. Margins: M1 = dbar > -1.35; M2 = dbar - 2 sqrt(2/k) sigma_hat > -2.7.
   - H always also needs every d_s < 0.
+  - The calibration test C is not modelled (treated as passed). Under option C-a the real probability of a harm claim
+    is P(H and C), so lower than shown.
 
 Run: /opt/homebrew/bin/python3.11 power_sim.py > results/power-sim.json
 """
@@ -92,7 +94,7 @@ def main():
                                  "p": simulate(rng, sigma, delta, k, mu_d)})
     print(json.dumps({"what": "simulated outcome probabilities of the stage 2 rule (H, N, I) for the harmful-pair "
                               "comparison, synthetic numbers, assumptions in power_sim.py docstring",
-                      "seed": SEED, "draws": R, "scope": "four-configuration design (Open item b = no); sigma_hat pooled over none, dinov3 and the two pairings only, in rows and extension", "note": "k = 5 rows assume 5 seeds in every configuration (an upper "
+                      "seed": SEED, "draws": R, "scope": "four-configuration design (Open item b = no); sigma_hat pooled over none, dinov3 and the two pairings only, in rows and extension; the calibration test C is not modelled (treated as passed)", "note": "k = 5 rows assume 5 seeds in every configuration (an upper "
                       "bound on what the 2-seed extension of dinov3 and dinov3+c-radiov4 buys)",
                       "rows": rows, "extension": ext}, indent=1))
 
