@@ -1,6 +1,6 @@
 # HEAR Lab: spatial audio for world action models
 
-**Status:** exploring. The direction was set up on 2026-11-15 and nothing has been run yet. The PI's first task is to get the RMS-AQA benchmark running. Current agenda: `PLAN.md`. History: `LOG.md`.
+**Status:** exploring. Nothing has been run yet; the PI's first task is to get the RMS-AQA benchmark running. Current agenda: `PLAN.md`. History: `LOG.md`.
 
 **Question:** What benefits does a world action model gain from being given spatial audio? In the lead's own words (2026-11-15): "relating spatial audio to world action models and investigating what benefits can be gained from providing world action models with spatial audio".
 
@@ -19,7 +19,7 @@ None of these are decided. Each one becomes a decision record in `decisions/` on
 - **What the paper has to show.** Open (see "What done looks like").
 
 ## First task from the PI: RMS-AQA
-Get the RMS-AQA benchmark running (`chen2026rmsaqa` in `literature/references.bib`). RMS-AQA is a two-stage multiple-choice question answering benchmark on 10-second, four-channel spatial audio clips from homes, and it is also a live ICASSP 2027 Grand Challenge. What "running" has to mean (scoring an existing model, reproducing the paper's trained baseline, or entering the challenge) is not settled yet. The plan item and what is known so far are in `PLAN.md`.
+Get the RMS-AQA benchmark running (`chen2026rmsaqa` in `literature/references.bib`). RMS-AQA is a two-stage multiple-choice question answering benchmark on 10-second, four-channel spatial audio clips of home scenes. Its training clips are simulated, its validation set mixes simulated and recorded clips, and its hidden evaluation set is recorded. It is also a live ICASSP 2027 Grand Challenge. The plan item and its open questions are in `PLAN.md`.
 
 ## Key findings so far
 - None yet.

@@ -33,7 +33,7 @@ Two places are available. **Vast.ai comes first.** Every run is planned for Vast
 Only the experiment lead session (`hear-lab-experiment`) rents, submits, or manages compute.
 
 **Vast.ai**
-- Compute budget: 200 US dollars of credit on the HEAR Lab team account, as read from the account on 2026-11-15 (`verified`). The lead confirmed on 2026-11-15 that this is the whole compute budget for now.
+- Compute budget: 200 US dollars of credit on the HEAR Lab team account. The planning lead read this balance from the account with the `vastai` tool on 2026-11-15 (`verified`), and the lead said the same day that it is the whole compute budget for now.
 - Every rental needs the lead's OK first, in the experiment lead's own session. Before asking, the experiment lead states the machine (GPU, memory, disk, the host's reliability score), the hourly price, the expected hours, and the total. The time estimate comes from a real timed batch. One OK covers one rental.
 - On-demand instances by default. An interruptible instance, which can be taken away mid-run, needs the lead's OK.
 - Hosts can go offline, and destroying an instance deletes everything on it. Long runs save checkpoints, and results and logs are copied off the instance and checked before it is destroyed.
