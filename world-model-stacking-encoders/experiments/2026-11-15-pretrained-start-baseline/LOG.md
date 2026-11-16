@@ -20,3 +20,11 @@ Hand-off from the planning lead after PR #34 (sign-off). The user's go for the w
 **Not run:** nothing on Nautilus or a paid provider. The design is not locked yet (Order of work step 3 not started).
 
 **Next:** the user approved preparing (not submitting) the sanity-check 1-3 Job (one L40/L40S): manifest and RUN steps by PR, then the user's go to submit.
+
+## 2026-11-15 [agent, lead, implementation] (sanity checks 1-3: pass mark fixed before submitting)
+
+PR #40 (sanity Job and `jobs/RUN-sanity.md`) merged on the user's word ("merge"). The user's go to submit, in the implementation window (2026-11-15): "yes go for it", after the lead stated one Nautilus L40 or L40S, about half an hour once the pod starts, a 90-minute pod cap, and that the first run locks the design.
+
+**Overfit pass mark (sanity check 1), fixed before the Job is created, as proposed in `jobs/RUN-sanity.md` "Pass and fail", unchanged.** From `overfit.json`, first and last 20 of 300 steps (means), same batch and draws: (1) last `loss/action` < 0.1 x first; (2) `loss`, `loss/vae` and `loss/action` each end lower than they start; (3) last `loss` < predict-zero total and < 0.5 x first `loss`; (4) no `STOP:` (exit 2). Pass = all four. Sources: proxy check 9 (`src/test_proxy_wam.py`) for (1), (2) and the 0.5 in (3); PLAN sanity check 1's wording for the predict-zero part of (3). Checks 2 and 3: as written in `jobs/RUN-sanity.md`. No result of this Job exists yet.
+
+Noted from the PR #40 review: the `s/FILL_AT_SUBMIT/.../` render bug (a render that also rewrites the guard, so the pod aborts with the commit filled) is present in the three unsubmitted proxy retrain manifests (`experiments/2026-10-27-proxy-calibration/jobs/job-train-retrain-dinov3-*.yaml`) and `RETRAIN.md` line 35. Not fixed (not this experiment's files, and not submitted).
