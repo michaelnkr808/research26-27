@@ -78,3 +78,9 @@ Noted from the PR #40 review: the `s/FILL_AT_SUBMIT/.../` render bug (a render t
 **Loss** (not an outcome; the LR is still in warmup, 2.8e-5 at step 299): 4.669 at step 0, 0.527 at step 299 (mean of the last 20: 0.540).
 
 **Smoke prep:** ConfigMap `stacking-encoders-baseline-eval-src` created 2026-11-16 with the 11 keys from `$C` = `bee6027`; every key read back equals `$C`'s file by sha256 (verified; the hashes are RUN-check4.md step 3.2's list). Next: the smoke Job (one L4, timing-only, 40 rollouts) needs the user's go.
+
+## 2026-11-16 [agent, lead, implementation] (sanity check 4, smoke Job submitted on the user's go)
+
+The user's go in chat ("yeah submit it") after the statement: one L4, timing-only (no outcomes computed), 40 clean rollouts (one per task, init state 0, a test-task use logged here), about 25 to 55 min of pod time and 0.4 to 0.9 GPU-hours (speculative), possible long L4 queue. Our GPU pods before submit: 0. Rendered `jobs/rendered/job-check4-smoke.yaml` (1 filled line, 0 placeholders; SMOKE_TRY 1, TRAIN_TRY 1, ENVS 4, CUDA_GRAPH 1), source commit `bee6027`, ConfigMap `stacking-encoders-baseline-eval-src` (verified above). Server dry run OK; Job `stacking-encoders-baseline-check4-smoke` created **2026-11-16 05:23:52 UTC** (Job deadline 79,200 s). Pod `stacking-encoders-baseline-check4-smoke-698mj` Pending at first look. One background status loop (5-minute checks, 79,700 s cap).
+
+**Next:** when the pod runs, the 15-minute GPU check (RUN-check4.md step 16); on `END:`, save the pod log, check the `.errors.jsonl` is absent or empty before reading any timing, then log per-episode wall times, the GPU over 10-minute windows (40% rule), CPU and memory, and set the evaluation's shard count, environments and deadline (PLAN "Parameters set from measurements"); GPU under 40% goes to the user.
