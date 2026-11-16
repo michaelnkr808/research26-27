@@ -1,0 +1,5 @@
+# 2026-11-15: stage 2, encoder pairings on the 8-layer pretrained-start model
+
+Stage 2 of decision 006: on the stage 1 model (the first 8 blocks of pretrained Wan 2.2 TI2V-5B, Fast-WAM recipe), add frozen encoder features by channel-wise concatenation on the VAE latent grid, the paper's way, and train no extra encoder, DINOv3 alone, a pairing the paper reports as helpful (DINOv3 + SigLIP 2), SigLIP 2 alone, C-RADIOv4 alone and the pairing it reports as harmful (DINOv3 + C-RADIOv4), each with several training seeds. Every checkpoint is tested on clean LIBERO first, then on LIBERO-Plus, where the paper measured the drop. It answers whether the paper's reported harm appears on our model once training-seed noise is measured.
+
+Status 2026-11-15: design signed off by the user (answers in `PLAN.md` "Amendments"); PR #41 not yet merged; nothing run. Pending: Nautilus compliance of a larger volume, the DreamWorld reading, the user's confirmation of two extension details, and the stage 1 result (`../2026-11-15-pretrained-start-baseline/`). Design in `PLAN.md`.
