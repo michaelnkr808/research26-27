@@ -11,7 +11,7 @@ Entries marked **open** are not decided yet. An open entry is filled by a pull r
 ## Domain sources
 - Key venues, journals, or conferences: **open**, filled from the literature survey.
 - Canonical references or textbooks: **open**, filled from the literature survey.
-- Trusted datasets or benchmarks: **open**, filled from the literature survey.
+- Trusted datasets or benchmarks: RMS-AQA (`chen2026rmsaqa`) is the first benchmark the direction handles, as the PI's first task. Others: **open**, filled from the literature survey.
 - Sources to treat with caution: **open**.
 
 ## Methods and evaluation
@@ -33,7 +33,7 @@ Two places are available. **Vast.ai comes first.** Every run is planned for Vast
 Only the experiment lead session (`hear-lab-experiment`) rents, submits, or manages compute.
 
 **Vast.ai**
-- Compute budget: 200 US dollars of credit on the HEAR Lab team account, as read from the account on 2026-11-15 (`verified`). Whether more will be added is **open**.
+- Compute budget: 200 US dollars of credit on the HEAR Lab team account, as read from the account on 2026-11-15 (`verified`). The lead confirmed on 2026-11-15 that this is the whole compute budget for now.
 - Every rental needs the lead's OK first, in the experiment lead's own session. Before asking, the experiment lead states the machine (GPU, memory, disk, the host's reliability score), the hourly price, the expected hours, and the total. The time estimate comes from a real timed batch. One OK covers one rental.
 - On-demand instances by default. An interruptible instance, which can be taken away mid-run, needs the lead's OK.
 - Hosts can go offline, and destroying an instance deletes everything on it. Long runs save checkpoints, and results and logs are copied off the instance and checked before it is destroyed.
@@ -51,7 +51,7 @@ Only the experiment lead session (`hear-lab-experiment`) rents, submits, or mana
 ## Conventions
 - Notation or terminology: working definitions are in `README.md` until the literature survey replaces them.
 - Figure and table conventions: **open.**
-- Target output format or venue: **open.**
+- Target output format or venue: a paper for Interspeech. The lead gives the deadline as the end of February 2027; the date and the paper format are not yet checked against the official call for papers.
 
 ## Overrides of general standards
 | General rule | Override | Reason |

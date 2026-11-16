@@ -1,10 +1,10 @@
 # HEAR Lab: spatial audio for world action models
 
-**Status:** exploring. The direction was set up on 2026-11-15 and nothing has been run yet. The first step is the literature survey. Current agenda: `PLAN.md`. History: `LOG.md`.
+**Status:** exploring. The direction was set up on 2026-11-15 and nothing has been run yet. The PI's first task is to get the RMS-AQA benchmark running. Current agenda: `PLAN.md`. History: `LOG.md`.
 
 **Question:** What benefits does a world action model gain from being given spatial audio? In the lead's own words (2026-11-15): "relating spatial audio to world action models and investigating what benefits can be gained from providing world action models with spatial audio".
 
-**What done looks like:** not defined yet. This has to be written down with the PI before any experiment is designed (`../_standards/01-research-process.md`). It needs to name the result or artifact that would answer the question and the evidence that would count.
+**What done looks like:** a paper submitted to Interspeech. The lead gives the deadline as the end of February 2027; this has not been checked against the official call for papers yet. What result the paper has to show is not defined yet, and has to be written down with the PI before any experiment that feeds the paper is designed (`../_standards/01-research-process.md`).
 
 ## Working definitions
 These are starting points written from memory (`recalled`), not from a source. The literature survey replaces them with cited definitions.
@@ -13,17 +13,20 @@ These are starting points written from memory (`recalled`), not from a source. T
 
 ## Open scope questions
 None of these are decided. Each one becomes a decision record in `decisions/` once the lead and the PI settle it.
-- Which world action model (or models) the work builds on.
-- Which benchmark or task set measures "benefit", and with which metrics.
-- Where the spatial audio comes from: real recordings, simulation, or both.
-- What the target output is (paper, venue, timeline).
+- **Which world action model the work builds on.** Open. One candidate the lead named is Wan 2.2, the model already used in this repo's `../world-model-stacking-encoders/` direction.
+- **Which benchmark or task set measures "benefit", and with which metrics.** Open. RMS-AQA (below) is a spatial audio question answering benchmark, not a world action model benchmark, so how it connects to the question is part of what has to be settled.
+- **Where the spatial audio comes from.** Open. The RMS-AQA dataset is the first one the direction will handle.
+- **What the paper has to show.** Open (see "What done looks like").
+
+## First task from the PI: RMS-AQA
+Get the RMS-AQA benchmark running (`chen2026rmsaqa` in `literature/references.bib`). RMS-AQA is a two-stage multiple-choice question answering benchmark on 10-second, four-channel spatial audio clips from homes, and it is also a live ICASSP 2027 Grand Challenge. What "running" has to mean (scoring an existing model, reproducing the paper's trained baseline, or entering the challenge) is not settled yet. The plan item and what is known so far are in `PLAN.md`.
 
 ## Key findings so far
 - None yet.
 
 ## Ownership
 - Lead: the repo owner.
-- PI: the HEAR Lab PI.
+- PI: Dongheon Lee, Assistant Professor at PKNU, previously at Meta.
 - Work is done mostly by AI agents under the lead's direction (`../_standards/05-ai-assisted-work.md`): a planning lead session (`hear-lab-planning`) and an experiment lead session (`hear-lab-experiment`).
 
 ## Key files
@@ -32,4 +35,4 @@ None of these are decided. Each one becomes a decision record in `decisions/` on
 - `LOG.md`: research log for the direction (short session summaries; detail is in each experiment's `LOG.md`)
 - `experiments/`: one folder per experiment, each with `config.*`, `PLAN.md`, `LOG.md`, `README.md` (copy `experiments/_new-experiment/`)
 - `decisions/`: decision records
-- `literature/`: paper notes and `references.bib`
+- `literature/`: `reading-list.md` (what has been read), `references.bib`, and paper notes
