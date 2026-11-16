@@ -239,6 +239,20 @@ def main():
         time.sleep(1.0)
         wd.stop()
         assert codes == [T.WATCHDOG_EXIT] and "[watchdog]" in logs[0], (codes, logs)
+        # first deadline: armed from construction; fires in the start-up phase if no step finishes; after the first
+        # beat the (longer) step limit applies instead
+        codes.clear(); logs.clear()
+        wd = T.StepWatchdog(30, logs.append, exit_fn=codes.append, first_s=0.4)
+        time.sleep(1.0)
+        wd.stop()
+        assert codes == [T.WATCHDOG_EXIT] and "start-up" in logs[0], (codes, logs)
+        codes.clear(); logs.clear()
+        wd = T.StepWatchdog(30, logs.append, exit_fn=codes.append, first_s=0.4)
+        time.sleep(0.2)
+        wd.beat()
+        time.sleep(0.8)
+        wd.stop()
+        assert codes == [] and logs == [], (codes, logs)
         wd = T.StepWatchdog(0, logs.append, exit_fn=codes.append)
         assert wd.thread is None
         codes.clear()
@@ -257,7 +271,7 @@ def main():
         finally:
             T.optimizer_step = orig_step
             T._watchdog_exit = orig_exit
-        assert rc == 0 and codes == [T.WATCHDOG_EXIT] and "[watchdog] no optimizer step finished in 1 s" in logW, (codes, logW)
+        assert rc == 0 and codes == [T.WATCHDOG_EXIT] and "[watchdog] fired in the training steps phase: no progress for 1 s" in logW, (codes, logW)
         codes.clear()
         rc, logA2 = run(argv(d, "A2", "--max-steps", "4", "--ckpt-every", "2"))
         assert rc == 0 and codes == [] and "[watchdog]" not in logA2

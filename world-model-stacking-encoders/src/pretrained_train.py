@@ -295,14 +295,16 @@ def _watchdog_exit(code):
 
 
 class StepWatchdog:
-    """Ends the process (exit WATCHDOG_EXIT) if no optimizer step finishes within limit_s seconds. A daemon thread,
-    armed by the first beat() (so the data-loader start-up and the first step are not covered). It changes nothing in
-    the training: no draws, no saved state. The checkpoint is only ever replaced by a rename, so ending the process
-    during a write leaves the previous checkpoint intact. limit_s 0 disables it."""
+    """Ends the process (exit WATCHDOG_EXIT) when training stalls. A daemon thread with two deadlines: until the first
+    optimizer step finishes, first_s seconds from construction (data index, model build, a resume's checkpoint load, the
+    first step; None = not armed until the first step); after each step, limit_s seconds since the last beat (steps and
+    checkpoint writes). It changes nothing in the training: no draws, no saved state. The checkpoint is only ever
+    replaced by a rename, so ending the process during a write leaves the previous checkpoint intact. limit_s 0 disables
+    the whole watchdog; first_s 0 or None disables the first deadline."""
 
-    def __init__(self, limit_s, log, exit_fn=None):
-        self.limit, self.log, self.exit_fn = limit_s, log, exit_fn
-        self.last, self.armed, self.fired = None, False, False
+    def __init__(self, limit_s, log, exit_fn=None, first_s=None):
+        self.limit, self.first, self.log, self.exit_fn = limit_s, (first_s or None), log, exit_fn
+        self.last, self.armed, self.fired, self.stepping = time.monotonic(), self.first is not None, False, False
         self.stop_ev = threading.Event()
         self.thread = None
         if limit_s and limit_s > 0:
@@ -311,23 +313,28 @@ class StepWatchdog:
 
     def beat(self):
         self.last = time.monotonic()
-        self.armed = True
+        self.armed = self.stepping = True
 
     def stop(self):
         self.stop_ev.set()
 
     def _run(self):
-        poll = min(5.0, self.limit / 4)
+        poll = min(5.0, self.limit / 4, (self.first or self.limit) / 4)
         while not self.stop_ev.wait(poll):
-            if self.armed and not self.fired and time.monotonic() - self.last > self.limit:
+            if not self.armed or self.fired:
+                continue
+            lim, phase = ((self.limit, "training steps") if self.stepping
+                          else (self.first, "start-up before the first optimizer step (data index, model build, "
+                                            "checkpoint load, first step)"))
+            if time.monotonic() - self.last > lim:
                 self.fired = True
-                self.log(f"[watchdog] no optimizer step finished in {self.limit:.0f} s (a hung loader or a stalled "
-                         f"CephFS read or write); exiting with code {WATCHDOG_EXIT}; the last ckpt.pt is intact and a "
-                         f"retried pod resumes from it")
+                self.log(f"[watchdog] fired in the {phase} phase: no progress for {lim:.0f} s (a hung loader or a "
+                         f"stalled CephFS read or write); exiting with code {WATCHDOG_EXIT}; the last ckpt.pt is "
+                         f"intact and a retried pod resumes from it")
                 (self.exit_fn or _watchdog_exit)(WATCHDOG_EXIT)
 
 
-def train(model, opt, data, plan, args, device, log, ckpt, start, stop, micro_hist, hist, hist_file=None):
+def train(model, opt, data, plan, args, device, log, ckpt, start, stop, micro_hist, hist, hist_file=None, wd=None):
     """Optimizer steps start..stop-1 of the plan. Returns (history of this process, finished). Each step's record is
     also appended to hist_file (history.jsonl in --out), which survives a lost pod."""
     total = len(plan)
@@ -335,12 +342,14 @@ def train(model, opt, data, plan, args, device, log, ckpt, start, stop, micro_hi
     loader = P.Loader(data, plan[:stop], start, horizon=args.horizon, read_threads=args.read_threads,
                       assemble_threads=args.assemble_threads)
     times, ckpt_logged = [], False
-    wd = StepWatchdog(args.step_watchdog_s, log)
+    own_wd = wd is None
+    wd = wd or StepWatchdog(args.step_watchdog_s, log, first_s=args.step_watchdog_first_s)
     try:
         return _train_loop(model, opt, data, plan, args, device, log, ckpt, start, stop, micro_hist, hist, hist_file,
                            total, t_run, loader, times, ckpt_logged, wd)
     finally:
-        wd.stop()
+        if own_wd:
+            wd.stop()
 
 
 def _train_loop(model, opt, data, plan, args, device, log, ckpt, start, stop, micro_hist, hist, hist_file, total,
@@ -445,6 +454,9 @@ def parser():
     p.add_argument("--step-watchdog-s", type=float, default=1800,
                    help=f"exit {WATCHDOG_EXIT} if no optimizer step finishes within this many seconds (armed after the "
                         f"first step; 0 = off)")
+    p.add_argument("--step-watchdog-first-s", type=float, default=3600,
+                   help="the watchdog's deadline from process start to the end of the first optimizer step (data "
+                        "index, model build, a resume's checkpoint load); 0 = none until the first step")
     p.add_argument("--max-steps", type=int, default=None, help="run only the first N optimizer steps of the full run")
     p.add_argument("--stop-after", type=int, default=None, help="testing: stop after this step as if the pod were lost")
     p.add_argument("--first-batch-report", action="store_true", help="write first-batch.json before training")
@@ -489,6 +501,14 @@ def main(argv=None):
     args = parser().parse_args(argv)
     t0 = time.time()
     log = lambda m: print(f"[train {time.time() - t0:7.0f}s] {m}", flush=True)
+    wd = StepWatchdog(args.step_watchdog_s, log, first_s=args.step_watchdog_first_s)   # armed from here (start-up)
+    try:
+        return _main(args, t0, log, wd)
+    finally:
+        wd.stop()
+
+
+def _main(args, t0, log, wd):
     if args.micro_batch not in MICRO_BATCHES and not args.allow_any_micro_batch:
         raise SystemExit(f"--micro-batch must be one of {MICRO_BATCHES}")
     if args.global_batch % args.micro_batch:
@@ -595,7 +615,7 @@ def main(argv=None):
 
     try:
         hist, finished = train(model, opt, data, plan, args, device, log, ckpt, start, stop, micro_hist, hist,
-                               out / "history.jsonl")
+                               out / "history.jsonl", wd=wd)
     except NonFiniteLoss as e:
         return _stop(out, "train.json", e, log, history=hist, micro_batch_history=micro_hist,
                      seconds=time.time() - t0)

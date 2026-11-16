@@ -34,8 +34,9 @@
 #   (variable DECLARED); a tool's own code (nvidia-smi returns 2, 10, 14, 15 for GPU faults; ls returns 2) is reported as 1, so a
 #   faulty-GPU node is retried (PR #47 review S2). RETRYABLE own codes: 16 (setup timeout: pip 1800 s, a staging dd 900 s, the
 #   sha256 checks, the model.pt sha256), 17 (step watchdog in pretrained_train.py: no optimizer step finished in 30 min, default
-#   --step-watchdog-s 1800; steps take about 4-5 s and checkpoint writes about 21 s; armed after the first step, so a retried pod's
-#   20 GB checkpoint load is not covered; PR #47 review S1; the resume costs at most one checkpoint interval).
+#   --step-watchdog-s 1800; steps take about 4-5 s and checkpoint writes about 21 s; before the first step a longer deadline applies from process start
+#   (--step-watchdog-first-s 3600: data index, model build, a resume's 20 GB checkpoint load, first step; check 4 took about 1 min to
+#   the first step); PR #47 review S1; the resume costs at most one checkpoint interval).
 #   Ignore (does not count toward backoffLimit) on the DisruptionTarget pod condition (node drain, preemption, eviction).
 #   Everything else (exit 1 Python errors including a CUDA OOM, 12 staging failed, 16, 17, 137 OOMKilled, node loss) counts toward the 2
 #   retries. The Job deadline still caps an endless disruption loop.
