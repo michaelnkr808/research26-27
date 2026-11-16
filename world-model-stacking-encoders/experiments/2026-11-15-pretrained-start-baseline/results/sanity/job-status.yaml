@@ -1,0 +1,236 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    nrp.ai/username: http://cilogon.org/serverE/users/436081
+  creationTimestamp: "2026-11-16T01:41:17Z"
+  generation: 1
+  labels:
+    batch.kubernetes.io/controller-uid: 3924eb7f-27f2-461d-8147-f67044ea3f27
+    batch.kubernetes.io/job-name: stacking-encoders-baseline-sanity
+    controller-uid: 3924eb7f-27f2-461d-8147-f67044ea3f27
+    job-name: stacking-encoders-baseline-sanity
+  name: stacking-encoders-baseline-sanity
+  namespace: aria-world
+  resourceVersion: "15540827026"
+  uid: 3924eb7f-27f2-461d-8147-f67044ea3f27
+spec:
+  activeDeadlineSeconds: 75600
+  backoffLimit: 0
+  completionMode: NonIndexed
+  completions: 1
+  manualSelector: false
+  parallelism: 1
+  podReplacementPolicy: TerminatingOrFailed
+  selector:
+    matchLabels:
+      batch.kubernetes.io/controller-uid: 3924eb7f-27f2-461d-8147-f67044ea3f27
+  suspend: false
+  template:
+    metadata:
+      labels:
+        batch.kubernetes.io/controller-uid: 3924eb7f-27f2-461d-8147-f67044ea3f27
+        batch.kubernetes.io/job-name: stacking-encoders-baseline-sanity
+        controller-uid: 3924eb7f-27f2-461d-8147-f67044ea3f27
+        job-name: stacking-encoders-baseline-sanity
+    spec:
+      activeDeadlineSeconds: 5400
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-L40
+                - NVIDIA-L40S
+              - key: nvidia.com/cuda.driver.major
+                operator: Gt
+                values:
+                - "569"
+              - key: topology.kubernetes.io/region
+                operator: In
+                values:
+                - us-west
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                - k8s-chase-ci-07.calit2.optiputer.net
+                - ry-gpu-08.sdsc.optiputer.net
+      containers:
+      - args:
+        - |
+          set -euo pipefail
+          SMI=""; OWN=0
+          R=/mnt/proxy; TAG=baseline-sanity-none-s0-try$TRY; D=$(date +%Y%m%d-%H%M%S)
+          OUT=$R/runs/$TAG; W=/work/out
+          WSRC=$R/models/Wan-AI/Wan2.2-TI2V-5B; WAN=/work/wan/Wan2.2-TI2V-5B
+          LOG=$R/logs/$TAG-$D.log; GPUCSV=$R/logs/$TAG-gpu-$D.csv
+          SMALL="first-batch/config.json first-batch/load.json first-batch/first-batch.json first-batch/train.json first-batch/history.jsonl overfit/overfit.json"
+          mkdir -p $R/logs $R/runs
+          exec > >(tee -a $LOG) 2>&1
+          TEE=$!
+          echo "=== BASELINE SANITY 1-3 (PLAN Order of work step 3): config none seed 0 local out $W, PVC copies $OUT"; date -u
+          echo "SRC_GIT_COMMIT=$SRC_GIT_COMMIT TRY=$TRY OVERFIT_STEPS=$OVERFIT_STEPS MICRO_BATCH=$MICRO_BATCH"
+          [[ "$SRC_GIT_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "ABORT: SRC_GIT_COMMIT is not a 40-hex commit (not filled at submit?)"; exit 10; }
+          if [ -e $OUT ]; then echo "ABORT: $OUT exists (an earlier attempt's files; set TRY to a new value)"; exit 11; fi
+          mkdir -p $OUT/first-batch $OUT/overfit $W /work/wan $WAN
+          OWN=1
+          phase() { echo "=== PHASE $1 $(date -u +%H:%M:%S)"; echo "#phase $1" >> $GPUCSV; }
+          finish() {
+            rc=$?; set +e
+            [ -n "$SMI" ] && { kill $SMI 2>/dev/null; wait $SMI 2>/dev/null; }
+            echo "#phase end" >> $GPUCSV
+            awk -F', ' 'BEGIN{p="start"} /^#phase/{p=$0; sub(/^#phase /,"",p); next} {v=$2; sub(/ %/,"",v); s[p]+=v; n[p]++; S+=v; N++} END{for(k in n) printf "[gpu-summary] %s: %d samples, mean %.1f%%\n", k, n[k], s[k]/n[k]; if(N) printf "[gpu-summary] all: %d samples, mean %.1f%%\n", N, S/N}' $GPUCSV
+            if [ "$OWN" = 1 ]; then
+              for f in $SMALL; do
+                if [ -f $W/$f ]; then
+                  timeout 300 cp $W/$f $OUT/$f || echo "WARNING: copy of $f to $OUT failed or timed out (it is still printed below)"
+                  echo "=== FILE $f sha256 $(sha256sum < $W/$f | cut -d' ' -f1) bytes $(stat -c %s $W/$f)"
+                  cat $W/$f; echo
+                  echo "=== END $f"
+                fi
+              done
+              ls -la $W/* $OUT/* 2>/dev/null
+            fi
+            date -u; echo "=== exit $rc"
+            exec 1>&- 2>&-; wait $TEE 2>/dev/null
+            exit $rc
+          }
+          trap finish EXIT
+          nvidia-smi; nproc; df -h $R /work
+          echo "/src = ConfigMap stacking-encoders-baseline-src; sha256 of its keys (must equal the commit's, RUN-sanity.md step 3):"
+          sha256sum /src/pretrained_train.py /src/pretrained_sizing.py /src/action_expert_init.py /src/proxy_wam.py /src/diagnostics.py /src/t5_cache.py /src/setup_env.sh
+          : > $GPUCSV
+          phase setup
+          nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv,noheader -l 15 > >(tee -a $GPUCSV | sed -u 's/^/[gpu] /') &
+          SMI=$!
+          rc=0; timeout --kill-after=60 1800 bash /src/setup_env.sh > /work/pip-env.log 2>&1 || rc=$?
+          [ $rc = 0 ] || { tail -50 /work/pip-env.log; [ $rc = 124 ] && echo "ABORT: pip setup timed out (1800 s)"; [ $rc = 124 ] && exit 124; exit 1; }
+          cp /work/pip-env.log $R/logs/pip-env-$TAG.log
+          phase stage-wan
+          stage() {
+            local f=$1 n mib per i pids=""
+            n=$(stat -c %s "$WSRC/$f"); mib=$(( (n + 1048575) / 1048576 )); per=$(( (mib + 15) / 16 ))
+            : > "$WAN/$f"
+            for i in $(seq 0 15); do
+              timeout --kill-after=30 900 dd if="$WSRC/$f" of="$WAN/$f" bs=1M skip=$((i * per)) seek=$((i * per)) count=$per conv=notrunc status=none &
+              pids="$pids $!"
+            done
+            for i in $pids; do
+              wait $i || { rc=$?; echo "ABORT: a dd of $f failed (rc $rc; 124 = timed out after 900 s)"; [ $rc = 124 ] && exit 124; exit 12; }
+            done
+            [ "$(stat -c %s "$WAN/$f")" = "$n" ] || { echo "ABORT: staged $f is $(stat -c %s "$WAN/$f") bytes, source $n"; exit 12; }
+            echo "staged $f $n bytes"
+          }
+          T0=$(date +%s)
+          stage diffusion_pytorch_model-00001-of-00003.safetensors
+          stage diffusion_pytorch_model-00003-of-00003.safetensors
+          cp $WSRC/diffusion_pytorch_model.safetensors.index.json $WSRC/config.json $WAN/ || { echo "ABORT: copy of the Wan index/config failed"; exit 12; }
+          echo "staging took $(( $(date +%s) - T0 )) s"
+          ( cd $WAN && timeout 600 sha256sum -c - <<'EOF'
+          720b06c4ade5e87c1246bba8ac95b664c638749cd9b102cf84d823bb44c026a1  diffusion_pytorch_model-00001-of-00003.safetensors
+          6306f7894c345de9093ad588771c2abfaeb668a81f7a6d9a918bd26ba3568e49  diffusion_pytorch_model-00003-of-00003.safetensors
+          bfa2337f1163e195d24151a72298daf34a620543898109be47e414c8daa5b3fe  diffusion_pytorch_model.safetensors.index.json
+          d1fea36899d00c2501b836c13ad65af56e2f9529ba622e50886d3f5c3e6c02bc  config.json
+          EOF
+          ) || { echo "ABORT: staged Wan files do not match the sha256 in the download log (or the check timed out after 600 s)"; exit 13; }
+          echo "staging + sha256 took $(( $(date +%s) - T0 )) s"
+          COMMON="--feats $R/feats --suites libero_spatial,libero_object,libero_goal,libero_10 --t5 $R/feats/t5 --config none --seed 0 --wan-dir $WAN --micro-batch $MICRO_BATCH"
+          phase first-batch
+          echo "FLAGS: python /src/pretrained_train.py $COMMON --first-batch-report --max-steps 20 --out $W/first-batch"
+          timeout --kill-after=60 1800 python /src/pretrained_train.py $COMMON --first-batch-report --max-steps 20 --out $W/first-batch
+          phase overfit
+          echo "FLAGS: python /src/pretrained_train.py $COMMON --overfit-steps $OVERFIT_STEPS --overfit-batch 8 --overfit-lr 1e-4 --out $W/overfit"
+          timeout --kill-after=60 1200 python /src/pretrained_train.py $COMMON --overfit-steps $OVERFIT_STEPS --overfit-batch 8 --overfit-lr 1e-4 --out $W/overfit
+          echo "=== done"
+        command:
+        - bash
+        - -c
+        env:
+        - name: SRC_GIT_COMMIT
+          value: c0ad302c703db49234c2e8c5c28dc58bc232bfad
+        - name: TRY
+          value: "1"
+        - name: OVERFIT_STEPS
+          value: "300"
+        - name: MICRO_BATCH
+          value: "8"
+        - name: HF_HOME
+          value: /work/hf
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: PYTHONPATH
+          value: /src
+        - name: OMP_NUM_THREADS
+          value: "3"
+        - name: MALLOC_ARENA_MAX
+          value: "2"
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        imagePullPolicy: IfNotPresent
+        name: main
+        resources:
+          limits:
+            cpu: 4800m
+            ephemeral-storage: 44Gi
+            memory: 19Gi
+            nvidia.com/gpu: "1"
+          requests:
+            cpu: "4"
+            ephemeral-storage: 38Gi
+            memory: 16Gi
+            nvidia.com/gpu: "1"
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /work
+          name: work
+        - mountPath: /src
+          name: src
+          readOnly: true
+        - mountPath: /mnt/proxy
+          name: proxy
+        - mountPath: /dev/shm
+          name: dshm
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir:
+          sizeLimit: 24Gi
+        name: work
+      - configMap:
+          defaultMode: 420
+          name: stacking-encoders-baseline-src
+        name: src
+      - name: proxy
+        persistentVolumeClaim:
+          claimName: stacking-encoders-proxy
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 2Gi
+        name: dshm
+  ttlSecondsAfterFinished: 86400
+status:
+  completionTime: "2026-11-16T03:01:51Z"
+  conditions:
+  - lastProbeTime: "2026-11-16T03:01:51Z"
+    lastTransitionTime: "2026-11-16T03:01:51Z"
+    message: Reached expected number of succeeded pods
+    reason: CompletionsReached
+    status: "True"
+    type: SuccessCriteriaMet
+  - lastProbeTime: "2026-11-16T03:01:51Z"
+    lastTransitionTime: "2026-11-16T03:01:51Z"
+    message: Reached expected number of succeeded pods
+    reason: CompletionsReached
+    status: "True"
+    type: Complete
+  ready: 0
+  startTime: "2026-11-16T01:41:17Z"
+  succeeded: 1
+  terminating: 0
+  uncountedTerminatedPods: {}

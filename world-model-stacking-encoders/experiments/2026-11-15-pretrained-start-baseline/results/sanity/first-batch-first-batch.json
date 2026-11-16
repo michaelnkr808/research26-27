@@ -1,0 +1,244 @@
+{
+ "batch_size": 128,
+ "micro_batch": 8,
+ "inputs": {
+  "latents_host": {
+   "shape": [
+    128,
+    3,
+    14,
+    28,
+    48
+   ],
+   "dtype": "float16"
+  },
+  "latents_device_per_micro": [
+   8,
+   48,
+   3,
+   14,
+   28
+  ],
+  "context_per_micro": [
+   8,
+   128,
+   4096
+  ],
+  "action": {
+   "shape": [
+    128,
+    32,
+    7
+   ],
+   "dtype": "float32"
+  },
+  "action_is_pad": {
+   "shape": [
+    128,
+    32
+   ],
+   "dtype": "bool"
+  },
+  "latent_is_pad": {
+   "shape": [
+    128,
+    2
+   ],
+   "dtype": "bool"
+  },
+  "proprio": {
+   "shape": [
+    128,
+    8
+   ],
+   "dtype": "float32"
+  },
+  "task": {
+   "shape": [
+    128
+   ],
+   "dtype": "int64"
+  }
+ },
+ "channels/vae": {
+  "n": 48,
+  "mean_range": [
+   -0.41874077916145325,
+   0.44461214542388916
+  ],
+  "std_range": [
+   0.5187406539916992,
+   0.9464551210403442
+  ],
+  "min": -5.625,
+  "max": 5.71875
+ },
+ "action_range": [
+  -1.0,
+  1.0
+ ],
+ "action_abs_gt1_fraction": 0.0,
+ "proprio_range": [
+  -0.997601330280304,
+  0.9562219977378845
+ ],
+ "proprio_abs_gt1_fraction": 0.0,
+ "padded_action_steps": 404,
+ "padded_latent_steps": 16,
+ "windows_with_padding": 29,
+ "tasks": [
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "pick up the black bowl on the wooden cabinet and place it on the plate",
+  "pick up the black bowl next to the ramekin and place it on the plate",
+  "put the wine bottle on the rack",
+  "pick up the black bowl next to the plate and place it on the plate",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "pick up the black bowl on the ramekin and place it on the plate",
+  "pick up the book and place it in the back compartment of the caddy",
+  "pick up the black bowl on the wooden cabinet and place it on the plate",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "pick up the cream cheese and place it in the basket",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "pick up the cream cheese and place it in the basket",
+  "pick up the orange juice and place it in the basket",
+  "put the wine bottle on the rack",
+  "push the plate to the front of the stove",
+  "pick up the book and place it in the back compartment of the caddy",
+  "pick up the black bowl next to the ramekin and place it on the plate",
+  "pick up the black bowl on the wooden cabinet and place it on the plate",
+  "put both the alphabet soup and the tomato sauce in the basket",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "pick up the black bowl next to the ramekin and place it on the plate",
+  "pick up the black bowl on the stove and place it on the plate",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "put both the alphabet soup and the tomato sauce in the basket",
+  "pick up the black bowl on the wooden cabinet and place it on the plate",
+  "pick up the black bowl on the stove and place it on the plate",
+  "pick up the black bowl on the wooden cabinet and place it on the plate",
+  "put both the alphabet soup and the tomato sauce in the basket",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "pick up the black bowl next to the plate and place it on the plate",
+  "pick up the black bowl on the wooden cabinet and place it on the plate",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "pick up the black bowl next to the plate and place it on the plate",
+  "put both the alphabet soup and the tomato sauce in the basket",
+  "pick up the black bowl next to the ramekin and place it on the plate",
+  "put the wine bottle on the rack",
+  "put both the alphabet soup and the tomato sauce in the basket",
+  "pick up the orange juice and place it in the basket",
+  "pick up the black bowl next to the ramekin and place it on the plate",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "pick up the alphabet soup and place it in the basket",
+  "put both the alphabet soup and the tomato sauce in the basket",
+  "pick up the black bowl on the ramekin and place it on the plate",
+  "pick up the cream cheese and place it in the basket",
+  "pick up the alphabet soup and place it in the basket",
+  "put the wine bottle on the rack",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "put both the alphabet soup and the tomato sauce in the basket",
+  "pick up the black bowl next to the ramekin and place it on the plate",
+  "pick up the book and place it in the back compartment of the caddy",
+  "pick up the cream cheese and place it in the basket",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "pick up the alphabet soup and place it in the basket",
+  "put both the alphabet soup and the tomato sauce in the basket",
+  "put both the alphabet soup and the tomato sauce in the basket",
+  "put both the alphabet soup and the tomato sauce in the basket",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "pick up the cream cheese and place it in the basket",
+  "pick up the cream cheese and place it in the basket",
+  "pick up the alphabet soup and place it in the basket",
+  "put the wine bottle on the rack",
+  "pick up the cream cheese and place it in the basket",
+  "put both the alphabet soup and the tomato sauce in the basket",
+  "pick up the black bowl next to the plate and place it on the plate",
+  "pick up the cream cheese and place it in the basket",
+  "pick up the black bowl on the wooden cabinet and place it on the plate",
+  "pick up the black bowl on the stove and place it on the plate",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "pick up the orange juice and place it in the basket",
+  "pick up the book and place it in the back compartment of the caddy",
+  "pick up the black bowl on the wooden cabinet and place it on the plate",
+  "pick up the alphabet soup and place it in the basket",
+  "pick up the alphabet soup and place it in the basket",
+  "push the plate to the front of the stove",
+  "push the plate to the front of the stove",
+  "put both the alphabet soup and the tomato sauce in the basket",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "pick up the black bowl on the stove and place it on the plate",
+  "pick up the cream cheese and place it in the basket",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "pick up the book and place it in the back compartment of the caddy",
+  "pick up the black bowl next to the plate and place it on the plate",
+  "pick up the black bowl next to the ramekin and place it on the plate",
+  "pick up the alphabet soup and place it in the basket",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "pick up the black bowl next to the ramekin and place it on the plate",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "pick up the black bowl on the wooden cabinet and place it on the plate",
+  "push the plate to the front of the stove",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "pick up the black bowl next to the plate and place it on the plate",
+  "pick up the black bowl on the stove and place it on the plate",
+  "put both the alphabet soup and the tomato sauce in the basket",
+  "pick up the book and place it in the back compartment of the caddy",
+  "pick up the book and place it in the back compartment of the caddy",
+  "pick up the book and place it in the back compartment of the caddy",
+  "pick up the alphabet soup and place it in the basket",
+  "put the wine bottle on the rack",
+  "put the wine bottle on the rack",
+  "pick up the alphabet soup and place it in the basket",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "pick up the cream cheese and place it in the basket",
+  "pick up the cream cheese and place it in the basket",
+  "pick up the black bowl on the wooden cabinet and place it on the plate",
+  "push the plate to the front of the stove",
+  "pick up the black bowl on the wooden cabinet and place it on the plate",
+  "pick up the cream cheese and place it in the basket",
+  "pick up the black bowl next to the ramekin and place it on the plate",
+  "pick up the book and place it in the back compartment of the caddy",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "put both the alphabet soup and the tomato sauce in the basket",
+  "pick up the alphabet soup and place it in the basket",
+  "pick up the black bowl on the ramekin and place it on the plate",
+  "pick up the black bowl on the ramekin and place it on the plate",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "push the plate to the front of the stove",
+  "pick up the black bowl on the stove and place it on the plate",
+  "pick up the black bowl on the stove and place it on the plate",
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "put both the alphabet soup and the tomato sauce in the basket",
+  "pick up the black bowl on the ramekin and place it on the plate",
+  "push the plate to the front of the stove"
+ ],
+ "n_distinct_tasks": 13,
+ "draws": {
+  "tv_range": [
+   89.21536254882812,
+   999.7081298828125
+  ],
+  "ta_range": [
+   2.9528141021728516,
+   992.0440063476562
+  ]
+ },
+ "loss_at_start": {
+  "model": {
+   "total": 4.668819814920425,
+   "vae": 3.0036653131246567,
+   "action": 1.6651545353233814
+  },
+  "predict_zero": {
+   "total": 2.8983758091926575,
+   "vae": 1.7385327741503716,
+   "action": 1.159843023866415
+  }
+ },
+ "loss_parts_note": "'vae' = video loss on the VAE channels, 'action' = action loss; predict_zero = a model that outputs 0, on the same batch and noise/timestep draws (step 0)",
+ "note": "model state at the time of the report: initial"
+}
