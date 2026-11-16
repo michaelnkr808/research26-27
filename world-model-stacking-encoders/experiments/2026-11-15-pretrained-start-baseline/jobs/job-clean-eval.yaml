@@ -19,7 +19,7 @@
 #   (per-episode seeding, rollout.py docstring). The pod learns its index from the Job's completion-index annotation.
 #   Why one Indexed Job rather than four Jobs: one manifest, one set of pinned hashes, one wait loop and one podFailurePolicy, so
 #   the four shards cannot drift apart; the proxy's rollout Jobs used the same pattern (completionMode Indexed). Cost: the
-#   backoffLimit is shared by the four indexes (6 in all, see RETRIES) and the Job deadline is one number for all.
+#   Job deadline is one number for all, and one failed index fails the Job (maxFailedIndexes 0, see RETRIES).
 # RECORDS: one new file per shard on the PVC, /mnt/proxy/rollouts/baseline-clean-eval/clean-none-s0-shard<i>of4-try<EVAL_TRY>.jsonl,
 #   never the smoke's /mnt/proxy/rollouts/baseline-check4/smoke-try1.jsonl. A retried pod finds its shard's file and rollout.py
 #   skips the keys already in it (done_keys; check_resume refuses a file written under other settings). The same EVAL_TRY on a
@@ -37,17 +37,24 @@
 #   the inner cap and the EXIT trap fire before it. Job activeDeadlineSeconds 172,800 s (48 h, from Job creation): up to 20 h of L4
 #   queue (the same selector matched two nodes on 2026-11-09, so the shards may run in two waves) + 2 x 5.33 h for two waves in the
 #   worst case + 2 x 5.33 h for two resumed pods = 41.3 h. ttlSecondsAfterFinished 86,400: save the pod logs within 24 h.
-# RETRIES: backoffLimit 6 (> 0, _standards/08 line 31; one count shared by the four indexes of an Indexed Job, so each shard can
-#   be retried about once and a node loss on one does not use up the others), restartPolicy Never. A retried pod resumes from its
-#   shard's records file. podFailurePolicy, as job-full-train.yaml: FailJob only on the exit codes this script chooses itself and for
-#   which a retry cannot help: 10 (commit not 40-hex: not rendered), 13 (model.pt sha256 differs from the pinned one, or the pin
-#   is not rendered), 15 (model.pt missing), 19 (a /src ConfigMap key differs from the hash rendered into this manifest, or an
-#   unrendered placeholder). The script reports such a code only when it chose it (variable DECLARED); a tool's own code is reported
-#   as 1, so a faulty-GPU node is retried. RETRYABLE: 16 (a setup step or the rollout cap timed out: a retry resumes and does the
-#   rest, still bounded by backoffLimit and the deadlines), 1 (Python error, a simulator worker died, "episodes raised" with an
-#   .errors.jsonl, nvidia-smi failed, restore failed), 137, node loss. Ignore (not counted toward backoffLimit) on the
-#   DisruptionTarget pod condition (drain, preemption, eviction). Limit of the mechanism: a deterministic Python SystemExit (for
-#   example check_resume refusing a mismatched records file) also exits 1 and is retried until the budget is used.
+# RETRIES: backoffLimitPerIndex 2 with maxFailedIndexes 0 (PR #48 review S2; replaces a shared backoffLimit, which the API does not
+#   allow together with backoffLimitPerIndex): each shard gets its own 2 retries (3 pods), so one bad shard cannot use up the other
+#   shards' retries; a shard that exhausts its 2 retries fails the Job (maxFailedIndexes 0) and the controller stops the rest, whose
+#   records stay on the PVC and resume on a resubmit with the same EVAL_TRY. > 0 retries as _standards/08 line 31. THE LEAD MUST
+#   RECHECK THIS FIELD PAIR IN A SERVER DRY RUN (needs Kubernetes 1.29+ beta / 1.33 GA; whether NRP accepts it, and whether it
+#   combines with podFailurePolicy, is not verified here). restartPolicy Never. A retried pod resumes from its shard's records
+#   file. podFailurePolicy, as job-full-train.yaml: FailJob only on the exit codes this script chooses itself and for which a retry
+#   cannot help: 2 (rollout.py exited 2, argparse: a bad flag), 10 (commit not 40-hex: not rendered), 13 (model.pt sha256 differs
+#   from the pinned one, or the pin is not rendered), 15 (model.pt missing), 19 (a /src ConfigMap key differs from the hash
+#   rendered into this manifest, or an unrendered placeholder). The script reports such a code only when it chose it (variable
+#   DECLARED); a tool's own code is reported as 1, so a faulty-GPU node is retried. RETRYABLE: 16 (a setup step or the rollout cap
+#   timed out: a retry resumes and does the rest, still bounded by the per-index limit and the deadlines), 1 (Python error, a
+#   simulator worker died, "episodes raised" with an .errors.jsonl, nvidia-smi failed, restore failed), 137, node loss. Ignore (not
+#   counted toward the limit) on the DisruptionTarget pod condition (drain, preemption, eviction). Limit of the mechanism: a
+#   deterministic Python SystemExit (for example check_resume refusing a mismatched records file, or a JSON decode error on a torn
+#   last record line) also exits 1 and is retried, here only twice per shard.
+# OUTCOMES IN LOGS (PR #48 review S1): the EXIT trap prints each file's === FILE header always, but the records body (which holds
+#   success fields) only when the pod exits 0, so a failed pod's log shows no test outcomes. The .errors.jsonl is printed whole.
 # /src CODE PIN: ConfigMap stacking-encoders-baseline-eval-src (11 keys; created 2026-11-16 from bee6027, LOG). A retried pod reads the
 #   ConfigMap again, so the 11 key sha256 are written into the heredoc below at render and the pod runs `sha256sum -c` before doing
 #   anything (exit 19). The last three keys (setup_env.sh, setup_sim.sh, env_bundle.sh) must also give the env bundle key
@@ -66,7 +73,7 @@
 #   (likely page cache from the env untar and the 6.7 GB model.pt read; speculative); the sha256 pass reads model.pt once more,
 #   which adds only page cache. The trap prints anon and file memory separately so a later run can be sized from a measurement.
 # GPU use (STANDARDS.md line 48): whole pod about 80% (arithmetic above). The script ends by itself; nothing in it waits or idles.
-# Exit codes: 0 done (all 500 records of the shard are in the file), 1 Python error / restore failed / nvidia-smi failed, 10 commit
+# Exit codes: 0 done (all 500 records of the shard are in the file), 1 Python error / restore failed / nvidia-smi failed, 2 rollout.py argparse error (fatal), 10 commit
 #   not 40-hex, 13 model.pt hash pin, 15 model.pt missing, 16 timeout (retryable), 19 /src hash mismatch. Table: RUN-clean-eval.md.
 apiVersion: batch/v1
 kind: Job
@@ -77,7 +84,8 @@ spec:
   completionMode: Indexed
   completions: 4
   parallelism: 4
-  backoffLimit: 6
+  backoffLimitPerIndex: 2
+  maxFailedIndexes: 0
   activeDeadlineSeconds: 172800
   ttlSecondsAfterFinished: 86400
   podFailurePolicy:
@@ -86,7 +94,7 @@ spec:
       onExitCodes:
         containerName: main
         operator: In
-        values: [10, 13, 15, 19]
+        values: [2, 10, 13, 15, 19]
     - action: Ignore
       onPodConditions:
       - type: DisruptionTarget
@@ -127,7 +135,7 @@ spec:
           phase() { echo "=== PHASE $1 $(date -u +%H:%M:%S)"; echo "#phase $1" >> $GPUCSV; }
           finish() {
             rc=$?; set +e
-            case $rc in 10|13|15|19) [ "$DECLARED" = 1 ] || { echo "[exit] code $rc came from a tool, not a decision of this script; reporting 1"; rc=1; } ;; esac
+            case $rc in 2|10|13|15|19) [ "$DECLARED" = 1 ] || { echo "[exit] code $rc came from a tool, not a decision of this script; reporting 1"; rc=1; } ;; esac
             [ -n "$SMI" ] && { kill $SMI 2>/dev/null; wait $SMI 2>/dev/null; }
             echo "#phase end" >> $GPUCSV
             awk -F', ' 'BEGIN{p="start"} /^#phase/{p=$0; sub(/^#phase /,"",p); next} {v=$2; sub(/ %/,"",v); s[p]+=v; n[p]++; S+=v; N++} END{for(k in n) printf "[gpu-summary] %s: %d samples, mean %.1f%%\n", k, n[k], s[k]/n[k]; if(N) printf "[gpu-summary] all: %d samples, mean %.1f%%\n", N, S/N}' $GPUCSV
@@ -136,7 +144,8 @@ spec:
             for f in $OUT $OUT.errors.jsonl; do
               if [ -f $f ]; then
                 echo "=== FILE $(basename $f) sha256 $(sha256sum < $f | cut -d' ' -f1) bytes $(stat -c %s $f) lines $(wc -l < $f)"
-                cat $f
+                # the records body (it holds test outcomes) is printed only on exit 0; a failed pod's log shows the header only (PR #48 review S1)
+                if [ "$f" = "$OUT.errors.jsonl" ] || [ $rc = 0 ]; then cat $f; else echo "(records body not printed: pod exit $rc; the file is on the PVC at $f)"; fi
                 echo "=== END $(basename $f)"
               fi
             done
@@ -189,6 +198,7 @@ spec:
           timeout --kill-after=60 $ROLLOUT_CAP_S python /src/rollout.py run $COMMON --envs $ENVS --out $OUT 2>&1 | sed "/using task orders/d" || rc=$?
           case $rc in
             0) ;;
+            2) echo "ABORT: rollout.py exited 2 (argparse: a bad flag, deterministic)"; fail 2 ;;
             124) echo "ABORT: the rollout pass hit its $ROLLOUT_CAP_S s cap (records so far are in the file; a retry resumes)"; exit 16 ;;
             137) if [ $(( SECONDS - T1 )) -ge $ROLLOUT_CAP_S ]; then echo "ABORT: the rollout pass hit its $ROLLOUT_CAP_S s cap (killed after the grace; a retry resumes)"; exit 16; fi; exit 137 ;;
             *) exit $rc ;;
