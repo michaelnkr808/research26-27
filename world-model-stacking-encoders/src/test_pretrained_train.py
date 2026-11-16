@@ -225,6 +225,76 @@ def main():
         print(f"7 ok: first-batch report written; overfit mode (action loss {first['loss/action']:.3f} -> "
               f"{last['loss/action']:.3f}); a non-finite loss stops (training, first-batch report, overfit) before any "
               f"step or checkpoint")
+
+        # 8. Step watchdog: not armed before the first step; fires once with exit code 17 and a log line when no step
+        #    finishes in time (a fake slow step); a normal run is unaffected and changes nothing in the saved weights.
+        import time
+        codes, logs = [], []
+        wd = T.StepWatchdog(0.4, logs.append, exit_fn=codes.append)
+        time.sleep(0.8)
+        assert codes == [], "fired before the first step finished"
+        wd.beat()
+        time.sleep(0.2)
+        assert codes == [], "fired early"
+        time.sleep(1.0)
+        wd.stop()
+        assert codes == [T.WATCHDOG_EXIT] and "[watchdog]" in logs[0], (codes, logs)
+        # first deadline: armed from construction; fires in the start-up phase if no step finishes; after the first
+        # beat the (longer) step limit applies instead
+        codes.clear(); logs.clear()
+        wd = T.StepWatchdog(30, logs.append, exit_fn=codes.append, first_s=0.4)
+        time.sleep(1.0)
+        wd.stop()
+        assert codes == [T.WATCHDOG_EXIT] and "start-up" in logs[0], (codes, logs)
+        codes.clear(); logs.clear()
+        wd = T.StepWatchdog(30, logs.append, exit_fn=codes.append, first_s=0.4)
+        time.sleep(0.2)
+        wd.beat()
+        time.sleep(0.8)
+        wd.stop()
+        assert codes == [] and logs == [], (codes, logs)
+        # R1: logging blocks forever; the process still exits (timer started before the log call)
+        codes.clear()
+        import threading
+        block = threading.Event()
+        wd = T.StepWatchdog(0.3, lambda m: block.wait(), exit_fn=codes.append, kill_after_s=0.3)
+        wd.beat()
+        time.sleep(1.5)
+        wd.stop()
+        assert codes == [T.WATCHDOG_EXIT], codes
+        block.set()
+        # R4: history.jsonl with a cut-off last line is read, the bad line skipped and counted
+        hp = d / "hist-test.jsonl"
+        hp.write_text('{"step": 0, "loss": 1.0}\n{"step": 1, "loss": 2.0}\n{"step": 2, "lo')
+        hl = []
+        got = T.read_history(hp, hl.append)
+        assert [r["step"] for r in got] == [0, 1] and "skipped 1 unparseable" in hl[0], (got, hl)
+        wd = T.StepWatchdog(0, logs.append, exit_fn=codes.append)
+        assert wd.thread is None
+        codes.clear()
+        slow, orig_step = [], T.optimizer_step
+        def slow_step(*a, **k):
+            if not slow:
+                slow.append(1)
+            elif len(slow) == 1:
+                slow.append(2)
+                time.sleep(1.5)
+            return orig_step(*a, **k)
+        orig_exit, T._watchdog_exit = T._watchdog_exit, codes.append
+        T.optimizer_step = slow_step
+        try:
+            rc, logW = run(argv(d, "W", "--max-steps", "3", "--ckpt-every", "2", "--step-watchdog-s", "0.6"))
+        finally:
+            T.optimizer_step = orig_step
+            T._watchdog_exit = orig_exit
+        assert rc == 0 and codes == [T.WATCHDOG_EXIT] and "[watchdog] fired in the training steps phase: no progress for 1 s" in logW, (codes, logW)
+        codes.clear()
+        rc, logA2 = run(argv(d, "A2", "--max-steps", "4", "--ckpt-every", "2"))
+        assert rc == 0 and codes == [] and "[watchdog]" not in logA2
+        A2 = model_pt(d, "A2")
+        assert all(torch.equal(A["model"][k], A2["model"][k]) for k in A["model"])
+        print("8 ok: the step watchdog is not armed before the first step, fires once with exit 17 and a log line on a "
+              "slow step, and a normal run is unaffected (same weights as the straight run)")
     print("all checks passed")
 
 
