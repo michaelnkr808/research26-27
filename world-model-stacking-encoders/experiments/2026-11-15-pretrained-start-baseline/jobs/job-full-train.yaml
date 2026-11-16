@@ -192,7 +192,8 @@ spec:
             echo "COMPLETE: model.pt and train.json already exist in $OUT; no training, only the model.pt sha256"
             phase model-sha
             ls -la $OUT/model.pt
-            echo "=== MODEL $(timeout --kill-after=60 900 sha256sum $OUT/model.pt)"
+            MSHA=$(timeout --kill-after=60 900 sha256sum $OUT/model.pt) || { echo "ABORT: model.pt sha256 failed or timed out (900 s)"; exit 124; }
+            echo "=== MODEL $MSHA"
             echo "=== done"
             exit 0
           fi
@@ -238,7 +239,8 @@ spec:
           timeout --kill-after=60 $TRAIN_TIMEOUT_S python /src/pretrained_train.py $COMMON --ckpt-every $CKPT_EVERY --out $OUT
           phase model-sha
           ls -la $OUT/model.pt
-          echo "=== MODEL $(timeout --kill-after=60 900 sha256sum $OUT/model.pt)"
+          MSHA=$(timeout --kill-after=60 900 sha256sum $OUT/model.pt) || { echo "ABORT: model.pt sha256 failed or timed out (900 s)"; exit 124; }
+          echo "=== MODEL $MSHA"
           echo "=== done"
         env:
         - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}
