@@ -1,8 +1,8 @@
-# NOT SUBMITTED (written 2026-11-16, Mac only; no kubectl run, no dry run). Prepared only; the lead submits it after the user's go,
+# NOT SUBMITTED (written 2026-11-16 on the Mac; the lead's server dry run of this manifest, podFailurePolicy included, passed
+#   2026-11-16). The lead submits it after the user's go,
 # following jobs/RUN-full-train.md. Fill SRC_GIT_COMMIT at submit (the render replaces only the env value line); the pod aborts
 # (exit 10) unless SRC_GIT_COMMIT is a 40-hex commit.
-# podFailurePolicy below has NOT been validated by a server: it must pass the lead's `kubectl create --dry-run=server` before the real
-#   create (it needs restartPolicy Never, set here). If the server rejects it, stop and tell the user; do not drop it silently.
+# podFailurePolicy needs restartPolicy Never (set here). Re-run `kubectl create --dry-run=server` on the rendered file.
 # IMPLEMENTS: PLAN Order of work, the full stage 1 baseline training run: config none, seed 0, all 21,696 optimizer steps (no
 #   --max-steps), micro-batch 8, --out /mnt/proxy/runs/baseline-none-s0 on the PVC. Same flags as jobs/job-check4-train.yaml
 #   (which passed on an L40S, LOG 2026-11-16) except: no --max-steps, --ckpt-every chosen in the pod from the card, fixed out folder.
@@ -28,10 +28,16 @@
 #   only replaced by the rename, so it is always a complete earlier checkpoint.
 # RETRIES: backoffLimit 2 (_standards/08 line 31: > 0 so a Job survives node reboots), restartPolicy Never. podFailurePolicy:
 #   FailJob on exit codes 2 (non-finite loss, train.json holds "stopped"), 10 (commit not 40-hex), 13 (Wan sha256 mismatch),
-#   14 (PVC space guard), 15 (unknown card), 124 (a step hit its `timeout`; for the training step that means 62 h were used, and
-#   a retry would only repeat it; a pip hang also lands here and is a resubmit by the lead): deterministic, retrying cannot help.
+#   14 (PVC space guard), 15 (nvidia-smi worked but the card is unknown), 18 (the TRAINING step hit its 62 h timeout: 124, or 137 after
+#   the kill grace; a retry would only repeat it), 19 (a /src ConfigMap key differs from the hash written into this manifest at
+#   render, PR #47 review B1): deterministic, retrying cannot help. The script reports a code from that list only when it chose it
+#   (variable DECLARED); a tool's own code (nvidia-smi returns 2, 10, 14, 15 for GPU faults; ls returns 2) is reported as 1, so a
+#   faulty-GPU node is retried (PR #47 review S2). RETRYABLE own codes: 16 (setup timeout: pip 1800 s, a staging dd 900 s, the
+#   sha256 checks, the model.pt sha256), 17 (step watchdog in pretrained_train.py: no optimizer step finished in 30 min, default
+#   --step-watchdog-s 1800; steps take about 4-5 s and checkpoint writes about 21 s; armed after the first step, so a retried pod's
+#   20 GB checkpoint load is not covered; PR #47 review S1; the resume costs at most one checkpoint interval).
 #   Ignore (does not count toward backoffLimit) on the DisruptionTarget pod condition (node drain, preemption, eviction).
-#   Everything else (exit 1 Python errors including a CUDA OOM, 12 staging failed, 137 OOMKilled, node loss) counts toward the 2
+#   Everything else (exit 1 Python errors including a CUDA OOM, 12 staging failed, 16, 17, 137 OOMKilled, node loss) counts toward the 2
 #   retries. The Job deadline still caps an endless disruption loop.
 # TIME ARITHMETIC (every input has a source):
 #   Projection, from LOG 2026-11-16 check-4 train entry: L40S 87,175 s compute + 30 writes x 21.5 s = 24.4 h; L40 5.036 s/step
@@ -71,9 +77,12 @@
 #   train.json and history.jsonl (about 7 MB and 13 MB for the full run); the full files are on the PVC in $OUT.
 # Wan staging, sha256 checks, ConfigMap key sha print, GPU sampler, exit trap, ConfigMap stacking-encoders-baseline-src (unchanged),
 #   image, PVC, env: as job-check4-train.yaml.
-# Exit codes: 0 done, 1 pip failed / Python error (CUDA OOM, a failed torch.save, run_identity mismatch), 2 non-finite loss, 10
-#   commit not 40-hex, 12 staging failed, 13 sha256 mismatch, 14 PVC space, 15 unknown card, 124 a step hit its `timeout` (pip 1800 s,
-#   each staging dd 900 s, sha256 600 s, training 223,200 s, model sha 900 s). Table with actions: RUN-full-train.md.
+# Exit codes: 0 done, 1 pip failed / Python error (CUDA OOM, a failed torch.save, run_identity mismatch) / nvidia-smi failed, 2
+#   non-finite loss, 10 commit not 40-hex, 12 staging failed, 13 Wan sha256 mismatch, 14 PVC space, 15 unknown card, 16 setup timeout
+#   (retryable), 17 step watchdog (retryable), 18 training timeout, 19 /src hash mismatch. Table with actions: RUN-full-train.md.
+# /src CODE PIN (B1): a ConfigMap is read when each pod starts, and a retried pod resumes ckpt.pt, so a changed ConfigMap would mix code
+#   versions inside one run (run_identity has no code). The 7 expected sha256 are written into the heredoc below at render (placeholder words
+#   in front of each file name), and the pod runs `sha256sum -c` on /src before touching anything (exit 19 on mismatch or an unrendered placeholder).
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -89,7 +98,7 @@ spec:
       onExitCodes:
         containerName: main
         operator: In
-        values: [2, 10, 13, 14, 15, 124]
+        values: [2, 10, 13, 14, 15, 18, 19]
     - action: Ignore
       onPodConditions:
       - type: DisruptionTarget
@@ -116,7 +125,8 @@ spec:
         args:
         - |
           set -euo pipefail
-          SMI=""; OWN=0
+          SMI=""; OWN=0; DECLARED=0
+          fail() { DECLARED=1; exit $1; }
           R=/mnt/proxy; TAG=baseline-none-s0; D=$(date +%Y%m%d-%H%M%S)
           OUT=$R/runs/$TAG
           WSRC=$R/models/Wan-AI/Wan2.2-TI2V-5B; WAN=/work/wan/Wan2.2-TI2V-5B
@@ -128,12 +138,23 @@ spec:
           TEE=$!
           echo "=== BASELINE FULL TRAINING: config none seed 0, 21,696 steps, out $OUT (on the PVC); full log on the PVC: $LOG"; date -u
           echo "SRC_GIT_COMMIT=$SRC_GIT_COMMIT MICRO_BATCH=$MICRO_BATCH TRAIN_TIMEOUT_S=$TRAIN_TIMEOUT_S"
-          [[ "$SRC_GIT_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "ABORT: SRC_GIT_COMMIT is not a 40-hex commit (not filled at submit?)"; exit 10; }
-          CARD=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -1)
+          [[ "$SRC_GIT_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "ABORT: SRC_GIT_COMMIT is not a 40-hex commit (not filled at submit?)"; fail 10; }
+          echo "/src = ConfigMap stacking-encoders-baseline-src; checking its 7 keys against the hashes rendered into this manifest (RUN-full-train.md step 4):"
+          ( cd /src && sha256sum -c - <<'EOF'
+          FILL_SHA_pretrained_train.py  pretrained_train.py
+          FILL_SHA_pretrained_sizing.py  pretrained_sizing.py
+          FILL_SHA_action_expert_init.py  action_expert_init.py
+          FILL_SHA_proxy_wam.py  proxy_wam.py
+          FILL_SHA_diagnostics.py  diagnostics.py
+          FILL_SHA_t5_cache.py  t5_cache.py
+          FILL_SHA_setup_env.sh  setup_env.sh
+          EOF
+          ) || { echo "ABORT: a /src key differs from the hash rendered at submit (the ConfigMap changed after the render, or the render did not run)"; fail 19; }
+          CARD=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -1) || { echo "ABORT: nvidia-smi failed (a faulty GPU node; retryable)"; exit 1; }
           case "$CARD" in
             *L40S*) CKPT_EVERY=700 ;;
             *L40*)  CKPT_EVERY=500 ;;
-            *) echo "ABORT: card '$CARD' is not an L40 or L40S, no checkpoint interval is set for it"; exit 15 ;;
+            *) echo "ABORT: card '$CARD' is not an L40 or L40S, no checkpoint interval is set for it"; fail 15 ;;
           esac
           echo "CARD $CARD -> --ckpt-every $CKPT_EVERY (PLAN rule: nearest 100 steps to 45 min of measured step time)"
           MODE=fresh
@@ -152,13 +173,14 @@ spec:
           AV=$(df -BG --output=avail $R | tail -1 | tr -dc 0-9)
           case $MODE in fresh) NEED=70;; resume) NEED=40;; *) NEED=5;; esac
           echo "PVC free: ${AV} GiB (need $NEED for mode $MODE)"
-          [ "$AV" -ge "$NEED" ] || { echo "ABORT: PVC has ${AV} GiB free, under the $NEED GiB this mode needs"; exit 14; }
+          [ "$AV" -ge "$NEED" ] || { echo "ABORT: PVC has ${AV} GiB free, under the $NEED GiB this mode needs"; fail 14; }
           mkdir -p $OUT /work/wan $WAN
           OWN=1
           : > $GPUCSV
           phase() { echo "=== PHASE $1 $(date -u +%H:%M:%S)"; echo "#phase $1" >> $GPUCSV; }
           finish() {
             rc=$?; set +e
+            case $rc in 2|10|13|14|15|18|19) [ "$DECLARED" = 1 ] || { echo "[exit] code $rc came from a tool, not a decision of this script; reporting 1"; rc=1; } ;; esac
             [ -n "$SMI" ] && { kill $SMI 2>/dev/null; wait $SMI 2>/dev/null; }
             echo "#phase end" >> $GPUCSV
             awk -F', ' 'BEGIN{p="start"} /^#phase/{p=$0; sub(/^#phase /,"",p); next} {v=$2; sub(/ %/,"",v); s[p]+=v; n[p]++; S+=v; N++} END{for(k in n) printf "[gpu-summary] %s: %d samples, mean %.1f%%\n", k, n[k], s[k]/n[k]; if(N) printf "[gpu-summary] all: %d samples, mean %.1f%%\n", N, S/N}' $GPUCSV
@@ -187,23 +209,22 @@ spec:
             exit $rc
           }
           trap finish EXIT
-          nvidia-smi; nproc; df -h $R /work
+          nvidia-smi || { echo "ABORT: nvidia-smi failed (a faulty GPU node; retryable)"; exit 1; }
+          nproc; df -h $R /work
           if [ $MODE = complete ]; then
             echo "COMPLETE: model.pt and train.json already exist in $OUT; no training, only the model.pt sha256"
             phase model-sha
             ls -la $OUT/model.pt
-            MSHA=$(timeout --kill-after=60 900 sha256sum $OUT/model.pt) || { echo "ABORT: model.pt sha256 failed or timed out (900 s)"; exit 124; }
+            MSHA=$(timeout --kill-after=60 900 sha256sum $OUT/model.pt) || { echo "ABORT: model.pt sha256 failed or timed out (900 s)"; exit 16; }
             echo "=== MODEL $MSHA"
             echo "=== done"
             exit 0
           fi
-          echo "/src = ConfigMap stacking-encoders-baseline-src; sha256 of its keys (must equal the commit's, RUN-full-train.md step 3):"
-          sha256sum /src/pretrained_train.py /src/pretrained_sizing.py /src/action_expert_init.py /src/proxy_wam.py /src/diagnostics.py /src/t5_cache.py /src/setup_env.sh
           phase setup
           nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv,noheader -l 30 > >(tee -a $GPUCSV | sed -u 's/^/[gpu] /') &
           SMI=$!
           rc=0; timeout --kill-after=60 1800 bash /src/setup_env.sh > /work/pip-env.log 2>&1 || rc=$?
-          [ $rc = 0 ] || { tail -50 /work/pip-env.log; [ $rc = 124 ] && echo "ABORT: pip setup timed out (1800 s)"; [ $rc = 124 ] && exit 124; exit 1; }
+          [ $rc = 0 ] || { tail -50 /work/pip-env.log; [ $rc = 124 ] && echo "ABORT: pip setup timed out (1800 s)"; [ $rc = 124 ] && exit 16; exit 1; }
           cp /work/pip-env.log $R/logs/pip-env-$TAG-$D.log
           phase stage-wan
           stage() {
@@ -215,7 +236,7 @@ spec:
               pids="$pids $!"
             done
             for i in $pids; do
-              wait $i || { rc=$?; echo "ABORT: a dd of $f failed (rc $rc; 124 = timed out after 900 s)"; [ $rc = 124 ] && exit 124; exit 12; }
+              wait $i || { rc=$?; echo "ABORT: a dd of $f failed (rc $rc; 124 = timed out after 900 s)"; [ $rc = 124 ] && exit 16; exit 12; }
             done
             [ "$(stat -c %s "$WAN/$f")" = "$n" ] || { echo "ABORT: staged $f is $(stat -c %s "$WAN/$f") bytes, source $n"; exit 12; }
             echo "staged $f $n bytes"
@@ -231,15 +252,23 @@ spec:
           bfa2337f1163e195d24151a72298daf34a620543898109be47e414c8daa5b3fe  diffusion_pytorch_model.safetensors.index.json
           d1fea36899d00c2501b836c13ad65af56e2f9529ba622e50886d3f5c3e6c02bc  config.json
           EOF
-          ) || { echo "ABORT: staged Wan files do not match the sha256 in the download log (or the check timed out after 600 s)"; exit 13; }
+          ) || { rc=$?; [ $rc = 124 ] && { echo "ABORT: the Wan sha256 check timed out (600 s)"; exit 16; }; echo "ABORT: staged Wan files do not match the sha256 in the download log"; fail 13; }
           echo "staging + sha256 took $(( $(date +%s) - T0 )) s"
           COMMON="--feats $R/feats --suites libero_spatial,libero_object,libero_goal,libero_10 --t5 $R/feats/t5 --config none --seed 0 --wan-dir $WAN --micro-batch $MICRO_BATCH"
           phase train
           echo "FLAGS: python /src/pretrained_train.py $COMMON --ckpt-every $CKPT_EVERY --out $OUT   (mode $MODE; look for 'resuming from' in the log)"
-          timeout --kill-after=60 $TRAIN_TIMEOUT_S python /src/pretrained_train.py $COMMON --ckpt-every $CKPT_EVERY --out $OUT
+          T1=$SECONDS; rc=0
+          timeout --kill-after=60 $TRAIN_TIMEOUT_S python /src/pretrained_train.py $COMMON --ckpt-every $CKPT_EVERY --out $OUT || rc=$?
+          case $rc in
+            0) ;;
+            2) fail 2 ;;
+            124) echo "ABORT: the training step hit its $TRAIN_TIMEOUT_S s timeout"; fail 18 ;;
+            137) if [ $(( SECONDS - T1 )) -ge $TRAIN_TIMEOUT_S ]; then echo "ABORT: the training step hit its $TRAIN_TIMEOUT_S s timeout (killed after the grace)"; fail 18; fi; exit 137 ;;
+            *) exit $rc ;;
+          esac
           phase model-sha
           ls -la $OUT/model.pt
-          MSHA=$(timeout --kill-after=60 900 sha256sum $OUT/model.pt) || { echo "ABORT: model.pt sha256 failed or timed out (900 s)"; exit 124; }
+          MSHA=$(timeout --kill-after=60 900 sha256sum $OUT/model.pt) || { echo "ABORT: model.pt sha256 failed or timed out (900 s)"; exit 16; }
           echo "=== MODEL $MSHA"
           echo "=== done"
         env:
