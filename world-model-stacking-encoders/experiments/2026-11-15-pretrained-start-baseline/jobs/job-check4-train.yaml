@@ -1,0 +1,232 @@
+# NOT SUBMITTED (written 2026-11-15, Mac only; no kubectl run, no dry run). Prepared only; the lead submits it after the user's go
+# in the lead's window, following jobs/RUN-check4.md. Fill SRC_GIT_COMMIT at submit (RUN-check4.md step 5: the render replaces only
+# the env value line); the pod aborts (exit 10) unless SRC_GIT_COMMIT is a 40-hex commit (no placeholder text in the guard, as
+# job-sanity.yaml, PR #40 review item 1).
+# IMPLEMENTS: PLAN "Sanity checks before the full run" item 4, first half: "a short training run (the same script and settings, a few
+#   hundred optimizer steps, its own --out)". Config none, seed 0, micro-batch 8, same flags as job-sanity.yaml's COMMON. The
+#   second half (the timing-only smoke of 40 clean rollouts on L4) is jobs/job-check4-smoke.yaml, submitted only after this Job
+#   succeeds. Design is already locked (the sanity Job ran 2026-11-16); nothing here changes the PLAN.
+# What it runs: python /src/pretrained_train.py ... --max-steps $MAX_STEPS (300) --ckpt-every $CKPT_EVERY (100) --out
+#   /mnt/proxy/runs/baseline-check4-none-s0-try$TRY, ON THE PVC (checkpoint writes to CephFS are what is being timed, PLAN
+#   "Checkpointing and resume": "Where: --out ... lives on the shared PVC", and the PR #39 review note in LOG: "run sanity check
+#   4 with a small --ckpt-every to time a real CephFS checkpoint write before the time limit is set"). --max-steps N runs the first
+#   N steps of the real 21,696-step plan, LR schedule over the full plan (LOG 2026-11-15 PR #39 "Worker choices"); the LR is
+#   still in warmup at step 300, so model.pt is close to the pretrained start; that is fine for the timing-only smoke.
+# CHECKPOINT WRITE COUNT (lead: look at this): pretrained_train.py writes at step s+1 only when (s+1) % ckpt_every == 0 AND
+#   s+1 < stop (src/pretrained_train.py line 324). With 300 steps and 100 that is TWO writes (steps 100 and 200); step 300 is
+#   the end of the run and writes model.pt instead. THREE writes need CKPT_EVERY 75 (writes at 75, 150, 225) or MAX_STEPS 301+
+#   with 100. Defaults here are the lead's (300 and 100); both are env values (CKPT_EVERY, MAX_STEPS) so the render can change
+#   them with no edit of the script. The deadline arithmetic below allows three writes either way. The second write is the
+#   interesting one: it renames ckpt.pt.tmp over an existing ckpt.pt (what a resume-capable run does), and the PVC holds both
+#   (2 x about 20 GB) while it runs.
+# Outputs on the PVC (all under /mnt/proxy/runs/baseline-check4-none-s0-try$TRY): ckpt.pt (about 20 GB, PLAN arithmetic: 1.68 B
+#   params x 12 bytes), model.pt (about 6.7 GB, PLAN; 6.26 GiB fp32 params by sanity's header arithmetic), config.json, load.json,
+#   train.json, history.jsonl. At exit the EXIT trap prints the four small files into the pod log between "=== FILE <name> sha256
+#   <hex> bytes <n>" and "=== END <name>" (as job-sanity.yaml, RUN-sanity.md step 10) and the sha256 of model.pt ("=== MODEL").
+#   ckpt.pt and model.pt are NEVER deleted by this Job and stay on the PVC until the user OKs deleting them (PLAN: "deleting it
+#   needs the user's OK"; _standards/05 gates). Guard: abort (exit 11) if the out folder exists, so a retry needs a new TRY.
+#   Guard: abort (exit 14) if the PVC has under 60 GiB free: the peak is ckpt.pt + ckpt.pt.tmp (2 x about 20 GB) = about 40 GB,
+#   then ckpt.pt + model.pt.tmp (about 27 GB); 60 GiB = 1.5 x the peak. (PVC showed 216G free at the sanity Job's start,
+#   results/sanity/stacking-encoders-baseline-sanity-cj4h7.log line 26.)
+# Wan staging, GPU sampler, 40% rule, fail-fast, exit codes: copied from job-sanity.yaml (same ConfigMap stacking-encoders-baseline-src,
+#   same 7 keys: pretrained_train.py imports action_expert_init, pretrained_sizing, proxy_wam, diagnostics; proxy_wam imports
+#   t5_cache). Sanity measured: setup (pip) 33 s, staging + sha256 91 s, data index and model build about 50 s to the first
+#   step (results/sanity log: phases 02:53:38, 02:54:11, 02:55:42; "[train 50s] 1712 episodes"; "[train 53s] [load] ...").
+#   Differences from job-sanity.yaml: --out on the PVC, one phase (no first-batch report, no overfit), --max-steps and
+#   --ckpt-every flags, a PVC free-space guard, memory sizing for the checkpoint writes, a per-30-s GPU sampler (the pod is
+#   longer), the model.pt sha256, the cgroup memory peak printed at exit, deadlines.
+# GPU use (STANDARDS.md line 48, the 40% rule): training itself ran 95 to 100% (sanity LOG: "while training 95 to 100%";
+#   overfit phase mean 82.3%). The idle parts are setup and staging (about 2 min, measured) and the checkpoint writes and the
+#   final model.pt write and sha256 (unmeasured; the GPU idles while torch.save writes). If every write ran at 30 MB/s (a
+#   speculative worst case: the sanity header cites about 30 MB/s for ONE CephFS reader, direction LOG 2026-11-01 (g)), the pod
+#   would be about 73 min with about 1,512 s of GPU use, a whole-pod mean near 35%. NRP's portal skips pods younger than 30 min
+#   and its warning/admin paths need 180 min of runtime (_standards/08), and the pod deadline below is 150 min, so this pod is
+#   not on those paths; the mean is logged ("[gpu-summary]") either way. The 15-minute check is RUN-check4.md step 9.
+# Fail fast: backoffLimit 0. Exit codes: 2 non-finite loss/grad norm (pretrained_train.py), 1 pip setup failed or a Python
+#   error (a CUDA out-of-memory is one), 10 commit not 40-hex, 11 out folder exists, 12 staging failed, 13 sha256 mismatch,
+#   14 PVC free space under 60 GiB, 124 a step hit its `timeout`. Table with actions: RUN-check4.md.
+# TIME ARITHMETIC (every input has a source; the deadlines below are derived from it):
+#   setup (pip)                          60 s    measured 33 s in the sanity pod, rounded up
+#   Wan staging + sha256                 120 s   measured 91 s, rounded up
+#   data index, model build, first step  60 s    measured about 50-53 s (sanity log "[train 50s]", "[train 53s]")
+#   300 steps x 5.04 s                  1,512 s  5.036 s/step projection, steps 2-20 on the L40 (LOG 2026-11-16 "Measured for the
+#                                                full run"; the L40S is faster, 3.907 s, sizing LOG line 41; the GPU list has both,
+#                                                so the L40 is the planning number)
+#   3 checkpoint writes x 700 s         2,100 s  ALLOWANCE, not a measurement: 20 GB / 30 MB/s = 667 s each (the one-reader CephFS
+#                                                rate above; a write may be slower or faster; this Job measures it)
+#   model.pt write (6.7 GB) 250 s, model.pt sha256 read-back 250 s: allowance at the same 30 MB/s (6.7 GB / 30 MB/s = 223 s)
+#   copy/print small files, exit        60 s
+#   TOTAL (worst-case allowance)        4,412 s = 73.5 min. Expected if writes run at 100 MB/s: about 2,300 s = 38 min (speculative).
+# Deadlines (from the TOTAL): pod-level activeDeadlineSeconds 9000 s = 2 x 4,412 s rounded up, = 150 min, under the 180-minute
+#   runtime of NRP's idle-warning and admin-list paths (_standards/08); counts from pod start; when it fires the EXIT trap may not
+#   run (the PVC log keeps what was written). Job-level 81000 s = 2 x 4,412 s (2.45 h) + 20 h of queue = 22.45 h, rounded to 22.5 h
+#   (the template's rule 2 x run + 20 h, job-sanity.yaml header; L40/L40S queued 72 min for the sanity Job). ttl 24 h: save the
+#   pod log within 24 h. Inner `timeout`s end a hung step early (exit 124, trap runs): pip 1800 s, each staging dd 900 s, sha256
+#   600 s, training 4800 s (= 60 + 1,512 + 2,100 + 250 = 3,922 s x 1.2, rounded), model.pt sha256 900 s, small-file copy 300 s.
+#   They sum above 9000 s; the pod deadline is the outer cap.
+# Sizing (each number's source; requests and limits within 20%):
+#   GPU 1 on L40 or L40S by gpu.product, driver > 569, us-west, the two host exclusions: all as job-sanity.yaml (same card
+#   list; A40/A6000 named resources NOT approved). Micro-batch 8: measured peak 35.83 GiB on the L40, under 0.9 x 44.99 GiB
+#   = 40.49 GiB (LOG 2026-11-16, verified; PLAN micro-batch rule).
+#   CPU 4 / 4800m: as job-sanity.yaml (the sanity pod ran on it: 32 reader threads, data wait about 0 s over 20 steps; not
+#   measured over 300 steps).
+#   Memory 24Gi / 28Gi (1.17x). The sanity pod ran on 16Gi / 19Gi and finished (exit 0), but it wrote no checkpoint to CephFS
+#   (its model.pt went to local disk, 5 s) and its peak host memory was not logged (not verified). New here: torch.save of
+#   the model and AdamW state to CephFS, about 20 GB of dirty page cache counted in the cgroup (reclaimable, but a stalled
+#   write holds it) on top of the sanity working set (estimated 4 to 6 GiB, job-sanity.yaml header, speculative). 24Gi is a
+#   judgment call (speculative), above NRP's 20% floor at any plausible use (4.8 GiB); the pod prints memory.peak at exit
+#   so the full-run Job is sized from a measurement. Not a resume (the guard refuses an existing out folder), so no 20 GB
+#   torch.load into host RAM here (PR #39 review note; the full-run resume path is a separate question).
+#   Ephemeral 38Gi / 44Gi, /work sizeLimit 24Gi: as job-sanity.yaml minus model.pt (the Wan files 9.32 GiB + pip env); unchanged
+#   because they held there and the need here is smaller.
+#   /dev/shm 2Gi (template; the loader uses threads).
+# Copied from job-sanity.yaml (itself from experiments/2026-10-27-proxy-calibration/jobs/job-train-retrain-dinov3-l16-48gb.yaml):
+#   image, setup_env.sh from the ConfigMap at /src, PVC, feats and T5 paths (/mnt/proxy/feats, /mnt/proxy/feats/t5: data/README.md
+#   section 4b, lines 65-79), env (OMP_NUM_THREADS 3, MALLOC_ARENA_MAX 2, HF_HOME, PYTHONPATH), the log naming. Nothing waits idle
+#   on purpose; no sleep; no tolerations.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-baseline-check4-train
+  namespace: aria-world
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 81000
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      activeDeadlineSeconds: 9000
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-L40, NVIDIA-L40S]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net, ry-gpu-08.sdsc.optiputer.net]}  # GPU faults, 2026-11-03
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          SMI=""; OWN=0
+          R=/mnt/proxy; TAG=baseline-check4-none-s0-try$TRY; D=$(date +%Y%m%d-%H%M%S)
+          OUT=$R/runs/$TAG
+          WSRC=$R/models/Wan-AI/Wan2.2-TI2V-5B; WAN=/work/wan/Wan2.2-TI2V-5B
+          LOG=$R/logs/$TAG-$D.log; GPUCSV=$R/logs/$TAG-gpu-$D.csv
+          SMALL="config.json load.json train.json history.jsonl"
+          mkdir -p $R/logs $R/runs
+          exec > >(tee -a $LOG) 2>&1
+          TEE=$!
+          echo "=== BASELINE SANITY CHECK 4, TRAINING HALF: config none seed 0, out $OUT (on the PVC)"; date -u
+          echo "SRC_GIT_COMMIT=$SRC_GIT_COMMIT TRY=$TRY MAX_STEPS=$MAX_STEPS CKPT_EVERY=$CKPT_EVERY MICRO_BATCH=$MICRO_BATCH"
+          [[ "$SRC_GIT_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "ABORT: SRC_GIT_COMMIT is not a 40-hex commit (not filled at submit?)"; exit 10; }
+          if [ -e $OUT ]; then echo "ABORT: $OUT exists (an earlier attempt's files; set TRY to a new value)"; exit 11; fi
+          AV=$(df -BG --output=avail $R | tail -1 | tr -dc 0-9)
+          echo "PVC free: ${AV} GiB (need 60)"
+          [ "$AV" -ge 60 ] || { echo "ABORT: PVC has ${AV} GiB free, under the 60 GiB the checkpoint writes need"; exit 14; }
+          mkdir -p $OUT /work/wan $WAN
+          OWN=1
+          phase() { echo "=== PHASE $1 $(date -u +%H:%M:%S)"; echo "#phase $1" >> $GPUCSV; }
+          finish() {
+            rc=$?; set +e
+            [ -n "$SMI" ] && { kill $SMI 2>/dev/null; wait $SMI 2>/dev/null; }
+            echo "#phase end" >> $GPUCSV
+            awk -F', ' 'BEGIN{p="start"} /^#phase/{p=$0; sub(/^#phase /,"",p); next} {v=$2; sub(/ %/,"",v); s[p]+=v; n[p]++; S+=v; N++} END{for(k in n) printf "[gpu-summary] %s: %d samples, mean %.1f%%\n", k, n[k], s[k]/n[k]; if(N) printf "[gpu-summary] all: %d samples, mean %.1f%%\n", N, S/N}' $GPUCSV
+            echo "[cgroup] memory.peak $(cat /sys/fs/cgroup/memory.peak 2>/dev/null || echo n/a) bytes, memory.current $(cat /sys/fs/cgroup/memory.current 2>/dev/null || echo n/a) bytes"
+            if [ "$OWN" = 1 ]; then
+              for f in $SMALL; do
+                if [ -f $OUT/$f ]; then
+                  echo "=== FILE $f sha256 $(sha256sum < $OUT/$f | cut -d' ' -f1) bytes $(stat -c %s $OUT/$f)"
+                  cat $OUT/$f; echo
+                  echo "=== END $f"
+                fi
+              done
+              ls -la $OUT
+              df -h $R
+            fi
+            date -u; echo "=== exit $rc"
+            exec 1>&- 2>&-; wait $TEE 2>/dev/null
+            exit $rc
+          }
+          trap finish EXIT
+          nvidia-smi; nproc; df -h $R /work
+          echo "/src = ConfigMap stacking-encoders-baseline-src; sha256 of its keys (must equal the commit's, RUN-check4.md step 3):"
+          sha256sum /src/pretrained_train.py /src/pretrained_sizing.py /src/action_expert_init.py /src/proxy_wam.py /src/diagnostics.py /src/t5_cache.py /src/setup_env.sh
+          : > $GPUCSV
+          phase setup
+          nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv,noheader -l 30 > >(tee -a $GPUCSV | sed -u 's/^/[gpu] /') &
+          SMI=$!
+          rc=0; timeout --kill-after=60 1800 bash /src/setup_env.sh > /work/pip-env.log 2>&1 || rc=$?
+          [ $rc = 0 ] || { tail -50 /work/pip-env.log; [ $rc = 124 ] && echo "ABORT: pip setup timed out (1800 s)"; [ $rc = 124 ] && exit 124; exit 1; }
+          cp /work/pip-env.log $R/logs/pip-env-$TAG.log
+          phase stage-wan
+          stage() {
+            local f=$1 n mib per i pids=""
+            n=$(stat -c %s "$WSRC/$f"); mib=$(( (n + 1048575) / 1048576 )); per=$(( (mib + 15) / 16 ))
+            : > "$WAN/$f"
+            for i in $(seq 0 15); do
+              timeout --kill-after=30 900 dd if="$WSRC/$f" of="$WAN/$f" bs=1M skip=$((i * per)) seek=$((i * per)) count=$per conv=notrunc status=none &
+              pids="$pids $!"
+            done
+            for i in $pids; do
+              wait $i || { rc=$?; echo "ABORT: a dd of $f failed (rc $rc; 124 = timed out after 900 s)"; [ $rc = 124 ] && exit 124; exit 12; }
+            done
+            [ "$(stat -c %s "$WAN/$f")" = "$n" ] || { echo "ABORT: staged $f is $(stat -c %s "$WAN/$f") bytes, source $n"; exit 12; }
+            echo "staged $f $n bytes"
+          }
+          T0=$(date +%s)
+          stage diffusion_pytorch_model-00001-of-00003.safetensors
+          stage diffusion_pytorch_model-00003-of-00003.safetensors
+          cp $WSRC/diffusion_pytorch_model.safetensors.index.json $WSRC/config.json $WAN/ || { echo "ABORT: copy of the Wan index/config failed"; exit 12; }
+          echo "staging took $(( $(date +%s) - T0 )) s"
+          ( cd $WAN && timeout 600 sha256sum -c - <<'EOF'
+          720b06c4ade5e87c1246bba8ac95b664c638749cd9b102cf84d823bb44c026a1  diffusion_pytorch_model-00001-of-00003.safetensors
+          6306f7894c345de9093ad588771c2abfaeb668a81f7a6d9a918bd26ba3568e49  diffusion_pytorch_model-00003-of-00003.safetensors
+          bfa2337f1163e195d24151a72298daf34a620543898109be47e414c8daa5b3fe  diffusion_pytorch_model.safetensors.index.json
+          d1fea36899d00c2501b836c13ad65af56e2f9529ba622e50886d3f5c3e6c02bc  config.json
+          EOF
+          ) || { echo "ABORT: staged Wan files do not match the sha256 in the download log (or the check timed out after 600 s)"; exit 13; }
+          echo "staging + sha256 took $(( $(date +%s) - T0 )) s"
+          COMMON="--feats $R/feats --suites libero_spatial,libero_object,libero_goal,libero_10 --t5 $R/feats/t5 --config none --seed 0 --wan-dir $WAN --micro-batch $MICRO_BATCH"
+          phase train
+          echo "FLAGS: python /src/pretrained_train.py $COMMON --max-steps $MAX_STEPS --ckpt-every $CKPT_EVERY --out $OUT"
+          timeout --kill-after=60 4800 python /src/pretrained_train.py $COMMON --max-steps $MAX_STEPS --ckpt-every $CKPT_EVERY --out $OUT
+          phase model-sha
+          ls -la $OUT/model.pt
+          echo "=== MODEL $(timeout --kill-after=60 900 sha256sum $OUT/model.pt)"
+          echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}
+        - {name: TRY, value: "1"}
+        - {name: MAX_STEPS, value: "300"}      # lead's spec: 300 optimizer steps (gives TWO checkpoint writes with CKPT_EVERY 100, see header)
+        - {name: CKPT_EVERY, value: "100"}     # lead's spec; 75 would give three writes at 75, 150, 225
+        - {name: MICRO_BATCH, value: "8"}      # measured fit on the L40 (LOG 2026-11-16); 4 only after a CUDA OOM and the user's OK
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: /src}
+        - {name: OMP_NUM_THREADS, value: "3"}
+        - {name: MALLOC_ARENA_MAX, value: "2"}
+        resources:                    # limits <= 1.2x requests; sources in the header
+          requests: {cpu: "4", memory: 24Gi, nvidia.com/gpu: "1", ephemeral-storage: 38Gi}
+          limits:   {cpu: "4800m", memory: 28Gi, nvidia.com/gpu: "1", ephemeral-storage: 44Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 24Gi}
+      - name: src
+        configMap: {name: stacking-encoders-baseline-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 2Gi}
