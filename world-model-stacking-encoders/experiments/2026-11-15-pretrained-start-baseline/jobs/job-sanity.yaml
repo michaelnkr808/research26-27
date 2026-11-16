@@ -1,22 +1,30 @@
 # NOT SUBMITTED (written 2026-11-15, Mac only; no kubectl run, no dry run). The user approved preparing this Job only; the lead
-# submits it after the user has seen it, following jobs/RUN-sanity.md. Fill SRC_GIT_COMMIT at submit (RUN-sanity.md step 4); the pod
-# aborts (exit 10) if the placeholder is left in. Submitting it starts the experiment, so the PLAN design locks (PLAN header and
-# Order of work step 3).
+# submits it after the user has seen it, following jobs/RUN-sanity.md. Fill SRC_GIT_COMMIT at submit (RUN-sanity.md step 4: the
+# render replaces only the env value line); the pod aborts (exit 10) unless SRC_GIT_COMMIT is a 40-hex commit, so an unfilled
+# placeholder aborts and a filled one passes (the guard holds no placeholder text for the render to rewrite; PR #40 review item 1).
+# Submitting it starts the experiment, so the PLAN design locks (PLAN header and Order of work step 3).
 # IMPLEMENTS: PLAN "Order of work" step 3 = "Sanity checks before the full run" 1-3, on one GPU, config none, seed 0:
 #   phase first-batch: src/pretrained_train.py --first-batch-report on the full data's first batch (all 128 windows of plan step
 #     0, step-0 draws): checks 2 (loss at start, model vs predict-zero; non-finite stops with exit 2) and 3 (input shapes,
-#     ranges, padding counts, task strings) -> <out>/first-batch/first-batch.json. pretrained_train.py has no report-only mode:
+#     ranges, padding counts, task strings) -> first-batch/first-batch.json. pretrained_train.py has no report-only mode:
 #     after the report it trains, so --max-steps 20 (lead's decision 2026-11-15) runs the first 20 optimizer steps of the real
 #     run (128 windows each, m=8 x 16, the full run's LR schedule and draws; no test tasks). They give this card's step time,
 #     peak_reserved_bytes per step (history.jsonl; the PLAN's micro-batch rule) and the "[projection] after 20 steps" log line
 #     (pretrained_train.py PROJECT_AFTER = 20). At the end it writes model.pt (about 6.7 GB, PLAN arithmetic), train.json and
-#     history.jsonl there (no ckpt.pt: with --ckpt-every 700 none falls before step 20). model.pt stays on the PVC until the
-#     user OKs deleting it (RUN-sanity.md step 13).
+#     history.jsonl (no ckpt.pt: with --ckpt-every 700 none falls before step 20).
 #   phase overfit: --overfit-steps 300 --overfit-batch 8 --overfit-lr 1e-4: sanity check 1, the first 8 windows of plan step 0,
-#     the draws of step 0 every step, constant LR (paper's peak 1e-4), m=8 (one micro-batch per step) -> <out>/overfit/overfit.json
+#     the draws of step 0 every step, constant LR (paper's peak 1e-4), m=8 (one micro-batch per step) -> overfit/overfit.json
 #     (first-20 and last-20 step means of each loss term, predict-zero on the same batch and draws, full history). 300 = "a few
 #     hundred" (PLAN), above the proxy check 9's 200 so the 20-step means are the same k as there (pretrained_train.py overfit():
 #     k = min(20, steps // 10)). Pass mark: RUN-sanity.md "Pass and fail"; the lead records it in the experiment LOG first.
+# Outputs (PR #40 review item 3): both phases write to pod-local /work/out/{first-batch,overfit} (--out), so model.pt (6.7 GB)
+#   never goes to CephFS and dies with the pod. At exit the EXIT trap copies only the small files (config.json, load.json,
+#   first-batch.json, train.json, history.jsonl, overfit.json) to the PVC sanity folder /mnt/proxy/runs/baseline-sanity-none-s0-try$TRY
+#   (new; the proxy used runs/pilot-*, pilot2-*, dinov3-*) and prints each into the pod log between
+#   "=== FILE <name> sha256 <hex> bytes <n>" and "=== END <name>" (RUN-sanity.md step 10), so they come off the cluster without a
+#   reader pod. Guard: abort (exit 11) if that PVC folder exists at all, so an earlier attempt's files are never overwritten; a
+#   rerun sets TRY to 2, 3, ... Logs: /mnt/proxy/logs/<tag>-<date>.log (the template's pattern), the pip freeze to
+#   /mnt/proxy/logs/pip-env-<tag>.log, the GPU samples to /mnt/proxy/logs/<tag>-gpu-<date>.csv.
 # Wan 2.2 TI2V-5B: pretrained_train.py --wan-dir -> pretrained_sizing.load_wan(model, wan_dir, keep): reads the index json and
 #   config.json from wan_dir, then opens only the shards that hold the kept blocks 0-7 and the non-block tensors. Measured in the
 #   sizing run (results/run1/load-none.json "shards_read"): shards 00001 and 00003 are read, 00002 is not; load_wan re-reads every
@@ -26,29 +34,31 @@
 #   about 300 MB/s, same LOG line), checks each against the sha256 recorded in
 #   experiments/2026-11-12-pretrained-start-sizing/results/wan22-dit-download.log (exit 13 on a mismatch), and points --wan-dir
 #   at the local copy. Same bytes; only the read path differs. load_wan raises LoadError if a shard it needs is missing.
-# Out dir: /mnt/proxy/runs/baseline-sanity-none-s0-try$TRY (new; no earlier Job wrote there: the proxy used runs/pilot-*,
-#   pilot2-*, dinov3-*). Guard (as the template's, stricter): abort (exit 11) if the dir exists at all, because
-#   pretrained_train.py would silently resume from a ckpt.pt there and skips the report if first-batch.json exists. A rerun
-#   sets TRY to 2, 3, ... (RUN-sanity.md). Logs: /mnt/proxy/logs/<tag>-<date>.log (the template's pattern), the pip freeze to
-#   /mnt/proxy/logs/pip-env-<tag>.log, and the GPU samples to /mnt/proxy/logs/<tag>-gpu-<date>.csv.
 # GPU use (STANDARDS.md line 48, the 40% rule): nvidia-smi at start, then an in-pod sampler every 15 s into the log ("[gpu]" lines)
 #   and the CSV, with "#phase" markers, and a per-phase mean at the end ("[gpu-summary]"). Most of the pod's life is setup (pip,
 #   staging, data index) with the GPU idle; the GPU is busy only in the two phases (estimate below). The pod should finish in
 #   about 30 min; NRP's portal skips pods younger than 30 min and its warning/admin paths need 180 min of runtime (_standards/08),
-#   so a short low-average pod is not on those paths (speculative: live portal config unknown).
+#   so a short low-average pod is not on those paths (speculative: live portal config unknown). The pod-level deadline below
+#   keeps a hung pod well under 180 min.
 # Fail fast: backoffLimit 0 (a failed pod ends the Job; as the template and RETRAIN.md, which kept 0 against _standards/08's
 #   "> 0" so a failure is never silently retried). A non-finite loss or gradient norm makes pretrained_train.py exit 2; set -e
-#   ends the script with that code, the pod fails, the Job fails. Exit codes of this script: 2 non-finite (pretrained_train.py),
-#   1 pip setup failed, 10 commit not filled, 11 out dir exists, 12 staging size mismatch, 13 sha256 mismatch, other = an error
-#   in python (traceback in the log). After any exit the EXIT trap prints the GPU summary and the small JSON results into the log
-#   between "=== FILE <name> sha256 <hex> bytes <n>" and "=== END <name>" lines, so they come off the cluster with the pod log
-#   (RUN-sanity.md step 10) without a reader pod.
+#   ends the script with that code, the pod fails, the Job fails. Exit codes: 2 non-finite (pretrained_train.py), 1 pip setup
+#   failed or a python error (traceback; a CUDA out-of-memory is one), 10 commit not a 40-hex sha, 11 PVC sanity folder exists,
+#   12 staging failed (a dd error or a size mismatch), 13 sha256 mismatch or the sha256 check timed out, 124 a step hit its
+#   `timeout` (pip, a dd, or a python phase; the "=== PHASE" lines say which). Table with actions: RUN-sanity.md.
+# Time caps (PR #40 review item 2): the Job-level activeDeadlineSeconds counts from Job creation and covers the queue; the
+#   pod-level activeDeadlineSeconds (in the pod template) counts from pod start: 5400 s = the 0.5 h estimate x 3 (1800 s x 3),
+#   under the 180-minute runtime of NRP's idle-warning and admin-list paths. When it fires the kubelet kills the container and the
+#   EXIT trap may not run (the PVC log keeps what was written). Inner `timeout`s end a hung step early with exit 124 and the
+#   trap runs: pip 1800 s (estimate about 12 min), each staging dd 900 s (worst estimate about 6 min for the 9.8 GB shard at
+#   30 MB/s split in 16), sha256 600 s (about 1 min), first-batch phase 1800 s (estimate about 5 min), overfit phase 1200 s
+#   (estimate about 5 min), the copy of the small files to the PVC 300 s. They sum above 5400 s; the pod deadline is the outer cap.
 # Copied from the template experiments/2026-10-27-proxy-calibration/jobs/job-train-retrain-dinov3-l16-48gb.yaml: image, setup_env.sh
-#   mounted from a ConfigMap at /src (here the separate stacking-encoders-baseline-src, lead's decision 2026-11-15), PVC, feats and T5 paths, env (OMP_NUM_THREADS 3, MALLOC_ARENA_MAX 2,
-#   HF_HOME, PYTHONPATH), CPU, GPU list L40/L40S by gpu.product (no A40/A6000 named resources: not approved), driver > 569,
-#   region us-west, the two host exclusions, /dev/shm, the guard pattern, the log naming. Differences: not Indexed (one pod), the
-#   two phases, the Wan staging, the GPU sampler, memory and ephemeral sizes, deadline. Nothing waits idle on purpose, no sleep,
-#   no tolerations.
+#   mounted from a ConfigMap at /src (here the separate stacking-encoders-baseline-src, lead's decision 2026-11-15), PVC, feats
+#   and T5 paths, env (OMP_NUM_THREADS 3, MALLOC_ARENA_MAX 2, HF_HOME, PYTHONPATH), CPU, GPU list L40/L40S by gpu.product (no
+#   A40/A6000 named resources: not approved), driver > 569, region us-west, the two host exclusions, /dev/shm, the guard
+#   pattern, the log naming. Differences: not Indexed (one pod), the two phases, the Wan staging, local outputs, the GPU sampler,
+#   memory and ephemeral sizes, deadlines and timeouts, the commit guard. Nothing waits idle on purpose, no sleep, no tolerations.
 # Sizing (each number's source; requests and limits within 20%):
 #   GPU 1 (start on 1 GPU, _standards/08). GPU memory: the overfit step at m=8 is one micro-batch plus the AdamW update; the
 #     sizing run measured the full-step peak at m=8 as 38,816,186,368 B (36.15 GiB) and the m=8 x 16 optimizer step as
@@ -61,22 +71,25 @@
 #     2026-11-02 (c), via the template header), so about 4 GiB was not buffer (subtraction); (b) here the model is built on the
 #     GPU (pretrained_sizing.build under torch.device(device)) and load_wan copies one tensor at a time (largest about 0.18 GB,
 #     14336 x 3072 x 4 B by arithmetic); (c) no long-lived buffer: overfit loads at most 8 episodes and the first-batch phase the
-#     episodes of plan steps 0-19 (one or two 16-episode buffers, at most about 32 episodes), VAE only, about 18 MB each (31.4 GB / 1,712 episodes, data/README.md 4b); T5 context 40 x 128 x
-#     4096 fp32 = 84 MB. Estimate about 4 to 6 GiB (speculative); 16Gi keeps that above NRP's 20% floor (3.2 GiB) and leaves room
-#     for page cache from the 10 GB staging copy and the 6.7 GB model.pt write (reclaimable, but counted in the cgroup).
-#   Ephemeral 30Gi / 34Gi (1.13x): the template's 20Gi for the pip environment (not measured) plus the staged Wan files,
-#     10,003,645,764 B = 9.32 GiB (bytes in the download log); /work sizeLimit 16Gi holds the staged files, pip log and HF_HOME.
+#     episodes of plan steps 0-19 (one or two 16-episode buffers, at most about 32 episodes), VAE only, about 18 MB each
+#     (31.4 GB / 1,712 episodes, data/README.md 4b); T5 context 40 x 128 x 4096 fp32 = 84 MB. Estimate about 4 to 6 GiB
+#     (speculative); 16Gi keeps that above NRP's 20% floor (3.2 GiB) and leaves room for page cache from the 10 GB staging copy
+#     and the 6.7 GB model.pt write (reclaimable, but counted in the cgroup).
+#   Ephemeral 38Gi / 44Gi (1.16x): the template's 20Gi for the pip environment (not measured) plus /work: the staged Wan files,
+#     10,003,645,764 B = 9.32 GiB (bytes in the download log), and model.pt, 1,681,051,847 fp32 parameters x 4 B = 6.26 GiB
+#     (arithmetic; trainable count from load-none.json), together 15.58 GiB; /work sizeLimit 24Gi (about 1.5x that) also holds
+#     the pip log, HF_HOME and the small outputs.
 #   /dev/shm 2Gi (template; the loader uses threads, not worker processes).
 # Time estimate (speculative where not marked measured): pip setup about 12 min (proxy LOG 2026-11-02, "pip setup and index load,
 #   about 0.2 h or more"); staging about 1 min at 300 MB/s, up to about 6 min at 30 MB/s, plus sha256 about 1 min; per process
 #   the data index of 1,712 episodes on CephFS about 1 to 2 min (sizing: 17 s for 16 episodes on local disk, measured) and the
 #   Wan load and re-read from local disk about 5 s (sizing 4.2 s, measured); first-batch phase: report forward of 2 x 16
-#   micro-batches about 10 s, 20 optimizer steps x 3.9 s = about 1.3 min (L40S, measured per step), model.pt write 6.7 GB at 30 MB/s up to about 4 min;
-#   overfit phase: 300 steps x about 0.48 s (0.229 s per m=8 micro-step forward+backward, measured, plus about 0.25 s for clip
-#   and AdamW: 3.907 - 16 x 0.229, measured difference) = about 2.4 min. Total about 27 min, call it 0.5 h.
-#   activeDeadlineSeconds 75600 (21 h, counts from Job creation, queue included) = 2 x 0.5 h run + 20 h for the queue, the
-#   template's rule (2 x run + 20 h; round 1 queued 3 h to 9 h+, proxy LOG 2026-11-06 (a), (c)); the GPU list is two types, so
-#   the queue may be long. ttl 24 h: save the pod log within 24 h (RUN-sanity.md step 9).
+#   micro-batches about 10 s, 20 optimizer steps x 3.9 s = about 1.3 min (L40S, measured per step), model.pt write 6.7 GB to
+#   local disk under a minute; overfit phase: 300 steps x about 0.48 s (0.229 s per m=8 micro-step forward+backward, measured,
+#   plus about 0.25 s for clip and AdamW: 3.907 - 16 x 0.229, measured difference) = about 2.4 min. Total about 24 min, call it
+#   0.5 h. Job-level activeDeadlineSeconds 75600 (21 h, counts from Job creation, queue included) = 2 x 0.5 h run + 20 h for the
+#   queue, the template's rule (2 x run + 20 h; round 1 queued 3 h to 9 h+, proxy LOG 2026-11-06 (a), (c)); the GPU list is two
+#   types, so the queue may be long. ttl 24 h: save the pod log within 24 h (RUN-sanity.md step 9).
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -89,6 +102,7 @@ spec:
   template:
     spec:
       restartPolicy: Never
+      activeDeadlineSeconds: 5400
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -109,17 +123,18 @@ spec:
           set -euo pipefail
           SMI=""; OWN=0
           R=/mnt/proxy; TAG=baseline-sanity-none-s0-try$TRY; D=$(date +%Y%m%d-%H%M%S)
-          OUT=$R/runs/$TAG
+          OUT=$R/runs/$TAG; W=/work/out
           WSRC=$R/models/Wan-AI/Wan2.2-TI2V-5B; WAN=/work/wan/Wan2.2-TI2V-5B
           LOG=$R/logs/$TAG-$D.log; GPUCSV=$R/logs/$TAG-gpu-$D.csv
+          SMALL="first-batch/config.json first-batch/load.json first-batch/first-batch.json first-batch/train.json first-batch/history.jsonl overfit/overfit.json"
           mkdir -p $R/logs $R/runs
           exec > >(tee -a $LOG) 2>&1
           TEE=$!
-          echo "=== BASELINE SANITY 1-3 (PLAN Order of work step 3): config none seed 0 out $OUT"; date -u
-          echo "SRC_GIT_COMMIT=$SRC_GIT_COMMIT TRY=$TRY OVERFIT_STEPS=$OVERFIT_STEPS"
-          [ "$SRC_GIT_COMMIT" != FILL_AT_SUBMIT ] || { echo "ABORT: SRC_GIT_COMMIT not filled at submit"; exit 10; }
-          if [ -e $OUT ]; then echo "ABORT: $OUT exists; pretrained_train.py would resume a ckpt.pt or skip the first-batch report there (set TRY to a new value)"; exit 11; fi
-          mkdir -p $OUT /work/wan $WAN
+          echo "=== BASELINE SANITY 1-3 (PLAN Order of work step 3): config none seed 0 local out $W, PVC copies $OUT"; date -u
+          echo "SRC_GIT_COMMIT=$SRC_GIT_COMMIT TRY=$TRY OVERFIT_STEPS=$OVERFIT_STEPS MICRO_BATCH=$MICRO_BATCH"
+          [[ "$SRC_GIT_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "ABORT: SRC_GIT_COMMIT is not a 40-hex commit (not filled at submit?)"; exit 10; }
+          if [ -e $OUT ]; then echo "ABORT: $OUT exists (an earlier attempt's files; set TRY to a new value)"; exit 11; fi
+          mkdir -p $OUT/first-batch $OUT/overfit $W /work/wan $WAN
           OWN=1
           phase() { echo "=== PHASE $1 $(date -u +%H:%M:%S)"; echo "#phase $1" >> $GPUCSV; }
           finish() {
@@ -127,14 +142,17 @@ spec:
             [ -n "$SMI" ] && { kill $SMI 2>/dev/null; wait $SMI 2>/dev/null; }
             echo "#phase end" >> $GPUCSV
             awk -F', ' 'BEGIN{p="start"} /^#phase/{p=$0; sub(/^#phase /,"",p); next} {v=$2; sub(/ %/,"",v); s[p]+=v; n[p]++; S+=v; N++} END{for(k in n) printf "[gpu-summary] %s: %d samples, mean %.1f%%\n", k, n[k], s[k]/n[k]; if(N) printf "[gpu-summary] all: %d samples, mean %.1f%%\n", N, S/N}' $GPUCSV
-            [ "$OWN" = 1 ] && for f in first-batch/config.json first-batch/load.json first-batch/first-batch.json first-batch/train.json overfit/overfit.json; do
-              if [ -f $OUT/$f ]; then
-                echo "=== FILE $f sha256 $(sha256sum < $OUT/$f | cut -d' ' -f1) bytes $(stat -c %s $OUT/$f)"
-                cat $OUT/$f; echo
-                echo "=== END $f"
-              fi
-            done
-            [ "$OWN" = 1 ] && ls -la $OUT $OUT/* 2>/dev/null
+            if [ "$OWN" = 1 ]; then
+              for f in $SMALL; do
+                if [ -f $W/$f ]; then
+                  timeout 300 cp $W/$f $OUT/$f || echo "WARNING: copy of $f to $OUT failed or timed out (it is still printed below)"
+                  echo "=== FILE $f sha256 $(sha256sum < $W/$f | cut -d' ' -f1) bytes $(stat -c %s $W/$f)"
+                  cat $W/$f; echo
+                  echo "=== END $f"
+                fi
+              done
+              ls -la $W/* $OUT/* 2>/dev/null
+            fi
             date -u; echo "=== exit $rc"
             exec 1>&- 2>&-; wait $TEE 2>/dev/null
             exit $rc
@@ -147,7 +165,8 @@ spec:
           phase setup
           nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv,noheader -l 15 > >(tee -a $GPUCSV | sed -u 's/^/[gpu] /') &
           SMI=$!
-          bash /src/setup_env.sh > /work/pip-env.log 2>&1 || { tail -50 /work/pip-env.log; exit 1; }
+          rc=0; timeout --kill-after=60 1800 bash /src/setup_env.sh > /work/pip-env.log 2>&1 || rc=$?
+          [ $rc = 0 ] || { tail -50 /work/pip-env.log; [ $rc = 124 ] && echo "ABORT: pip setup timed out (1800 s)"; [ $rc = 124 ] && exit 124; exit 1; }
           cp /work/pip-env.log $R/logs/pip-env-$TAG.log
           phase stage-wan
           stage() {
@@ -155,46 +174,49 @@ spec:
             n=$(stat -c %s "$WSRC/$f"); mib=$(( (n + 1048575) / 1048576 )); per=$(( (mib + 15) / 16 ))
             : > "$WAN/$f"
             for i in $(seq 0 15); do
-              dd if="$WSRC/$f" of="$WAN/$f" bs=1M skip=$((i * per)) seek=$((i * per)) count=$per conv=notrunc status=none &
+              timeout --kill-after=30 900 dd if="$WSRC/$f" of="$WAN/$f" bs=1M skip=$((i * per)) seek=$((i * per)) count=$per conv=notrunc status=none &
               pids="$pids $!"
             done
-            for i in $pids; do wait $i; done
+            for i in $pids; do
+              wait $i || { rc=$?; echo "ABORT: a dd of $f failed (rc $rc; 124 = timed out after 900 s)"; [ $rc = 124 ] && exit 124; exit 12; }
+            done
             [ "$(stat -c %s "$WAN/$f")" = "$n" ] || { echo "ABORT: staged $f is $(stat -c %s "$WAN/$f") bytes, source $n"; exit 12; }
             echo "staged $f $n bytes"
           }
           T0=$(date +%s)
           stage diffusion_pytorch_model-00001-of-00003.safetensors
           stage diffusion_pytorch_model-00003-of-00003.safetensors
-          cp $WSRC/diffusion_pytorch_model.safetensors.index.json $WSRC/config.json $WAN/
+          cp $WSRC/diffusion_pytorch_model.safetensors.index.json $WSRC/config.json $WAN/ || { echo "ABORT: copy of the Wan index/config failed"; exit 12; }
           echo "staging took $(( $(date +%s) - T0 )) s"
-          ( cd $WAN && sha256sum -c - <<'EOF'
+          ( cd $WAN && timeout 600 sha256sum -c - <<'EOF'
           720b06c4ade5e87c1246bba8ac95b664c638749cd9b102cf84d823bb44c026a1  diffusion_pytorch_model-00001-of-00003.safetensors
           6306f7894c345de9093ad588771c2abfaeb668a81f7a6d9a918bd26ba3568e49  diffusion_pytorch_model-00003-of-00003.safetensors
           bfa2337f1163e195d24151a72298daf34a620543898109be47e414c8daa5b3fe  diffusion_pytorch_model.safetensors.index.json
           d1fea36899d00c2501b836c13ad65af56e2f9529ba622e50886d3f5c3e6c02bc  config.json
           EOF
-          ) || { echo "ABORT: staged Wan files do not match the sha256 in the download log"; exit 13; }
+          ) || { echo "ABORT: staged Wan files do not match the sha256 in the download log (or the check timed out after 600 s)"; exit 13; }
           echo "staging + sha256 took $(( $(date +%s) - T0 )) s"
-          COMMON="--feats $R/feats --suites libero_spatial,libero_object,libero_goal,libero_10 --t5 $R/feats/t5 --config none --seed 0 --wan-dir $WAN --micro-batch 8"
+          COMMON="--feats $R/feats --suites libero_spatial,libero_object,libero_goal,libero_10 --t5 $R/feats/t5 --config none --seed 0 --wan-dir $WAN --micro-batch $MICRO_BATCH"
           phase first-batch
-          echo "FLAGS: python /src/pretrained_train.py $COMMON --first-batch-report --max-steps 20 --out $OUT/first-batch"
-          python /src/pretrained_train.py $COMMON --first-batch-report --max-steps 20 --out $OUT/first-batch
+          echo "FLAGS: python /src/pretrained_train.py $COMMON --first-batch-report --max-steps 20 --out $W/first-batch"
+          timeout --kill-after=60 1800 python /src/pretrained_train.py $COMMON --first-batch-report --max-steps 20 --out $W/first-batch
           phase overfit
-          echo "FLAGS: python /src/pretrained_train.py $COMMON --overfit-steps $OVERFIT_STEPS --overfit-batch 8 --overfit-lr 1e-4 --out $OUT/overfit"
-          python /src/pretrained_train.py $COMMON --overfit-steps $OVERFIT_STEPS --overfit-batch 8 --overfit-lr 1e-4 --out $OUT/overfit
+          echo "FLAGS: python /src/pretrained_train.py $COMMON --overfit-steps $OVERFIT_STEPS --overfit-batch 8 --overfit-lr 1e-4 --out $W/overfit"
+          timeout --kill-after=60 1200 python /src/pretrained_train.py $COMMON --overfit-steps $OVERFIT_STEPS --overfit-batch 8 --overfit-lr 1e-4 --out $W/overfit
           echo "=== done"
         env:
         - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}
         - {name: TRY, value: "1"}
         - {name: OVERFIT_STEPS, value: "300"}
+        - {name: MICRO_BATCH, value: "8"}    # PLAN micro-batch rule: 8, or 4 after a CUDA OOM at 8 (RUN-sanity.md exit codes)
         - {name: HF_HOME, value: /work/hf}
         - {name: PYTHONUNBUFFERED, value: "1"}
         - {name: PYTHONPATH, value: /src}
         - {name: OMP_NUM_THREADS, value: "3"}
         - {name: MALLOC_ARENA_MAX, value: "2"}
         resources:                    # limits <= 1.2x requests; sources in the header
-          requests: {cpu: "4", memory: 16Gi, nvidia.com/gpu: "1", ephemeral-storage: 30Gi}
-          limits:   {cpu: "4800m", memory: 19Gi, nvidia.com/gpu: "1", ephemeral-storage: 34Gi}
+          requests: {cpu: "4", memory: 16Gi, nvidia.com/gpu: "1", ephemeral-storage: 38Gi}
+          limits:   {cpu: "4800m", memory: 19Gi, nvidia.com/gpu: "1", ephemeral-storage: 44Gi}
         volumeMounts:
         - {name: work, mountPath: /work}
         - {name: src, mountPath: /src, readOnly: true}
@@ -202,7 +224,7 @@ spec:
         - {name: dshm, mountPath: /dev/shm}
       volumes:
       - name: work
-        emptyDir: {sizeLimit: 16Gi}
+        emptyDir: {sizeLimit: 24Gi}
       - name: src
         configMap: {name: stacking-encoders-baseline-src}
       - name: proxy
