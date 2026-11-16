@@ -48,3 +48,7 @@ From the lead, 2026-11-15:
 - How RMS-AQA (question answering) connects to the world action model question, and what the Interspeech paper has to show.
 - Whether to start the literature survey (waits for the lead's go).
 
+## 2026-11-15 [agent, lead, planning] (addendum: dataset access requested, waiting for approval)
+**Did:** the lead reported that the RMS-AQA dataset access request is made and is waiting for approval. The dataset page says approval is automatic, but the dataset's gate setting is manual, so it may need someone on the dataset side to approve it (`speculative` on how long that takes). `PLAN.md` updated.
+**PR:** direct.
+**Next:** unchanged. When access is granted and the PI has said what "running" means, the planning lead writes the experiment `PLAN.md` and hands it to `hear-lab-experiment`.

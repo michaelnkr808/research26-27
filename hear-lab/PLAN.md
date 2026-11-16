@@ -4,7 +4,7 @@ Living agenda. Only work that is running, next, or parked lives here. No results
 
 ## Now
 - **First task from the PI: get the RMS-AQA benchmark running.** Planning stage, nothing run yet. What the planning lead read about the benchmark (code, data access, compute, challenge dates) is in the `LOG.md` entry for 2026-11-15.
-  - **Blocked on:** dataset access. Downloads are gated behind a registration form on Hugging Face (`PeacefulData/RMS-AQA`); the page says approval is automatic. The lead said on 2026-11-15 that they will make the request.
+  - **Blocked on:** dataset access. Downloads are gated behind a registration form on Hugging Face (`PeacefulData/RMS-AQA`); the page says approval is automatic. The lead made the request on 2026-11-15 and it is waiting for approval, so the gate is not instant in practice (the dataset's setting is manual approval).
   - **Open, for the lead and the PI:** (1) what "running" means: score an existing model on the validation set, reproduce the paper's trained baseline for one or more of its four models, or enter the challenge (submission deadline 2026-12-10 per the challenge site, which marks its dates as preliminary); (2) whether the 200 dollar budget is meant to cover a training run.
   - **Settled 2026-11-15:** by "the cluster" the PI means Vast.ai (per the lead), which matches the Vast.ai-first rule in `STANDARDS.md`.
   - Then: the planning lead writes the experiment `PLAN.md`, and the experiment lead session (`hear-lab-experiment`) builds and runs it. Experiments are not run from the planning session (the lead, 2026-11-15).
