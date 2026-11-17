@@ -1,0 +1,55 @@
+=== start Tue Nov 17 22:50:30 UTC 2026
+d9d3d9d92eeaaaf2d10bb873c9fb77ca322989106d97a3d5152af0699e9f76aa  /src/check_stage2_cache.py
+feats=/mnt/proxy/feats sources=['dinov3', 'siglip2', 'c-radiov4', 'vae'] suites=['libero_goal', 'libero_spatial', 'libero_object', 'libero_10']
+dinov3 libero_goal: 433 meta episodes, 433 complete, 0 with a gap
+  provenance: model=facebook/dinov3-vitl16-pretrain-lvd1689m hf_id=None resolution=224 compute_dtype=fp32 (1 file(s))
+dinov3 libero_spatial: 434 meta episodes, 434 complete, 0 with a gap
+  provenance: model=facebook/dinov3-vitl16-pretrain-lvd1689m hf_id=None resolution=224 compute_dtype=fp32 (1 file(s))
+dinov3 libero_object: 457 meta episodes, 457 complete, 0 with a gap
+  provenance: model=facebook/dinov3-vitl16-pretrain-lvd1689m hf_id=None resolution=224 compute_dtype=fp32 (1 file(s))
+dinov3 libero_10: 388 meta episodes, 388 complete, 0 with a gap
+  provenance: model=facebook/dinov3-vitl16-pretrain-lvd1689m hf_id=None resolution=224 compute_dtype=fp32 (1 file(s))
+siglip2 libero_goal: 433 meta episodes, 433 complete, 0 with a gap
+  provenance: model=google/siglip2-so400m-patch14-384 hf_id=None resolution=384 compute_dtype=fp16 (1 file(s))
+siglip2 libero_spatial: 434 meta episodes, 434 complete, 0 with a gap
+  provenance: model=google/siglip2-so400m-patch14-384 hf_id=None resolution=384 compute_dtype=fp16 (1 file(s))
+siglip2 libero_object: 457 meta episodes, 457 complete, 0 with a gap
+  provenance: model=google/siglip2-so400m-patch14-384 hf_id=None resolution=384 compute_dtype=fp16 (1 file(s))
+siglip2 libero_10: 388 meta episodes, 388 complete, 0 with a gap
+  provenance: model=google/siglip2-so400m-patch14-384 hf_id=None resolution=384 compute_dtype=fp16 (1 file(s))
+c-radiov4 libero_goal: 433 meta episodes, 433 complete, 0 with a gap
+  provenance: model=nvidia/C-RADIOv4-SO400M hf_id=None resolution=448 compute_dtype=fp16 (1 file(s))
+c-radiov4 libero_spatial: 434 meta episodes, 434 complete, 0 with a gap
+  provenance: model=nvidia/C-RADIOv4-SO400M hf_id=None resolution=448 compute_dtype=fp16 (1 file(s))
+c-radiov4 libero_object: 457 meta episodes, 457 complete, 0 with a gap
+  provenance: model=nvidia/C-RADIOv4-SO400M hf_id=None resolution=448 compute_dtype=fp16 (1 file(s))
+c-radiov4 libero_10: 388 meta episodes, 388 complete, 0 with a gap
+  provenance: model=nvidia/C-RADIOv4-SO400M hf_id=None resolution=448 compute_dtype=fp16 (1 file(s))
+vae libero_goal: 433 meta episodes, 433 complete, 0 with a gap
+  provenance: model=Wan2.2_VAE (FastWAM loader) hf_id=None resolution=None compute_dtype=bf16 (10 file(s))
+vae libero_spatial: 434 meta episodes, 434 complete, 0 with a gap
+  provenance: model=Wan2.2_VAE (FastWAM loader) hf_id=None resolution=None compute_dtype=bf16 (13 file(s))
+vae libero_object: 457 meta episodes, 457 complete, 0 with a gap
+  provenance: model=Wan2.2_VAE (FastWAM loader) hf_id=None resolution=None compute_dtype=bf16 (11 file(s))
+vae libero_10: 388 meta episodes, 388 complete, 0 with a gap
+  provenance: model=Wan2.2_VAE (FastWAM loader) hf_id=None resolution=None compute_dtype=bf16 (8 file(s))
+volume: 834 GiB used, 190 GiB free of 1024 GiB (report only, no threshold)
+=== summary
+dinov3     libero_goal     episodes  433  gaps 0
+dinov3     libero_spatial  episodes  434  gaps 0
+dinov3     libero_object   episodes  457  gaps 0
+dinov3     libero_10       episodes  388  gaps 0
+siglip2    libero_goal     episodes  433  gaps 0
+siglip2    libero_spatial  episodes  434  gaps 0
+siglip2    libero_object   episodes  457  gaps 0
+siglip2    libero_10       episodes  388  gaps 0
+c-radiov4  libero_goal     episodes  433  gaps 0
+c-radiov4  libero_spatial  episodes  434  gaps 0
+c-radiov4  libero_object   episodes  457  gaps 0
+c-radiov4  libero_10       episodes  388  gaps 0
+vae        libero_goal     episodes  433  gaps 0
+vae        libero_spatial  episodes  434  gaps 0
+vae        libero_object   episodes  457  gaps 0
+vae        libero_10       episodes  388  gaps 0
+=== OK: 0 gap(s)
+=== exit 0 Tue Nov 17 22:56:04 UTC 2026

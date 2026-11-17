@@ -1,0 +1,132 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    nrp.ai/username: http://cilogon.org/serverE/users/436081
+  creationTimestamp: "2026-11-17T22:50:18Z"
+  generation: 1
+  labels:
+    batch.kubernetes.io/controller-uid: 1c8361d1-a5c9-4097-8321-85ac96609250
+    batch.kubernetes.io/job-name: stacking-encoders-pairings-cache-check
+    controller-uid: 1c8361d1-a5c9-4097-8321-85ac96609250
+    job-name: stacking-encoders-pairings-cache-check
+  name: stacking-encoders-pairings-cache-check
+  namespace: aria-world
+  resourceVersion: "15560823431"
+  uid: 1c8361d1-a5c9-4097-8321-85ac96609250
+spec:
+  activeDeadlineSeconds: 3600
+  backoffLimit: 2
+  completionMode: NonIndexed
+  completions: 1
+  manualSelector: false
+  parallelism: 1
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes:
+        containerName: main
+        operator: In
+        values:
+        - 1
+        - 2
+    - action: Ignore
+      onPodConditions:
+      - status: "True"
+        type: DisruptionTarget
+  podReplacementPolicy: Failed
+  selector:
+    matchLabels:
+      batch.kubernetes.io/controller-uid: 1c8361d1-a5c9-4097-8321-85ac96609250
+  suspend: false
+  template:
+    metadata:
+      labels:
+        batch.kubernetes.io/controller-uid: 1c8361d1-a5c9-4097-8321-85ac96609250
+        batch.kubernetes.io/job-name: stacking-encoders-pairings-cache-check
+        controller-uid: 1c8361d1-a5c9-4097-8321-85ac96609250
+        job-name: stacking-encoders-pairings-cache-check
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: feature.node.kubernetes.io/pci-10de.present
+                operator: NotIn
+                values:
+                - "true"
+              - key: topology.kubernetes.io/region
+                operator: In
+                values:
+                - us-west
+      containers:
+      - args:
+        - |
+          set -uo pipefail
+          echo "=== start $(date -u)"
+          sha256sum /src/check_stage2_cache.py
+          rc=0
+          python /src/check_stage2_cache.py --feats /mnt/proxy/feats --workers 16 || rc=$?
+          echo "=== exit $rc $(date -u)"
+          exit $rc
+        command:
+        - bash
+        - -c
+        env:
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        imagePullPolicy: IfNotPresent
+        name: main
+        resources:
+          limits:
+            cpu: 600m
+            memory: 1200Mi
+          requests:
+            cpu: 500m
+            memory: 1Gi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /src
+          name: src
+          readOnly: true
+        - mountPath: /mnt/proxy
+          name: proxy
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: stacking-encoders-pairings-cachecheck-src
+        name: src
+      - name: proxy
+        persistentVolumeClaim:
+          claimName: stacking-encoders-proxy
+          readOnly: true
+  ttlSecondsAfterFinished: 86400
+status:
+  completionTime: "2026-11-17T22:56:17Z"
+  conditions:
+  - lastProbeTime: "2026-11-17T22:56:17Z"
+    lastTransitionTime: "2026-11-17T22:56:17Z"
+    message: Reached expected number of succeeded pods
+    reason: CompletionsReached
+    status: "True"
+    type: SuccessCriteriaMet
+  - lastProbeTime: "2026-11-17T22:56:18Z"
+    lastTransitionTime: "2026-11-17T22:56:18Z"
+    message: Reached expected number of succeeded pods
+    reason: CompletionsReached
+    status: "True"
+    type: Complete
+  ready: 0
+  startTime: "2026-11-17T22:50:18Z"
+  succeeded: 1
+  terminating: 0
+  uncountedTerminatedPods: {}
