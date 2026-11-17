@@ -179,3 +179,33 @@ From the lead, 2026-11-16:
 - Base model (the lead will decide).
 - Where the data comes from: a ready set if one is found, otherwise rendering with SoundSpaces 2.0.
 - Still open with the PI: what "running" means for RMS-AQA and how it connects; whether the 200 dollars covers a training run; the navigation setting; what the Interspeech paper has to show. Dataset access for RMS-AQA is still pending.
+
+## 2026-11-16 [agent, lead, planning] (prior-work check merged: PR #51; session close)
+**Goal:** answer the lead's doubt that nobody has measured whether audio improves a world action model.
+
+**Did:**
+- One worker wrote `literature/survey/2026-11-16-prior-work-check-audio-in-world-action-models.md` (a verdict and nine ranked entries), reading the closest papers in full from raw text and chasing their citations.
+- A fact-check reviewer checked the file against the sources, ran its own searches (14 further queries), and posted its findings on the pull request. Three required changes went back to the same worker and landed as a new commit. The planning lead added two bibliography entries (`ji2026dreaming`, `akin2025pixels`) and a paragraph plus pointer in `literature/survey/2026-11-16-summary.md`. Key check after the merge: 94 survey keys, 97 bibliography keys, none missing.
+- Merged on the lead's "yeah merge 51" (2026-11-16). Worker worktree and branches removed.
+- Filled the project brief the other hear-lab sessions read at start (outside the repo).
+
+**PR:** #51. This entry and the `PLAN.md` move: direct.
+
+**Found** (`verified` means read from the paper's raw text by the worker and the reviewer on 2026-11-16; nothing reproduced):
+- Audio-Visual World Models (`wang2025audio`, arXiv 2512.00883), version 3 only, Table 4: navigation success over 500 episodes in SoundSpaces 2.0 with a fixed planner. Baseline without a world model 0.269; world model with its audio forecast removed 0.266; with its vision forecast removed 0.280; full audio-visual world model 0.381; oracle world model 0.423 (`verified`). So only the joint audio and video forecast beat having no world model. The table is absent from version 4 (`verified`). The paper does not state whether the agent's own audio input changed between rows; the file labels that reading as inferred. No mono variant, no pretrained video model, no code or data release found.
+- `akin2025pixels` (arXiv 2511.01310), a multi-agent maze task built to need audio, reported a gain from audio but was withdrawn by its authors, who state the results are invalid (`verified` from the arXiv record). It is in the bibliography marked withdrawn and is not to be cited as evidence.
+- Not found in the worker's search or the reviewer's own: (a) a comparison of mono against spatial audio inside any world model or world action model; (b) a large pretrained video world action model (Wan, Cosmos, LTX) given audio input and scored on task success. "Not found" is a search result, not proof of absence.
+- The lead's doubt was partly right: "audio helps a world model act" has a small-scale precedent. The summary's "not found" item now carries this result and its limits.
+
+Corrections the planning lead made in chat this session (also fixed in the files): WNM-3D is not confirmed to run in the simulator that renders spatial audio (the survey names its benchmarks, not the simulator); "the agent heard audio in every setup" in Audio-Visual World Models is an inference, not a statement in the paper, and removing the vision forecast hurt as much as removing the audio forecast.
+
+Planning lead's suggestion, not a decision (`speculative`): frame the experiment as three versions of one Wan 2.2 navigation model (no audio, one-channel audio, spatial audio), since the spatial comparison is the part not found in prior work. The framing is the lead's and the PI's to decide.
+
+**Not verified:** whether a paper the searches missed does (a) or (b); what Audio-Visual World Models' rows changed about the agent's own inputs.
+
+**Next:** the lead picks the base model and talks to the PI. Then the planning lead writes the decision records (base model, setting, audio encoder, data source) and fills the open `STANDARDS.md` entries by pull request. No experiment is planned or approved. Good point to start a fresh session.
+
+**Open questions:**
+- Base model (the lead decides). Candidates in `literature/survey/2026-11-16-summary.md`: WNM-3D, AstraNav-World, UniWAM, or plain Wan 2.2 with an own action head. Open check: whether WNM-3D can be evaluated where SoundSpaces 2.0 renders audio.
+- For the PI: what "running" RMS-AQA means (reproduce the Audio Flamingo 3 baseline by training it, or something lighter); how RMS-AQA connects to the world action model work; whether the 200 dollars covers a training run; challenge entry by 2026-12-10; the navigation setting; whether the PI has dataset access or knows a ready dataset.
+- RMS-AQA dataset access: still pending on Hugging Face.

@@ -11,7 +11,6 @@ Living agenda. Only work that is running, next, or parked lives here. No results
   - **Settled 2026-11-15:** by "the cluster" the PI means Vast.ai (per the lead), which matches the Vast.ai-first rule in `STANDARDS.md`.
   - Then: the planning lead writes the experiment `PLAN.md`, and the experiment lead session (`hear-lab-experiment`) builds and runs it. Experiments are not run from the planning session (the lead, 2026-11-15).
 - **Scope the direction with the PI.** Settle the open scope questions in `README.md`. The lead's approach (2026-11-16): add an audio encoder to the world action model so it can also make decisions based on audio input (`LOG.md` 2026-11-16 addendum). Still to ask the PI: how RMS-AQA connects to world action models. The lead prefers Wan 2.2 as the base (2026-11-16, a preference, not yet a decision record). Opened by the survey: whether the setting is simulated navigation, where spatial audio data exists, or robot manipulation, where no public spatial audio data was found. Owner: the lead, with the planning lead writing up each answer as a decision record.
-- **Prior-work check: has anyone measured whether audio improves a world action model or world model for acting?** Started 2026-11-16 on the lead's doubt (`LOG.md` 2026-11-16). One worker, one new file under `literature/survey/`; lands by pull request after a fact-check.
 - **Choose the base model.** Owner: the lead ("ill decide on the base model in a bit", 2026-11-16). Candidates and what each releases: `literature/survey/2026-11-16-summary.md`. Open check: whether WNM-3D can be evaluated where SoundSpaces 2.0 renders audio.
 - **Find the data.** No ready set with egocentric video, spatial audio and navigation actions was found in two search rounds; the lead expects one exists. Fallback: render with SoundSpaces 2.0 (`literature/survey/2026-11-16-spatial-audio-navigation-data.md`, closing section).
 
@@ -24,6 +23,7 @@ Living agenda. Only work that is running, next, or parked lives here. No results
 - None.
 
 ## Recently done
+- Prior-work check: audio in a world model has a small-scale precedent; mono against spatial audio, and audio in a large pretrained video world action model, were not found (PR #51). `LOG.md` 2026-11-16.
 - Survey follow-up: navigation data, navigation world models, bibliography, summary, read-first list (PR #50). `LOG.md` 2026-11-16.
 - Literature survey, three topic files, reviewed and merged (PR #49). `LOG.md` 2026-11-16.
 - Direction folder set up and merged (PR #45). `LOG.md` 2026-11-15.
