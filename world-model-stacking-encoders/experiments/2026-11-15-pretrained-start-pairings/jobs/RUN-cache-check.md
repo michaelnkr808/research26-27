@@ -9,8 +9,8 @@ Written 2026-11-17 by a worker, Mac only. Nothing here has been submitted. One C
 1. **Source commit** `$C` on a clean, pulled `main` that contains `src/check_stage2_cache.py`: `git rev-parse HEAD`.
 2. **Create the ConfigMap** (one key, new name, created here; do not reuse the baseline's):
    ```
-   kubectl create configmap stacking-encoders-pairings-cachecheck-src -n aria-world --from-file=check_stage2_cache.py=../../src/check_stage2_cache.py --dry-run=server
-   kubectl create configmap stacking-encoders-pairings-cachecheck-src -n aria-world --from-file=check_stage2_cache.py=../../src/check_stage2_cache.py
+   kubectl create configmap stacking-encoders-pairings-cachecheck-src -n aria-world --from-file=check_stage2_cache.py=../../../src/check_stage2_cache.py --dry-run=server
+   kubectl create configmap stacking-encoders-pairings-cachecheck-src -n aria-world --from-file=check_stage2_cache.py=../../../src/check_stage2_cache.py
    ```
    (run from `jobs/`; the path assumes that). Read it back and compare with `$C`'s file; a difference: stop and ask.
    ```
