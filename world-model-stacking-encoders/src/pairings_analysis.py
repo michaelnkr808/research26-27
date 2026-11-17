@@ -1,16 +1,19 @@
 """Stage 2 analysis: the locked decision rule of experiments/2026-11-15-pretrained-start-pairings/PLAN.md.
 
-This file implements the PLAN's "Comparison statistic (defined before any result)" (PLAN lines 115-123) and its
-"Decision rule" (lines 151-211) with the options the user signed off in the "Amendments" (lines 311 onward):
+This file implements the PLAN's "Comparison statistic (defined before any result)" (PLAN lines 115-122) and its
+"Decision rule" (lines 153-212) with the options the user signed off in the "Amendments" (lines 315 onward):
 threshold T3 = max(2.7, f(n) x sigma_hat), margins M2, calibration C-a (required), clean gate G1 at 36, coverage 1%,
 SigLIP 2 alone and C-RADIOv4 alone trained (Open item b = yes), and the one-time extension (seeds 3 and 4 of dinov3
-and dinov3+c-radiov4) with sign condition S-4of5, for a complete three-seed I only. It never changes the rule. Any
+and dinov3+c-radiov4) with sign condition S-4of5, for a complete three-seed I only; and the three cases the user
+decided in the amendment of 2026-11-17, item 3 (a) to (c) (PLAN lines 398-405; "DECIDED CASES" below). It never
+changes the rule. Any
 other design (a scope cut, other options) is a dated PLAN amendment first and a code change second.
 
 Run (stdlib only):
   /opt/homebrew/bin/python3.11 -I pairings_analysis.py --input stage2-totals.json --out stage2-analysis.json
 Exit 0: outcome computed (printed, and written to --out). Exit 2: the input is incomplete or malformed; nothing is
-written and no outcome is given.
+written and no outcome is given. Exit 3: outcome computed and written as for 0, but the input reaches a case the PLAN
+leaves to the user; it is printed as "STOP FOR THE USER" and listed under "stops_for_user" (see "OPEN CASE" below).
 
 Input (one JSON object):
   {"checkpoints": [<entry>, ...]}
@@ -24,16 +27,20 @@ with "status": "missing" (Design, "Training failures"; Decision rule item 6).
              "libero_goal": {...}, "libero_10": {...}},
    "gate_diagnosis": {"fault_found": false, "note": "..."},     # required only when B < 36 (item 5)
    "libero_plus": {"41": {"successes": 8012, "evaluated": 10030, "missing": 0},
-                   "42": {...}, "43": {...}}}
+                   "42": {...}, "43": {...}}}     # optional only for a checkpoint over the clean 1% line (item 3 (c))
   {"config": "dinov3+c-radiov4", "train_seed": 2, "status": "missing", "reason": "non-finite loss, rerun failed"}
 "evaluated" counts the LIBERO-Plus episodes scored under that eval seed after reruns, "missing" those still missing
 (rollout.py's errors file); evaluated + missing must be 10,030. Clean: the 2,000 clean rollouts, 500 per suite
-(50 per task, 10 tasks), eval seed 41; the counts come from the stage 1 tally (tally_proxy_clean.py's per-suite
-counts or tally_per_task.py).
+(50 per task, 10 tasks), eval seed 41; "episodes" counts the clean rollouts of that suite that produced a record
+after reruns, so 500 - episodes are missing (a rollout with no record: it raised or its shard did not finish; not a
+rollout the policy failed); more than 500 is an input error. The counts come from the stage 1 tally
+(tally_proxy_clean.py's per-suite counts or tally_per_task.py).
 
 Statistic (PLAN lines 116-122): rate = successes / evaluated per eval seed, Y(c, s) = mean of the three rates, in
 points. A checkpoint with more than 1% of its 30,090 LIBERO-Plus rollouts missing counts as a missing seed.
-B(c, s) = mean of the four suite rates. d_s(A - B) = Y(A, s) - Y(B, s) on the seeds both have; dbar their mean.
+B(c, s) = mean of the four suite rates, each rate = successes / rollouts with a record; missing clean rollouts leave
+the denominators and are reported per checkpoint (item 3 (c)). A checkpoint with more than 1% of its 2,000 clean
+rollouts missing (21 or more) counts as a missing seed for the whole analysis, the LIBERO-Plus tests included. d_s(A - B) = Y(A, s) - Y(B, s) on the seeds both have; dbar their mean.
 sigma_hat: pooled within-configuration SD over every configuration with at least 2 seeds. f(n) = 2 x sqrt(2 / n).
 All comparisons are exact (fractions; the square root is compared by squaring), so values on a boundary land on the
 side the rule states: dbar <= -T, dbar >= T, and the strict ">" of M2.
@@ -43,21 +50,27 @@ the paired seeds, d_s, dbar, n, the threshold used and the result; the extension
 PLAN's Decision rule item 8 names it: "C fails, under C-a", "H and K", "H, not K, and H_L", "H, not K, not H_L",
 "N and K", "N, not K", "I".
 
-When C fails (C-a), nothing is claimed (PLAN line 190): the harm test and "below both members" are output as
+When C fails (C-a), nothing is claimed (PLAN line 192): the harm test and "below both members" are output as
 "not claimed (C fails)", and so is the helpful-pairing state (K, H_L or unresolved), a claim about the contrast; the
 comparisons themselves are still reported, the computed values under the keys "harm_test_as_computed_not_claimed"
 and "helpful_pairing_as_computed_not_claimed".
 
-UNRESOLVED, PENDING THE USER (the PLAN does not settle these; the script keeps the behaviour below until the user
-answers, and lists them in every output under "unresolved_pending_user"):
-  1. The extension when the harm test is a complete three-seed I but C fails under C-a (item 7, line 187, says "if
-     the result is I"; item 8, line 190, sends "C fails" to the user's options). Status "user decides"; if seeds 3 and
-     4 are supplied anyway they are analysed, and the label stays "C fails, under C-a" (C stays on seeds 0 to 2).
-  2. Clean LIBERO with other than 500 rollouts in a suite is refused (input error). The PLAN has a coverage rule for
-     LIBERO-Plus only (line 117), none for clean LIBERO.
-  3. After the extension, "below both members" pairs the five-seed harm result with the three-seed C-RADIOv4-alone
-     test (three-seed sigma_hat; line 187 keeps the re-pooled sigma_hat for H and N only; line 176 does not say which
-     H to pair it with).
+DECIDED CASES (PLAN amendment 2026-11-17, item 3; until then the script reported these as pending the user):
+  (a) (line 399) If the outcome is "C fails, under C-a", including C not established (a missing none or dinov3 seed,
+      item 6) and read as that branch, the extension of item 7 is not run, even when the three-seed harm test is I
+      with all three seeds present. Status EXT_C_FAILS; seeds 3 and 4 supplied anyway are refused (input error).
+  (b) (line 400) "Below both members" (dinov3+c-radiov4 against c-radiov4 alone) stays in. After an extension it
+      uses seeds 0 to 2 only, paired by seed, with the values and thresholds computed before the extension (the
+      three-seed sigma_hat, T and f(3)); it is stated only when H (on five seeds) holds and this three-seed test
+      holds, and the output says the harm test is on five seeds and this comparison on three
+      ("below_both_members_basis"). Under "C fails, under C-a" it is not stated (and no extension is run, (a)).
+  (c) (lines 403-404) Clean coverage, as above: up to 20 missing of 2,000 leave B's denominators and are reported;
+      21 or more make the checkpoint a missing seed for the whole analysis, with item 6's consequences (a missing
+      dinov3+c-radiov4 or dinov3 seed: harm I, not qualifying for the extension; a missing none or dinov3 seed: C
+      not established, read as "C fails"; a missing dinov3+siglip2 or dinov3 seed: helpful pairing unresolved).
+OPEN CASE (line 405, not decided by the user; kept out of this script's decisions): whether a checkpoint over the
+clean 1% line still gets its LIBERO-Plus evaluation. Its "libero_plus" may be given (reported, not used: the seed is
+missing either way) or left out; either way the checkpoint is listed under "stops_for_user" and the exit code is 3.
 lp_eval.py is not imported: its paired/verdict work on per-episode tables of the proxy's subset rule, not on totals.
 """
 
@@ -79,6 +92,7 @@ LP_ROLLOUTS = 3 * LP_EPISODES                # 30,090
 MISSING_MAX = Fraction(1, 100)               # coverage: more than 1% missing = missing seed (Open item j)
 CLEAN_SUITES = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
 CLEAN_PER_SUITE = 500
+CLEAN_ROLLOUTS = len(CLEAN_SUITES) * CLEAN_PER_SUITE   # 2,000; more than 1% (21 or more) missing = missing seed
 GATE = Fraction(36)                          # G1 (item 5)
 FLOOR = Fraction(27, 10)                     # 2.7: T3's floor and M2's margin
 EXT_MIN_NEGATIVE = 4                         # S-4of5
@@ -90,18 +104,20 @@ LABELS = {("H", "K"): "H and K", ("H", "H_L"): "H, not K, and H_L", ("H", "unres
 EXT_NA = "not applicable: the harm test is not I"
 EXT_DUE = "due: complete three-seed I with C passed; train seeds 3 and 4 of dinov3 and dinov3+c-radiov4 (item 7)"
 EXT_MISSING = "not qualifying: an I caused by a missing seed does not trigger the extension (item 7)"
-EXT_USER = ("user decides: complete three-seed I, but C fails under C-a; the PLAN does not say whether the extension "
-            "applies then (item 7 'if the result is I' vs item 8 'C fails' options)")
-EXT_DONE = "done: seeds 3 and 4 analysed; H and N on five seeds, C, K, H_L on seeds 0 to 2 (two-stage design)"
+EXT_C_FAILS = ("not run: C fails under C-a (or C is not established and is read as that branch); seeds 3 and 4 could "
+               "not change the outcome or any claim (PLAN amendment 2026-11-17, item 3 (a))")
+EXT_DONE = ("done: seeds 3 and 4 analysed; H and N on five seeds, C, K, H_L and the c-radiov4 comparison on seeds "
+            "0 to 2 (two-stage design)")
 NOT_CLAIMED = "not claimed (C fails)"
 
-PENDING_EXT_C_FAILS = ("extension when the harm test is a complete three-seed I but C fails under C-a: 'user decides' "
-                       "(PLAN lines 187 and 190)")
-PENDING_CLEAN_500 = ("clean LIBERO with other than 500 rollouts in a suite: refused; the PLAN has no clean coverage "
-                     "rule (line 117 covers LIBERO-Plus only)")
-PENDING_BELOW_BOTH_EXT = ("after the extension, 'below both members' pairs the five-seed harm result with the "
-                          "three-seed C-RADIOv4-alone test (lines 176 and 187)")
-PENDING = (PENDING_EXT_C_FAILS, PENDING_CLEAN_500, PENDING_BELOW_BOTH_EXT)
+BELOW_BOTH_3 = ("H and the c-radiov4 comparison on seeds 0 to 2, paired by seed (three-seed sigma_hat, T and f(3))")
+BELOW_BOTH_5 = ("the harm test H is on five seeds (seeds 0 to 4, re-pooled sigma_hat, f(5), S-4of5); the c-radiov4 "
+                "comparison is on three (seeds 0 to 2 only, paired by seed, with the three-seed sigma_hat, T and f(3) "
+                "computed before the extension) (PLAN amendment 2026-11-17, item 3 (b))")
+
+STOP_CLEAN_LP = ("more than 1% of the 2,000 clean rollouts missing after reruns: a missing seed for the whole analysis "
+                 "(PLAN amendment 2026-11-17, item 3 (c)). Whether this checkpoint still gets its LIBERO-Plus "
+                 "evaluation is not decided by the user (still open, PLAN line 405): stop and ask the user")
 
 
 class InputError(ValueError):
@@ -124,25 +140,29 @@ def _count(x, what):
 
 
 def _clean_B(rec, where):
+    """Per-suite clean rates over the rollouts with a record, B, and the missing counts (item 3 (c)). A suite with
+    no record at all has no rate, and then B is None (the checkpoint is then far over the 1% line)."""
     clean = rec.get("clean")
     if not isinstance(clean, dict):
         raise InputError(f"{where}: no clean tally (the gate needs B for every checkpoint, item 5)")
     if sorted(clean) != sorted(CLEAN_SUITES):
         raise InputError(f"{where}: clean suites {sorted(clean)}, need {sorted(CLEAN_SUITES)}")
-    rates = {}
+    rates, missing = {}, {}
     for suite in CLEAN_SUITES:
         s = clean[suite]
         if not isinstance(s, dict):
             raise InputError(f"{where}: clean {suite} is not an object")
         n = _count(s.get("episodes"), f"{where} clean {suite} episodes")
         k = _count(s.get("successes"), f"{where} clean {suite} successes")
-        if n != CLEAN_PER_SUITE:
-            raise InputError(f"{where}: clean {suite} has {n} episodes, need {CLEAN_PER_SUITE} (2,000 rollouts). "
-                             f"Unresolved, pending the user: {PENDING_CLEAN_500}")
+        if n > CLEAN_PER_SUITE:
+            raise InputError(f"{where}: clean {suite} has {n} episodes, more than the {CLEAN_PER_SUITE} of the "
+                             "protocol (a rollout counted twice?)")
         if k > n:
             raise InputError(f"{where}: clean {suite} successes {k} > episodes {n}")
-        rates[suite] = Fraction(100 * k, n)
-    return rates, sum(rates.values(), Fraction(0)) / len(rates)
+        rates[suite] = Fraction(100 * k, n) if n else None
+        missing[suite] = CLEAN_PER_SUITE - n
+    B = None if None in rates.values() else sum(rates.values(), Fraction(0)) / len(rates)
+    return rates, B, missing
 
 
 def _lp(rec, where):
@@ -206,29 +226,46 @@ def _checkpoint(rec, where):
         return {"status": "missing", "missing_reason": reason, "checkpoint": rec.get("checkpoint")}
     if status != "ok":
         raise InputError(f'{where}: status must be "ok" or "missing", got {status!r}')
-    suite_rates, B = _clean_B(rec, where)
-    gate_pass = B >= GATE
+    suite_rates, B, clean_missing = _clean_B(rec, where)
+    clean_missing_total = sum(clean_missing.values())
+    clean_short = Fraction(clean_missing_total, CLEAN_ROLLOUTS) > MISSING_MAX
+    gate_pass = None if B is None else B >= GATE
     diag = rec.get("gate_diagnosis")
-    if not gate_pass:
+    if gate_pass is False:
         if not isinstance(diag, dict) or not isinstance(diag.get("fault_found"), bool):
             raise InputError(f"{where}: B = {float(B):.2f} < 36 and no gate diagnosis "
                              '("gate_diagnosis": {"fault_found": false, "note": ...}) (item 5)')
         if diag["fault_found"]:
             raise InputError(f"{where}: the gate diagnosis found a fault; fix it by PR, re-evaluate every affected "
                              "checkpoint in every configuration, and supply the new results (item 6)")
-    lp = _lp(rec, where)
-    rates = {es: Fraction(100 * k, n) if n else None for es, (k, n, m) in lp.items()}
-    missing_total = sum(m for _, _, m in lp.values())
-    too_incomplete = Fraction(missing_total, LP_ROLLOUTS) > MISSING_MAX
     out = {"status": "ok", "checkpoint": rec.get("checkpoint"),
            "clean_suite_rates": suite_rates, "B": B, "gate_pass": gate_pass,
-           "gate_diagnosis": diag if not gate_pass else None,
-           "lp_counts": lp, "lp_rates": rates, "missing_per_eval_seed": {es: lp[es][2] for es in EVAL_SEEDS},
-           "missing_total": missing_total, "missing_frac": Fraction(missing_total, LP_ROLLOUTS)}
-    if too_incomplete:
-        out.update(status="missing", missing_reason=f"coverage: {missing_total} of {LP_ROLLOUTS} LIBERO-Plus "
-                   "rollouts missing after reruns, more than 1%")
+           "gate_diagnosis": diag if gate_pass is False else None,
+           "clean_missing_per_suite": clean_missing, "clean_missing_total": clean_missing_total,
+           "clean_missing_frac": Fraction(clean_missing_total, CLEAN_ROLLOUTS), "stop": None,
+           "lp_counts": None, "lp_rates": None, "missing_per_eval_seed": None, "missing_total": None,
+           "missing_frac": None}
+    reasons = []
+    if clean_short:
+        reasons.append(f"clean coverage: {clean_missing_total} of {CLEAN_ROLLOUTS} clean rollouts missing after "
+                       "reruns, more than 1% (PLAN amendment 2026-11-17, item 3 (c))")
+        # The open case: the LIBERO-Plus evaluation of such a checkpoint is the user's call, so the script neither
+        # requires nor refuses it. Given: validated and reported, not used (the seed is missing either way).
+        out["stop"] = STOP_CLEAN_LP + ("; LIBERO-Plus results were supplied: reported, not used"
+                                       if "libero_plus" in rec else "; no LIBERO-Plus results supplied")
+    if not clean_short or "libero_plus" in rec:
+        lp = _lp(rec, where)
+        missing_total = sum(m for _, _, m in lp.values())
+        out.update(lp_counts=lp, lp_rates={es: Fraction(100 * k, n) if n else None for es, (k, n, m) in lp.items()},
+                   missing_per_eval_seed={es: lp[es][2] for es in EVAL_SEEDS}, missing_total=missing_total,
+                   missing_frac=Fraction(missing_total, LP_ROLLOUTS))
+        if Fraction(missing_total, LP_ROLLOUTS) > MISSING_MAX:
+            reasons.append(f"coverage: {missing_total} of {LP_ROLLOUTS} LIBERO-Plus rollouts missing after reruns, "
+                           "more than 1%")
+    if reasons:
+        out.update(status="missing", missing_reason="; ".join(reasons))
         return out
+    rates = out["lp_rates"]
     vals = list(rates.values())
     out["Y"] = sum(vals, Fraction(0)) / len(vals)
     out["eval_seed_sd"] = _sd(vals)
@@ -396,24 +433,25 @@ def analyse(obj):
     HL = _test_out(l_cmp, hl_res, l_cmp["complete"], hl_T, extra={"sign_condition": "every d_s < 0"})
     K = _test_out(l_cmp, None if k_raw is None else (k_raw and not hl_res), l_cmp["complete"], margin=k_m)
 
-    # Below both members (secondary; c-radiov4 alone is trained).
+    # Below both members (secondary; c-radiov4 alone is trained). Seeds 0-2 and the three-seed sigma_hat, T and
+    # f(3), also after an extension (PLAN amendment 2026-11-17, item 3 (b)).
     r_cmp = compare(ck, DR, R_, BASE_SEEDS)
     hr_res, hr_T = harm_like(r_cmp, V3)
     HR = _test_out(r_cmp, hr_res, r_cmp["complete"], hr_T, extra={"sign_condition": "every d_s < 0"})
 
-    # Extension status (item 7).
+    # Extension status (item 7; under C fails, PLAN amendment 2026-11-17, item 3 (a)).
     if harm3 != "I":
         ext_status = EXT_NA
     elif not h_cmp["complete"]:
         ext_status = EXT_MISSING
-    elif c_holds:
-        ext_status = EXT_DUE
+    elif not c_holds:
+        ext_status = EXT_C_FAILS
     else:
-        ext_status = EXT_USER
+        ext_status = EXT_DUE
 
     harm, stage5 = harm3, None
     if has_ext:
-        if ext_status not in (EXT_DUE, EXT_USER):
+        if ext_status != EXT_DUE:
             raise InputError(f"extension seeds supplied, but the three-seed result does not qualify ({ext_status})")
         seeds5 = BASE_SEEDS + EXT_SEEDS
         V5, df5, pool5 = pooled(ck, {c: (seeds5 if c in EXT_CONFIGS else BASE_SEEDS) for c in CONFIGS})
@@ -434,14 +472,12 @@ def analyse(obj):
                                         "negative_count": sum(v < 0 for v in h5["d_s"].values())}),
                   "N": _test_out(h5, None if n5_res is None else (n5_res and not h5_res), h5["complete"],
                                  margin=n5_m),
-                  "harm_outcome": harm if c_holds else NOT_CLAIMED}
-        ext_status = EXT_DONE + ("" if c_holds else "; C fails under C-a, so the label stays C fails")
+                  "harm_outcome": harm}
+        ext_status = EXT_DONE
 
     label = C_FAILS if not c_holds else ("I" if harm == "I" else LABELS[(harm, helpful)])
     below_both = bool(harm == "H" and hr_res and r_cmp["complete"])
-    applies = {PENDING_EXT_C_FAILS: ext_status == EXT_USER or (has_ext and not c_holds),
-               PENDING_CLEAN_500: False,     # the input was accepted, so every clean suite had 500 rollouts
-               PENDING_BELOW_BOTH_EXT: bool(has_ext and c_holds)}
+    stops = [{"config": c, "train_seed": s, "stop": r["stop"]} for (c, s), r in _sorted(ck) if r.get("stop")]
     return {"rule": "PLAN 2026-11-15-pretrained-start-pairings, Decision rule as signed off: T3, M2, C-a, G1 at 36, "
                     "coverage 1%, extension S-4of5 for a complete three-seed I",
             "outcome": label,
@@ -452,8 +488,9 @@ def analyse(obj):
             "helpful_pairing_as_computed_not_claimed": None if c_holds else helpful,
             "calibration_C_holds": c_holds,
             "below_both_members": below_both if c_holds else NOT_CLAIMED,
+            "below_both_members_basis": NOT_CLAIMED if not c_holds else (BELOW_BOTH_5 if has_ext else BELOW_BOTH_3),
             "extension": ext_status,
-            "unresolved_pending_user": [{"case": p, "applies_to_this_input": applies[p]} for p in PENDING],
+            "stops_for_user": stops,
             "sigma_hat_three_seeds_pts": math.sqrt(V3), "pooled_variance_three_seeds_exact": str(V3),
             "df_three_seeds": df3, "pool_three_seeds": pool3,
             "tests_three_seeds": {"C": C, "H": H3, "N": N3, "H_L": HL, "K": K, "H_vs_c-radiov4": HR},
@@ -477,18 +514,26 @@ def _config_summary(ck, has_ext):
     return out
 
 
+def _sorted(ck):
+    return sorted(ck.items(), key=lambda kv: (CONFIGS.index(kv[0][0]), kv[0][1]))
+
+
 def _ck_out(ck):
     out = []
-    for (c, s), r in sorted(ck.items(), key=lambda kv: (CONFIGS.index(kv[0][0]), kv[0][1])):
+    for (c, s), r in _sorted(ck):
         e = {"config": c, "train_seed": s, "status": r["status"], "checkpoint": r.get("checkpoint")}
         if "missing_reason" in r:
             e["missing_reason"] = r["missing_reason"]
-        if "B" in r:
-            e.update(B_pts=float(r["B"]), gate_G1_pass=r["gate_pass"], gate_diagnosis=r["gate_diagnosis"],
-                     clean_suite_rates_pts={k: float(v) for k, v in r["clean_suite_rates"].items()},
-                     lp_rates_pts={es: (None if v is None else float(v)) for es, v in r["lp_rates"].items()},
+        if "clean_suite_rates" in r:
+            fl = (lambda v: None if v is None else float(v))
+            e.update(B_pts=fl(r["B"]), gate_G1_pass=r["gate_pass"], gate_diagnosis=r["gate_diagnosis"],
+                     clean_suite_rates_pts={k: fl(v) for k, v in r["clean_suite_rates"].items()},
+                     clean_missing_per_suite=r["clean_missing_per_suite"],
+                     clean_missing_total=r["clean_missing_total"],
+                     clean_missing_pct=float(r["clean_missing_frac"] * 100), stop_for_user=r["stop"],
+                     lp_rates_pts=None if r["lp_rates"] is None else {es: fl(v) for es, v in r["lp_rates"].items()},
                      lp_missing_per_eval_seed=r["missing_per_eval_seed"], lp_missing_total=r["missing_total"],
-                     lp_missing_pct=float(r["missing_frac"] * 100))
+                     lp_missing_pct=None if r["missing_frac"] is None else float(r["missing_frac"] * 100))
         if "Y" in r:
             e.update(Y_pts=float(r["Y"]), Y_exact=str(r["Y"]), eval_seed_sd_pts=r["eval_seed_sd"])
         out.append(e)
@@ -508,14 +553,14 @@ def report(res):
              f"  harm test: {res['harm_outcome']} (three seeds: {res['harm_outcome_three_seeds']}); helpful pairing: "
              f"{res['helpful_pairing']}; C holds: {res['calibration_C_holds']}; below both members: "
              f"{res['below_both_members']}",
+             f"  below both members basis: {res['below_both_members_basis']}",
              f"  extension: {res['extension']}"]
     if not res["calibration_C_holds"]:
         lines[1] = (f"  harm test: {NOT_CLAIMED}; helpful pairing: {NOT_CLAIMED}; below both members: "
-                    f"{NOT_CLAIMED}; C holds: False (PLAN line 190: the comparisons below are reported, nothing is "
+                    f"{NOT_CLAIMED}; C holds: False (PLAN line 192: the comparisons below are reported, nothing is "
                     f"claimed)")
-    for p in res["unresolved_pending_user"]:
-        if p["applies_to_this_input"]:
-            lines.append(f"  UNRESOLVED, PENDING THE USER (applies here): {p['case']}")
+    for p in res["stops_for_user"]:
+        lines.append(f"  STOP FOR THE USER: {p['config']} seed {p['train_seed']}: {p['stop']}")
     lines.append(f"  sigma_hat (seeds 0-2): {_fmt(res['sigma_hat_three_seeds_pts'])} pts, df {res['df_three_seeds']}")
     if res["extension_stage"]:
         e = res["extension_stage"]
@@ -525,6 +570,7 @@ def report(res):
         if "Y_pts" in r:
             lines.append(f"  {r['config']:<18} s{r['train_seed']}  Y {_fmt(r['Y_pts'])}  eval-seed sd "
                          f"{_fmt(r['eval_seed_sd_pts'])}  missing {r['lp_missing_total']}  B {_fmt(r['B_pts'], 2)}"
+                         f"  clean missing {r['clean_missing_total']}"
                          f"  gate {'pass' if r['gate_G1_pass'] else 'FAIL (no fault found)'}")
         else:
             lines.append(f"  {r['config']:<18} s{r['train_seed']}  MISSING: {r['missing_reason']}")
@@ -569,7 +615,7 @@ def main(argv=None):
     print(report(res))
     if args.out:
         Path(args.out).write_text(json.dumps(_jsonable(res), indent=1))
-    return 0
+    return 3 if res["stops_for_user"] else 0
 
 
 if __name__ == "__main__":

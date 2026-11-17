@@ -1,5 +1,6 @@
-"""Synthetic checks for pairings_analysis.py: every outcome branch of the locked stage 2 rule, the extension, and
-missing or incomplete input. Run: /opt/homebrew/bin/python3.11 -I test_pairings_analysis.py
+"""Synthetic checks for pairings_analysis.py: every outcome branch of the locked stage 2 rule, the extension, the
+three cases decided in the PLAN amendment of 2026-11-17 (item 3 (a) to (c); class DecidedCases), and missing or
+incomplete input. Run: /opt/homebrew/bin/python3.11 -I test_pairings_analysis.py
 
 Synthetic numbers only. Most checkpoints are built with 10,000 evaluated and 30 missing episodes per eval seed
 (90 of 30,090 missing, under the 1% line), so Y = successes / 100 is an exact decimal and boundary cases are exact.
@@ -65,10 +66,6 @@ def design(e=1.5, **vals):
 def replace(entries, new):
     keys = {(n["config"], n["train_seed"]) for n in new}
     return [x for x in entries if (x["config"], x["train_seed"]) not in keys] + list(new)
-
-
-def pending(r):
-    return {p["case"]: p["applies_to_this_input"] for p in r["unresolved_pending_user"]}
 
 
 def run(entries):
@@ -353,17 +350,6 @@ class Extension(unittest.TestCase):
         with self.assertRaisesRegex(P.InputError, "extension incomplete"):
             run(self.base() + [ck(D, 3, 80)])
 
-    def test_C_fails_with_three_seed_I_is_left_to_the_user(self):
-        r = run(self.base(none=79))
-        self.assertEqual((r["outcome"], r["extension"]), ("C fails, under C-a", P.EXT_USER))
-        self.assertTrue(pending(r)[P.PENDING_EXT_C_FAILS])
-        r = run(ext(self.base(none=79)))          # the user said yes: analysed, label stays
-        self.assertEqual(r["outcome"], "C fails, under C-a")
-        self.assertEqual((r["harm_outcome"], r["extension_stage"]["harm_outcome"]), (P.NOT_CLAIMED, P.NOT_CLAIMED))
-        self.assertEqual(r["harm_test_as_computed_not_claimed"], {"final": "H", "three_seeds": "I"})
-        self.assertTrue(r["extension"].startswith(P.EXT_DONE))
-        self.assertTrue(pending(r)[P.PENDING_EXT_C_FAILS])
-
     def test_extension_H_uses_repooled_sigma(self):
         # siglip2 e = 6 makes f(5) x sigma_hat exceed 2.7. Re-pooled (seeds 0-4): T = 3.24, dbar = -3.4, so H.
         # With the three-seed sigma_hat at n = 5, T would be 3.74 and the result I.
@@ -401,10 +387,6 @@ class Extension(unittest.TestCase):
         self.assertLessEqual(h["dbar_pts"], -h["threshold_T_pts"])
         self.assertEqual(r["harm_outcome"], "I")
 
-    def test_below_both_after_extension_is_listed_pending(self):
-        r = run(ext(self.base(), dr_vals=(76, 76)))
-        self.assertTrue(pending(r)[P.PENDING_BELOW_BOTH_EXT])
-        self.assertIn("UNRESOLVED, PENDING THE USER (applies here)", P.report(r))
 
 
 class NotClaimedAndPending(unittest.TestCase):
@@ -432,24 +414,172 @@ class NotClaimedAndPending(unittest.TestCase):
         self.assertIn("harm test: H", P.report(r))
         self.assertIn("helpful pairing: K", P.report(r))
 
-    def test_every_output_lists_the_unresolved_cases(self):
+    def test_no_pending_cases_remain(self):
         r = run(design())
-        self.assertEqual([p["case"] for p in r["unresolved_pending_user"]], list(P.PENDING))
-        self.assertFalse(any(pending(r).values()))
-        self.assertNotIn("PENDING THE USER", P.report(r))
+        self.assertNotIn("unresolved_pending_user", r)
+        self.assertEqual(r["stops_for_user"], [])
+        text = P.report(r)
+        self.assertNotIn("PENDING THE USER", text)
+        self.assertNotIn("STOP FOR THE USER", text)
 
-    def test_clean_under_500_is_refused_as_pending(self):
-        e = ck(D, 0, 80)
-        e["clean"]["libero_goal"]["episodes"] = 499
-        with self.assertRaisesRegex(P.InputError, "pending the user"):
+    def test_docstring_names_the_decided_and_open_cases(self):
+        doc = " ".join(P.__doc__.split())
+        self.assertNotIn("UNRESOLVED, PENDING THE USER", doc)
+        for words in ("DECIDED CASES (PLAN amendment 2026-11-17, item 3", "the extension of item 7 is not run",
+                      "seeds 0 to 2 only, paired by seed", "21 or more make the checkpoint a missing seed",
+                      "OPEN CASE", "still gets its LIBERO-Plus evaluation"):
+            self.assertIn(words, doc)
+
+
+def clean_short(entry, per_suite):
+    """Take per_suite[i] rollouts of clean suite i out as missing (no record), keeping the suite's success rate."""
+    for s, m in zip(P.CLEAN_SUITES, per_suite):
+        c = entry["clean"][s]
+        rate = Fraction(c["successes"], c["episodes"])
+        c["episodes"] -= m
+        c["successes"] = int(rate * c["episodes"]) if c["episodes"] else 0
+    return entry
+
+
+def get_ck(r, config, seed):
+    return [x for x in r["checkpoints"] if x["config"] == config and x["train_seed"] == seed][0]
+
+
+class DecidedCases(unittest.TestCase):
+    """PLAN amendment 2026-11-17, item 3 (lines 398-405). Each test fails on the script of PR #56, which reported
+    these cases as pending the user (an EXT_USER status and analysed extension seeds under C fails; a
+    "unresolved_pending_user" list; any clean suite other than 500 rollouts refused)."""
+
+    def three_seed_I(self, **kw):
+        return design(dr=[76, 76, 81], **kw)      # d(DR - D) = -4, -4, +1: complete three-seed I
+
+    # (a) line 399: no extension under "C fails, under C-a".
+    def test_a_C_fails_complete_I_no_extension(self):
+        r = run(self.three_seed_I(none=79))       # d(D - none) = 1: C fails by size
+        self.assertEqual((r["outcome"], r["extension"]), ("C fails, under C-a", P.EXT_C_FAILS))
+        self.assertTrue(r["tests_three_seeds"]["H"]["established"])   # all three seeds present: still not run
+        self.assertEqual(r["harm_test_as_computed_not_claimed"], {"final": "I", "three_seeds": "I"})
+        self.assertIn("extension: not run: C fails under C-a", P.report(r))
+
+    def test_a_C_fails_extension_seeds_refused(self):
+        with self.assertRaisesRegex(P.InputError, "does not qualify.*C fails under C-a"):
+            run(ext(self.three_seed_I(none=79)))
+
+    def test_a_C_not_established_is_read_as_C_fails_no_extension(self):
+        es = replace(self.three_seed_I(), [gone(NONE, 1)])   # C not established; harm test complete I
+        r = run(es)
+        self.assertFalse(r["tests_three_seeds"]["C"]["established"])
+        self.assertTrue(r["tests_three_seeds"]["H"]["established"])
+        self.assertEqual((r["outcome"], r["extension"]), ("C fails, under C-a", P.EXT_C_FAILS))
+        with self.assertRaisesRegex(P.InputError, "does not qualify"):
+            run(ext(es))
+
+    def test_a_C_holds_complete_I_extension_still_due(self):
+        self.assertEqual(run(self.three_seed_I())["extension"], P.EXT_DUE)
+
+    # (b) line 400: below both members after the extension: seeds 0-2, paired, pre-extension sigma_hat, T, f(3).
+    def test_b_after_extension_stated_with_five_and_three_seed_basis(self):
+        # e = 1.5, dr 76, 76, 81, c-radiov4 80, 80, 85: d(DR - R) = -4 on every seed 0-2; H on five seeds
+        r = run(ext(self.three_seed_I(r=[80, 80, 85]), dr_vals=(76, 76)))
+        self.assertEqual((r["harm_outcome_three_seeds"], r["harm_outcome"]), ("I", "H"))
+        hr = r["tests_three_seeds"]["H_vs_c-radiov4"]
+        self.assertEqual((hr["paired_seeds"], hr["n"], hr["result_on_paired_seeds"]), ([0, 1, 2], 3, True))
+        self.assertAlmostEqual(hr["threshold_T_pts"], max(2.7, P.f_of(3) * r["sigma_hat_three_seeds_pts"]))
+        self.assertIs(r["below_both_members"], True)
+        self.assertEqual(r["below_both_members_basis"], P.BELOW_BOTH_5)
+        self.assertNotIn("unresolved_pending_user", r)
+        text = P.report(r)
+        self.assertIn("harm test H is on five seeds", text)
+        self.assertIn("comparison is on three", text)
+
+    def test_b_uses_pre_extension_threshold_not_repooled(self):
+        # e = 3, dr 74, 74, 81, c-radiov4 = dr + 4 (d = -4 on seeds 0-2), extension dr 74, 74: H on five seeds.
+        # Three-seed T = f(3) x three-seed sigma_hat = 4.30 > 4: not below both. With the re-pooled sigma_hat
+        # (f(5): 3.00, or f(3): 3.87) it would be stated.
+        r = run(ext(design(e=3, dr=[74, 74, 81], r=[78, 78, 85]), dr_vals=(74, 74)))
+        self.assertEqual(r["harm_outcome"], "H")
+        hr, s5 = r["tests_three_seeds"]["H_vs_c-radiov4"], r["extension_stage"]["sigma_hat_pts"]
+        self.assertEqual((hr["n"], hr["dbar_exact"], hr["result_on_paired_seeds"]), (3, "-4", False))
+        self.assertAlmostEqual(hr["threshold_T_pts"], P.f_of(3) * r["sigma_hat_three_seeds_pts"])
+        self.assertGreater(hr["threshold_T_pts"], 4)
+        self.assertLess(P.f_of(3) * s5, 4)        # the re-pooled sigma_hat would have passed it
+        self.assertIs(r["below_both_members"], False)
+        self.assertEqual(r["below_both_members_basis"], P.BELOW_BOTH_5)
+
+    def test_b_without_extension_basis_is_three_seeds(self):
+        r = run(design())
+        self.assertEqual((r["below_both_members"], r["below_both_members_basis"]), (True, P.BELOW_BOTH_3))
+
+    def test_b_not_stated_under_C_fails(self):
+        r = run(design(none=78))
+        self.assertEqual((r["below_both_members"], r["below_both_members_basis"]), (P.NOT_CLAIMED, P.NOT_CLAIMED))
+
+    # (c) lines 403-404: missing clean rollouts.
+    def test_c_20_missing_leave_the_denominators(self):
+        e = clean_short(ck(D, 0, 80), (20, 0, 0, 0))          # libero_spatial: 480 with a record
+        e["clean"]["libero_spatial"]["successes"] = 432       # 90% of 480
+        r = run(replace(design(), [e]))
+        c = get_ck(r, D, 0)
+        self.assertEqual((c["status"], c["clean_missing_total"]), ("ok", 20))
+        self.assertEqual(c["clean_missing_per_suite"]["libero_spatial"], 20)
+        self.assertEqual(c["clean_suite_rates_pts"]["libero_spatial"], 90.0)   # 432 / 480, not 432 / 500
+        self.assertEqual(c["B_pts"], (90 + 80 * 3) / 4)
+        self.assertEqual((r["outcome"], r["stops_for_user"]), ("H and K", []))
+        self.assertIn("clean missing 20", P.report(r))
+
+    def test_c_21_missing_is_a_missing_seed_and_a_stop(self):
+        e = clean_short(ck(DR, 1, 75), (6, 5, 5, 5))          # 21 missing across suites
+        r = run(replace(design(), [e]))
+        c = get_ck(r, DR, 1)
+        self.assertEqual((c["status"], c["clean_missing_total"]), ("missing", 21))
+        self.assertIn("clean coverage: 21 of 2000", c["missing_reason"])
+        # item 6: a missing dinov3+c-radiov4 seed makes the harm outcome I, not qualifying for the extension
+        self.assertEqual((r["outcome"], r["harm_outcome"], r["extension"]), ("I", "I", P.EXT_MISSING))
+        self.assertFalse(r["tests_three_seeds"]["H"]["established"])
+        self.assertEqual([(s["config"], s["train_seed"]) for s in r["stops_for_user"]], [(DR, 1)])
+        self.assertIn("LIBERO-Plus results were supplied: reported, not used", r["stops_for_user"][0]["stop"])
+        self.assertIn("STOP FOR THE USER: dinov3+c-radiov4 seed 1", P.report(r))
+        with self.assertRaisesRegex(P.InputError, "does not qualify"):
+            run(ext(replace(design(), [e])))
+
+    def test_c_21_missing_includes_libero_plus_tests(self):
+        # a dinov3 seed over the clean line drops out of C (C fails), H and the helpful pairing (unresolved),
+        # even though its LIBERO-Plus results are complete
+        r = run(replace(design(), [clean_short(ck(D, 2, 80), (21, 0, 0, 0))]))
+        self.assertEqual((r["outcome"], r["helpful_pairing_as_computed_not_claimed"]), ("C fails, under C-a",
+                                                                                         "unresolved"))
+        self.assertEqual(r["harm_test_as_computed_not_claimed"]["final"], "I")
+        for t in ("C", "H", "K", "H_L"):
+            self.assertEqual(r["tests_three_seeds"][t]["paired_seeds"], [0, 1])
+        r = run(replace(design(), [clean_short(ck(DL, 0, 80), (0, 0, 0, 21))]))
+        self.assertEqual((r["outcome"], r["helpful_pairing"]), ("H, not K, not H_L", "unresolved"))
+
+    def test_c_libero_plus_not_required_over_the_line(self):
+        e = clean_short(ck(DR, 1, 75), (500, 0, 0, 0))        # a whole suite without a record: B undefined
+        del e["libero_plus"]
+        r = run(replace(design(), [e]))
+        c = get_ck(r, DR, 1)
+        self.assertEqual((c["status"], c["B_pts"], c["gate_G1_pass"], c["lp_rates_pts"]), ("missing", None, None, None))
+        self.assertIn("no LIBERO-Plus results supplied", r["stops_for_user"][0]["stop"])
+        self.assertEqual(r["harm_outcome"], "I")
+
+    def test_c_libero_plus_still_required_under_the_line(self):
+        e = clean_short(ck(DR, 1, 75), (20, 0, 0, 0))
+        del e["libero_plus"]
+        with self.assertRaisesRegex(P.InputError, "libero_plus eval seeds"):
             run(replace(design(), [e]))
 
-    def test_docstring_names_the_unresolved_cases(self):
-        doc = " ".join(P.__doc__.split())
-        self.assertIn("UNRESOLVED, PENDING THE USER", doc)
-        for words in ("complete three-seed I but C fails under C-a", "other than 500 rollouts",
-                      "five-seed harm result with the three-seed C-RADIOv4-alone test"):
-            self.assertIn(words, doc)
+    def test_c_cli_exit_3_on_a_stop(self):
+        with tempfile.TemporaryDirectory() as d:
+            inp, out = os.path.join(d, "i.json"), os.path.join(d, "o.json")
+            with open(inp, "w") as f:
+                json.dump({"checkpoints": replace(design(), [clean_short(ck(DR, 1, 75), (21, 0, 0, 0))])}, f)
+            p = subprocess.run([sys.executable, "-I", os.path.join(HERE, "pairings_analysis.py"), "--input", inp,
+                                "--out", out], capture_output=True, text=True)
+            self.assertEqual(p.returncode, 3, p.stderr)
+            self.assertIn("STOP FOR THE USER", p.stdout)
+            with open(out) as f:
+                self.assertEqual(len(json.load(f)["stops_for_user"]), 1)
 
 
 class BadInput(unittest.TestCase):
@@ -485,10 +615,10 @@ class BadInput(unittest.TestCase):
         del e["clean"]
         self.bad(replace(design(), [e]), "no clean tally")
 
-    def test_clean_short(self):
+    def test_clean_over_500(self):
         e = ck(D, 0, 80)
-        e["clean"]["libero_goal"]["episodes"] = 499
-        self.bad(replace(design(), [e]), "need 500")
+        e["clean"]["libero_goal"]["episodes"] = 501
+        self.bad(replace(design(), [e]), "more than the 500")
 
     def test_lp_counts_do_not_add_up(self):
         e = ck(D, 0, 80)
