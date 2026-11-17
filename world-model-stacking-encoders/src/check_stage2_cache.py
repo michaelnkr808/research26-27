@@ -10,8 +10,8 @@ The VAE is looked up in vae, then vae_b, as proxy_wam.py does. It also prints th
 fields of every _meta.shard*.json, and the free space of the volume. Nothing is written: files are opened read-only,
 .npy arrays are memory-mapped so only the header is read, and no directory is created.
 
-Exit code 0: no gap. 1: at least one gap (missing meta, missing or malformed file, wrong dtype, shape or length, a
-missing or inconsistent provenance file, free space under --min-free-gib). A summary is printed either way.
+Exit code 0: no gap. 1: at least one gap (missing meta, missing, truncated or unreadable file, wrong dtype, shape or
+length, a missing, unreadable or inconsistent provenance file). Free space is printed only, never a gap. A summary is printed either way.
 
 Run: python check_stage2_cache.py --feats /mnt/proxy/feats
 """
@@ -89,15 +89,23 @@ def provenance(feats, source, suite):
     if not files:
         return ([] if source == "vae" else [f"{source}/{suite}: no _meta.shard*.json"]), [f"  provenance: none found"]
     seen = {}
+    bad = []
     for f in files:
-        with open(f) as fh:
-            j = json.load(fh)
+        try:
+            with open(f) as fh:
+                j = json.load(fh)
+            if not isinstance(j, dict):
+                raise ValueError("not a JSON object")
+        except Exception as e:
+            bad.append(f"{source}/{suite}: cannot read {os.path.relpath(f, feats)} ({type(e).__name__}: {e})")
+            continue
         key = (j.get("model"), j.get("hf_id"), str(j.get("resolution")), j.get("dtype"))
         seen.setdefault(key, []).append(os.path.relpath(f, feats))
     lines = [f"  provenance: model={k[0]} hf_id={k[1]} resolution={k[2]} compute_dtype={k[3]} ({len(v)} file(s))"
              for k, v in seen.items()]
-    gaps = [f"{source}/{suite}: {len(seen)} different model/resolution/dtype values across shards"] if len(seen) > 1 else []
-    return gaps, lines
+    gaps = bad + ([f"{source}/{suite}: {len(seen)} different model/resolution/dtype values across shards"]
+                  if len(seen) > 1 else [])
+    return gaps, lines or ["  provenance: none readable"]
 
 
 def check_cache(feats, sources=SOURCES, suites=SUITES, dims=DIMS, workers=16, out=print):
@@ -137,16 +145,13 @@ def main(argv=None, out=print):
     p.add_argument("--sources", default=",".join(SOURCES))
     p.add_argument("--suites", default=",".join(SUITES))
     p.add_argument("--workers", type=int, default=16)
-    p.add_argument("--min-free-gib", type=float, default=None, help="exit 1 if the volume has less free space")
     a = p.parse_args(argv)
     sources, suites = a.sources.split(","), a.suites.split(",")
     out(f"feats={a.feats} sources={sources} suites={suites}")
     gaps, cells = check_cache(a.feats, sources, suites, DIMS, a.workers, out)
     du = shutil.disk_usage(a.feats)
     free = du.free / 2**30
-    out(f"volume: {du.used / 2**30:.0f} GiB used, {free:.0f} GiB free of {du.total / 2**30:.0f} GiB")
-    if a.min_free_gib is not None and free < a.min_free_gib:
-        gaps.append(f"volume: {free:.0f} GiB free, want at least {a.min_free_gib:.0f}")
+    out(f"volume: {du.used / 2**30:.0f} GiB used, {free:.0f} GiB free of {du.total / 2**30:.0f} GiB (report only, no threshold)")
     out("=== summary")
     for source, suite, n, g in cells:
         out(f"{source:10s} {suite:15s} episodes {n:4d}  gaps {g}")

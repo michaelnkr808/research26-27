@@ -80,8 +80,40 @@ class Check(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertTrue(any(x.startswith("=== OK") for x in out))
         self.assertTrue(any(x.startswith("volume:") for x in out))
-        self.assertEqual(C.main(["--feats", feats, "--sources", "dinov3", "--suites", "libero_10",
-                                 "--min-free-gib", "1e9"], out=out.append), 1)
+
+    def test_truncated_npy_is_a_gap(self):
+        p = os.path.join(self.feats, "dinov3", "libero_goal", "ep000000.npy")
+        with open(p, "rb") as fh:
+            data = fh.read()
+        with open(p, "wb") as fh:
+            fh.write(data[:len(data) // 2])        # header intact, data cut short
+        gaps, _ = self.run_check()
+        self.assertEqual(len(gaps), 1)
+        self.assertIn("dinov3/libero_goal/ep000000: cannot read .npy header", gaps[0])
+
+    def test_unreadable_npy_is_a_gap(self):
+        with open(os.path.join(self.feats, "siglip2", "libero_10", "ep000003.npy"), "wb") as fh:
+            fh.write(b"not a numpy file at all")
+        gaps, _ = self.run_check()
+        self.assertEqual(len(gaps), 1)
+        self.assertIn("siglip2/libero_10/ep000003: cannot read .npy header", gaps[0])
+
+    def test_unreadable_stats_is_a_gap(self):
+        with open(os.path.join(self.feats, "dinov3", "libero_10", "ep000003.stats.npy"), "wb") as fh:
+            fh.write(b"junk")
+        gaps, _ = self.run_check()
+        self.assertEqual(len(gaps), 1)
+        self.assertIn("cannot read .stats.npy", gaps[0])
+
+    def test_bad_meta_json_is_a_gap(self):
+        with open(os.path.join(self.feats, "c-radiov4", "libero_goal", "_meta.shard0of1.json"), "w") as fh:
+            fh.write("{not json")
+        with open(os.path.join(self.feats, "vae", "libero_10", "_meta.shard0of1.json"), "w") as fh:
+            fh.write("[1, 2]")
+        gaps, _ = self.run_check()
+        self.assertEqual(len(gaps), 2)
+        self.assertTrue(any("c-radiov4/libero_goal: cannot read" in g and "JSONDecodeError" in g for g in gaps))
+        self.assertTrue(any("vae/libero_10: cannot read" in g for g in gaps))
 
     def test_missing_npy(self):
         os.remove(os.path.join(self.feats, "dinov3", "libero_goal", "ep000001.npy"))
