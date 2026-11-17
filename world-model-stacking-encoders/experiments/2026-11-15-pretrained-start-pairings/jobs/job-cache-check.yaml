@@ -1,0 +1,60 @@
+# Stage 2 cache pre-check (pairings PLAN, "Cache check, by reading only"; "What the implementation session must add" item 3).
+# Read-only, CPU-only Job: runs src/check_stage2_cache.py against /mnt/proxy/feats (PVC stacking-encoders-proxy, mounted
+# readOnly). It writes nothing to the PVC. Exit 0 = no gap, 1 = a gap (Job fails at once, no retry), summary in the pod log.
+# Code: ConfigMap stacking-encoders-pairings-cachecheck-src, key check_stage2_cache.py, mounted at /src (RUN-cache-check.md).
+# Style of the baseline's job-check4-cleanup.yaml: no sleep, requests at or under the exempt size (1 CPU, 2 GB; policy
+# lines in _standards/08), limits within 20% of requests, CPU-only node affinity, region us-west, activeDeadlineSeconds.
+# Image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime (has numpy; nothing is installed). The reads are file headers
+# (np.load mmap) and the small stats files, so 600m CPU and 16 reader threads are plenty; CephFS reads scale with threads.
+# NOT SUBMITTED. Submitting needs the user's go in the lead's window.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-pairings-cache-check
+  namespace: aria-world
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 3600
+  ttlSecondsAfterFinished: 86400
+  podFailurePolicy:
+    rules:
+    - action: FailJob            # exit 1 = the check found a gap; 2 = the script itself failed. Rerunning will not change it.
+      onExitCodes: {containerName: main, operator: In, values: [1, 2]}
+    - action: Ignore             # node reboot or drain: retry without counting
+      onPodConditions: [{type: DisruptionTarget}]
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -uo pipefail
+          echo "=== start $(date -u)"
+          sha256sum /src/check_stage2_cache.py
+          rc=0
+          python /src/check_stage2_cache.py --feats /mnt/proxy/feats --workers 16 || rc=$?
+          echo "=== exit $rc $(date -u)"
+          exit $rc
+        env:
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        resources:
+          requests: {cpu: 500m, memory: 1Gi}
+          limits:   {cpu: 600m, memory: 1200Mi}
+        volumeMounts:
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy, readOnly: true}
+      volumes:
+      - name: src
+        configMap: {name: stacking-encoders-pairings-cachecheck-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy, readOnly: true}
