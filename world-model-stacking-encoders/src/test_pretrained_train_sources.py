@@ -7,14 +7,20 @@ one fake source (config "dinov3") and with two (config "dinov3+c-radiov4"), fake
      (patch_embedding.weight, head.head.weight, head.head.bias) hold the fake Wan file's values on the 48 VAE channels
      and zeros on the extra channels; nothing else is partly loaded;
   2. the derived action expert is unchanged by the widening: its derived (copied or resized) tensors equal those of
-     the 48-channel ("none") model bit for bit, and so does every video-expert tensor that is not widened;
+     the 48-channel ("none") model bit for bit, and so does every video-expert tensor that is not widened. Not
+     expected to match across configs at the same seed, and not checked: the fresh tensors (action encoder, action
+     head, proprio encoder; the seeded build makes the wider patch embedding first, so it uses more random numbers
+     before them), and the noise and timestep draws (draw_step's video-noise tensor has the extra channels in its
+     shape, so every draw after it from the same generator, the timesteps and the action noise too, comes out
+     different);
   3. one optimizer step's gradient with micro-batches 8 x 16 and 4 x 32 equals one batch of 128 with the same draws,
      relative L2 error <= 1e-5 over all parameters (the stage 1 tolerance, PR #39); the loss and each per-source loss
      part too; the extra input channels get a nonzero gradient (the check is not empty);
   4. resume: a run stopped after step 2 and resumed at the same micro-batch equals the straight 4-step run bit for bit
      (weights, losses); a resume with another --config is refused;
   5. rollout.Policy.load builds the widened model from model.pt (in_dim, widened shapes, every parameter equal, the
-     sources and their training statistics in the saved config).
+     sources in the saved config), and the per-source feature statistics it normalizes with equal the ones training
+     used (Data.fstats, recomputed here from the cache's .stats.npy files, not read back from model.pt).
 
 Needs FastWAM 7faa711 importable (pip install --no-deps -e FastWAM) and safetensors, as test_pretrained_train.py.
 """
@@ -205,6 +211,9 @@ def check_policy_load(d, config, tag, A):
     assert cfg["in_dim"] == in_dim and cfg["sources"] == [P.VAE] + srcs and cfg["config"] == config
     assert set(cfg["feature_stats"]) == set(srcs)
     assert all(len(cfg["feature_stats"][s][0]) == len(cfg["feature_stats"][s][1]) == DIMS[s] for s in srcs)
+    # the statistics training used: Data.fstats of the same cache and config (float32 mean, sd per channel)
+    train_stats = P.Data(d, SUITES.split(","), srcs, None).fstats
+    assert set(train_stats) == set(srcs)
     orig = R.Featurizer
     seen = []
     R.Featurizer = lambda sources, *a, **k: seen.append(list(sources))   # the encoders are not needed to build it
@@ -215,7 +224,12 @@ def check_policy_load(d, config, tag, A):
     assert seen == [srcs], seen
     assert pol.sources == srcs and set(pol.fstats) == set(srcs)
     for s in srcs:
-        assert torch.equal(pol.fstats[s][0], torch.tensor(cfg["feature_stats"][s][0]))
+        for i, what in enumerate(("mean", "sd")):
+            ref = torch.from_numpy(train_stats[s][i])
+            assert ref.dtype == torch.float32 and bool(ref.abs().max() > 0), (s, what)
+            got = pol.fstats[s][i]
+            assert got.dtype == ref.dtype and torch.equal(got, ref), \
+                (s, what, float((got.float() - ref).abs().max()))
     sd = pol.model.state_dict()
     assert set(sd) == set(A["model"]) and all(torch.equal(sd[k], A["model"][k]) for k in sd)
     assert tuple(sd["video_expert.patch_embedding.weight"].shape) == (48, in_dim, 1, 2, 2)
@@ -223,7 +237,7 @@ def check_policy_load(d, config, tag, A):
     assert sd["video_expert.head.head.bias"].shape[0] == PATCH_K * in_dim
     assert len(pol.model.video_expert.blocks) == len(pol.model.action_expert.blocks) == 2
     print(f"  5 ok [{config}]: rollout.Policy.load builds the widened model (in_dim {in_dim}) from model.pt, every "
-          f"parameter equal; sources {srcs} and their statistics carried")
+          f"parameter equal; sources {srcs}; its feature statistics equal the ones training used (Data.fstats)")
 
 
 def main():
