@@ -99,3 +99,38 @@ Planning lead's read of what that takes (`speculative`, a proposal, nothing deci
 **PR:** direct (this entry and the `PLAN.md` status move). The survey files will go by pull request.
 **Not verified:** nothing from the survey yet; the workers had not reported when this was written.
 **Next:** check the three survey files, have a fresh reviewer fact-check them against the sources, then write the summary of what exists and what is missing, and the `references.bib` entries.
+
+## 2026-11-16 [agent, lead, planning] (literature survey done and merged: PR #49; the lead prefers Wan 2.2 as the base)
+**Goal:** run the literature survey the lead approved, and report what exists and what is missing around "add an audio encoder to a world action model".
+
+**Did:**
+- Three workers each wrote one survey file under `literature/survey/`: audio in robot policies (17 papers), spatial audio in embodied AI (30 papers), world action models (19 papers). Each paper was opened by the worker, with read depth recorded per paper.
+- Review, all posted on the pull request: three fact-check reviewers checked every entry's metadata against the arXiv API and the content against raw page text; a fourth reviewer tried to disprove the "I did not find" claims with its own searches; a second-round reviewer checked the fixes and the new entries. The workers fixed their own files. The lead read the Cosmos 3 model cards and the S2A2 seed sentence from raw text itself.
+- Merged on the lead's "yeah merge the pr" (2026-11-16).
+
+**PR:** #49 (the three survey files). This entry and the `PLAN.md` and `README.md` status moves: direct.
+
+**Found** (what the reviewed survey files say; `verified` means read from the paper or page by a worker or reviewer on 2026-11-16, not reproduced; detail and quotes are in the files and the pull request comments):
+- No world action model was found that was trained or evaluated with audio as an input to robot control (`verified` only as "not found in these searches").
+- Cosmos 3 (NVIDIA, open weights) is a world action model family whose base model accepts and generates two-channel 48 kHz audio; its released robot policy takes cameras and proprioception only, and its audio input is capped at 0.5 s on the model card (`verified`, model cards read by the lead). Whether its two channels carry direction was not checked. The first survey pass missed it; the gap-claim reviewer found it.
+- FLUX 3 Action (Black Forest Labs) saw audio in pretraining only (`verified` by a worker and a reviewer).
+- Most open world action models read are built on the Wan 2.2 5B family (Fast-WAM, Motus, LingBot-VA, tau0-WM); Ovi and MOVA are joint audio-video generators built on Wan 2.2 (`verified` by a worker and a reviewer; the exact checkpoint is stated only for tau0-WM).
+- Closest to the direction: "Audio-Visual World Models" (arXiv 2512.00883) predicts frames and binaural audio under actions, in simulated navigation only, with a small model, not a pretrained video model.
+- Spatial audio in acting models is common in simulated navigation, including NaVLA2 (one of the papers the lead has read), which trains on its own 43.9K-episode set rendered with SoundSpaces 2.0 on Habitat and reports an ablation of a mono-downmix branch against a binaural branch. For real-robot manipulation only two were found: S2A2 (microphone arrays, preprint) and SoundAct (stereo, workshop project page).
+- No publicly released real-robot dataset with calibrated spatial audio, video and robot actions was found. REASSEMBLE is the closest public one (three separately placed microphones, not an array). FEEL has a 7-microphone array with human, not robot, actions.
+- Several spatial audio encoders and spatial audio language models exist that could be reused (BAT's SpatialAST, SPUR, JAEGER, OmniEcho, and the RMS-AQA baseline's spatial branch); release status differs and is recorded per entry.
+- One reviewer finding was wrong and not applied (S2A2's real-robot seed count is stated in the paper: a single seed); one first-round finding was reversed (JAEGER has a public checkpoint repository). Both are recorded on the pull request.
+
+From the lead, 2026-11-16:
+- "id prefer to work with wan 2.2" as the base. This is the lead's preference, not yet a decision record; which Wan 2.2 world action model is not chosen.
+- The lead expects datasets with spatial audio alongside video to exist, and asked what NaVLA2 trained on. Answer from the survey entry: simulator-rendered binaural audio (SoundSpaces 2.0 on Habitat) with navigation actions. So such data exists for simulated navigation; what was not found is the real-robot manipulation case.
+- The lead asked what the Audio Flamingo 3 baseline is; the planning lead explained it in chat. Whether it is the first benchmark experiment is still not confirmed.
+
+**Not verified:** nothing in the survey was reproduced. Items each file lists under "Could not verify" (among them the SoundAct OpenReview paper and the Preprints.org embodied-audio survey). Whether the MINav dataset and NaVLA2 weights are released. Section and table labels in entries read through the summarizing page reader.
+
+**Next:** second pull request with the `references.bib` entries for the surveyed papers, a short summary of what exists and what is missing, and a read-first list in `reading-list.md`. Then the open choices for the lead and the PI: navigation in a simulator (data exists) or robot manipulation (no public spatial audio data found); which Wan 2.2 world action model; which spatial audio encoder.
+
+**Open questions:**
+- Navigation or manipulation as the setting, given where spatial audio data exists.
+- Which Wan 2.2 based world action model, and what it costs to fine-tune on the 200 dollar budget.
+- Still open: what the PI means by "running" for RMS-AQA and how it connects to world action models; whether the 200 dollars covers a training run; dataset access (pending).

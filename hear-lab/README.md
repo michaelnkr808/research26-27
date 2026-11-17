@@ -1,6 +1,6 @@
 # HEAR Lab: spatial audio for world action models
 
-**Status:** exploring. Nothing has been run yet; the PI's first task is to get the RMS-AQA benchmark running. Current agenda: `PLAN.md`. History: `LOG.md`.
+**Status:** exploring. Nothing has been run yet; the PI's first task is to get the RMS-AQA benchmark running. A literature survey is done (`literature/survey/`, PR #49). Current agenda: `PLAN.md`. History: `LOG.md`.
 
 **Question:** What benefits does a world action model gain from being given spatial audio? In the lead's own words (2026-11-15): "relating spatial audio to world action models and investigating what benefits can be gained from providing world action models with spatial audio".
 
@@ -35,4 +35,4 @@ Get the RMS-AQA benchmark running (`chen2026rmsaqa` in `literature/references.bi
 - `LOG.md`: research log for the direction (short session summaries; detail is in each experiment's `LOG.md`)
 - `experiments/`: one folder per experiment, each with `config.*`, `PLAN.md`, `LOG.md`, `README.md` (copy `experiments/_new-experiment/`)
 - `decisions/`: decision records
-- `literature/`: `reading-list.md` (what has been read), `references.bib`, and paper notes
+- `literature/`: `reading-list.md` (what has been read), `references.bib`, and paper notes; `literature/survey/` holds the reviewed survey files
