@@ -14,6 +14,8 @@ Run (stdlib only):
 Exit 0: outcome computed (printed, and written to --out). Exit 2: the input is incomplete or malformed; nothing is
 written and no outcome is given. Exit 3: outcome computed and written as for 0, but the input reaches a case the PLAN
 leaves to the user; it is printed as "STOP FOR THE USER" and listed under "stops_for_user" (see "OPEN CASE" below).
+The exit-3 stop is a reminder after the fact, not the enforcement point: the run session must stop and ask the user
+at the LIBERO-Plus evaluation step itself, before that checkpoint is evaluated (PLAN line 405).
 
 Input (one JSON object):
   {"checkpoints": [<entry>, ...]}
@@ -69,8 +71,13 @@ DECIDED CASES (PLAN amendment 2026-11-17, item 3; until then the script reported
       dinov3+c-radiov4 or dinov3 seed: harm I, not qualifying for the extension; a missing none or dinov3 seed: C
       not established, read as "C fails"; a missing dinov3+siglip2 or dinov3 seed: helpful pairing unresolved).
 OPEN CASE (line 405, not decided by the user; kept out of this script's decisions): whether a checkpoint over the
-clean 1% line still gets its LIBERO-Plus evaluation. Its "libero_plus" may be given (reported, not used: the seed is
-missing either way) or left out; either way the checkpoint is listed under "stops_for_user" and the exit code is 3.
+clean 1% line still gets its LIBERO-Plus evaluation. Its "libero_plus" may be given (validated and reported, not
+used: the seed is missing either way) or left out. The gate still applies to it: a computable B below 36 needs a
+"gate_diagnosis" (item 5; the user's answer on PR #59, 2026-11-17). Without a recorded answer the checkpoint is
+listed under "stops_for_user" and the exit code is 3. The user's answer for that checkpoint is recorded in its entry:
+  "user_decision_libero_plus": "evaluate" | "skip", "decided": "<date and the user's words>"
+Then the stop clears (no exit 3) and the report prints the recorded decision under "user_decisions". The two fields
+go together, and only on a checkpoint over the clean line (anywhere else they are an input error).
 lp_eval.py is not imported: its paired/verdict work on per-episode tables of the proxy's subset rule, not on totals.
 """
 
@@ -186,6 +193,21 @@ def _lp(rec, where):
     return out
 
 
+DECISIONS = ("evaluate", "skip")
+
+
+def _user_decision(rec, where):
+    """The user's recorded answer to the open case (PLAN line 405), or None when not given."""
+    d, words = rec.get("user_decision_libero_plus"), rec.get("decided")
+    if d is None and words is None:
+        return None
+    if d not in DECISIONS:
+        raise InputError(f'{where}: "user_decision_libero_plus" must be one of {list(DECISIONS)}, got {d!r}')
+    if not isinstance(words, str) or not words.strip():
+        raise InputError(f'{where}: "user_decision_libero_plus" needs "decided": "<date and the user\'s words>"')
+    return {"user_decision_libero_plus": d, "decided": words}
+
+
 def load(obj):
     """Validate the input and return {(config, seed): checkpoint dict}, and whether extension seeds are present."""
     if not isinstance(obj, dict) or not isinstance(obj.get("checkpoints"), list):
@@ -245,14 +267,24 @@ def _checkpoint(rec, where):
            "clean_missing_frac": Fraction(clean_missing_total, CLEAN_ROLLOUTS), "stop": None,
            "lp_counts": None, "lp_rates": None, "missing_per_eval_seed": None, "missing_total": None,
            "missing_frac": None}
+    decision = _user_decision(rec, where)
+    if decision and not clean_short:
+        raise InputError(f'{where}: "user_decision_libero_plus" is given, but only {clean_missing_total} clean '
+                         "rollouts are missing; the decision exists only for a checkpoint over the clean 1% line")
+    out["user_decision"] = None
     reasons = []
     if clean_short:
         reasons.append(f"clean coverage: {clean_missing_total} of {CLEAN_ROLLOUTS} clean rollouts missing after "
                        "reruns, more than 1% (PLAN amendment 2026-11-17, item 3 (c))")
         # The open case: the LIBERO-Plus evaluation of such a checkpoint is the user's call, so the script neither
         # requires nor refuses it. Given: validated and reported, not used (the seed is missing either way).
-        out["stop"] = STOP_CLEAN_LP + ("; LIBERO-Plus results were supplied: reported, not used"
-                                       if "libero_plus" in rec else "; no LIBERO-Plus results supplied")
+        supplied = ("; LIBERO-Plus results were supplied: reported, not used" if "libero_plus" in rec
+                    else "; no LIBERO-Plus results supplied")
+        if decision:
+            out["user_decision"] = dict(decision, note="recorded user decision on the open case (PLAN line 405)"
+                                        + supplied)
+        else:
+            out["stop"] = STOP_CLEAN_LP + supplied
     if not clean_short or "libero_plus" in rec:
         lp = _lp(rec, where)
         missing_total = sum(m for _, _, m in lp.values())
@@ -478,6 +510,8 @@ def analyse(obj):
     label = C_FAILS if not c_holds else ("I" if harm == "I" else LABELS[(harm, helpful)])
     below_both = bool(harm == "H" and hr_res and r_cmp["complete"])
     stops = [{"config": c, "train_seed": s, "stop": r["stop"]} for (c, s), r in _sorted(ck) if r.get("stop")]
+    decisions = [dict(r["user_decision"], config=c, train_seed=s) for (c, s), r in _sorted(ck)
+                 if r.get("user_decision")]
     return {"rule": "PLAN 2026-11-15-pretrained-start-pairings, Decision rule as signed off: T3, M2, C-a, G1 at 36, "
                     "coverage 1%, extension S-4of5 for a complete three-seed I",
             "outcome": label,
@@ -491,6 +525,7 @@ def analyse(obj):
             "below_both_members_basis": NOT_CLAIMED if not c_holds else (BELOW_BOTH_5 if has_ext else BELOW_BOTH_3),
             "extension": ext_status,
             "stops_for_user": stops,
+            "user_decisions": decisions,
             "sigma_hat_three_seeds_pts": math.sqrt(V3), "pooled_variance_three_seeds_exact": str(V3),
             "df_three_seeds": df3, "pool_three_seeds": pool3,
             "tests_three_seeds": {"C": C, "H": H3, "N": N3, "H_L": HL, "K": K, "H_vs_c-radiov4": HR},
@@ -531,6 +566,7 @@ def _ck_out(ck):
                      clean_missing_per_suite=r["clean_missing_per_suite"],
                      clean_missing_total=r["clean_missing_total"],
                      clean_missing_pct=float(r["clean_missing_frac"] * 100), stop_for_user=r["stop"],
+                     user_decision=r["user_decision"],
                      lp_rates_pts=None if r["lp_rates"] is None else {es: fl(v) for es, v in r["lp_rates"].items()},
                      lp_missing_per_eval_seed=r["missing_per_eval_seed"], lp_missing_total=r["missing_total"],
                      lp_missing_pct=None if r["missing_frac"] is None else float(r["missing_frac"] * 100))
@@ -561,6 +597,9 @@ def report(res):
                     f"claimed)")
     for p in res["stops_for_user"]:
         lines.append(f"  STOP FOR THE USER: {p['config']} seed {p['train_seed']}: {p['stop']}")
+    for p in res["user_decisions"]:
+        lines.append(f"  USER DECISION (recorded): {p['config']} seed {p['train_seed']}: LIBERO-Plus evaluation "
+                     f"'{p['user_decision_libero_plus']}', decided: {p['decided']} ({p['note']})")
     lines.append(f"  sigma_hat (seeds 0-2): {_fmt(res['sigma_hat_three_seeds_pts'])} pts, df {res['df_three_seeds']}")
     if res["extension_stage"]:
         e = res["extension_stage"]

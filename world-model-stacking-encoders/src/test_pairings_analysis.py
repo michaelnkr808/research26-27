@@ -427,7 +427,9 @@ class NotClaimedAndPending(unittest.TestCase):
         self.assertNotIn("UNRESOLVED, PENDING THE USER", doc)
         for words in ("DECIDED CASES (PLAN amendment 2026-11-17, item 3", "the extension of item 7 is not run",
                       "seeds 0 to 2 only, paired by seed", "21 or more make the checkpoint a missing seed",
-                      "OPEN CASE", "still gets its LIBERO-Plus evaluation"):
+                      "OPEN CASE", "still gets its LIBERO-Plus evaluation",
+                      "The exit-3 stop is a reminder after the fact", "must stop and ask the user at the LIBERO-Plus "
+                      "evaluation step itself", '"user_decision_libero_plus": "evaluate" | "skip"'):
             self.assertIn(words, doc)
 
 
@@ -568,6 +570,84 @@ class DecidedCases(unittest.TestCase):
         del e["libero_plus"]
         with self.assertRaisesRegex(P.InputError, "libero_plus eval seeds"):
             run(replace(design(), [e]))
+
+    # The user's answers on PR #59, 2026-11-17 ("go with both of these").
+    def test_c_over_line_low_B_still_needs_gate_diagnosis(self):
+        e = clean_short(ck(DR, 1, 75, B=30), (21, 0, 0, 0))   # B 30 < 36 on the records that exist
+        with self.assertRaisesRegex(P.InputError, "no gate diagnosis"):
+            run(replace(design(), [e]))
+        e["gate_diagnosis"] = {"fault_found": True}
+        with self.assertRaisesRegex(P.InputError, "found a fault"):
+            run(replace(design(), [e]))
+
+    def test_c_over_line_gate_is_computed_and_reported(self):
+        diag = {"fault_found": False, "note": "no fault in the fail-branch diagnosis"}
+        e = clean_short(ck(DR, 1, 75, B=30, gate_diagnosis=diag), (21, 0, 0, 0))
+        c = get_ck(run(replace(design(), [e])), DR, 1)
+        self.assertEqual((c["status"], c["gate_G1_pass"], c["gate_diagnosis"]), ("missing", False, diag))
+        self.assertAlmostEqual(c["B_pts"], 30, delta=0.1)
+        c = get_ck(run(replace(design(), [clean_short(ck(DR, 1, 75), (21, 0, 0, 0))])), DR, 1)
+        self.assertEqual((c["gate_G1_pass"], c["gate_diagnosis"]), (True, None))
+        self.assertAlmostEqual(c["B_pts"], 80, delta=0.1)
+
+    def test_c_over_line_libero_plus_validated_and_reported_not_used(self):
+        e = clean_short(ck(DR, 1, None, miss=(30, 30, 30), per_eval=(60, 61, 62)), (21, 0, 0, 0))
+        r = run(replace(design(), [e]))
+        c = get_ck(r, DR, 1)
+        self.assertEqual(c["status"], "missing")
+        for es, y in zip(P.EVAL_SEEDS, (60, 61, 62)):
+            self.assertAlmostEqual(c["lp_rates_pts"][es], y)
+        self.assertEqual((c["lp_missing_per_eval_seed"], c["lp_missing_total"]), ({"41": 30, "42": 30, "43": 30}, 90))
+        self.assertNotIn("Y_pts", c)                              # reported, not used
+        self.assertEqual(r["tests_three_seeds"]["H"]["paired_seeds"], [0, 2])
+        e["libero_plus"]["42"]["missing"] = 0                     # evaluated + missing != 10,030
+        with self.assertRaisesRegex(P.InputError, "!= 10030"):
+            run(replace(design(), [e]))
+
+    def test_c_recorded_user_decision_clears_the_stop(self):
+        for decision, keep_lp in (("evaluate", True), ("skip", False)):
+            e = clean_short(ck(DR, 1, 75), (21, 0, 0, 0))
+            if not keep_lp:
+                del e["libero_plus"]
+            e.update(user_decision_libero_plus=decision, decided="2026-11-20, the user: 'test words'")
+            r = run(replace(design(), [e]))
+            self.assertEqual(r["stops_for_user"], [])
+            self.assertEqual([(d["config"], d["train_seed"], d["user_decision_libero_plus"], d["decided"])
+                              for d in r["user_decisions"]], [(DR, 1, decision, "2026-11-20, the user: 'test words'")])
+            self.assertEqual((r["outcome"], get_ck(r, DR, 1)["status"]), ("I", "missing"))   # still a missing seed
+            text = P.report(r)
+            self.assertNotIn("STOP FOR THE USER", text)
+            self.assertIn(f"USER DECISION (recorded): dinov3+c-radiov4 seed 1: LIBERO-Plus evaluation '{decision}', "
+                          "decided: 2026-11-20, the user: 'test words'", text)
+
+    def test_c_without_decision_stop_unchanged(self):
+        r = run(replace(design(), [clean_short(ck(DR, 1, 75), (21, 0, 0, 0))]))
+        self.assertEqual((len(r["stops_for_user"]), r["user_decisions"]), (1, []))
+
+    def test_c_user_decision_bad_input(self):
+        e = clean_short(ck(DR, 1, 75), (21, 0, 0, 0))
+        e["user_decision_libero_plus"] = "evaluate"
+        with self.assertRaisesRegex(P.InputError, 'needs "decided"'):
+            run(replace(design(), [e]))
+        e.update(user_decision_libero_plus="maybe", decided="2026-11-20")
+        with self.assertRaisesRegex(P.InputError, "must be one of"):
+            run(replace(design(), [e]))
+        e = ck(DR, 1, 75, user_decision_libero_plus="skip", decided="2026-11-20")   # not over the line
+        with self.assertRaisesRegex(P.InputError, "only for a checkpoint over the clean 1% line"):
+            run(replace(design(), [e]))
+
+    def test_c_cli_exit_0_with_recorded_decision(self):
+        with tempfile.TemporaryDirectory() as d:
+            inp = os.path.join(d, "i.json")
+            e = clean_short(ck(DR, 1, 75), (21, 0, 0, 0))
+            e.update(user_decision_libero_plus="skip", decided="2026-11-20, the user: 'skip it'")
+            with open(inp, "w") as f:
+                json.dump({"checkpoints": replace(design(), [e])}, f)
+            p = subprocess.run([sys.executable, "-I", os.path.join(HERE, "pairings_analysis.py"), "--input", inp],
+                               capture_output=True, text=True)
+            self.assertEqual(p.returncode, 0, p.stderr)
+            self.assertIn("USER DECISION (recorded)", p.stdout)
+            self.assertNotIn("STOP FOR THE USER", p.stdout)
 
     def test_c_cli_exit_3_on_a_stop(self):
         with tempfile.TemporaryDirectory() as d:
