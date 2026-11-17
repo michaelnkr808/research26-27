@@ -13,3 +13,7 @@ Step-by-step record of running this experiment (design in PLAN.md, results in RE
 Job and ConfigMap deleted after the log was saved. Nothing on the PVC was written.
 
 **Next:** the user's merge OK for PRs #54-#57; the planning amendment (PR #58) and then the `pairings_analysis.py` update; wave manifests.
+
+## 2026-11-17 [agent, lead, implementation] (stage 2 code merged, PRs #54-#57)
+
+On the user's "merge": PR #54 (cache pre-check, merge `a26f64a`), #55 (feature parity and the frame-resize gap test, `397f95e`), #56 (`pairings_analysis.py`, `cdd7941`) and #57 (training tests with sources and none invariance, `be174b0`). Worker worktrees and branches removed. The three rule answers are still flagged "pending the user" in `pairings_analysis.py` until planning's amendment (PR #58) merges and the script is updated by PR.
