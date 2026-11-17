@@ -134,3 +134,14 @@ From the lead, 2026-11-16:
 - Navigation or manipulation as the setting, given where spatial audio data exists.
 - Which Wan 2.2 based world action model, and what it costs to fine-tune on the 200 dollar budget.
 - Still open: what the PI means by "running" for RMS-AQA and how it connects to world action models; whether the 200 dollars covers a training run; dataset access (pending).
+
+## 2026-11-16 [agent, lead, planning] (addendum: the lead leans to navigation as the setting; follow-up surveys started; Audio Flamingo 3 size)
+**Did:**
+- From the lead, 2026-11-16: "why do we need a robot arm doing manipulation with spatial audio? i feel like that doesn't make sense for a task where audio would be useful ... i feel that adding audio to a WAM would help moreso with navigation over like the tasks that a robot arm would do". The lead asked for more datasets like the one NaVLA2 trained on. Recorded as the lead's lean toward navigation as the setting; not yet a decision record, and not yet discussed with the PI.
+- From the lead, 2026-11-16, on reproducing the Audio Flamingo 3 baseline as the first benchmark experiment: "the audio flamingo 3 idea doesn't sound too bad", and asked how big it is. Not a go-ahead for an experiment plan yet.
+- Dispatched two more survey workers, each writing one new file under `literature/survey/` from `main` at `10f5288`: datasets, benchmarks and simulators with spatial audio, egocentric video and navigation actions (how to get each, release status); and world models and world action models for navigation (what they are built on, whether any use Wan 2.2, whether any take audio). A third worker is writing the `references.bib` entries for the papers in PR #49.
+- Read the Audio Flamingo 3 model page (`nvidia/audio-flamingo-3`, Hugging Face, raw model card and file listing, 2026-11-16).
+**PR:** direct.
+**Found** (`verified`, model card and file listing read 2026-11-16): Audio Flamingo 3 is built from the AF-Whisper audio encoder, an MLP audio adaptor, and a Qwen2.5-7B language model. The weight files total about 18 GB (language model about 15.2 GB in four files, audio encoder about 1.3 GB, plus adapter files). The card lists test hardware as an A100 80 GB. License: NVIDIA OneWay Noncommercial License, with parts under the Qwen Research License; the full terms were not read.
+**Not verified:** how much GPU memory the RMS-AQA baseline training needs with this model, and how long it takes; that needs a timed batch on a rented machine.
+**Next:** check and review the two new survey files and the bibliography, then bring the lead the navigation data options and the navigation base-model options.
