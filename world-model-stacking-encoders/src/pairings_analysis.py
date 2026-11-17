@@ -44,8 +44,9 @@ PLAN's Decision rule item 8 names it: "C fails, under C-a", "H and K", "H, not K
 "N and K", "N, not K", "I".
 
 When C fails (C-a), nothing is claimed (PLAN line 190): the harm test and "below both members" are output as
-"not claimed (C fails)"; the comparisons themselves are still reported, the harm test's computed value under the key
-"harm_test_as_computed_not_claimed".
+"not claimed (C fails)", and so is the helpful-pairing state (K, H_L or unresolved), a claim about the contrast; the
+comparisons themselves are still reported, the computed values under the keys "harm_test_as_computed_not_claimed"
+and "helpful_pairing_as_computed_not_claimed".
 
 UNRESOLVED, PENDING THE USER (the PLAN does not settle these; the script keeps the behaviour below until the user
 answers, and lists them in every output under "unresolved_pending_user"):
@@ -447,7 +448,8 @@ def analyse(obj):
             "harm_outcome": harm if c_holds else NOT_CLAIMED,
             "harm_outcome_three_seeds": harm3 if c_holds else NOT_CLAIMED,
             "harm_test_as_computed_not_claimed": None if c_holds else {"final": harm, "three_seeds": harm3},
-            "helpful_pairing": helpful,
+            "helpful_pairing": helpful if c_holds else NOT_CLAIMED,
+            "helpful_pairing_as_computed_not_claimed": None if c_holds else helpful,
             "calibration_C_holds": c_holds,
             "below_both_members": below_both if c_holds else NOT_CLAIMED,
             "extension": ext_status,
@@ -508,9 +510,9 @@ def report(res):
              f"{res['below_both_members']}",
              f"  extension: {res['extension']}"]
     if not res["calibration_C_holds"]:
-        lines[1] = (f"  harm test: {NOT_CLAIMED}; below both members: {NOT_CLAIMED}; C holds: False "
-                    f"(PLAN line 190: the comparisons below are reported, nothing is claimed); helpful pairing: "
-                    f"{res['helpful_pairing']}")
+        lines[1] = (f"  harm test: {NOT_CLAIMED}; helpful pairing: {NOT_CLAIMED}; below both members: "
+                    f"{NOT_CLAIMED}; C holds: False (PLAN line 190: the comparisons below are reported, nothing is "
+                    f"claimed)")
     for p in res["unresolved_pending_user"]:
         if p["applies_to_this_input"]:
             lines.append(f"  UNRESOLVED, PENDING THE USER (applies here): {p['case']}")

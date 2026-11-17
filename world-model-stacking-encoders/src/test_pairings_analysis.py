@@ -145,11 +145,12 @@ class Statistic(unittest.TestCase):
 
 class Outcomes(unittest.TestCase):
     def check(self, r, label, harm, helpful, c=True):
-        shown = harm if c else P.NOT_CLAIMED
+        shown, shown_l = (harm, helpful) if c else (P.NOT_CLAIMED, P.NOT_CLAIMED)
         self.assertEqual((r["outcome"], r["harm_outcome"], r["helpful_pairing"], r["calibration_C_holds"]),
-                         (label, shown, helpful, c))
+                         (label, shown, shown_l, c))
         if not c:
             self.assertEqual(r["harm_test_as_computed_not_claimed"]["final"], harm)
+            self.assertEqual(r["helpful_pairing_as_computed_not_claimed"], helpful)
 
     def test_H_and_K(self):
         r = run(design())                         # d(DR-D) = -5, d(DL-D) = 0
@@ -250,8 +251,9 @@ class Boundaries(unittest.TestCase):
         c = [x for x in r["checkpoints"] if x["config"] == D and x["train_seed"] == 1][0]
         self.assertEqual(c["status"], "missing")
         self.assertEqual((r["outcome"], r["harm_outcome"], r["helpful_pairing"]),
-                         ("C fails, under C-a", P.NOT_CLAIMED, "unresolved"))
+                         ("C fails, under C-a", P.NOT_CLAIMED, P.NOT_CLAIMED))
         self.assertEqual(r["harm_test_as_computed_not_claimed"]["final"], "I")
+        self.assertEqual(r["helpful_pairing_as_computed_not_claimed"], "unresolved")
 
 
 class MissingSeeds(unittest.TestCase):
@@ -279,7 +281,8 @@ class MissingSeeds(unittest.TestCase):
     def test_missing_dinov3_seed(self):
         r = run(replace(design(), [gone(D, 2)]))
         self.assertEqual((r["outcome"], r["harm_outcome"], r["helpful_pairing"], r["extension"]),
-                         ("C fails, under C-a", P.NOT_CLAIMED, "unresolved", P.EXT_MISSING))
+                         ("C fails, under C-a", P.NOT_CLAIMED, P.NOT_CLAIMED, P.EXT_MISSING))
+        self.assertEqual(r["helpful_pairing_as_computed_not_claimed"], "unresolved")
         self.assertEqual(r["harm_test_as_computed_not_claimed"]["final"], "I")
 
     def test_missing_c_radiov4_alone(self):
@@ -411,17 +414,23 @@ class NotClaimedAndPending(unittest.TestCase):
         self.assertEqual((r["harm_outcome"], r["harm_outcome_three_seeds"], r["below_both_members"]),
                          (P.NOT_CLAIMED,) * 3)
         self.assertEqual(r["harm_test_as_computed_not_claimed"], {"final": "H", "three_seeds": "H"})
+        self.assertEqual((r["helpful_pairing"], r["helpful_pairing_as_computed_not_claimed"]), (P.NOT_CLAIMED, "K"))
         self.assertTrue(r["tests_three_seeds"]["H_vs_c-radiov4"]["result_on_paired_seeds"])  # still reported
+        self.assertTrue(r["tests_three_seeds"]["K"]["result_on_paired_seeds"])               # still reported
         text = P.report(r)
-        self.assertIn("harm test: not claimed (C fails); below both members: not claimed (C fails)", text)
+        self.assertIn("harm test: not claimed (C fails); helpful pairing: not claimed (C fails); "
+                      "below both members: not claimed (C fails)", text)
         self.assertNotIn("harm test: H", text)
+        self.assertNotIn("helpful pairing: K", text)
         self.assertNotIn("below both members: True", text)
 
     def test_C_holds_states_results_plainly(self):
         r = run(design())
         self.assertEqual((r["harm_outcome"], r["below_both_members"]), ("H", True))
         self.assertIsNone(r["harm_test_as_computed_not_claimed"])
+        self.assertEqual((r["helpful_pairing"], r["helpful_pairing_as_computed_not_claimed"]), ("K", None))
         self.assertIn("harm test: H", P.report(r))
+        self.assertIn("helpful pairing: K", P.report(r))
 
     def test_every_output_lists_the_unresolved_cases(self):
         r = run(design())
