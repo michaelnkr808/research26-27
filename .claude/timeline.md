@@ -435,3 +435,27 @@
 - Decisions from the user: "the cluster" means Vast.ai; experiments are run by the hear-lab-experiment session, not planning; hear-lab stays independent of the vis-lab work.
 - Open loops: the RMS-AQA dataset access request (Hugging Face, PeacefulData/RMS-AQA) is waiting for approval; the PI has to say what "get it running" means (score an existing model, reproduce the trained baseline, or enter the challenge) and whether the 200 dollars should cover a training run. When both are back, planning writes the experiment PLAN.md and hands it to hear-lab-experiment. The literature survey waits for the user's go. hear-lab/STANDARDS.md still has the old deadline wording, to be fixed in its next pull request.
 - See: hear-lab/LOG.md (2026-11-15 entries), hear-lab/PLAN.md, hear-lab/README.md, hear-lab/STANDARDS.md
+
+## 2026-11-16: presentations session, picture-first deck for the PI meeting (compute funding ask)
+
+- Read the user's deck export (Research Proposal-14, saved 2026-11-11) and the repo, and gave a picture-first slide plan with likely questions, weak spots and unchecked items for the PI meeting on Wednesday 2026-11-18.
+- Made 13 new figures plus three reused ones in writing/figures/2026-11-16-pi-deck/ (script make_pi_deck_figures.py, tiles/, by-slide/ previews, README.txt), a Desktop copy at ~/Desktop/pi-deck-images, and an 8-slide Google Slides deck in the user's Drive built from a hand-written pptx (pip install was blocked).
+- Checked and corrected: the stage 2 trim order is only a worker suggestion (the user decides later), the cluster-crowding and GPU-use arguments are weaker for the new model, and the deck's feature-overlap status (built) conflicts with the README (design only).
+- Open loops: the user picks the dollar amount to ask for and fills it on slides 7 and 8; re-read Runpod, Modal and Vast.ai prices before Wednesday; stage 1 training should end about 2026-11-17 16:00 UTC (its clean-eval result may or may not exist by Wednesday); the figures folder and Desktop copy are uncommitted; deck has no speaker notes.
+- See: world-model-stacking-encoders/writing/figures/2026-11-16-pi-deck/README.txt, experiments/2026-11-15-pretrained-start-pairings/PLAN.md (run counts, Open item l), experiments/2026-11-12-pretrained-start-sizing/README.md
+
+## 2026-11-17: stacking-encoders experiment session, stage 1 baseline trained and passed clean LIBERO
+
+- Watched the full baseline training on a Nautilus L40 to the end (about 32 h, exit 0, no restarts, GPU about 97%), saved its logs and deleted the Job; the trained model.pt stays on the PVC.
+- On the user's "yep submit it", ran the 2,000-rollout clean LIBERO evaluation on 4 L4s (about an hour each, no errors, same model hash in every pod). Test-set use was logged before any outcome was read.
+- Result: four-suite average 92.55%, above the locked 90% pass line, so stage 2 (encoder pairings) starts per the PLAN with this run as the no-encoder reference. A fresh reviewer recomputed it from the records; PR #52 merged on the user's OK.
+- Open loops: tell the planning lead (vis-lab-planning) the result and that the experiment PLAN status is theirs to mark done; the user's answers on a per-task tally script and on deleting the check-4 checkpoint files (/mnt/proxy/runs/baseline-check4-none-s0-try1/). The presentations session's PI-deck note expected this result might not exist by Wednesday; it now does.
+- See: world-model-stacking-encoders/experiments/2026-11-15-pretrained-start-baseline/LOG.md (2026-11-17 entries), README.md, results/clean-eval/
+
+## 2026-11-17: stacking-encoders planning session, stage 1 pass recorded and the stage 2 plan amended (PR #58)
+
+- Joined local main with GitHub's main at the start, answered a run of paper questions (Wan 2.2, VAE, flow matching, Fast-WAM), set up a literature session (vis-lab-literature) that then corrected three things said from memory, and sent a résumé summary to the résumé session.
+- Stage 1 passed (92.55% on clean LIBERO against the 90 bar, no extra encoder, one training seed). Wrote the dated amendment to the stage 2 PLAN with the measured stage 1 numbers; a fresh reviewer checked it twice; merged as PR #58 on the user's OK. LOG entry, PLAN Now line and README status merged and pushed (c6b5f45).
+- Decisions from the user: no extra seeds if the DINOv3 sanity check fails; the pair against C-RADIOv4 alone stays on three seeds with the thresholds computed before any extension; missing clean LIBERO episodes are rerun first, and a model more than 1% short drops out of the verdict (the strict rule, confirmed after its consequence was explained). The user also corrected a message to the mentor: the old 8% was LIBERO-Plus with DINOv3, the fair clean LIBERO comparison is about 20% to 92.5%.
+- Open loops: the stage 3 design (fusion variants) is not started, and it begins by asking the user which variants to test. In the experiment window: the user's merge OK for stage 2 code PRs #54 to #57, then the go for the second volume and the sweep. LIBERO-Plus evaluation cost is still unmeasured. For the PI meeting on 2026-11-18: training is about 550 card-hours at the L40 rate, up from about 400. The direction PLAN.md "Now" section is long and partly out of date.
+- See: world-model-stacking-encoders/LOG.md (2026-11-17 [agent, lead, planning]), world-model-stacking-encoders/experiments/2026-11-15-pretrained-start-pairings/PLAN.md (Amendments, 2026-11-17)
