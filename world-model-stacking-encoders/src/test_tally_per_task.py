@@ -1,6 +1,10 @@
 """Run: /opt/homebrew/bin/python3.11 -I test_tally_per_task.py"""
+import contextlib
+import io
+import json
 import os
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -64,6 +68,49 @@ class PerTask(unittest.TestCase):
     def test_bad_success_raises(self):
         with self.assertRaises(ValueError):
             T.tally([rec("libero_spatial", 0, 0, 2, 1)])
+
+
+class Main(unittest.TestCase):
+    def run_main(self, rows):
+        with tempfile.TemporaryDirectory() as d:
+            rd = os.path.join(d, "records")
+            os.makedirs(rd)
+            with open(os.path.join(rd, "a.jsonl"), "w") as f:
+                for r in rows:
+                    f.write(json.dumps(r) + "\n")
+            out = os.path.join(d, "out.json")
+            with open(out, "w") as f:
+                f.write("KEEP")
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                code = T.main(["x", rd, out])
+            return code, open(out).read()
+
+    def test_no_records_exits_nonzero_without_writing(self):
+        code, content = self.run_main([])
+        self.assertNotEqual(code, 0)
+        self.assertEqual(content, "KEEP")
+
+    def test_missing_suite_exits_nonzero_without_writing(self):
+        code, content = self.run_main([rec("libero_spatial", 0, 0, 1, 1)])
+        self.assertNotEqual(code, 0)
+        self.assertEqual(content, "KEEP")
+
+    def test_all_suites_writes(self):
+        code, content = self.run_main([rec(s, 0, 0, 1, 1) for s in T.SUITES])
+        self.assertEqual(code, 0)
+        self.assertEqual(json.loads(content)["total"], {"succ": 4, "n": 4})
+
+    def test_missing_dir_exits_nonzero(self):
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            self.assertNotEqual(T.main(["x", "/nonexistent-dir-xyz", "/nonexistent-out/o.json"]), 0)
+        self.assertFalse(os.path.exists("/nonexistent-out"))
+
+    def test_help_prints_usage_and_writes_nothing(self):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = T.main(["x", "--help"])
+        self.assertEqual(code, 0)
+        self.assertIn("Run:", buf.getvalue())
 
 
 if __name__ == "__main__":

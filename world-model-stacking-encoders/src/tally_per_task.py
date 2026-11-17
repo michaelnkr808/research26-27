@@ -1,6 +1,8 @@
 """Per-task tally of the stage 1 baseline clean-LIBERO evaluation (read-only, stdlib only).
 
 Run: /opt/homebrew/bin/python3.11 -I tally_per_task.py [records_dir] [out_json]
+(-h/--help prints this text. Exits non-zero without writing if the records dir is
+missing, no clean records are found, or any of the four suites is missing.)
 
 Reads the rollout records (JSONL) and reports, per suite and per task: successes,
 trials, success rate, and mean episode length (the "steps" field) over all episodes
@@ -98,16 +100,27 @@ def render(t):
 
 
 def main(argv):
+    if any(a in ("-h", "--help") for a in argv[1:]):
+        print(__doc__)
+        return 0
     d = argv[1] if len(argv) > 1 else DEF_DIR
     o = argv[2] if len(argv) > 2 else DEF_OUT
+    if not os.path.isdir(d):
+        print(f"error: records dir not found: {d}; nothing written", file=sys.stderr)
+        return 2
     t = tally(load(d))
     print(render(t))
+    if t["n_clean_records"] == 0 or t["missing_suites"]:
+        why = "no clean records" if t["n_clean_records"] == 0 else "missing suites " + ",".join(t["missing_suites"])
+        print(f"error: {why}; nothing written", file=sys.stderr)
+        return 1
     os.makedirs(os.path.dirname(o), exist_ok=True)
     with open(o, "w") as f:
         json.dump(t, f, indent=2)
         f.write("\n")
     print(f"\nwrote {o}")
+    return 0
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    sys.exit(main(sys.argv))
