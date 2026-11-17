@@ -233,6 +233,8 @@ Any extra encoder or pairing (stage 2); fusion variants (stage 3); LIBERO-Plus s
 ## Status
 Design only, written 2026-11-15. **Signed off by the user 2026-11-15** (merge go for PR #34 in the planning window, with the answers recorded under "Amendments"). The pass bar (option 4) and the decision rule are locked from that sign-off. The rest of the design locks at the first cluster or paid run, as written under "Order of work"; before that lock, Open items 7 and 10 need the Fast-WAM reading and the user's answers, and items 4, 6, 8, 9 and 11 need the user's confirmation (see "Amendments"). No code, no run, no results.
 
+**Update 2026-11-17 (planning lead; verified against this folder's `LOG.md` and `README.md`):** done, **pass**. Those open items were answered in the later amendments below, the four sanity checks passed, and the full training run finished on a Nautilus L40 (32.18 h, exit 0). The 2,000-rollout clean LIBERO evaluation gave B = 92.55 (1,851 of 2,000; one training seed, eval seed 41), at or above the locked 90 pass line (option 4), so stage 2 starts with this run as `none` seed 0. `none` seed 0 was not scored on LIBERO-Plus here. Results merged as PR #52 and PR #53; numbers and hashes in `LOG.md` 2026-11-17 and `README.md`.
+
 ## Amendments
 <!-- ### YYYY-MM-DD: what changed, why, and whether any results had been seen yet -->
 
