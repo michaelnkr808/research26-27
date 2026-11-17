@@ -1,0 +1,5 @@
+NAME                                            READY   STATUS      RESTARTS   AGE   IP              NODE                              NOMINATED NODE   READINESS GATES
+stacking-encoders-baseline-clean-eval-0-dkk2c   0/1     Completed   0          92m   10.244.46.184   nautilus-it-gpu05.fullerton.edu   <none>           <none>
+stacking-encoders-baseline-clean-eval-1-fvtcz   0/1     Completed   0          92m   10.244.183.18   nautilus-it-gpu06.fullerton.edu   <none>           <none>
+stacking-encoders-baseline-clean-eval-2-xnkg5   0/1     Completed   0          92m   10.244.183.16   nautilus-it-gpu06.fullerton.edu   <none>           <none>
+stacking-encoders-baseline-clean-eval-3-wkxbw   0/1     Completed   0          92m   10.244.183.4    nautilus-it-gpu06.fullerton.edu   <none>           <none>
