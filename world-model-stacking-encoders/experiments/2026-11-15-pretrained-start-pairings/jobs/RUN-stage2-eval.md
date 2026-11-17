@@ -1,0 +1,62 @@
+# Stage 2 evaluation Jobs (smoke, clean LIBERO, LIBERO-Plus): steps for the lead
+
+Written 2026-11-17 by a worker, Mac only. Nothing here has been submitted; the only kubectl use was `kubectl apply --dry-run=client` on rendered copies (read-only discovery calls; nothing created). Three templates, rendered per checkpoint by `jobs/render.sh`; all on NVIDIA L4 only. They carry over stage 1's `job-check4-smoke.yaml` and `job-clean-eval.yaml` (both ran on L4) and the proxy's full-benchmark LIBERO-Plus Job (`../../2026-10-27-proxy-calibration/jobs/rendered/job-eval-dinov3-s1-l4.yaml`). Each template's header has its sources and arithmetic. Paths are relative to this experiment folder. `$C` is the source commit. Order and caps: `RUN-stage2-waves.md`.
+
+**Order per checkpoint (PLAN Order of work step 6, Decision rule items 5 and 6):** training done -> smoke for its configuration (seed 0 only, once per configuration) -> clean LIBERO (4 shards) -> gate G1 (B >= 36 is a working check, not a result; below 36: stage 1's fail-branch diagnosis, no test outcomes used, and the checkpoint is still scored on LIBERO-Plus if no fault is found) -> LIBERO-Plus (NSHARDS shards). **No verdict from wave 1.** Clean and LIBERO-Plus are test-set uses: log each in `LOG.md` with the date and the checkpoint (path, `model.pt` sha256) at submit, before any outcome is read. Never read outcomes from a failed or partial run; the pods print the records body only on exit 0.
+
+| Job | template | pods | records |
+|---|---|---|---|
+| `stacking-encoders-pairings-smoke-<cfgk>-s0` | `job-smoke.template.yaml` | 1 L4 | `/mnt/proxy/rollouts/pairings-smoke/<cfgk>-s0/smoke-{clean,lp-timing}-try<T>.jsonl` (timing only, no outcomes) |
+| `stacking-encoders-pairings-clean-<cfgk>-s<seed>` | `job-clean-eval.template.yaml` | 4 L4 (Indexed) | `/mnt/proxy/rollouts/pairings/<cfgk>-s<seed>/clean-shard<i>of4-try<T>.jsonl` |
+| `stacking-encoders-pairings-lp-<cfgk>-s<seed>` | `job-lp-eval.template.yaml` | NSHARDS L4 (Indexed), PARALLEL at once | `/mnt/proxy/rollouts/pairings/<cfgk>-s<seed>/lp-shard<i>of<N>-try<T>.jsonl` |
+
+## Once per stage
+
+1. **The user's go for the sweep** (`RUN-stage2-waves.md`).
+2. **Source commit** `$C` (the same one as training is fine): `git rev-parse HEAD`. The 11 eval keys are unchanged since stage 1 (`git log` 2026-11-17: `rollout.py` last changed in `2267edf`, before stage 1's evaluation); a difference needs a LOG note and, for the three env scripts, a new env bundle (the pod prints the bundle key; it must be `9182f8131559`).
+3. **ConfigMaps** (create with `--dry-run=server` first, then read back):
+   - `stacking-encoders-pairings-eval-src`, 11 keys from `$C`: `rollout.py lp_eval.py proxy_wam.py t5_cache.py diagnostics.py extract_fastwam.py extract_features.py fastwam_data.py setup_env.sh setup_sim.sh env_bundle.sh` (the read-back loop of `../../2026-11-15-pretrained-start-baseline/jobs/RUN-clean-eval.md` step 3, with this name). Never edit it while an evaluation Job exists.
+   - `stacking-encoders-pairings-lp-subset`, one key `full-subset.json.gz`: `gzip -n -c ../../2026-10-27-proxy-calibration/results/full-benchmark/full-subset.json > /tmp/full-subset.json.gz` then `kubectl create configmap stacking-encoders-pairings-lp-subset -n aria-world --from-file=full-subset.json.gz=/tmp/full-subset.json.gz`. The pod gunzips it and checks sha256 `9f4baa42a971bdfad148e19629c08ce74443aa4f2fe0b1512b512ec4649177b2` (checked on the committed file on the Mac, 2026-11-17); a mismatch exits 21.
+4. **Secret**: encoder configurations read `HF_TOKEN` from Secret `stacking-encoders-hf` (key `HF_TOKEN`), as every proxy rollout Job did. Check it exists without printing it: `kubectl get secret stacking-encoders-hf -n aria-world -o jsonpath='{.data}' | grep -c HF_TOKEN` (1). Missing: stop and ask the user (do not create a stand-in). `none` renders without it.
+
+## Smoke per configuration (PLAN Hand-off step 5; also the LIBERO-Plus timing shard)
+
+5. **When**: after the configuration's seed 0 training Job is Complete and its log is saved (the `=== MODEL` line). For `none`, right away: the smoke runs only the LIBERO-Plus timing shard on stage 1's checkpoint (stage 1 already ran the clean smoke).
+6. **Render**: `./render.sh smoke <config> --model-sha <the training log's === MODEL sha256> --commit $C` (`none`: no `--model-sha`, stage 1's pin is built in). `--envs 4` is the default (stage 1's value).
+7. **Submit** after the GPU count (ours plus 1 at most 8): `kubectl create --dry-run=server -f rendered/job-smoke-<cfgk>-s0.yaml`, then `kubectl create -f ...`. Expected pod time under 1 h (restore 9-10 min, model load about 4 min, two passes; stage 1: 40 clean episodes at 215 per pod-hour).
+8. **Read** (after Complete, logs saved into `results/smoke/<cfgk>/`): `[pass]` lines (rc, seconds, records), `[gpu]` samples and the `resources:` lines (10-minute GPU windows), `[gpu-summary]` per phase, GPU memory used per sample against the L4's 23,034 MiB, `[cgroup]` lines, any `.errors.jsonl`. Record:
+   - **Fit**: a CUDA out-of-memory on the L4 is a stop for the user (PLAN: no move off L4 without the user). Options to put to the user: fewer environments, `CUDA_GRAPH` 0 (a template env value; a re-render with a note), or another card.
+   - **GPU use**: the 10-minute windows of the clean pass at or above 40%. Under 40%: re-render with `--envs 6` or `8` and run the smoke again with a new `--try`; still under 40%: stop for the user (stage 1's rule). The chosen `--envs` is used for that configuration's clean and LIBERO-Plus Jobs.
+   - **Clean rate** R_clean = 40 / (clean pass seconds) x 3,600 episodes per pod-hour, rounded down (an upper bound on time: every episode ran to its step limit, and the `[pass]` seconds include the model load of about 4 min, so the rate is conservative). It is `--clean-rate` for that configuration.
+   - **LIBERO-Plus rate**: copy the `smoke-lp-timing-try<T>.jsonl` body from the log (between `=== FILE smoke-lp-timing...` and `=== END`) to `results/smoke/<cfgk>/smoke-lp-timing.jsonl`, then `/opt/homebrew/bin/python3.11 -I jobs/lp_timing_rate.py --records results/smoke/<cfgk>/smoke-lp-timing.jsonl --envs <ENVS> --pass-seconds <the lp-timing [pass] seconds>`. It refuses a file with any outcome field. It prints per-cell wall times, the cell-weighted rate, an upper bound of pod-hours per checkpoint, and the `--lp-rate` to use (the lower of the weighted and the raw rate). **This fills the PLAN blank "LIBERO-Plus evaluation time per checkpoint on L4" as an upper bound**; the measured rate of the first full LIBERO-Plus Job (`none` seed 0) then gives the real figure. Both go into `LOG.md`, and the total measured evaluation cost of the whole design goes to the user before wave 2's evaluations (PLAN amendment 2026-11-15, Open item l: no pre-registered cut; the user decides any cut).
+
+## Clean LIBERO per checkpoint
+
+9. **Render**: `./render.sh clean <config> <seed> --clean-rate <R_clean of the config> --envs <ENVS of the config> --model-sha <=== MODEL sha256> --commit $C` (with `--runs-pvc ...` if the run is on the second volume). It computes the rollout cap (2 x 500 / R x 3,600 s), the pod deadline and the Job deadline (template header). `none` seeds 1 and 2: `--clean-rate 215` (stage 1's measured smoke) is the default.
+10. **Submit** after the GPU count (ours plus 4 at most 8; if fewer are free, wait). Server dry run first; it also checks `backoffLimitPerIndex` with `podFailurePolicy`, which stage 1's server already accepted.
+11. **Watch and read** exactly as `../../2026-11-15-pretrained-start-baseline/jobs/RUN-clean-eval.md` steps 7 to 11 (one background wait on Job status every 5 min; 15-minute GPU check; save every pod's log at once into `results/clean/<cfgk>-s<seed>/`; tally with the stage 1 tally script). Missing rollouts (no record after a rerun with the same `EVAL_TRY`): PLAN amendment 2026-11-17 item 3 (c): left out of B's denominator and counted; more than 1% (21 or more of 2,000) makes the checkpoint a missing seed, and **the lead asks the user before that checkpoint's LIBERO-Plus evaluation** (still open in the PLAN).
+12. **Gate G1** in the LOG: B(c, s) against 36. Below 36: stage 1's fail-branch diagnosis (no test outcomes) before LIBERO-Plus; the checkpoint is still scored on LIBERO-Plus if no fault is found.
+
+## LIBERO-Plus per checkpoint
+
+13. **Shards**: `--shards 16` is the proposal (about 1,881 rollouts per shard). With the LIBERO-Plus timing upper bound R_lp, a shard is at most 1,881 / R_lp pod-hours (for scale only: at stage 1's clean timing-only 215 per pod-hour that would be 8.7 h; real rollouts end early on success). Pick NSHARDS so the upper bound per pod stays near or under about 8 h, and never change NSHARDS or `--order-seed` (0) for a checkpoint once its first shard has written a record (a resume would refuse the file). `--parallel` is how many L4 pods may run at once under the 8-GPU cap; raise it later with `kubectl patch job <name> -n aria-world --type merge -p '{"spec":{"parallelism":<p>}}'` only after the GPU count.
+14. **Render**: `./render.sh lp <config> <seed> --lp-rate <R_lp> --shards <N> --parallel <P> --envs <ENVS> --model-sha <sha> --commit $C`. It refuses to render without `--lp-rate`.
+15. **Submit**: server dry run, create, note the time. **The first LIBERO-Plus Job is `none` seed 0** (PLAN "Dependence on stage 1": its full LIBERO-Plus evaluation is the first evaluation of stage 2). Its first finished shards give the real rate: log episodes per pod-hour per shard and the projected pod-hours per checkpoint, and put the measured cost of the whole design to the user before wave 2's evaluations.
+16. **Watch**: one background wait over all evaluation Jobs (status fields every 5 min, never a log stream). 15-minute check per new pod (`MODE`, `=== MODEL` and `equals the pinned value`, restore timing, `[gpu]` samples). **About 3 h into each long pod** check the trailing GPU mean (in-pod `[gpu]` samples; Prometheus DCGM where the node exports it): under 40% over 3 h draws NRP's idle warning (`_standards/08` [NRP code] item 2); bring it to the user before the next shard starts (more environments, or fewer pods at once).
+17. **After the Job ends**: save every pod's log at once into `results/lp/<cfgk>-s<seed>/`, check each shard's records count against its job count (`ceil(30,090 / N)` or one fewer) and every `.errors.jsonl`. Episodes that raised are rerun with the same `EVAL_TRY` (resubmit the same rendered file; done keys are skipped). Still missing after reruns: left out of the denominator and counted per checkpoint and eval seed; more than 1% of 30,090 makes the checkpoint a missing seed (PLAN Comparison statistic, "Coverage"). Delete the Job (graceful). Nothing on the PVC is deleted.
+
+## Exit codes (all three templates)
+
+| rc | Meaning | Job result | What to do |
+|---|---|---|---|
+| 0 | done (all records of the shard or pass) | Complete (per index) | read |
+| 1 | Python error, restore failed, nvidia-smi failed, episodes raised (`.errors.jsonl`) | retried, 2 per index (smoke: 2 for the Job) | the retry resumes; the same traceback twice: stop and ask |
+| 2 | rollout.py argparse (a bad flag) | fails at once | fix the render |
+| 10 | commit not 40-hex, or CONFIG / CFGK / SEED / CLEAN_SMOKE / LP_TIMING not rendered | fails at once | re-render |
+| 13 | `model.pt` sha256 differs from the pin, or the pin not rendered | fails at once | stop; check the training log's `=== MODEL` line and `RUN_DIR`; tell the user |
+| 15 | `model.pt` missing | fails at once | check `RUN_DIR` / `--runs-pvc` |
+| 16 | a setup step or the rollout cap timed out | retried | a retry resumes; if every retry hits the cap, the rate was wrong: re-render with the measured rate, same `EVAL_TRY` |
+| 19 | a `/src` key differs from the rendered hash | fails at once | the ConfigMap changed: read it back (step 3), re-render, same `EVAL_TRY` |
+| 21 | LIBERO-Plus episode list or `task_classification.json` differs from the pinned sha256 | fails at once | stop; tell the user |
+| 137 / OOMKilled | host memory over the limit | retried | read `[cgroup]` lines of earlier pods; ask before raising the request |
+| DisruptionTarget | node drain or preemption | retried, not counted | nothing |

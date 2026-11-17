@@ -1,0 +1,296 @@
+# EXAMPLE RENDER, NOT FOR SUBMISSION (written by render.sh train dinov3+c-radiov4 1; placeholders FILL_* left in: the pod aborts on them).
+# Example inputs are illustrations, not measurements: --clean-rate none given, --lp-rate none given (215 is stage 1's
+# timing-only CLEAN rate for none; no LIBERO-Plus rate has been measured).
+# RENDERED by jobs/render.sh from jobs/job-train.template.yaml: train dinov3+c-radiov4 seed 1: micro-batch 8, ckpt-every L40S 600 / L40 500, cap 65 h, pod 241200 s, Job 356400 s, memory 36Gi / 43Gi, out /mnt/proxy/runs/pairings-dinov3-c-radiov4-s1
+# STAGE 2 TRAINING JOB TEMPLATE (pairings PLAN "What the implementation session must add" item 5; Order of work steps 6-7).
+# NOT SUBMITTED. Written 2026-11-17 on the Mac; checked only with `kubectl apply --dry-run=client` on rendered copies (no server
+# dry run, no cluster contact). Never submit this file: render it with jobs/render.sh (RUN-stage2-train.md), which fills every
+# __PLACEHOLDER__ for one configuration and one training seed and writes jobs/rendered/; the rendered file is what is
+# server-dry-run, submitted and committed. The rendered file still holds FILL_AT_SUBMIT / FILL_SHA_* until the submit render
+# (render.sh --commit), and the pod aborts on them (exit 10 or 19).
+# BASED ON: ../../2026-11-15-pretrained-start-baseline/jobs/job-full-train.yaml, which ran stage 1's full run to exit 0 (stage 1 LOG
+#   2026-11-16/17: 21,696 steps on an L40, model.pt sha256 b25e63e6...). Everything not listed under CHANGES is that file's,
+#   byte for byte: card set (L40 or L40S by gpu.product, us-west, driver > 569, the two host exclusions; no named resources, no
+#   tolerations, no priority class), retries (backoffLimit 3, podFailurePolicy FailJob on this script's own deterministic exit
+#   codes, Ignore on DisruptionTarget), resume logic (fresh / resume / complete / stale rename), Wan staging and sha256 checks,
+#   /src hash pin (exit 19), step watchdog (exit 17), GPU sampler and phases, exit trap, CPU 4 / 4800m, ephemeral 38Gi / 44Gi,
+#   /work 24Gi, /dev/shm 2Gi, ttlSecondsAfterFinished 86,400. Stage 1's header explains each of those; it is not repeated here.
+# CHANGES (each for a stated reason):
+#   1. Config and seed are rendered (env CONFIG, CFGK, SEED): --config $CONFIG --seed $SEED. CONFIG is pretrained_train.py's
+#      config string (dinov3, siglip2, c-radiov4, dinov3+siglip2, dinov3+c-radiov4, none); CFGK is the same with + replaced by -
+#      (Kubernetes names allow no +), used in the Job name, the labels and the out folder. The pod checks CFGK = CONFIG with + -> -.
+#   2. Out folder $RUN_ROOT/pairings-<CFGK>-s<SEED> (stage 1's was $R/runs/baseline-none-s0). RUN_ROOT is /mnt/proxy/runs on the
+#      current volume, or /mnt/runs/runs once the second volume exists (PLAN amendment 2026-11-15 later, item 3: the user chose a
+#      the runs go to stacking-encoders-proxy. Features, T5, Wan weights and logs stay on stacking-encoders-proxy (/mnt/proxy).
+#      The free-space guard (exit 14) reads the volume of RUN_ROOT.
+#   3. --first-batch-report added: PLAN Decision rule item 6 runs the first-batch report for every configuration before any
+#      evaluation. It writes first-batch.json (per-source channel statistics, loss vs predict-zero) before step 1, using no-grad
+#      forwards and the step-0 draws from their own (seed, step) generator (pretrained_train.py lines 216-251, 611-624), so it does
+#      not change the training draws (read, not tested; stage 1's full run did not pass it, its sanity Job did).
+#   4. Checkpoint interval per card is rendered (CKPT_L40S, CKPT_L40), per configuration (CHECKPOINT INTERVAL below).
+#   5. A CUDA out-of-memory now exits 20 (FailJob): the script greps the last 300 log lines for "CUDA out of memory" or
+#      "OutOfMemoryError" after a Python exit 1. Stage 1 retried it (exit 1), which would only repeat the OOM at the same
+#      micro-batch three times. PLAN Training: micro-batch "the largest of 8 and 4 under 0.9 x the card's memory"; so the lead
+#      re-renders with MICRO_BATCH 4 (allowed by the rule, logged) and resubmits; a resume at a new micro-batch is supported
+#      (pretrained_train.py lines 599-603). Micro-batch 4 not fitting is a stop for the user (PLAN Hand-off step 4).
+#   6. Pod stdout keeps step lines 1-25 (stage 1 kept only every 100th) so the first-minutes check (micro-batch fit, s/step,
+#      data wait; PLAN Hand-off step 4) reads from `kubectl logs`; awk replaces stage 1's grep filter for that. 25 extra lines.
+#   7. Host memory, the time cap, the pod and Job deadlines: rendered per configuration (below).
+#   8. New ConfigMap stacking-encoders-pairings-train-src (the same 7 keys as stacking-encoders-baseline-src, created from the
+#      stage 2 source commit; the files are unchanged since stage 1's commit, `git log` on 2026-11-17: the last change to
+#      pretrained_train.py, proxy_wam.py, pretrained_sizing.py is 17d9cbb, before stage 1's run).
+#   9. Labels experiment=stacking-pairings, kind, config, seed: to count this sweep's pods for the 8-GPU cap in one command.
+# CHECKPOINT INTERVAL (stage 1 rule: the multiple of 100 steps nearest 45 min = 2,700 s of step time, kept within 30-60 min).
+#   Measured step times exist only for none (Nautilus L40S 4.018 s, L40 5.036 s; stage 1 LOG). For the encoder configs the
+#   sizing check measured dinov3 at +2.2% per step over none (Modal L40S; sizing LOG line 41). Speculative linear extrapolation
+#   by added channels (+2.2% per 1,024): 1,152 channels +2.5%, 2,176 channels +4.7%. Then L40S: dinov3 4.106 s -> 658 -> 700;
+#   siglip2 / c-radiov4 4.118 s -> 656 -> 700; pairs 4.207 s -> 642 -> 600. L40: dinov3 5.147 s -> 525 -> 500; 1,152-wide 5.162 s
+#   -> 523 -> 500; pairs 5.273 s -> 512 -> 500. Each lands 42-48 min. If the first-minutes s/step makes the rendered interval
+#   fall outside 30-60 min, re-render; ckpt_every is not in run_identity, so a resume with another interval is allowed.
+# TIME ARITHMETIC (stage 1's rule: cap = about twice the projection on the slower card, the L40; inputs as above, speculative
+#   for every config but none): projection = 21,696 x s/step(L40) + 43 writes x 21.5 s. none 30.6 h -> 62 h (stage 1's cap,
+#   unchanged); dinov3 31.3 h -> 63 h; siglip2 / c-radiov4 31.4 h -> 63 h; pairs 32.0 h -> 65 h (2 x projection, rounded up to
+#   the hour). TRAIN_TIMEOUT_S = cap. Pod activeDeadlineSeconds = cap + 4,680 s (setup 3,600 + kill grace 60 + model.pt
+#   sha256 900 + 60 + trap 60, as stage 1) rounded up to the hour. Job activeDeadlineSeconds = cap + 20 h queue + 14 h for three
+#   resumes (stage 1: 62 + 20 + 14 = 96 h). render.sh computes all three from the cap. At micro-batch 4 the step time is not
+#   measured anywhere: the first-minutes projection decides (over the cap: stop for the user, PLAN Hand-off step 4).
+# HOST MEMORY (speculative arithmetic; stage 1 measured none only, anon at exit is not the working set). none and resume:
+#   stage 1's 32Gi / 38Gi (a resume holds the about 20 GB checkpoint in RAM, then frees it before the loader starts:
+#   pretrained_train.py line 597 `del state`, loader at line 348). Encoder configs add the loader's episode cache: each feature
+#   file is held with its future means (2 x the file, proxy_wam.py lines 137-143, 326-330), for at most about 2 chunks of 16
+#   episodes (horizon = ceil(16 x 162 / 128) + 1 = 22 steps; 277,713 frames / 1,712 episodes = 162 per episode, data/README.md
+#   line 39), plus up to 6 queued fp16 batches (queue maxsize prefetch 3 + assemble 3; one batch is 128 x 1,176 x in_dim x 2 B).
+#   dinov3: 32 x 162 x 0.80 MB x 2 = 8.3 GB + 6 x 0.32 GB = 10 GB over none; 1,152-wide: about 11 GB; pairs: 32 x 162 x 1.71 MB
+#   x 2 = 17.7 GB + 6 x 0.67 GB = 21.7 GB over none. With none's working set guessed at 4 to 6 GiB (stage 1 header), pairs reach
+#   about 25 to 27 GiB in normal running. Rendered: none and single encoders 32Gi / 38Gi; pairs 36Gi / 43Gi (1.19x; normal use
+#   about 70-75% of the request, inside NRP's 20-150%). The exit trap prints memory.peak and anon; the first pair run's
+#   numbers size the rest (RUN-stage2-train.md step 8).
+# GPU USE: as stage 1 (train phase 89.7% in check 4, the idle parts are minutes in a day-long run). Checked 15 min in.
+# Exit codes: as stage 1, plus 20 (CUDA out of memory, FailJob). 10 also covers CONFIG / CFGK / SEED not rendered consistently.
+#   Table: RUN-stage2-train.md.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-pairings-train-dinov3-c-radiov4-s1
+  namespace: aria-world
+  labels: {experiment: stacking-pairings, kind: train, config: dinov3-c-radiov4, seed: "1"}
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 356400
+  ttlSecondsAfterFinished: 86400
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes:
+        containerName: main
+        operator: In
+        values: [2, 10, 13, 14, 15, 18, 19, 20]
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+        status: "True"
+  template:
+    metadata:
+      labels: {experiment: stacking-pairings, kind: train, config: dinov3-c-radiov4, seed: "1"}
+    spec:
+      restartPolicy: Never
+      activeDeadlineSeconds: 241200
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-L40, NVIDIA-L40S]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net, ry-gpu-08.sdsc.optiputer.net]}  # GPU faults, 2026-11-03
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          SMI=""; OWN=0; DECLARED=0
+          fail() { DECLARED=1; exit $1; }
+          R=/mnt/proxy; TAG=pairings-$CFGK-s$SEED; D=$(date +%Y%m%d-%H%M%S)
+          OUT=$RUN_ROOT/$TAG
+          WSRC=$R/models/Wan-AI/Wan2.2-TI2V-5B; WAN=/work/wan/Wan2.2-TI2V-5B
+          LOG=$R/logs/$TAG-$D.log; GPUCSV=$R/logs/$TAG-gpu-$D.csv
+          SMALL="config.json load.json"
+          BIG="train.json history.jsonl"
+          mkdir -p $R/logs $RUN_ROOT
+          # pod stdout keeps steps 1-25 (first-minutes check) and every 100th step; the PVC log keeps every step
+          exec > >(tee -a $LOG | awk '{ if (match($0, /^\[train +[0-9]+s\] \{"step": [0-9]+,/)) { s = substr($0, RSTART, RLENGTH); sub(/^.*"step": /, "", s); n = s + 0; if (n > 25 && n % 100 != 0) next } print; fflush() }') 2>&1
+          TEE=$!
+          echo "=== STAGE 2 PAIRINGS TRAINING: config $CONFIG seed $SEED, 21,696 steps, out $OUT; full log on the PVC: $LOG"; date -u
+          echo "SRC_GIT_COMMIT=$SRC_GIT_COMMIT CONFIG=$CONFIG CFGK=$CFGK SEED=$SEED MICRO_BATCH=$MICRO_BATCH TRAIN_TIMEOUT_S=$TRAIN_TIMEOUT_S CKPT_L40S=$CKPT_L40S CKPT_L40=$CKPT_L40 RUN_ROOT=$RUN_ROOT"
+          [[ "$SEED" =~ ^[0-9]+$ && -n "$CONFIG" && "$CFGK" = "$(echo "$CONFIG" | tr '+' '-')" ]] || { echo "ABORT: CONFIG '$CONFIG' / CFGK '$CFGK' / SEED '$SEED' not rendered consistently"; fail 10; }
+          [[ "$SRC_GIT_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "ABORT: SRC_GIT_COMMIT is not a 40-hex commit (not filled at submit?)"; fail 10; }
+          echo "/src = ConfigMap stacking-encoders-pairings-train-src; checking its 7 keys against the hashes rendered into this manifest (RUN-stage2-train.md step 4):"
+          ( cd /src && sha256sum -c - <<'EOF'
+          FILL_SHA_pretrained_train.py  pretrained_train.py
+          FILL_SHA_pretrained_sizing.py  pretrained_sizing.py
+          FILL_SHA_action_expert_init.py  action_expert_init.py
+          FILL_SHA_proxy_wam.py  proxy_wam.py
+          FILL_SHA_diagnostics.py  diagnostics.py
+          FILL_SHA_t5_cache.py  t5_cache.py
+          FILL_SHA_setup_env.sh  setup_env.sh
+          EOF
+          ) || { echo "ABORT: a /src key differs from the hash rendered at submit (the ConfigMap changed after the render, or the render did not run)"; fail 19; }
+          CARD=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -1) || { echo "ABORT: nvidia-smi failed (a faulty GPU node; retryable)"; exit 1; }
+          case "$CARD" in
+            *L40S*) CKPT_EVERY=$CKPT_L40S ;;
+            *L40*)  CKPT_EVERY=$CKPT_L40 ;;
+            *) echo "ABORT: card '$CARD' is not an L40 or L40S, no checkpoint interval is set for it"; fail 15 ;;
+          esac
+          echo "CARD $CARD -> --ckpt-every $CKPT_EVERY (stage 1 rule: nearest 100 steps to 45 min of step time; per-config values in RUN-stage2-train.md)"
+          MODE=fresh
+          if [ -f $OUT/model.pt ] && [ -f $OUT/train.json ]; then
+            MODE=complete
+          elif [ -f $OUT/ckpt.pt ]; then
+            MODE=resume
+          elif [ -d $OUT ] && [ -n "$(ls -A $OUT)" ]; then
+            STALE=$OUT.stale-$D
+            echo "STALE: $OUT exists with files but no ckpt.pt (a pod lost before its first checkpoint); moving it to $STALE (nothing deleted):"
+            ls -la $OUT || true
+            mv $OUT $STALE
+          fi
+          echo "MODE: $MODE"
+          if [ $MODE = resume ] || [ $MODE = complete ]; then ls -la --time-style=full-iso $OUT || true; fi
+          AV=$(df -BG --output=avail $RUN_ROOT | tail -1 | tr -dc 0-9)
+          case $MODE in fresh) NEED=70;; resume) NEED=40;; *) NEED=5;; esac
+          echo "PVC free: ${AV} GiB on the volume of $RUN_ROOT (need $NEED for mode $MODE; RUN-stage2-train.md also needs 40 GB per running job before submit)"
+          [ "$AV" -ge "$NEED" ] || { echo "ABORT: PVC has ${AV} GiB free, under the $NEED GiB this mode needs"; fail 14; }
+          mkdir -p $OUT /work/wan $WAN
+          OWN=1
+          : > $GPUCSV
+          phase() { echo "=== PHASE $1 $(date -u +%H:%M:%S)"; echo "#phase $1" >> $GPUCSV; }
+          finish() {
+            rc=$?; set +e
+            case $rc in 2|10|13|14|15|18|19|20) [ "$DECLARED" = 1 ] || { echo "[exit] code $rc came from a tool, not a decision of this script; reporting 1"; rc=1; } ;; esac
+            [ -n "$SMI" ] && { kill $SMI 2>/dev/null; wait $SMI 2>/dev/null; }
+            echo "#phase end" >> $GPUCSV
+            awk -F', ' 'BEGIN{p="start"} /^#phase/{p=$0; sub(/^#phase /,"",p); next} {v=$2; sub(/ %/,"",v); s[p]+=v; n[p]++; S+=v; N++} END{for(k in n) printf "[gpu-summary] %s: %d samples, mean %.1f%%\n", k, n[k], s[k]/n[k]; if(N) printf "[gpu-summary] all: %d samples, mean %.1f%%\n", N, S/N}' $GPUCSV
+            echo "[cgroup] memory.peak $(cat /sys/fs/cgroup/memory.peak 2>/dev/null || echo n/a) bytes, memory.current $(cat /sys/fs/cgroup/memory.current 2>/dev/null || echo n/a) bytes"
+            echo "[cgroup] $(grep -E '^anon ' /sys/fs/cgroup/memory.stat 2>/dev/null || echo 'anon n/a') (bytes, at exit); $(grep -E '^file ' /sys/fs/cgroup/memory.stat 2>/dev/null || echo 'file n/a') (page cache)"
+            if [ "$OWN" = 1 ]; then
+              for f in $SMALL $(cd $OUT && ls config-resume-step*.json 2>/dev/null); do
+                if [ -f $OUT/$f ]; then
+                  echo "=== FILE $f sha256 $(sha256sum < $OUT/$f | cut -d' ' -f1) bytes $(stat -c %s $OUT/$f)"
+                  cat $OUT/$f; echo
+                  echo "=== END $f"
+                fi
+              done
+              for f in $BIG; do
+                if [ -f $OUT/$f ]; then
+                  echo "=== BIGFILE $f sha256 $(sha256sum < $OUT/$f | cut -d' ' -f1) bytes $(stat -c %s $OUT/$f) (full file on the PVC: $OUT/$f; last 3 lines follow)"
+                  tail -n 3 $OUT/$f | cut -c1-400
+                  echo "=== END $f"
+                fi
+              done
+              ls -la $OUT
+              df -h $R $RUN_ROOT
+            fi
+            date -u; echo "=== exit $rc"
+            exec 1>&- 2>&-; wait $TEE 2>/dev/null
+            exit $rc
+          }
+          trap finish EXIT
+          nvidia-smi || { echo "ABORT: nvidia-smi failed (a faulty GPU node; retryable)"; exit 1; }
+          nproc; df -h $R /work
+          if [ $MODE = complete ]; then
+            echo "COMPLETE: model.pt and train.json already exist in $OUT; no training, only the model.pt sha256"
+            phase model-sha
+            ls -la $OUT/model.pt
+            MSHA=$(timeout --kill-after=60 900 sha256sum $OUT/model.pt) || { echo "ABORT: model.pt sha256 failed or timed out (900 s)"; exit 16; }
+            echo "=== MODEL $MSHA"
+            echo "=== done"
+            exit 0
+          fi
+          phase setup
+          nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv,noheader -l 30 > >(tee -a $GPUCSV | sed -u 's/^/[gpu] /') &
+          SMI=$!
+          rc=0; timeout --kill-after=60 1800 bash /src/setup_env.sh > /work/pip-env.log 2>&1 || rc=$?
+          [ $rc = 0 ] || { tail -50 /work/pip-env.log; [ $rc = 124 ] && echo "ABORT: pip setup timed out (1800 s)"; [ $rc = 124 ] && exit 16; exit 1; }
+          cp /work/pip-env.log $R/logs/pip-env-$TAG-$D.log
+          phase stage-wan
+          stage() {
+            local f=$1 n mib per i pids=""
+            n=$(stat -c %s "$WSRC/$f"); mib=$(( (n + 1048575) / 1048576 )); per=$(( (mib + 15) / 16 ))
+            : > "$WAN/$f"
+            for i in $(seq 0 15); do
+              timeout --kill-after=30 900 dd if="$WSRC/$f" of="$WAN/$f" bs=1M skip=$((i * per)) seek=$((i * per)) count=$per conv=notrunc status=none &
+              pids="$pids $!"
+            done
+            for i in $pids; do
+              wait $i || { rc=$?; echo "ABORT: a dd of $f failed (rc $rc; 124 = timed out after 900 s)"; [ $rc = 124 ] && exit 16; exit 12; }
+            done
+            [ "$(stat -c %s "$WAN/$f")" = "$n" ] || { echo "ABORT: staged $f is $(stat -c %s "$WAN/$f") bytes, source $n"; exit 12; }
+            echo "staged $f $n bytes"
+          }
+          T0=$(date +%s)
+          stage diffusion_pytorch_model-00001-of-00003.safetensors
+          stage diffusion_pytorch_model-00003-of-00003.safetensors
+          cp $WSRC/diffusion_pytorch_model.safetensors.index.json $WSRC/config.json $WAN/ || { echo "ABORT: copy of the Wan index/config failed"; exit 12; }
+          echo "staging took $(( $(date +%s) - T0 )) s"
+          ( cd $WAN && timeout 600 sha256sum -c - <<'EOF'
+          720b06c4ade5e87c1246bba8ac95b664c638749cd9b102cf84d823bb44c026a1  diffusion_pytorch_model-00001-of-00003.safetensors
+          6306f7894c345de9093ad588771c2abfaeb668a81f7a6d9a918bd26ba3568e49  diffusion_pytorch_model-00003-of-00003.safetensors
+          bfa2337f1163e195d24151a72298daf34a620543898109be47e414c8daa5b3fe  diffusion_pytorch_model.safetensors.index.json
+          d1fea36899d00c2501b836c13ad65af56e2f9529ba622e50886d3f5c3e6c02bc  config.json
+          EOF
+          ) || { rc=$?; [ $rc = 124 ] && { echo "ABORT: the Wan sha256 check timed out (600 s)"; exit 16; }; echo "ABORT: staged Wan files do not match the sha256 in the download log"; fail 13; }
+          echo "staging + sha256 took $(( $(date +%s) - T0 )) s"
+          COMMON="--feats $R/feats --suites libero_spatial,libero_object,libero_goal,libero_10 --t5 $R/feats/t5 --config $CONFIG --seed $SEED --wan-dir $WAN --micro-batch $MICRO_BATCH --first-batch-report"
+          phase train
+          echo "FLAGS: python /src/pretrained_train.py $COMMON --ckpt-every $CKPT_EVERY --out $OUT   (mode $MODE; look for 'resuming from' in the log)"
+          T1=$SECONDS; rc=0
+          timeout --kill-after=60 $TRAIN_TIMEOUT_S python /src/pretrained_train.py $COMMON --ckpt-every $CKPT_EVERY --out $OUT || rc=$?
+          case $rc in
+            0) ;;
+            2) fail 2 ;;
+            124) echo "ABORT: the training step hit its $TRAIN_TIMEOUT_S s timeout"; fail 18 ;;
+            137) if [ $(( SECONDS - T1 )) -ge $TRAIN_TIMEOUT_S ]; then echo "ABORT: the training step hit its $TRAIN_TIMEOUT_S s timeout (killed after the grace)"; fail 18; fi; exit 137 ;;
+            1) if tail -n 300 $LOG | grep -q -E 'CUDA out of memory|OutOfMemoryError'; then echo "ABORT: CUDA out of memory at micro-batch $MICRO_BATCH (PLAN micro-batch rule: re-render with 4, RUN-stage2-train.md; a retry would repeat it)"; fail 20; fi; exit 1 ;;
+            *) exit $rc ;;
+          esac
+          phase model-sha
+          ls -la $OUT/model.pt
+          MSHA=$(timeout --kill-after=60 900 sha256sum $OUT/model.pt) || { echo "ABORT: model.pt sha256 failed or timed out (900 s)"; exit 16; }
+          echo "=== MODEL $MSHA"
+          echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}
+        - {name: CONFIG, value: "dinov3+c-radiov4"}            # pretrained_train.py --config (sources joined by +)
+        - {name: CFGK, value: "dinov3-c-radiov4"}             # the same with + as -, for names
+        - {name: SEED, value: "1"}
+        - {name: MICRO_BATCH, value: "8"}       # PLAN rule: 8, or 4 if 8 does not fit (header)
+        - {name: CKPT_L40S, value: "600"}           # header, CHECKPOINT INTERVAL
+        - {name: CKPT_L40, value: "500"}
+        - {name: TRAIN_TIMEOUT_S, value: "234000"}   # header, TIME ARITHMETIC
+        - {name: RUN_ROOT, value: "/mnt/proxy/runs"}             # /mnt/proxy/runs, or /mnt/runs/runs on the second volume
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: /src}
+        - {name: OMP_NUM_THREADS, value: "3"}
+        - {name: MALLOC_ARENA_MAX, value: "2"}
+        resources:                    # limits <= 1.2x requests; sources in the header
+          requests: {cpu: "4", memory: 36Gi, nvidia.com/gpu: "1", ephemeral-storage: 38Gi}
+          limits:   {cpu: "4800m", memory: 43Gi, nvidia.com/gpu: "1", ephemeral-storage: 44Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 24Gi}
+      - name: src
+        configMap: {name: stacking-encoders-pairings-train-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 2Gi}
