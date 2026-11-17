@@ -211,3 +211,7 @@ The clean evaluation result entry above landed as PR #52 (merge 66c7d08) on the 
 **Hand-off** of the stage 1 result and measured costs was sent to the planning lead (`world-model-stacking-encoders-57`) for the stage 2 PLAN blanks. The user will talk to planning in that window. Stage 2 code is not started.
 
 **Next:** the user's merge OK for PR #53. After that, stage 2 code by PR on the user's go.
+
+## 2026-11-17 [agent, lead, implementation] (per-task tally merged, PR #53)
+
+PR #53 (per-task tally script, its test, `results/clean-eval/per-task-tally.json`) was merged on the user's OK in chat ("merge", merge `d2e972c`). The worker's worktree and branch were removed.
