@@ -1,0 +1,24 @@
+=== start Tue Nov 17 20:53:37 UTC 2026
+total 26267929
+drwxr-xr-x  2 root root           6 Nov 16 04:50 .
+drwxr-xr-x 10 root root           8 Nov 16 08:30 ..
+-rw-r--r--  1 root root 20173391777 Nov 16 04:45 ckpt.pt
+-rw-r--r--  1 root root        4969 Nov 16 04:29 config.json
+-rw-r--r--  1 root root       87653 Nov 16 04:50 history.jsonl
+-rw-r--r--  1 root root      206310 Nov 16 04:29 load.json
+-rw-r--r--  1 root root  6724568074 Nov 16 04:50 model.pt
+-rw-r--r--  1 root root       98963 Nov 16 04:50 train.json
+Filesystem                                                                                                                                                      Size  Used Avail Use% Mounted on
+csi-cephfs-node@90a5afad-c313-4e49-9b5f-317100c6930e.nautilusfs=/volumes/csi/csi-vol-9fc6b0fe-e947-4528-a5c5-c5e80fc7d70d/9f0765b7-9592-498f-ae6c-7f42cf4c5f62  1.0T  859G  166G  84% /mnt/proxy
+removed '/mnt/proxy/runs/baseline-check4-none-s0-try1/ckpt.pt'
+removed '/mnt/proxy/runs/baseline-check4-none-s0-try1/model.pt'
+total 390
+drwxr-xr-x  2 root root      4 Nov 17 20:53 .
+drwxr-xr-x 10 root root      8 Nov 16 08:30 ..
+-rw-r--r--  1 root root   4969 Nov 16 04:29 config.json
+-rw-r--r--  1 root root  87653 Nov 16 04:50 history.jsonl
+-rw-r--r--  1 root root 206310 Nov 16 04:29 load.json
+-rw-r--r--  1 root root  98963 Nov 16 04:50 train.json
+Filesystem                                                                                                                                                      Size  Used Avail Use% Mounted on
+csi-cephfs-node@90a5afad-c313-4e49-9b5f-317100c6930e.nautilusfs=/volumes/csi/csi-vol-9fc6b0fe-e947-4528-a5c5-c5e80fc7d70d/9f0765b7-9592-498f-ae6c-7f42cf4c5f62  1.0T  840G  185G  83% /mnt/proxy
+=== exit 0 Tue Nov 17 20:53:37 UTC 2026
