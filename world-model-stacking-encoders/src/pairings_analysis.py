@@ -43,10 +43,20 @@ the paired seeds, d_s, dbar, n, the threshold used and the result; the extension
 PLAN's Decision rule item 8 names it: "C fails, under C-a", "H and K", "H, not K, and H_L", "H, not K, not H_L",
 "N and K", "N, not K", "I".
 
-Not decided by the PLAN and left to the user (the script makes no choice): whether the extension applies when the
-harm test is a complete three-seed I but C fails under C-a (item 7 says "if the result is I"; item 8 sends "C fails"
-to the user's options). The status is then "user decides"; if seeds 3 and 4 are supplied anyway (the user said yes),
-they are analysed, and the label stays "C fails, under C-a" (C stays on seeds 0 to 2, item 7).
+When C fails (C-a), nothing is claimed (PLAN line 190): the harm test and "below both members" are output as
+"not claimed (C fails)"; the comparisons themselves are still reported, the harm test's computed value under the key
+"harm_test_as_computed_not_claimed".
+
+UNRESOLVED, PENDING THE USER (the PLAN does not settle these; the script keeps the behaviour below until the user
+answers, and lists them in every output under "unresolved_pending_user"):
+  1. The extension when the harm test is a complete three-seed I but C fails under C-a (item 7, line 187, says "if
+     the result is I"; item 8, line 190, sends "C fails" to the user's options). Status "user decides"; if seeds 3 and
+     4 are supplied anyway they are analysed, and the label stays "C fails, under C-a" (C stays on seeds 0 to 2).
+  2. Clean LIBERO with other than 500 rollouts in a suite is refused (input error). The PLAN has a coverage rule for
+     LIBERO-Plus only (line 117), none for clean LIBERO.
+  3. After the extension, "below both members" pairs the five-seed harm result with the three-seed C-RADIOv4-alone
+     test (three-seed sigma_hat; line 187 keeps the re-pooled sigma_hat for H and N only; line 176 does not say which
+     H to pair it with).
 lp_eval.py is not imported: its paired/verdict work on per-episode tables of the proxy's subset rule, not on totals.
 """
 
@@ -82,6 +92,15 @@ EXT_MISSING = "not qualifying: an I caused by a missing seed does not trigger th
 EXT_USER = ("user decides: complete three-seed I, but C fails under C-a; the PLAN does not say whether the extension "
             "applies then (item 7 'if the result is I' vs item 8 'C fails' options)")
 EXT_DONE = "done: seeds 3 and 4 analysed; H and N on five seeds, C, K, H_L on seeds 0 to 2 (two-stage design)"
+NOT_CLAIMED = "not claimed (C fails)"
+
+PENDING_EXT_C_FAILS = ("extension when the harm test is a complete three-seed I but C fails under C-a: 'user decides' "
+                       "(PLAN lines 187 and 190)")
+PENDING_CLEAN_500 = ("clean LIBERO with other than 500 rollouts in a suite: refused; the PLAN has no clean coverage "
+                     "rule (line 117 covers LIBERO-Plus only)")
+PENDING_BELOW_BOTH_EXT = ("after the extension, 'below both members' pairs the five-seed harm result with the "
+                          "three-seed C-RADIOv4-alone test (lines 176 and 187)")
+PENDING = (PENDING_EXT_C_FAILS, PENDING_CLEAN_500, PENDING_BELOW_BOTH_EXT)
 
 
 class InputError(ValueError):
@@ -117,7 +136,8 @@ def _clean_B(rec, where):
         n = _count(s.get("episodes"), f"{where} clean {suite} episodes")
         k = _count(s.get("successes"), f"{where} clean {suite} successes")
         if n != CLEAN_PER_SUITE:
-            raise InputError(f"{where}: clean {suite} has {n} episodes, need {CLEAN_PER_SUITE} (2,000 rollouts)")
+            raise InputError(f"{where}: clean {suite} has {n} episodes, need {CLEAN_PER_SUITE} (2,000 rollouts). "
+                             f"Unresolved, pending the user: {PENDING_CLEAN_500}")
         if k > n:
             raise InputError(f"{where}: clean {suite} successes {k} > episodes {n}")
         rates[suite] = Fraction(100 * k, n)
@@ -413,17 +433,25 @@ def analyse(obj):
                                         "negative_count": sum(v < 0 for v in h5["d_s"].values())}),
                   "N": _test_out(h5, None if n5_res is None else (n5_res and not h5_res), h5["complete"],
                                  margin=n5_m),
-                  "harm_outcome": harm}
+                  "harm_outcome": harm if c_holds else NOT_CLAIMED}
         ext_status = EXT_DONE + ("" if c_holds else "; C fails under C-a, so the label stays C fails")
 
     label = C_FAILS if not c_holds else ("I" if harm == "I" else LABELS[(harm, helpful)])
+    below_both = bool(harm == "H" and hr_res and r_cmp["complete"])
+    applies = {PENDING_EXT_C_FAILS: ext_status == EXT_USER or (has_ext and not c_holds),
+               PENDING_CLEAN_500: False,     # the input was accepted, so every clean suite had 500 rollouts
+               PENDING_BELOW_BOTH_EXT: bool(has_ext and c_holds)}
     return {"rule": "PLAN 2026-11-15-pretrained-start-pairings, Decision rule as signed off: T3, M2, C-a, G1 at 36, "
                     "coverage 1%, extension S-4of5 for a complete three-seed I",
             "outcome": label,
-            "harm_outcome": harm, "harm_outcome_three_seeds": harm3, "helpful_pairing": helpful,
+            "harm_outcome": harm if c_holds else NOT_CLAIMED,
+            "harm_outcome_three_seeds": harm3 if c_holds else NOT_CLAIMED,
+            "harm_test_as_computed_not_claimed": None if c_holds else {"final": harm, "three_seeds": harm3},
+            "helpful_pairing": helpful,
             "calibration_C_holds": c_holds,
-            "below_both_members": bool(harm == "H" and hr_res and r_cmp["complete"]),
+            "below_both_members": below_both if c_holds else NOT_CLAIMED,
             "extension": ext_status,
+            "unresolved_pending_user": [{"case": p, "applies_to_this_input": applies[p]} for p in PENDING],
             "sigma_hat_three_seeds_pts": math.sqrt(V3), "pooled_variance_three_seeds_exact": str(V3),
             "df_three_seeds": df3, "pool_three_seeds": pool3,
             "tests_three_seeds": {"C": C, "H": H3, "N": N3, "H_L": HL, "K": K, "H_vs_c-radiov4": HR},
@@ -478,8 +506,15 @@ def report(res):
              f"  harm test: {res['harm_outcome']} (three seeds: {res['harm_outcome_three_seeds']}); helpful pairing: "
              f"{res['helpful_pairing']}; C holds: {res['calibration_C_holds']}; below both members: "
              f"{res['below_both_members']}",
-             f"  extension: {res['extension']}",
-             f"  sigma_hat (seeds 0-2): {_fmt(res['sigma_hat_three_seeds_pts'])} pts, df {res['df_three_seeds']}"]
+             f"  extension: {res['extension']}"]
+    if not res["calibration_C_holds"]:
+        lines[1] = (f"  harm test: {NOT_CLAIMED}; below both members: {NOT_CLAIMED}; C holds: False "
+                    f"(PLAN line 190: the comparisons below are reported, nothing is claimed); helpful pairing: "
+                    f"{res['helpful_pairing']}")
+    for p in res["unresolved_pending_user"]:
+        if p["applies_to_this_input"]:
+            lines.append(f"  UNRESOLVED, PENDING THE USER (applies here): {p['case']}")
+    lines.append(f"  sigma_hat (seeds 0-2): {_fmt(res['sigma_hat_three_seeds_pts'])} pts, df {res['df_three_seeds']}")
     if res["extension_stage"]:
         e = res["extension_stage"]
         lines.append(f"  sigma_hat (re-pooled, extension): {_fmt(e['sigma_hat_pts'])} pts, df {e['df']}")

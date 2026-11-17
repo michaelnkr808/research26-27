@@ -67,6 +67,10 @@ def replace(entries, new):
     return [x for x in entries if (x["config"], x["train_seed"]) not in keys] + list(new)
 
 
+def pending(r):
+    return {p["case"]: p["applies_to_this_input"] for p in r["unresolved_pending_user"]}
+
+
 def run(entries):
     return P.analyse({"checkpoints": entries})
 
@@ -84,6 +88,26 @@ class Statistic(unittest.TestCase):
         self.assertEqual(c["Y_exact"], "81")
         self.assertAlmostEqual(c["eval_seed_sd_pts"], 1.0)
         self.assertEqual(c["lp_missing_total"], 90)
+
+    def test_Y_is_mean_of_rates_not_pooled_rate(self):
+        # uneven denominators: 9,730 / 10,030 / 10,030 evaluated, rates 0, 100, 100. Mean of rates = 200/3;
+        # pooled successes / pooled evaluated = 20060 / 29790 = 67.34, which the rule does not use.
+        es = replace(design(), [ck(D, 0, None, miss=(300, 0, 0), per_eval=(0, 100, 100))])
+        c = [x for x in run(es)["checkpoints"] if x["config"] == D and x["train_seed"] == 0][0]
+        self.assertEqual(c["Y_exact"], "200/3")
+        self.assertNotAlmostEqual(c["Y_pts"], 100 * 20060 / 29790, places=3)
+
+    def test_zero_difference_is_neither_harm_nor_gain(self):
+        r = run(design(dr=[74, 74, 80]))          # d = -6, -6, 0: dbar -4 <= -T, but 0 is not < 0
+        h = r["tests_three_seeds"]["H"]
+        self.assertLessEqual(h["dbar_pts"], -h["threshold_T_pts"])
+        self.assertFalse(h["result_on_paired_seeds"])
+        self.assertEqual(r["harm_outcome"], "I")
+        r = run(design(none=[70, 70, 80]))        # d(dinov3 - none) = 10, 10, 0: dbar >= T, but 0 is not > 0
+        c = r["tests_three_seeds"]["C"]
+        self.assertGreaterEqual(c["dbar_pts"], c["threshold_T_pts"])
+        self.assertFalse(c["result_on_paired_seeds"])
+        self.assertEqual(r["outcome"], "C fails, under C-a")
 
     def test_missing_episodes_leave_the_denominator(self):
         es = replace(design(), [ck(D, 0, 80, miss=(100, 0, 0))])
@@ -121,8 +145,11 @@ class Statistic(unittest.TestCase):
 
 class Outcomes(unittest.TestCase):
     def check(self, r, label, harm, helpful, c=True):
+        shown = harm if c else P.NOT_CLAIMED
         self.assertEqual((r["outcome"], r["harm_outcome"], r["helpful_pairing"], r["calibration_C_holds"]),
-                         (label, harm, helpful, c))
+                         (label, shown, helpful, c))
+        if not c:
+            self.assertEqual(r["harm_test_as_computed_not_claimed"]["final"], harm)
 
     def test_H_and_K(self):
         r = run(design())                         # d(DR-D) = -5, d(DL-D) = 0
@@ -223,7 +250,8 @@ class Boundaries(unittest.TestCase):
         c = [x for x in r["checkpoints"] if x["config"] == D and x["train_seed"] == 1][0]
         self.assertEqual(c["status"], "missing")
         self.assertEqual((r["outcome"], r["harm_outcome"], r["helpful_pairing"]),
-                         ("C fails, under C-a", "I", "unresolved"))
+                         ("C fails, under C-a", P.NOT_CLAIMED, "unresolved"))
+        self.assertEqual(r["harm_test_as_computed_not_claimed"]["final"], "I")
 
 
 class MissingSeeds(unittest.TestCase):
@@ -239,7 +267,8 @@ class MissingSeeds(unittest.TestCase):
         self.assertEqual(r["outcome"], "C fails, under C-a")
         self.assertTrue(r["tests_three_seeds"]["C"]["result_on_paired_seeds"])
         self.assertFalse(r["tests_three_seeds"]["C"]["established"])
-        self.assertEqual(r["harm_outcome"], "H")
+        self.assertEqual(r["harm_outcome"], P.NOT_CLAIMED)
+        self.assertEqual(r["harm_test_as_computed_not_claimed"]["final"], "H")
 
     def test_missing_helpful_seed_is_unresolved(self):
         r = run(replace(design(), [gone(DL, 1)]))
@@ -250,7 +279,8 @@ class MissingSeeds(unittest.TestCase):
     def test_missing_dinov3_seed(self):
         r = run(replace(design(), [gone(D, 2)]))
         self.assertEqual((r["outcome"], r["harm_outcome"], r["helpful_pairing"], r["extension"]),
-                         ("C fails, under C-a", "I", "unresolved", P.EXT_MISSING))
+                         ("C fails, under C-a", P.NOT_CLAIMED, "unresolved", P.EXT_MISSING))
+        self.assertEqual(r["harm_test_as_computed_not_claimed"]["final"], "I")
 
     def test_missing_c_radiov4_alone(self):
         r = run(replace(design(), [gone(R_, 0)]))
@@ -323,10 +353,94 @@ class Extension(unittest.TestCase):
     def test_C_fails_with_three_seed_I_is_left_to_the_user(self):
         r = run(self.base(none=79))
         self.assertEqual((r["outcome"], r["extension"]), ("C fails, under C-a", P.EXT_USER))
+        self.assertTrue(pending(r)[P.PENDING_EXT_C_FAILS])
         r = run(ext(self.base(none=79)))          # the user said yes: analysed, label stays
         self.assertEqual(r["outcome"], "C fails, under C-a")
-        self.assertEqual(r["harm_outcome"], "H")
+        self.assertEqual((r["harm_outcome"], r["extension_stage"]["harm_outcome"]), (P.NOT_CLAIMED, P.NOT_CLAIMED))
+        self.assertEqual(r["harm_test_as_computed_not_claimed"], {"final": "H", "three_seeds": "I"})
         self.assertTrue(r["extension"].startswith(P.EXT_DONE))
+        self.assertTrue(pending(r)[P.PENDING_EXT_C_FAILS])
+
+    def test_extension_H_uses_repooled_sigma(self):
+        # siglip2 e = 6 makes f(5) x sigma_hat exceed 2.7. Re-pooled (seeds 0-4): T = 3.24, dbar = -3.4, so H.
+        # With the three-seed sigma_hat at n = 5, T would be 3.74 and the result I.
+        es = design(e=6, dr=[74, 74, 81])
+        self.assertEqual(run(es)["extension"], P.EXT_DUE)
+        r = run(ext(es, dr_vals=(77, 77)))
+        h = r["extension_stage"]["H"]
+        s5, s3 = r["extension_stage"]["sigma_hat_pts"], r["sigma_hat_three_seeds_pts"]
+        self.assertAlmostEqual(h["threshold_T_pts"], P.f_of(5) * s5)
+        self.assertGreater(P.f_of(5) * s5, 2.7)
+        self.assertGreater(P.f_of(5) * s3, -h["dbar_pts"])      # the three-seed sigma would block H
+        self.assertEqual((h["dbar_exact"], h["negative_count"]), ("-17/5", 4))
+        self.assertEqual((r["harm_outcome"], r["outcome"]), ("H", "H, not K, not H_L"))
+
+    def test_extension_N_uses_repooled_sigma(self):
+        # siglip2 e = 3; the extension seeds of dinov3+c-radiov4 (83, 90) widen the spread: f(5) x re-pooled
+        # sigma_hat = 4.46, dbar = +0.4, so 0.4 - 4.46 < -2.7: I. With the three-seed sigma_hat N would hold.
+        es = design(e=3, dr=[74, 74, 81])
+        self.assertEqual(run(es)["extension"], P.EXT_DUE)
+        r = run(ext(es, dr_vals=(83, 90)))
+        st = r["extension_stage"]
+        n = st["N"]
+        self.assertAlmostEqual(n["margin"]["f_n_sigma_hat_pts"], P.f_of(5) * st["sigma_hat_pts"])
+        self.assertGreater(n["margin"]["f_n_sigma_hat_pts"], 2.7)
+        self.assertGreater(n["dbar_pts"] - P.f_of(5) * r["sigma_hat_three_seeds_pts"], -2.7)  # three-seed: N
+        self.assertFalse(n["result_on_paired_seeds"])
+        self.assertEqual(r["harm_outcome"], "I")
+
+    def test_extension_zero_difference_is_not_negative(self):
+        # five d_s: -6, -6, +1, -6, 0 (dbar -3.4 <= -T): only 3 negative, so not H under S-4of5
+        es = design(dr=[74, 74, 81])
+        r = run(ext(es, dr_vals=(74, 80)))
+        h = r["extension_stage"]["H"]
+        self.assertEqual((h["negative_count"], h["result_on_paired_seeds"]), (3, False))
+        self.assertLessEqual(h["dbar_pts"], -h["threshold_T_pts"])
+        self.assertEqual(r["harm_outcome"], "I")
+
+    def test_below_both_after_extension_is_listed_pending(self):
+        r = run(ext(self.base(), dr_vals=(76, 76)))
+        self.assertTrue(pending(r)[P.PENDING_BELOW_BOTH_EXT])
+        self.assertIn("UNRESOLVED, PENDING THE USER (applies here)", P.report(r))
+
+
+class NotClaimedAndPending(unittest.TestCase):
+    def test_C_fails_claims_nothing(self):
+        r = run(design(none=78))                  # C fails; computed harm test H; DR below c-radiov4 too
+        self.assertEqual(r["outcome"], "C fails, under C-a")
+        self.assertEqual((r["harm_outcome"], r["harm_outcome_three_seeds"], r["below_both_members"]),
+                         (P.NOT_CLAIMED,) * 3)
+        self.assertEqual(r["harm_test_as_computed_not_claimed"], {"final": "H", "three_seeds": "H"})
+        self.assertTrue(r["tests_three_seeds"]["H_vs_c-radiov4"]["result_on_paired_seeds"])  # still reported
+        text = P.report(r)
+        self.assertIn("harm test: not claimed (C fails); below both members: not claimed (C fails)", text)
+        self.assertNotIn("harm test: H", text)
+        self.assertNotIn("below both members: True", text)
+
+    def test_C_holds_states_results_plainly(self):
+        r = run(design())
+        self.assertEqual((r["harm_outcome"], r["below_both_members"]), ("H", True))
+        self.assertIsNone(r["harm_test_as_computed_not_claimed"])
+        self.assertIn("harm test: H", P.report(r))
+
+    def test_every_output_lists_the_unresolved_cases(self):
+        r = run(design())
+        self.assertEqual([p["case"] for p in r["unresolved_pending_user"]], list(P.PENDING))
+        self.assertFalse(any(pending(r).values()))
+        self.assertNotIn("PENDING THE USER", P.report(r))
+
+    def test_clean_under_500_is_refused_as_pending(self):
+        e = ck(D, 0, 80)
+        e["clean"]["libero_goal"]["episodes"] = 499
+        with self.assertRaisesRegex(P.InputError, "pending the user"):
+            run(replace(design(), [e]))
+
+    def test_docstring_names_the_unresolved_cases(self):
+        doc = " ".join(P.__doc__.split())
+        self.assertIn("UNRESOLVED, PENDING THE USER", doc)
+        for words in ("complete three-seed I but C fails under C-a", "other than 500 rollouts",
+                      "five-seed harm result with the three-seed C-RADIOv4-alone test"):
+            self.assertIn(words, doc)
 
 
 class BadInput(unittest.TestCase):
