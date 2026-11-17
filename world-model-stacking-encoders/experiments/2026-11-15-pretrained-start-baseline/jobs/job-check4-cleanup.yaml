@@ -1,0 +1,45 @@
+# Cleanup: delete the sanity check 4 checkpoint files (user OK in chat 2026-11-17: "sure yeah remove this").
+# Deletes only ckpt.pt and model.pt in /mnt/proxy/runs/baseline-check4-none-s0-try1/; small files there stay.
+# CPU-only Job, exits on its own (no sleep), requests at or under the exempt size, limits within 20%.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-baseline-check4-cleanup
+  namespace: aria-world
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 1800
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          D=/mnt/proxy/runs/baseline-check4-none-s0-try1
+          echo "=== start $(date -u)"
+          ls -la "$D"; df -h /mnt/proxy
+          for f in ckpt.pt model.pt; do
+            if [ -f "$D/$f" ]; then rm -v "$D/$f"; else echo "missing $D/$f"; fi
+          done
+          ls -la "$D"; df -h /mnt/proxy
+          echo "=== exit 0 $(date -u)"
+        resources:
+          requests: {cpu: 500m, memory: 512Mi}
+          limits:   {cpu: 600m, memory: 600Mi}
+        volumeMounts:
+        - {name: proxy, mountPath: /mnt/proxy}
+      volumes:
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}

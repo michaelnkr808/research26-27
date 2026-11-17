@@ -201,3 +201,13 @@ For reference only (not part of the rule): the paper's VAE-only reference is 97.
 ## 2026-11-17 [agent, lead, implementation] (evaluation result merged, PR #52)
 
 The clean evaluation result entry above landed as PR #52 (merge 66c7d08) on the user's OK in chat ("merge PR #52"), after a fresh read-only reviewer recomputed the tally from the records (1,851 of 2,000, 92.55%) and found nothing blocking (PR #52 comment); its GPU-hours note was fixed in 1240a33. The experiment PLAN's status is left to the planning lead. Still open with the user: a per-task tally script (new script by PR), and whether to delete the check-4 checkpoint files on the PVC.
+
+## 2026-11-17 [agent, lead, implementation] (check-4 checkpoint files deleted; per-task tally PR opened)
+
+**Deletion** (user OK in chat 2026-11-17: "sure yeah remove this"). CPU-only Job `stacking-encoders-baseline-check4-cleanup` (`jobs/job-check4-cleanup.yaml`) removed `ckpt.pt` (20,173,391,777 B) and `model.pt` (6,724,568,074 B) from `/mnt/proxy/runs/baseline-check4-none-s0-try1/`. The small files stay (`config.json`, `history.jsonl`, `load.json`, `train.json`). PVC use went from 859G to 840G, with 185G available (`df` in the log, verified, `results/check4-cleanup.log`). `=== exit 0`. The Job was deleted after its log was saved. Nothing else on the PVC was touched.
+
+**Per-task tally** (user OK in chat 2026-11-17). A worker (Sonnet) wrote `src/tally_per_task.py`, its test, and `results/clean-eval/per-task-tally.json`. The lead added a fix: the script exits non-zero without writing on empty or incomplete input (a `--help` run had overwritten the JSON with an empty tally in the worktree; restored before commit). The lead reran the checks: 13 tests OK, and a rerun on the records gives a byte-identical JSON. A fresh reviewer (Sonnet) recomputed all 40 tasks independently and found no differences; verdict approve, with three minor non-blocking notes (PR comment). PR #53, open, waiting on the user's merge OK.
+
+**Hand-off** of the stage 1 result and measured costs was sent to the planning lead (`world-model-stacking-encoders-57`) for the stage 2 PLAN blanks. The user will talk to planning in that window. Stage 2 code is not started.
+
+**Next:** the user's merge OK for PR #53. After that, stage 2 code by PR on the user's go.
