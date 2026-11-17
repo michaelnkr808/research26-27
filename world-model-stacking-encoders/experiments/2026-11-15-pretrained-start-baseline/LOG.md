@@ -197,3 +197,7 @@ For reference only (not part of the rule): the paper's VAE-only reference is 97.
 **Not done:** per-task success and mean episode length (PLAN "Reported") are in the records (`episode_id` = task x 1000 + trial, `steps`) but no existing script tallies them; a new script with a test, by PR, needs the user's OK. The PVC copies of the full logs and GPU CSVs were not copied off. Job deleted after the logs were saved and the records extracted (graceful; no pods left). Nothing on the PVC deleted: `baseline-none-s0` (`model.pt`, `ckpt.pt`), the check-4 folder, and the shard records under `/mnt/proxy/rollouts/baseline-clean-eval/` stay.
 
 **Next:** the user's merge OK for this PR; hand the result to the planning lead for the stage 2 PLAN; ask the user about the per-task tally and about deleting the check-4 checkpoint files.
+
+## 2026-11-17 [agent, lead, implementation] (evaluation result merged, PR #52)
+
+The clean evaluation result entry above landed as PR #52 (merge 66c7d08) on the user's OK in chat ("merge PR #52"), after a fresh read-only reviewer recomputed the tally from the records (1,851 of 2,000, 92.55%) and found nothing blocking (PR #52 comment); its GPU-hours note was fixed in 1240a33. The experiment PLAN's status is left to the planning lead. Still open with the user: a per-task tally script (new script by PR), and whether to delete the check-4 checkpoint files on the PVC.
