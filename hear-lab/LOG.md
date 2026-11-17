@@ -145,3 +145,37 @@ From the lead, 2026-11-16:
 **Found** (`verified`, model card and file listing read 2026-11-16): Audio Flamingo 3 is built from the AF-Whisper audio encoder, an MLP audio adaptor, and a Qwen2.5-7B language model. The weight files total about 18 GB (language model about 15.2 GB in four files, audio encoder about 1.3 GB, plus adapter files). The card lists test hardware as an A100 80 GB. License: NVIDIA OneWay Noncommercial License, with parts under the Qwen Research License; the full terms were not read.
 **Not verified:** how much GPU memory the RMS-AQA baseline training needs with this model, and how long it takes; that needs a timed batch on a rented machine.
 **Next:** check and review the two new survey files and the bibliography, then bring the lead the navigation data options and the navigation base-model options.
+
+## 2026-11-16 [agent, lead, planning] (survey follow-up merged: PR #50; navigation data and navigation world models; prior-work check started)
+**Goal:** follow the lead's lean toward navigation: find data like NaVLA2's, find world models for navigation, and finish the survey outputs (bibliography, summary, read-first list).
+
+**Did:**
+- Two survey workers wrote `literature/survey/2026-11-16-spatial-audio-navigation-data.md` (20 datasets and simulators) and `literature/survey/2026-11-16-navigation-world-models.md` (23 papers). A third wrote `literature/references.bib` entries (95 entries, covering all 92 survey keys), with metadata from the arXiv API or each paper's own page. The planning lead wrote `literature/survey/2026-11-16-summary.md` and the read-first list in `literature/reading-list.md`.
+- Review, posted on the pull request: one fact-check reviewer per new survey file, then a second-round reviewer for the fixes, the new entries, the summary, the read-first list and a 20-entry bibliography sample. The first round found two Wan 2.2 navigation models the worker had missed (WNM-3D, UniWAM); the second round found one wrong release field (WorldVLN) and nine statements in the summary that said more than the survey files support. All fixed; the resolution is recorded in a comment on the pull request.
+- Merged on the lead's "merge pr 50" (2026-11-16).
+- The planning lead ran a keyword search of the Hugging Face dataset index (soundspaces, binaural, ambisonic, "audio-visual navigation", audiogoal, "spatial audio", "audio visual world model") on 2026-11-16. It returned audio-only sets and the FAR corpora already in the survey, and no set with video and navigation actions (`verified` as a listing read; the datasets were not opened).
+
+**PR:** #50. This entry and the `PLAN.md` and `README.md` status moves: direct.
+
+**Found** (what the reviewed files say; `verified` means read from the paper or page by a worker or reviewer on 2026-11-16, nothing reproduced; detail in the files):
+- Navigation world action models built on Wan2.2-TI2V-5B exist: WNM-3D (training scripts for two of three stages and checkpoints released; weights non-commercial; 16 H100), AstraNav-World (inference code and part of the weights; evaluated in Habitat; 96 H20), and for mobile manipulation UniWAM and ABot-M0.5. None mentions audio (keyword search of each paper's full text).
+- WNM-3D's benchmarks are GN-Bench and VLN-CE R2R; the survey entry does not say which simulator runs them. The planning lead had told the lead in chat that WNM-3D is tested in the simulator family that renders spatial audio; that was not supported and was corrected in chat and in the summary.
+- NaVLA2's MINav data and checkpoints are listed as unreleased in its repository. No release was found for the Audio-Visual World Models data (AVW-4k) or LH-AVLN. What is public is the means to render such data (SoundSpaces 2.0 on Habitat, with released sound libraries and episode definitions); the navigation data file's closing section lists what has to be obtained and run.
+- Public real recordings nearest to the need: OmniEchoBench (first-order Ambisonics at grid points in 30 scanned rooms, frames rendered from meshes), and smart-glasses sets with a 7-microphone array and head trajectories but no navigation actions.
+- Audio-Visual World Models (arXiv 2512.00883) uses its audio-visual world model in a planner to improve an audio-visual navigation agent in SoundSpaces 2.0. What exactly it compares (for example a vision-only world model) is not in the survey entry.
+
+From the lead, 2026-11-16:
+- Doubts that nobody has measured whether audio improves a world action model: "that seems like it may have already been done before".
+- Base model: "ill decide on the base model in a bit".
+- Data: "im sure we can find some dataset".
+- Budget and base: "thats fine, we wanted to build of wan 2.2 anyway right", in reply to the point that the realistic form starts from released Wan 2.2 based weights and trains only an added part.
+
+**Not verified:** whether a ready dataset exists that the searches missed; whether WNM-3D can be evaluated where SoundSpaces 2.0 renders audio; what fine-tuning from a released checkpoint costs; the answer to the lead's prior-work doubt.
+
+**Next:** a worker is running a focused prior-work check on one question (has anyone measured whether audio improves a world action model or world model for acting), reading the closest papers in full and chasing their citations. Its file goes by pull request with a fact-check. Then the lead picks the base model; the planning lead writes the decision records.
+
+**Open questions:**
+- The prior-work check's answer.
+- Base model (the lead will decide).
+- Where the data comes from: a ready set if one is found, otherwise rendering with SoundSpaces 2.0.
+- Still open with the PI: what "running" means for RMS-AQA and how it connects; whether the 200 dollars covers a training run; the navigation setting; what the Interspeech paper has to show. Dataset access for RMS-AQA is still pending.
