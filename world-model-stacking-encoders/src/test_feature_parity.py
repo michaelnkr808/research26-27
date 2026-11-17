@@ -26,8 +26,17 @@ loaded. The Wan VAE is not part of this question: its loader is replaced by a st
 while Featurizer is built (the VAE weights are not on this Mac). The encoder branch of Featurizer is the real code.
 (test_rollout.py and test_pretrained_train.py do not cover encoders: they use fake featurizers.)
 
-Not covered: frame preparation before the encoder (decode + to_224 at cache time, process_obs at rollout). See the
-report on PR #55: the two resizers differ by one uint8 level on about a fifth of the pixels.
+KNOWN GAP, accepted by the user on 2026-11-17 (decision: accept and bound it, change neither resizer): frame
+preparation before the encoder is not identical. At cache time the frames go decode_episode -> fastwam_data.to_224
+(fastwam_data.py:83-86, torch TF.resize bilinear antialias on float32 in [0, 1]) -> rounded to uint8 in
+extract_fastwam.encoder_episode (extract_fastwam.py:101). At rollout, rollout.process_obs (rollout.py:194-195) flips the
+sim image by [::-1, ::-1] and rollout.center_crop_resize (rollout.py:171-179) does a PIL Image.BILINEAR resize on uint8.
+On the same 256 x 256 uint8 image the two resizers differ by at most 1 uint8 level, on about 20% of the pixels (measured
+2026-11-17, noise and smooth images). It also applies to stage 1: the proxy and baseline were trained on cache frames
+and rolled out through center_crop_resize. test_prep_gap_bounded below measures and bounds it; it does not remove it.
+NOT checked on this Mac (no LIBERO data here): whether the stored dataset frames have the same orientation as the sim
+frames after the flip, and the effect of video-codec compression on the dataset frames versus raw sim frames.
+The encoder tests below feed identical uint8 frames to both paths, so they do not see this gap.
 
 Run from src/: python test_feature_parity.py
 """
@@ -75,6 +84,32 @@ def frames(seed):
     big = torch.from_numpy(base).permute(0, 3, 1, 2)
     big = torch.nn.functional.interpolate(big, size=(224, 224), mode="bilinear", align_corners=False)
     return big.round().clamp(0, 255).to(torch.uint8).permute(0, 2, 3, 1).numpy()
+
+
+def prep_gap(img):
+    """img (n, 256, 256, 3) uint8 -> (max abs level difference, fraction of differing values) between the cache-time
+    prep (to_224, rounded to uint8 as extract_fastwam.encoder_episode does) and rollout.center_crop_resize. The rollout side
+    gets the 180 degree flip of process_obs on its input and the inverse flip on its output, so both sides see the
+    same pixels."""
+    cache = (FD.to_224(img) * 255).round().clamp(0, 255).to(torch.uint8).permute(0, 2, 3, 1).numpy()
+    roll = np.stack([R.center_crop_resize(np.ascontiguousarray(i[::-1, ::-1])) for i in img])[:, ::-1, ::-1]
+    d = np.abs(cache.astype(np.int32) - roll.astype(np.int32))
+    return int(d.max()), float((d > 0).mean())
+
+
+def test_prep_gap_bounded():
+    """The bounds were set AFTER seeing the measurement (max 1 level, about 20% of values differ, on noise and smooth
+    images); they guard against a change to either resizer, they do not claim the two are identical."""
+    g = np.random.default_rng(0)
+    noise = g.integers(0, 256, (4, 256, 256, 3), dtype=np.uint8)
+    base = torch.from_numpy(g.integers(0, 256, (4, 16, 16, 3)).astype(np.float32)).permute(0, 3, 1, 2)
+    smooth = torch.nn.functional.interpolate(base, size=(256, 256), mode="bilinear", align_corners=False)
+    smooth = smooth.round().clamp(0, 255).to(torch.uint8).permute(0, 2, 3, 1).numpy()
+    for name, img in (("noise", noise), ("smooth", smooth)):
+        mx, frac = prep_gap(img)
+        print(f"prep gap ({name}): max abs diff {mx} uint8 level, {100 * frac:.1f}% of values differ", flush=True)
+        assert mx <= 1, (name, mx)
+        assert frac <= 0.25, (name, frac)
 
 
 def check_spec(side, source, enc):
@@ -172,6 +207,7 @@ for _s in SOURCES:
 
 
 if __name__ == "__main__":
+    test_prep_gap_bounded()
     bad = 0
     for s in SOURCES:
         try:
