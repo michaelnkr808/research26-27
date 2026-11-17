@@ -197,7 +197,7 @@ spec:
           valueFrom:
             fieldRef: {fieldPath: "metadata.annotations['batch.kubernetes.io/job-completion-index']"}
         - {name: NSHARDS, value: "4"}          # equals spec.completions
-        - {name: EVAL_TRY, value: "1"}         # names the records files; a new value starts over
+        - {name: EVAL_TRY, value: "1"}   # names the records files; a new value starts over (render.sh --try)
         - {name: ENVS, value: "4"}      # from this config's smoke (stage 1 rule: raise until GPU >= 40%); none: 4
         - {name: CUDA_GRAPH, value: "1"}
         - {name: ROLLOUT_CAP_S, value: "16800"}   # 2 x the timing-only upper bound per shard (header)
