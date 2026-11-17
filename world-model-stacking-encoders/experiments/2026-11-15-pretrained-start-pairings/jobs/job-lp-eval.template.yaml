@@ -18,7 +18,7 @@
 #   is marked failed while the other shards run to the end (stage 1's clean Job used maxFailedIndexes 0, fine for 4 short
 #   shards; here 16 long ones would all be killed). The Job then ends Failed (reason FailedIndexes) once every index is done;
 #   status.failedIndexes names the bad shards. A resubmit of the same rendered file (same EVAL_TRY) reruns every index, but a
-#   shard whose records file is already complete (no .errors.jsonl, records >= its job count) exits 0 before the model hash,
+#   shard whose records file is already complete (no .errors.jsonl, unique job keys >= its job count) exits 0 before the model hash,
 #   restore and load ("COMPLETE:"), so only the unfinished shards cost GPU time. podFailurePolicy FailJob on this script's own
 #   deterministic codes still ends the whole Job at once: those are pin or render errors that every shard would hit.
 # SHARDS: NSHARDS indexes, PARALLEL pods at once (the 8-GPU cap counts them with the training pods; the lead may raise
@@ -173,8 +173,14 @@ spec:
           ls -la $RUN/model.pt
           if [ -e $OUT ]; then echo "MODE: resume (records file exists, $(wc -l < $OUT) lines already)"; else echo "MODE: fresh"; fi
           EXP=$(( (30090 - SHARD + NSHARDS - 1) / NSHARDS ))   # jobs[SHARD::NSHARDS] of the 30,090
-          if [ -f $OUT ] && [ ! -f $OUT.errors.jsonl ] && [ "$(wc -l < $OUT)" -ge "$EXP" ]; then
-            echo "COMPLETE: $OUT already holds $(wc -l < $OUT) of $EXP records; nothing to run (a resubmit after another shard failed)"; exit 0
+          # unique job keys (rollout.py job_key: benchmark, suite, episode_id, eval_seed), so a duplicated line cannot count twice;
+          # an unreadable line makes the count 0 and the shard runs normally (rollout.py then resumes or refuses the file)
+          NKEYS=0
+          if [ -f $OUT ]; then
+            NKEYS=$(python3 -c 'import json, sys; print(len({(r["benchmark"], r["suite"], int(r["episode_id"]), int(r["eval_seed"])) for r in (json.loads(x) for x in open(sys.argv[1]) if x.strip())}))' $OUT 2>/dev/null || echo 0)
+          fi
+          if [ -f $OUT ] && [ ! -f $OUT.errors.jsonl ] && [ "$NKEYS" -ge "$EXP" ]; then
+            echo "COMPLETE: $OUT already holds $NKEYS unique job keys of $EXP; nothing to run (a resubmit after another shard failed)"; exit 0
           fi
           nvidia-smi || { echo "ABORT: nvidia-smi failed (a faulty GPU node; retryable)"; exit 1; }
           nproc; df -h $R /work
