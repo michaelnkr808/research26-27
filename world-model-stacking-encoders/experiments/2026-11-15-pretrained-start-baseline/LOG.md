@@ -163,3 +163,37 @@ Job `stacking-encoders-baseline-full-train` deleted after the log was saved (gra
 **Test-set use (PLAN "Test-set use"), recorded before any outcome is read:** date 2026-11-17; checkpoint `/mnt/proxy/runs/baseline-none-s0/model.pt`, step 21,696 (final), sha256 `b25e63e61d6297d523eb75f9e334f179e5faac58c06aaa81da92d4ca3fcdc732`; clean LIBERO, 4 suites x 10 tasks x 50 trials = 2,000 rollouts, init state = trial, eval seed 41, `EVAL_TRY` try1, 4 shards of 500 (125 per suite each). No checkpoint, hyperparameter or recipe choice will be made from its outcomes. No outcome has been seen at the time of this entry.
 
 **Next:** 15-minute GPU check on each pod after it starts Running, a second look at 75-90 min (other suites), one Job-status wait; on finish RUN-clean-eval.md steps 9-15 (save every pod log, MODEL hash check, errors files first, extract records, tally to `results/clean-eval/clean-eval-tally.json`, the locked pass bar).
+
+## 2026-11-17 [agent, lead, implementation] (clean LIBERO evaluation complete: four-suite average 92.55%, PASS under the locked bar, option 4)
+
+**Run** (verified, saved pod logs `results/clean-eval/<pod>.log`, `job-status.yaml` condition Complete, `failedIndexes` empty, `pods.txt`): Job `stacking-encoders-baseline-clean-eval` created 2026-11-17 17:20:51 UTC, `$C` = `2b9d39ce0551cd91df68a52389ee2d03cdc7cee5`, EVAL_TRY 1, ENVS 4, CUDA graph on. All four pods NVIDIA L4, `MODE: fresh`, 0 restarts, no retries, `=== exit 0` each.
+
+| shard | pod | node | model-sha start | rollouts start | rollout time | episodes/h | GPU mean rollout / whole pod | memory.peak (B) | anon at exit (B) |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 | eval-0-dkk2c | nautilus-it-gpu05.fullerton.edu | 17:38:36 | 17:52:35 | 3,182 s | 566 | 84.4% / 71.9% | 35,433,410,560 | 1,671,168 |
+| 1 | eval-1-fvtcz | nautilus-it-gpu06.fullerton.edu | 17:21:11 | 17:35:41 | 3,135 s | 574 | 86.5% / 72.9% | 35,433,414,656 | 1,675,264 |
+| 2 | eval-2-xnkg5 | nautilus-it-gpu06.fullerton.edu | 17:24:29 | 17:35:41 | 3,014 s | 597 | 87.7% / 73.4% | 30,897,176,576 | 1,675,264 |
+| 3 | eval-3-wkxbw | nautilus-it-gpu06.fullerton.edu | 17:24:30 | 17:35:41 | 3,185 s | 565 | 86.6% / 73.1% | 32,134,139,904 | 1,671,168 |
+
+Restore (env bundle `env-9182f8131559`): shard 0 untar 131 s + 428 s; shards 1-3, all on gpu06, printed the identical line "untar 109 s, debs + assets unzip + checks 472 s" and entered rollouts at the same second (17:35:41) although they started 3 min apart (the three appear to have waited on one shared restore on that node; speculative, not read from the code). Restore GPU 0% (expected). Shard 0 was Pending until about 17:38. Memory peaks for shards 0 and 1 equal the 33Gi limit (35,433,480,192 B) to within about 70 kB, with anon about 1.7 MB and page cache 16-22 GB at exit and no OOM kill: page cache, as in check 4 and the training run (speculative reading). Pod time about 1.1 h each from the first logged phase (model-sha) to exit, about 4.4 L4 GPU-hours in all (arithmetic from the log timestamps; container start-up before the first phase, a few minutes per pod, not included; review comment on PR #52), against the upper-bound estimate of about 2.6 h per pod and 10.4 GPU-hours: rollouts ran at about 2.6 times the timing-only smoke's 215 episodes/h, as expected when successful episodes end before their step limit. The 15-minute checks (17:37 shards 1-3, 18:04 shard 0) found the model hash line, `equals the pinned value`, `MODE: fresh`, in-pod GPU 50-100% per 30 s sample once rollouts ran, no `device=cpu`, CUDA or `ERROR` line. Public Prometheus DCGM had no series for these pods at 17:37 (the in-pod sampler is the evidence; DCGM gaps on some nodes are known). The 75-90 min look found all four pods already Completed.
+
+**Checks before any outcome was read** (RUN-clean-eval.md steps 10-12, verified): `=== MODEL` sha256 identical in the training log and all four eval logs (one hash, 5 lines: `b25e63e6…dc732`). Each log: `[errors] no .errors.jsonl for this shard`, `=== exit 0`. Records extracted from the logs; each extract's sha256, bytes and lines equal its `=== FILE` line, 500 lines each:
+- `clean-none-s0-shard0of4-try1.jsonl` 40576a48ff8a7c0856ef1a1f884750ffde8b1154a41fb17961f337505f6d984f, 227,742 B
+- `clean-none-s0-shard1of4-try1.jsonl` 1f894b0c2e074e65d8181c25cb37bbb524f7a08788c3a1b3cf9058f45262d7ac, 227,696 B
+- `clean-none-s0-shard2of4-try1.jsonl` 9d3da4c57281f23d18942978d3cfabe3daba513e4a656674d58ce343037997a7, 227,696 B
+- `clean-none-s0-shard3of4-try1.jsonl` d02ee2d4f50283f5b7cb60e8749e31803374faf0e7a39d2231f3e1e48aacea84, 227,693 B
+`"timing_only": true` count 0 in every file.
+
+**Outcome** (verified, `src/tally_proxy_clean.py results/clean-eval/records results/clean-eval/clean-eval-tally.json`): 2,000 clean records of 2,000, one checkpoint (`none train_seed=0 /mnt/proxy/runs/baseline-none-s0`), eval seed 41, 500 per suite, no duplicates, no uneven counts, no missing suites. These are `clean50` records (50 trials per task, 2,000 in all); the tally JSON's built-in `note` field describes the proxy's clean1 tally and does not apply here.
+- libero_spatial 465/500 = 93.0%
+- libero_object 489/500 = 97.8%
+- libero_goal 471/500 = 94.2%
+- libero_10 426/500 = 85.2%
+- **Four-suite average B = 92.55%** (mean of the per-suite rates; the tally's printed line rounds to 92.5%). Binomial standard error, PLAN's pooled form sqrt(p(1-p)/2000) with p = 1,851/2,000 = 0.9255: 0.59 points (arithmetic). One training seed (seed 0); this is rollout-sampling error only.
+
+**Decision rule applied word for word** (PLAN "Pass bar and decision rule", option 4, locked 2026-11-15): "B >= 90 pass; 36 <= B < 90 conditional pass; B < 36 fail." B = 92.55 >= 90: **PASS** (clear-pass zone; no LIBERO-Plus condition applies). PLAN "What happens for each outcome", Pass: "Stage 2 starts (decision 006 (c) item 2, line 15): DINOv3 alone, one helpful pairing and the harmful pairing, fused by channel-wise concatenation, on clean LIBERO first and then LIBERO-Plus, all with this recipe and this checkpoint's `none` run as the no-encoder reference. Stage 2 gets its own PLAN, with its seed count (Open item 5)." Stage 2's PLAN belongs to the planning lead.
+For reference only (not part of the rule): the paper's VAE-only reference is 97.9 on clean LIBERO at 30 layers (PLAN source numbers, paper Table 8); this 8-layer model is about 5 points below it, with the largest gap on libero_10.
+
+**Not done:** per-task success and mean episode length (PLAN "Reported") are in the records (`episode_id` = task x 1000 + trial, `steps`) but no existing script tallies them; a new script with a test, by PR, needs the user's OK. The PVC copies of the full logs and GPU CSVs were not copied off. Job deleted after the logs were saved and the records extracted (graceful; no pods left). Nothing on the PVC deleted: `baseline-none-s0` (`model.pt`, `ckpt.pt`), the check-4 folder, and the shard records under `/mnt/proxy/rollouts/baseline-clean-eval/` stay.
+
+**Next:** the user's merge OK for this PR; hand the result to the planning lead for the stage 2 PLAN; ask the user about the per-task tally and about deleting the check-4 checkpoint files.
