@@ -14,6 +14,13 @@
 #   shard. Differences from the proxy: --clean 0 (clean LIBERO is its own Job here, the proxy added one clean trial per task),
 #   stage 1's pins and exit trap, the ConfigMap is new (stacking-encoders-pairings-lp-subset, RUN-stage2-eval.md step 3), and
 #   backoffLimitPerIndex instead of one shared backoffLimit.
+# RETRIES (PR #60 review item 1): backoffLimitPerIndex 2 per shard and maxFailedIndexes = NSHARDS, so a shard that fails 3 times
+#   is marked failed while the other shards run to the end (stage 1's clean Job used maxFailedIndexes 0, fine for 4 short
+#   shards; here 16 long ones would all be killed). The Job then ends Failed (reason FailedIndexes) once every index is done;
+#   status.failedIndexes names the bad shards. A resubmit of the same rendered file (same EVAL_TRY) reruns every index, but a
+#   shard whose records file is already complete (no .errors.jsonl, records >= its job count) exits 0 before the model hash,
+#   restore and load ("COMPLETE:"), so only the unfinished shards cost GPU time. podFailurePolicy FailJob on this script's own
+#   deterministic codes still ends the whole Job at once: those are pin or render errors that every shard would hit.
 # SHARDS: NSHARDS indexes, PARALLEL pods at once (the 8-GPU cap counts them with the training pods; the lead may raise
 #   parallelism later with `kubectl patch job ... spec.parallelism`, as the proxy did). Shard i runs jobs[i::NSHARDS] of the
 #   shuffled list (about 30,090 / NSHARDS rollouts). NSHARDS and --order-seed must stay the same for every pod and every resume
@@ -68,7 +75,7 @@ spec:
   completions: __NSHARDS__
   parallelism: __PARALLEL__
   backoffLimitPerIndex: 2
-  maxFailedIndexes: 0
+  maxFailedIndexes: __NSHARDS__   # one shard that keeps failing must not stop the others (PR #60 review item 1)
   activeDeadlineSeconds: __JOB_DEADLINE_S__
   ttlSecondsAfterFinished: 86400
   podFailurePolicy:
@@ -165,6 +172,10 @@ spec:
           [ -f $RUN/model.pt ] || { echo "ABORT: $RUN/model.pt is missing (did the training Job succeed? is RUN_DIR right?)"; fail 15; }
           ls -la $RUN/model.pt
           if [ -e $OUT ]; then echo "MODE: resume (records file exists, $(wc -l < $OUT) lines already)"; else echo "MODE: fresh"; fi
+          EXP=$(( (30090 - SHARD + NSHARDS - 1) / NSHARDS ))   # jobs[SHARD::NSHARDS] of the 30,090
+          if [ -f $OUT ] && [ ! -f $OUT.errors.jsonl ] && [ "$(wc -l < $OUT)" -ge "$EXP" ]; then
+            echo "COMPLETE: $OUT already holds $(wc -l < $OUT) of $EXP records; nothing to run (a resubmit after another shard failed)"; exit 0
+          fi
           nvidia-smi || { echo "ABORT: nvidia-smi failed (a faulty GPU node; retryable)"; exit 1; }
           nproc; df -h $R /work
           phase model-sha

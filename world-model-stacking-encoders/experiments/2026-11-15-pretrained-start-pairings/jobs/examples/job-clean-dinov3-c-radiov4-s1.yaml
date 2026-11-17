@@ -1,7 +1,7 @@
 # EXAMPLE RENDER, NOT FOR SUBMISSION (written by render.sh clean dinov3+c-radiov4 1; placeholders FILL_* left in: the pod aborts on them).
 # Example inputs are illustrations, not measurements: --clean-rate 215, --lp-rate none given (215 is stage 1's
 # timing-only CLEAN rate for none; no LIBERO-Plus rate has been measured).
-# RENDERED by jobs/render.sh from jobs/job-clean-eval.template.yaml: clean dinov3+c-radiov4 seed 1: 4 shards, rate 215/h, cap 16800 s, pod 19200 s, Job 151200 s, envs 4, try 1, checkpoint /mnt/proxy/runs/pairings-dinov3-c-radiov4-s1
+# RENDERED by jobs/render.sh from jobs/job-clean-eval.template.yaml: clean dinov3+c-radiov4 seed 1: 4 shards, parallel 4, rate 215/h, cap 16800 s, pod 19200 s, Job 151200 s, envs 4, try 1, checkpoint /mnt/proxy/runs/pairings-dinov3-c-radiov4-s1
 # STAGE 2 CLEAN-LIBERO EVALUATION TEMPLATE, one Indexed Job of 4 shards per checkpoint, on L4 (PLAN Evaluation "Clean LIBERO
 # first": 50 rollouts per task, 40 tasks, 2,000 rollouts, eval seed 41; Decision rule item 5, gate G1 at 36, chosen).
 # NOT SUBMITTED. Render with jobs/render.sh clean <config> <seed> (RUN-stage2-eval.md); never submit this file.
@@ -15,8 +15,9 @@
 #   1's); HF_TOKEN for encoder configs; new ConfigMap name; labels.
 # DEADLINES (stage 1's rule): ROLLOUT_CAP_S = 2 x the timing-only upper bound per shard = 2 x 500 / R x 3,600 s, where R is this
 #   configuration's smoke rate (timing-only clean episodes per pod-hour; stage 1's none: 215 -> 16,800 s, as stage 1). Pod
-#   activeDeadlineSeconds = setup 1,800 + cap + 60 + trap 60, rounded up to 600 s. Job activeDeadlineSeconds = 20 h queue + 2
-#   pod deadlines (the 4 shards may run in two waves) + 2 pod deadlines (resumed pods), rounded up to the hour. render.sh
+#   activeDeadlineSeconds = setup 1,800 + cap + 60 + trap 60, rounded up to 600 s. PARALLEL (render.sh --parallel, default 4)
+#   sets how many shards run at once. Job activeDeadlineSeconds = 20 h queue + max(2, ceil(4 / PARALLEL))
+#   pod deadlines (the shards may run in two or more waves) + 2 pod deadlines (resumed pods), rounded up to the hour. render.sh
 #   computes all three from --clean-rate R. Real rollouts end early on success, so the real time is well under the cap (stage 1:
 #   about 2.6 x faster than timing-only).
 # GPU USE: stage 1 per-shard rollout phase 50-100% per 30 s sample; about 1.1 h per pod (under the 180-minute idle-warning runtime).
@@ -59,7 +60,7 @@ metadata:
 spec:
   completionMode: Indexed
   completions: 4
-  parallelism: 4
+  parallelism: 4   # 4 when 4 L4 fit under the 8-GPU cap; fewer during wave 2 (RUN-stage2-waves.md)
   backoffLimitPerIndex: 2
   maxFailedIndexes: 0
   activeDeadlineSeconds: 151200

@@ -11,8 +11,9 @@
 #   1's); HF_TOKEN for encoder configs; new ConfigMap name; labels.
 # DEADLINES (stage 1's rule): ROLLOUT_CAP_S = 2 x the timing-only upper bound per shard = 2 x 500 / R x 3,600 s, where R is this
 #   configuration's smoke rate (timing-only clean episodes per pod-hour; stage 1's none: 215 -> 16,800 s, as stage 1). Pod
-#   activeDeadlineSeconds = setup 1,800 + cap + 60 + trap 60, rounded up to 600 s. Job activeDeadlineSeconds = 20 h queue + 2
-#   pod deadlines (the 4 shards may run in two waves) + 2 pod deadlines (resumed pods), rounded up to the hour. render.sh
+#   activeDeadlineSeconds = setup 1,800 + cap + 60 + trap 60, rounded up to 600 s. PARALLEL (render.sh --parallel, default 4)
+#   sets how many shards run at once. Job activeDeadlineSeconds = 20 h queue + max(2, ceil(4 / PARALLEL))
+#   pod deadlines (the shards may run in two or more waves) + 2 pod deadlines (resumed pods), rounded up to the hour. render.sh
 #   computes all three from --clean-rate R. Real rollouts end early on success, so the real time is well under the cap (stage 1:
 #   about 2.6 x faster than timing-only).
 # GPU USE: stage 1 per-shard rollout phase 50-100% per 30 s sample; about 1.1 h per pod (under the 180-minute idle-warning runtime).
@@ -56,7 +57,7 @@ metadata:
 spec:
   completionMode: Indexed
   completions: 4
-  parallelism: 4
+  parallelism: __PARALLEL__   # 4 when 4 L4 fit under the 8-GPU cap; fewer during wave 2 (RUN-stage2-waves.md)
   backoffLimitPerIndex: 2
   maxFailedIndexes: 0
   activeDeadlineSeconds: __JOB_DEADLINE_S__

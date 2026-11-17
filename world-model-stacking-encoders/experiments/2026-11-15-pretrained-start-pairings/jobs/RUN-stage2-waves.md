@@ -18,7 +18,7 @@ Seventeen new training runs, one per configuration and seed, plus an evaluation 
 | sub-wave | training Jobs (GPUs) | evaluation running at the same time (L4 GPUs) | GPUs at most | disk at most |
 |---|---|---|---|---|
 | 1a | `dinov3`, `dinov3+c-radiov4`, `dinov3+siglip2`, `c-radiov4` (4) | smoke of `none` (LIBERO-Plus timing shard only, 1), then LIBERO-Plus of `none` seed 0 at parallel 4 (4) | 8 | 4 x 40 = 160 GB |
-| 1b | `siglip2` (1), once 1a's runs have finished (free space then about 204 - 4 x 26.7 = 97 GB, arithmetic) | wave 1a's smokes, clean and LIBERO-Plus Jobs, at most 7 L4 pods | 8 | 40 GB + the finished runs |
+| 1b | `siglip2` (1), once all four of 1a's training pods have ended (free space then about 204 - 4 x 26.7 = 97 GB, arithmetic) | wave 1a's smokes, clean and LIBERO-Plus Jobs, at most 7 L4 pods | 8 | 40 GB + the finished runs |
 
 Why this order: the three configurations the main question needs (`dinov3`, the harmful pair and the helpful pair) start first; `c-radiov4` alone joins them because the "below both members" comparison uses it; `siglip2` alone is first in the scope-cut order the plan recommended (Open item l). This is a choice of order, not of scope; wave 1b runs in full. **If the second volume exists before wave 1, all five start together** (5 training GPUs + 3 L4 pods for `none`'s LIBERO-Plus).
 
@@ -32,16 +32,38 @@ Evaluations in wave 1, per finished checkpoint: smoke (1 L4 pod, under 1 h expec
 
 | sub-wave | training Jobs | evaluation pods at the same time | GPUs at most |
 |---|---|---|---|
-| 2a | seed 1 of `none`, `dinov3`, `siglip2`, `c-radiov4`, `dinov3+siglip2`, `dinov3+c-radiov4` (6) | at most 2 L4 (wave 1's LIBERO-Plus shards) | 8 |
-| 2b | seed 2 of the six (6), when 2a's pods are gone | at most 2 L4 (wave 1 and 2a evaluations) | 8 |
+| 2a | seed 1 of `none`, `dinov3`, `siglip2`, `c-radiov4`, `dinov3+siglip2`, `dinov3+c-radiov4` (6), **only after wave 1b's `siglip2` training pod has ended** and at most 2 L4 pods are running | at most 2 L4 (wave 1's evaluations) | 8 |
+| 2b | seed 2 of the six (6), **only after all six 2a training pods have ended** and at most 2 L4 pods are running | at most 2 L4 (wave 1 and 2a evaluations) | 8 |
 
 Disk on the second volume: 6 x 40 = 240 GB at the peak plus the finished runs (12 x 26.7 = 320 GB if no `ckpt.pt` is deleted), under 1Ti (arithmetic).
 
 **Option B, no second volume (the current volume only):** each sub-wave starts only after the previous runs' `ckpt.pt` files are deleted under the conditions above (each deletion batch needs the user's OK in the lead's window). Free space then shrinks by about 6.7 GB per finished run (its `model.pt`), so the sub-waves are about 4, 4, 3 and 1 runs (or 4, 3, 3, 2), 4 sub-waves in all (arithmetic from 204 GB, wave 1's five `model.pt`, and 40 GB per running job; whether stage 1's own `ckpt.pt` is deleted changes it by one run). Each sub-wave also waits for the previous one's evaluation and backup, so this is much slower.
 
+In Option B each sub-wave of k training runs starts only after the previous sub-wave's training pods have ended, and only while at most 8 - k L4 pods are running.
+
 Sub-wave order within wave 2 is by seed (all of seed 1, then all of seed 2), so a cut-short wave never leaves one configuration with more seeds than another.
 
 **Wave 2 Jobs: 36** (12 training, 12 clean, 12 LIBERO-Plus). Pods: 12 + 48 + 12 x 16 = 252.
+
+## Every transition, counted against the 8-GPU cap (PR #60 review item 3)
+
+The rule behind all rows: at every moment, training pods + L4 pods (smoke, clean, LIBERO-Plus) of this sweep + any other stacking pod <= 8, and every submit or `parallelism` patch is preceded by the GPU count of `RUN-stage2-train.md` step 5. A Job's pods count from the moment they are Pending (a Pending pod can start at any time). Clean Jobs take `--parallel` 1 to 4 and LIBERO-Plus Jobs `--parallel` 1 to 16, so evaluation always fits into what training leaves; when it does not fit, it waits.
+
+| moment | training pods | L4 pods allowed | total at most |
+|---|---|---|---|
+| 1a starts (4 training) | 4 | 1 (`none` smoke, LIBERO-Plus timing shard only) | 5 |
+| `none`'s smoke has ended, its rate measured | 4 | 4 (`none` seed 0 LIBERO-Plus, `--parallel 4`) | 8 |
+| one 1a run ends (and so on for each) | 3, 2, 1 | 5, 6, 7: its smoke (1), then its clean (`--parallel` up to what is free), then its LIBERO-Plus; `none`'s LIBERO-Plus keeps its 4 | 8 |
+| all four 1a training pods have ended; 1b starts (`siglip2`) | 1 | 7 | 8 |
+| 1b's `siglip2` training pod has ended | 0 | 8 (wave 1 evaluations, `kubectl patch` parallelism up if wanted) | 8 |
+| before 2a: lower the L4 pods to 2 (patch the LIBERO-Plus Jobs' `parallelism` down, let running clean pods finish; no new evaluation Job) | 0 | 2 | 2 |
+| 2a starts (6 training) | 6 | 2 | 8 |
+| a 2a run ends | 5, 4, ... | 3, 4, ...: its clean (`--parallel` up to what is free), then LIBERO-Plus | 8 |
+| all six 2a training pods have ended; L4 pods lowered to 2 again; 2b starts | 6 | 2 | 8 |
+| 2b runs end | 5, 4, ..., 0 | 3, 4, ..., 8 | 8 |
+| second volume before wave 1 (all five seed-0 runs together) | 5 | 1 (smoke), then 3 (`none` LIBERO-Plus `--parallel 3`) | 8 |
+
+Lowering a LIBERO-Plus Job's `parallelism` below half the rendered value stretches its run past the Job deadline's margin; re-render it with the new `--parallel` (same `EVAL_TRY`, same `--shards`: finished shards are skipped) instead of only patching (PR #60 review item 7).
 
 ## Totals and the gate
 

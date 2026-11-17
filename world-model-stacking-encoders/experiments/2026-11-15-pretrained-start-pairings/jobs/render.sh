@@ -5,9 +5,9 @@
 #
 #   render.sh train <config> <seed>  [--micro-batch 8|4] [--runs-pvc NAME] [--commit C]
 #   render.sh smoke <config>         [--clean-smoke 0|1] [--lp-timing 0|1] [--envs N] [--try T] [--model-sha SHA] [--runs-pvc NAME] [--commit C]
-#   render.sh clean <config> <seed>  [--clean-rate R] [--envs N] [--try T] [--model-sha SHA] [--runs-pvc NAME] [--commit C]
+#   render.sh clean <config> <seed>  [--clean-rate R] [--parallel P (1-4)] [--envs N] [--try T] [--model-sha SHA] [--runs-pvc NAME] [--commit C]
 #   render.sh lp    <config> <seed>  --lp-rate R [--shards N] [--parallel P] [--envs N] [--try T] [--model-sha SHA] [--runs-pvc NAME] [--commit C]
-#   common: [--out-dir DIR] [--example]   (--example prefixes the file with a NOT-FOR-SUBMISSION banner)
+#   common: [--out-dir DIR] [--example] [--extension (required for seeds 3 and 4)]   (--example prefixes the file with a NOT-FOR-SUBMISSION banner)
 #
 # <config>: none, dinov3, siglip2, c-radiov4, dinov3+siglip2, dinov3+c-radiov4 (pretrained_train.py --config). Kubernetes names
 # use CFGK = config with + replaced by - (dinov3+siglip2 -> dinov3-siglip2).
@@ -36,13 +36,13 @@ CFGK=${CONFIG//+/-}
 [[ "$SEED" =~ ^[0-9]$ ]] || die "seed '$SEED' must be one digit"
 if [ "$SEED" -ge 3 ]; then
   case $CONFIG in
-    dinov3|dinov3+c-radiov4) echo "render.sh: NOTE seed $SEED is an extension seed (PLAN Decision rule item 7): only if the three-seed outcome is a complete I and the user's rule says so" >&2 ;;
+    dinov3|dinov3+c-radiov4) ;;   # extension seeds: need --extension (checked after the options)
     *) die "seeds 3 and 4 exist only for dinov3 and dinov3+c-radiov4 (PLAN Decision rule item 7)" ;;
   esac
 fi
 
 MB=8; RUNS_PVC=stacking-encoders-proxy; COMMIT=""; MODEL_SHA=""; ENVS=4; TRY=1; CLEAN_RATE=""; LP_RATE=""; NSHARDS=16
-PARALLEL=4; CLEAN_SMOKE=""; LP_TIMING=1; OUTDIR="$HERE/rendered"; EXAMPLE=0
+PARALLEL=4; CLEAN_SMOKE=""; LP_TIMING=1; OUTDIR="$HERE/rendered"; EXAMPLE=0; EXTENSION=0
 while [ $# -gt 0 ]; do
   case $1 in
     --micro-batch) MB=$2; shift 2 ;;
@@ -59,6 +59,7 @@ while [ $# -gt 0 ]; do
     --lp-timing) LP_TIMING=$2; shift 2 ;;
     --out-dir) OUTDIR=$2; shift 2 ;;
     --example) EXAMPLE=1; shift ;;
+    --extension) EXTENSION=1; shift ;;
     *) die "unknown option '$1'" ;;
   esac
 done
@@ -69,12 +70,17 @@ num --envs "$ENVS"; num --try "$TRY"; num --shards "$NSHARDS"; num --parallel "$
 [ -z "$COMMIT" ] || [[ "$COMMIT" =~ ^[0-9a-f]{40}$ ]] || die "--commit must be a 40-hex commit"
 [ -z "$MODEL_SHA" ] || [[ "$MODEL_SHA" =~ ^[0-9a-f]{64}$ ]] || die "--model-sha must be a sha256"
 ceil() { echo $(( ($1 + $2 - 1) / $2 * $2 )); }   # ceil(a / b) * b, integers
+if [ "$SEED" -ge 3 ] && [ "$EXTENSION" != 1 ]; then
+  die "seed $SEED is an extension seed (PLAN Decision rule item 7): only after a complete three-seed I, with the user's OK for its Jobs; pass --extension"
+fi
 
 # Where runs live: stage 1's volume, or the second volume (PLAN amendment 2026-11-15 later, item 3), mounted at /mnt/runs
 if [ "$RUNS_PVC" = stacking-encoders-proxy ]; then RUN_ROOT=/mnt/proxy/runs; else RUN_ROOT=/mnt/runs/runs; fi
 if [ "$CONFIG" = none ] && [ "$SEED" = 0 ]; then
   RUN_DIR=/mnt/proxy/runs/baseline-none-s0                                     # stage 1's run (stage 1 LOG line 152)
-  [ -n "$MODEL_SHA" ] || MODEL_SHA=b25e63e61d6297d523eb75f9e334f179e5faac58c06aaa81da92d4ca3fcdc732
+  [ -z "$MODEL_SHA" ] || die "none seed 0 is pinned to stage 1's model.pt sha256; --model-sha is not accepted for it"
+  MODEL_SHA=b25e63e61d6297d523eb75f9e334f179e5faac58c06aaa81da92d4ca3fcdc732
+  [ "$KIND" != clean ] || die "none seed 0's clean LIBERO evaluation was stage 1's (2,000 of 2,000 records); a repeat would be a second test-set use. Its LIBERO-Plus evaluation and timing smoke are allowed"
 else
   RUN_DIR=$RUN_ROOT/pairings-$CFGK-s$SEED
 fi
@@ -116,10 +122,12 @@ case $KIND in
     fi
     num --clean-rate "$CLEAN_RATE"
     CAP=$(ceil $(( (3600000 + CLEAN_RATE - 1) / CLEAN_RATE )) 100)               # 2 x 500 / R x 3,600 s
-    POD=$(ceil $(( 1800 + CAP + 120 )) 600); JOBD=$(ceil $(( 72000 + 4 * POD )) 3600)
-    add __ROLLOUT_CAP_S__ "$CAP"; add __POD_DEADLINE_S__ "$POD"; add __JOB_DEADLINE_S__ "$JOBD"
+    [ "$PARALLEL" -le 4 ] || die "--parallel $PARALLEL exceeds the 4 clean shards"
+    WAVES=$(( (4 + PARALLEL - 1) / PARALLEL )); [ "$WAVES" -ge 2 ] || WAVES=2
+    POD=$(ceil $(( 1800 + CAP + 120 )) 600); JOBD=$(ceil $(( 72000 + (WAVES + 2) * POD )) 3600)
+    add __ROLLOUT_CAP_S__ "$CAP"; add __POD_DEADLINE_S__ "$POD"; add __JOB_DEADLINE_S__ "$JOBD"; add __PARALLEL__ "$PARALLEL"
     TPL=job-clean-eval.template.yaml; NAME=job-clean-$CFGK-s$SEED.yaml
-    SUMMARY="clean $CONFIG seed $SEED: 4 shards, rate $CLEAN_RATE/h, cap $CAP s, pod $POD s, Job $JOBD s, envs $ENVS, try $TRY, checkpoint $RUN_DIR"
+    SUMMARY="clean $CONFIG seed $SEED: 4 shards, parallel $PARALLEL, rate $CLEAN_RATE/h, cap $CAP s, pod $POD s, Job $JOBD s, envs $ENVS, try $TRY, checkpoint $RUN_DIR"
     ;;
   lp)
     [ -n "$LP_RATE" ] || die "lp needs --lp-rate R from the LIBERO-Plus timing shard (RUN-stage2-eval.md); LIBERO-Plus time is still blank in the PLAN"

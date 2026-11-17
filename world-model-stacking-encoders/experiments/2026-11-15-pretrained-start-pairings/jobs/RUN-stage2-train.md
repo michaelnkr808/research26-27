@@ -54,7 +54,7 @@ Only `none` has measured step times on Nautilus. Everything for the encoder conf
    - **First-batch report**: the `[first batch] loss at start` line; the per-source channel statistics are in `first-batch.json` on the PVC (fault checks, PLAN Decision rule item 6).
    - **Free space**: the `PVC free:` line.
    - The first pair run's exit-trap `[cgroup]` lines size the rest (host memory is estimated, not measured, for every encoder configuration).
-9. **Micro-batch 4 re-render**: `./render.sh train <config> <seed> --micro-batch 4 --commit $C` (same `$C`), delete the old Job (graceful), wait until its pod is gone, create the new one. The run resumes from `ckpt.pt` if one exists, else it starts fresh (a folder without `ckpt.pt` is renamed `.stale-<date>`, never deleted).
+9. **Micro-batch 4 re-render**: `./render.sh train <config> <seed> --micro-batch 4 --commit $C` (same `$C`, and the same `--runs-pvc` as the first render, or none if it had none: a different volume would start a fresh run and ignore the existing `ckpt.pt`), delete the old Job (graceful), wait until its pod is gone, create the new one. The run resumes from `ckpt.pt` if one exists, else it starts fresh (a folder without `ckpt.pt` is renamed `.stale-<date>`, never deleted).
 
 ## Exit codes
 As `../../2026-11-15-pretrained-start-baseline/jobs/RUN-full-train.md` ("What each exit code means"), with the stage 2 values: the time cap is the rendered one, and one new code:
@@ -62,6 +62,7 @@ As `../../2026-11-15-pretrained-start-baseline/jobs/RUN-full-train.md` ("What ea
 | rc | Meaning | Job result | What to do |
 |---|---|---|---|
 | 20 | CUDA out of memory at the rendered micro-batch | fails at once | step 9 (re-render with 4); at 4: stop for the user |
+| 1 with "CUDA out of memory" in the pod log | the same, but the traceback reached the PVC log after the script's check (tee lag) | retried at the same micro-batch | delete the Job and treat it as exit 20 |
 | 10 | commit not 40-hex, or CONFIG / CFGK / SEED not rendered consistently | fails at once | re-render |
 
 ## After each Job ends
