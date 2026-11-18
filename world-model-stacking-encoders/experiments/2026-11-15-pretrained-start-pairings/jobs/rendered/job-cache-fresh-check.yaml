@@ -1,0 +1,129 @@
+# Encoder cache freshness check (pairings stage 2; the user OK'd pinning DINOv3 and SigLIP 2 and this check in chat
+# 2026-11-17). Runs src/check_cache_fresh.py: recomputes 2 seed-chosen cached episodes per suite (8 episodes) for DINOv3,
+# SigLIP 2 and C-RADIOv4 with the pinned Hugging Face revisions (src/extract_features.py REVISIONS) and compares them with
+# the cached .npy under /mnt/proxy/feats. Tolerance (cosine, per-frame relative L2, max-abs) and its reasoning: RUN-cache-fresh-check.md (fixed before any run).
+# NOT SUBMITTED (written 2026-11-17 on the Mac). Submitting needs the user's go in the lead's window. Steps: RUN-cache-fresh-check.md.
+# Render before submit: SRC_GIT_COMMIT and the 6 /src sha256 (FILL_ placeholders), as stage 1's RUN-full-train.md step 4.
+#
+# WHY ONE GPU, NOT CPU-ONLY: the caches were computed on GPUs (DINOv3 fp32; SigLIP 2 and C-RADIOv4 fp16, C-RADIOv4 through
+#   autocast). On CPU, fp16 runs through different kernels (different accumulation), so a CPU recompute would differ from the
+#   cache by numerics of unknown size, and a failure would not say whether the weights changed. CPU is also slow here
+#   (C-RADIOv4 at 448 px about 1 frame/s on the Mac CPU, LOG 2026-10-17 (c)). An L4: all three final extraction pods finished on L4s
+#   (nautilus-it-gpu05; LOG 2026-10-29 (m), its 2026-10-30 02:40 UTC status line, and 2026-10-30 (c)), so most cached episodes come from that card type.
+# CARD: NVIDIA-L4 by gpu.product, driver > 569 (the image is CUDA 12.8), us-west (CephFS), the two fault hosts excluded as in
+#   stage 1. Scheduling risk, stated: L4 + driver > 569 + us-west matched only 2 nodes on 2026-11-09 (8 h Pending then);
+#   widening to the 24 GB set of the extraction Jobs is the lead's call (RUN file, "If it does not schedule").
+# TIME (sources): setup_env.sh pip about 33 s (stage 1 check 4) plus weight downloads (DINOv3, SigLIP 2 so400m, C-RADIOv4, a
+#   few GB) and FastWAM; compute: 8 episodes, about 162 frames each on average (277,713 frames / 1,712 episodes, LOG
+#   2026-10-29 (e)), the longest libero_10 ones 457-505 (LOG 2026-10-30 (c)), so about 1,300 frames per encoder (up to about 4,000
+#   if the draw picks long ones); the L4 ran DINOv3 at 15-17, C-RADIOv4 at 13-14 and SigLIP 2 at 21 frames/s in extraction
+#   (LOG 2026-10-29 (k), (m); 2026-10-30 (c)), so about 1.5 to 5 min per encoder. Expected pod time about 10 to 20 min.
+#   Caps: setup 900 s, the check 2,400 s (inner timeouts, exit 16 and 124), pod activeDeadlineSeconds 3,600 s (900 + 60 +
+#   2,400 + 60 + slack, so the inner timeouts fire first); Job activeDeadlineSeconds 21,600 s (6 h from Job creation,
+#   includes the queue).
+# GPU USE (_standards/08): the encoders ran at 94-100% on the L4 in extraction (LOG 2026-10-29 (k)); the idle parts are pip and
+#   the downloads (a few minutes). The pod should end before the portal's 30-min minimum age, far under the 3 h warning
+#   window; the gpu05/06 L4 nodes export no DCGM (proxy LOG 2026-11-07 (h)). A sampler prints [gpu] lines every 15 s.
+# MEMORY: request 10Gi, limit 12Gi (1.2x). The three encoders are loaded at once (weights move to the GPU; host copies are
+#   transient), one episode decoded at a time: the longest (about 505 frames) is about 0.8 GB of 512 px uint8 frames plus
+#   0.6 GB at 224 px float32. The SigLIP 2 extraction needed 12Gi WITH its prefetch thread (LOG 2026-10-30 (c)); there is no
+#   prefetch here. MALLOC_ARENA_MAX=2 as there. CPU 3 / 3600m, OMP_NUM_THREADS=3 (= the request, LOG 2026-10-29 (k)).
+# READ-ONLY: the PVC is mounted readOnly (volume and mount). The script writes only to /work (emptyDir) and stdout.
+# EXIT CODES: 0 pass; 3 an episode out of tolerance, a missing or wrong-shape cache file, or provenance / loaded revision
+#   mismatch; 2 the check script failed (traceback); 124 the check hit its 2,400 s timeout; 10 commit not 40-hex; 19 a /src
+#   key differs from the rendered hash; 16 setup timed out or pip failed (retryable). 1: Python died outside main or
+#   nvidia-smi failed (a faulty GPU node; retryable). podFailurePolicy fails the Job at once on 2, 3, 10, 19, 124.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-pairings-cache-fresh-check
+  namespace: aria-world
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 21600
+  ttlSecondsAfterFinished: 86400
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes:
+        containerName: main
+        operator: In
+        values: [2, 3, 10, 19, 124]
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+        status: "True"
+  template:
+    spec:
+      restartPolicy: Never
+      activeDeadlineSeconds: 3600
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: nvidia.com/gpu.product, operator: In, values: [NVIDIA-L4]}
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net, ry-gpu-08.sdsc.optiputer.net]}  # GPU faults, 2026-11-03
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -uo pipefail
+          echo "=== CACHE FRESHNESS CHECK (read-only): DINOv3, SigLIP 2, C-RADIOv4 against /mnt/proxy/feats"; date -u
+          echo "SRC_GIT_COMMIT=$SRC_GIT_COMMIT"
+          [[ "$SRC_GIT_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "ABORT: SRC_GIT_COMMIT is not a 40-hex commit (not rendered?)"; exit 10; }
+          echo "/src = ConfigMap stacking-encoders-pairings-freshcheck-src; checking its 6 keys against the hashes rendered into this manifest:"
+          ( cd /src && sha256sum -c - <<'EOF'
+          e85d7bf05a35b882354b791f8bdb1d68f315f201c471ca4d266d7f2e4ba20ec7  check_cache_fresh.py
+          f334c5604f319f779af6b70d06c0505f2c5df482c4531cb8b779b6894384683a  extract_features.py
+          42eb27b49051f5c7401e55c2730b3d4d3bf3371f28340b40317b8e87ccec66f0  extract_fastwam.py
+          81993810937d2692597d1d161e438f7688dc7809d0017628d9603ef1d196e363  fastwam_data.py
+          7af1f7aa2d595d9e0b7f1fb462f7901c6fa9594d2da7895b0168f0ef3ea2d70d  diagnostics.py
+          880c47cbe741b7fbcd98f44f85e7a1d14747d6c837e0493f4642e5ebbc18ace8  setup_env.sh
+          EOF
+          ) || { echo "ABORT: a /src key differs from the rendered hash (ConfigMap changed after the render, or no render)"; exit 19; }
+          nvidia-smi || { echo "ABORT: nvidia-smi failed (a faulty GPU node; retryable)"; exit 1; }
+          nproc; df -h /work /mnt/proxy
+          nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv,noheader -l 15 | sed -u 's/^/[gpu] /' &
+          SMI=$!
+          trap 'kill $SMI 2>/dev/null' EXIT
+          echo "=== PHASE setup $(date -u +%H:%M:%S)"
+          rc=0; timeout --kill-after=60 900 bash /src/setup_env.sh > /work/pip-env.log 2>&1 || rc=$?
+          [ $rc = 0 ] || { tail -50 /work/pip-env.log; echo "ABORT: setup_env.sh failed or timed out (rc $rc; retryable)"; exit 16; }
+          grep -iE '^(torch|torchvision|transformers|huggingface.hub|av|numpy)==' /work/pip-env.log
+          echo "=== PHASE check $(date -u +%H:%M:%S)"
+          rc=0; T1=$SECONDS
+          timeout --kill-after=60 2400 python /src/check_cache_fresh.py --data-root /mnt/proxy/data/lerobot_v30 \
+            --feats /mnt/proxy/feats --device cuda --out-json /work/cache-fresh-check.json || rc=$?
+          if [ $rc = 137 ] && [ $(( SECONDS - T1 )) -ge 2400 ]; then echo "ABORT: the check hit its 2400 s timeout (killed after the grace)"; rc=124; fi
+          [ $rc = 124 ] && echo "ABORT: the check hit its 2400 s timeout"
+          date -u; echo "=== exit $rc"
+          exit $rc
+        env:
+        - {name: SRC_GIT_COMMIT, value: 5fca5003e4372f8a2615f8d841b88d7f2055e7f1}
+        - name: HF_TOKEN                               # DINOv3 is gated
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: /src}
+        - {name: OMP_NUM_THREADS, value: "3"}
+        - {name: MALLOC_ARENA_MAX, value: "2"}
+        resources:                    # limits <= 1.2x requests; sources in the header
+          requests: {cpu: "3", memory: 10Gi, nvidia.com/gpu: "1", ephemeral-storage: 30Gi}
+          limits:   {cpu: "3600m", memory: 12Gi, nvidia.com/gpu: "1", ephemeral-storage: 34Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy, readOnly: true}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 24Gi}
+      - name: src
+        configMap: {name: stacking-encoders-pairings-freshcheck-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy, readOnly: true}
