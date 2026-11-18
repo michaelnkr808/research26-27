@@ -45,12 +45,17 @@ LATENT_GRID = (14, 28)   # 224 x 448 / 16
 
 def save_npy(path, arr, stage_dir=None):
     """Atomic write, so a killed Job never leaves a truncated episode that a rerun would skip. With stage_dir the
-    array is saved there first and copied over in one go; returns the seconds the copy took (None without staging)."""
+    array is saved there first and copied over in one go; returns the seconds the copy took (None without staging).
+    The temporary file is flushed and fsync'ed before the rename onto path: a write the storage refuses (CephFS pool
+    full, LOG 2026-11-18) then raises here instead of leaving a full-size file of zeros under the final name. The
+    copy time includes that fsync."""
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f".{path.name}.tmp")
     if stage_dir is None:
         with open(tmp, "wb") as f:
             np.save(f, arr)
+            f.flush()
+            os.fsync(f.fileno())
         os.replace(tmp, path)
         return None
     staged = Path(stage_dir) / path.name
@@ -58,7 +63,10 @@ def save_npy(path, arr, stage_dir=None):
     with open(staged, "wb") as f:
         np.save(f, arr)
     t = time.time()
-    shutil.copyfile(staged, tmp)
+    with open(staged, "rb") as src, open(tmp, "wb") as f:
+        shutil.copyfileobj(src, f, 16 * 2**20)
+        f.flush()
+        os.fsync(f.fileno())
     os.replace(tmp, path)
     staged.unlink()
     return time.time() - t

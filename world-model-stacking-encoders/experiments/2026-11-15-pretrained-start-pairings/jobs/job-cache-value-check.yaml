@@ -1,0 +1,83 @@
+# Stage 2 cache value check (LOG 2026-11-18, "cache check after the re-extraction: FAIL": 8 SigLIP 2 episodes were
+# full-size files of zero bytes after a CephFS pool-full event; the header check cannot see a zero stretch after a
+# good header). Read-only, CPU-only Job: runs src/check_stage2_cache.py --values over all four sources (dinov3,
+# siglip2, c-radiov4, vae) and all four suites against /mnt/proxy/feats (PVC stacking-encoders-proxy, mounted readOnly).
+# Every episode file is read in full: data against its .stats.npy (encoders), all-zero 4096-byte pages (all sources and
+# the stats files), non-finite values. It writes nothing to the PVC. Exit 0 = no gap, 1 = a gap (Job fails at once,
+# no retry; every damaged episode is listed on a "DAMAGED <source> <suite> <ep>" line), 2 = usage error.
+# Code: ConfigMap stacking-encoders-pairings-valuecheck-src, key check_stage2_cache.py, mounted at /src, sha256 printed
+# at start (RUN-cache-value-check.md). Same style as job-cache-check.yaml: no sleep, no tolerations, CPU-only node
+# affinity, region us-west, limits within 20% of requests, backoffLimit 2 with podFailurePolicy.
+# Image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime (has numpy; nothing is installed).
+#
+# Sizing (measured on the Mac 2026-11-18, Apple M4 Pro, SYNTHETIC files of real shape used for timing only: 8 files of
+# 150 x 14 x 28 x 1152 float16 plus stats, page cache warm, so this is CPU speed, not storage speed):
+#   1 thread 529 MB/s, 2 threads 529 MB/s each, 4 threads 513 MB/s each, 8 threads 447 MB/s each (3.6 GB/s total).
+#   Max RSS: 112 MB with 1 thread, 277 MB with 4, 434 MB with 8: about 45 MB per thread on about 70 MB of base.
+# Projection for the cluster run (speculative arithmetic; CephFS read speed was NOT measured for this Job):
+#   Bytes: about 756 GB (DINOv3 223 GB, SigLIP 2 251 GB, C-RADIOv4 251 GB, VAE about 31 GB; stats files about 0.1 GB).
+#   CephFS: the only measurement is the proxy read bench (experiments/2026-10-27-proxy-calibration/results/logs/
+#   read-bench-vwdb8.log, one CPU node, whole episode files): 1 thread 29.5 MB/s, 8 threads 174, 16 threads 296 MB/s.
+#   So the run is read-bound: 16 reader threads at about 300 MB/s -> 756 GB in about 42 min, plus about 7 min of
+#   header and metadata work (the header-only check took 6 min 44 s on 2026-11-18). At half the bench rate, about 1.5 h.
+#   CPU: assuming a cluster core runs at about half the Mac's per-thread speed (about 250 MB/s, assumption), 300 MB/s
+#   of reads needs about 1.2 cores of numpy plus the CephFS client's kernel time: request 2 CPU, limit 2400m (1.2x).
+#   Memory: 16 threads x about 45 MB + base, about 0.8 GB by the Mac RSS (Mac RSS undercounts; allocator slack on Linux
+#   may be higher): request 2Gi, limit 2400Mi (1.17x). Each file's cached pages are dropped after reading
+#   (posix_fadvise DONTNEED), so page cache should stay small; memory.peak and anon are printed at the end.
+#   activeDeadlineSeconds 14400 (4 h): covers 756 GB at about 55 MB/s, under a fifth of the 16-thread bench rate.
+# NOT SUBMITTED. Submitting needs the user's go in the lead's window.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-pairings-cache-value-check
+  namespace: aria-world
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 14400
+  ttlSecondsAfterFinished: 86400
+  podFailurePolicy:
+    rules:
+    - action: FailJob            # exit 1 = the check found a gap (or a Python traceback); 2 = usage error. Rerunning will not change it.
+      onExitCodes: {containerName: main, operator: In, values: [1, 2]}
+    - action: Ignore             # node reboot or drain: retry without counting
+      onPodConditions: [{type: DisruptionTarget}]
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -uo pipefail
+          echo "=== start $(date -u) node=${NODE_NAME:-?}"
+          sha256sum /src/check_stage2_cache.py
+          rc=0
+          python /src/check_stage2_cache.py --feats /mnt/proxy/feats --workers 16 --values || rc=$?
+          echo "[cgroup] memory.peak $(cat /sys/fs/cgroup/memory.peak 2>/dev/null || echo n/a) bytes; $(grep -E '^(anon|file) ' /sys/fs/cgroup/memory.stat 2>/dev/null | tr '\n' ' ')"
+          echo "=== exit $rc $(date -u)"
+          exit $rc
+        env:
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - name: NODE_NAME
+          valueFrom: {fieldRef: {fieldPath: spec.nodeName}}
+        resources:
+          requests: {cpu: "2", memory: 2Gi}
+          limits:   {cpu: 2400m, memory: 2400Mi}
+        volumeMounts:
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy, readOnly: true}
+      volumes:
+      - name: src
+        configMap: {name: stacking-encoders-pairings-valuecheck-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy, readOnly: true}
