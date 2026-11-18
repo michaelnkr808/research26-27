@@ -67,7 +67,8 @@ def weights(seed=0, sources=("dinov3", "siglip2")):
 
 def args_for(feats, sources="dinov3,siglip2", **kw):
     a = dict(data_root="/nonexistent", feats=str(feats), sources=sources, suites=",".join(CF.SUITES),
-             per_suite=2, seed=0, batch=CF.BATCH, cos_min=CF.COS_MIN, rel_max=CF.REL_MAX, device="cpu", out_json=None)
+             per_suite=2, seed=0, batch=CF.BATCH, cos_min=CF.COS_MIN, rel_max=CF.REL_MAX, rel_l2_max=CF.REL_L2_MAX, device="cpu",
+             out_json=None)
     a.update(kw)
     return argparse.Namespace(**a)
 
@@ -173,8 +174,16 @@ def test_compare_metrics():
     c = np.ones((2, 14, 28, D), np.float16)
     m = CF.compare(c, c)
     assert m["cos_min"] > 0.999999 and m["rel_max"] == 0 and m["frac_bit_equal"] == 1
+    assert m["rel_l2"] == 0
     m = CF.compare(-c, c)
     assert m["cos_min"] < -0.999 and not CF.passes(m)
+    # per-frame relative L2: one frame 3% too large -> rel_l2 0.03 on that frame; cosine is blind to the scale
+    f = c.copy()
+    f[1] = (c[1].astype(np.float32) * 1.03).astype(np.float16)
+    m = CF.compare(f, c)
+    assert abs(m["rel_l2"] - 0.03) < 2e-3 and m["cos_min"] > 0.999999, m
+    assert not CF.passes(m) and CF.passes(m, rel_max=1, rel_l2_max=0.05)
+    assert not CF.passes(dict(m, rel_max=0.0), rel_max=1)          # the L2 bar alone fails it
 
 
 def test_main_exit_codes():
@@ -205,7 +214,7 @@ def test_defaults_match_extraction_jobs():
     import extract_features as EF
     assert CF.EXTRACT == {"dinov3": "fp32", "siglip2": "fp16", "c-radiov4": "fp16"} and CF.BATCH == 32
     assert set(CF.SOURCES) <= set(EF.REVISIONS) and all(len(EF.REVISIONS[s]) == 40 for s in CF.SOURCES)
-    assert (CF.COS_MIN, CF.REL_MAX, CF.PER_SUITE, CF.SEED) == (0.999, 0.02, 2, 0)
+    assert (CF.COS_MIN, CF.REL_MAX, CF.REL_L2_MAX, CF.PER_SUITE, CF.SEED) == (0.999, 0.02, 0.02, 2, 0)
 
 
 if __name__ == "__main__":

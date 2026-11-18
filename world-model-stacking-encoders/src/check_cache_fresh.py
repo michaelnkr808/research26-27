@@ -13,7 +13,8 @@ size, same compute dtype as the extraction Jobs, encoder from extract_features.E
 rounded to float16 as stored. Compared per episode with the cached (n, 14, 28, D) float16 array:
   cos_min   the lowest per-frame cosine similarity (each frame's grid flattened)
   rel_max   max |fresh - cached| / max |cached| over the episode
-An episode passes when cos_min >= COS_MIN and rel_max <= REL_MAX. The tolerances were fixed in RUN-cache-fresh-check.md
+  rel_l2    the largest per-frame relative L2 error, ||fresh - cached|| / ||cached|| (each frame's grid flattened)
+An episode passes when cos_min >= COS_MIN, rel_max <= REL_MAX and rel_l2 <= REL_L2_MAX. The tolerances were fixed in RUN-cache-fresh-check.md
 before any run, with their reasoning; do not change them after seeing results.
 
 It also checks each source's provenance files (<feats>/<source>/<suite>/_meta.shard*.json): model id and compute dtype
@@ -50,6 +51,7 @@ SEED = 0
 # Pass tolerances, fixed before any run (reasoning in RUN-cache-fresh-check.md).
 COS_MIN = 0.999
 REL_MAX = 0.02
+REL_L2_MAX = 0.02
 
 
 def suite_root(data_root, suite):
@@ -75,16 +77,18 @@ def compare(fresh, cached):
     c = cached.reshape(len(cached), -1).astype(np.float64)
     nf, nc = np.linalg.norm(f, axis=1), np.linalg.norm(c, axis=1)
     cos = (f * c).sum(1) / np.maximum(nf * nc, 1e-30)
+    rel_l2 = np.linalg.norm(f - c, axis=1) / np.maximum(nc, 1e-30)
     scale = float(np.abs(c).max())
     diff = np.abs(f - c)
     return {"cos_min": float(cos.min()), "cos_median": float(np.median(cos)),
+            "rel_l2": float(rel_l2.max()), "rel_l2_median": float(np.median(rel_l2)),
             "rel_max": float(diff.max() / scale) if scale > 0 else float("inf"),
             "max_abs_diff": float(diff.max()), "max_abs_cached": scale,
             "frac_bit_equal": float((fresh == cached).mean())}
 
 
-def passes(m, cos_min=COS_MIN, rel_max=REL_MAX):
-    return m["cos_min"] >= cos_min and m["rel_max"] <= rel_max
+def passes(m, cos_min=COS_MIN, rel_max=REL_MAX, rel_l2_max=REL_L2_MAX):
+    return m["cos_min"] >= cos_min and m["rel_max"] <= rel_max and m["rel_l2"] <= rel_l2_max
 
 
 def check_provenance(feats, source, suite, hf_id, dtype_name):
@@ -164,17 +168,17 @@ def run(args, load_encoder=None, read_suite=None, decode=None, encode_episode=No
                                     f"episode length {ep['length']}")
                     continue
                 row.update(compare(fresh, cached))
-                row["pass"] = passes(row, args.cos_min, args.rel_max)
+                row["pass"] = passes(row, args.cos_min, args.rel_max, args.rel_l2_max)
                 rows.append(row)
                 log(f"[ep] {s} {suite} ep{ep['episode_index']:06d} n={ep['length']}: cos_min {row['cos_min']:.6f} "
-                    f"cos_median {row['cos_median']:.6f} rel_max {row['rel_max']:.2e} "
+                    f"cos_median {row['cos_median']:.6f} rel_l2 {row['rel_l2']:.2e} rel_max {row['rel_max']:.2e} "
                     f"(max abs diff {row['max_abs_diff']:.3g} of {row['max_abs_cached']:.3g}) "
                     f"bit-equal {100 * row['frac_bit_equal']:.1f}% {'PASS' if row['pass'] else 'FAIL'} ({row['seconds']}s)")
 
     failed = [r for r in rows if not r["pass"]]
     ok = not problems and not failed and len(rows) == len(sources) * len(suites) * args.per_suite
     summary = {
-        "ok": ok, "tolerance": {"cos_min": args.cos_min, "rel_max": args.rel_max},
+        "ok": ok, "tolerance": {"cos_min": args.cos_min, "rel_max": args.rel_max, "rel_l2_max": args.rel_l2_max},
         "seed": args.seed, "per_suite": args.per_suite, "batch": args.batch, "device": args.device,
         "torch": torch.__version__,
         "encoders": {s: {"hf_id": e.hf_id, "revision": getattr(e, "revision", None),
@@ -183,7 +187,8 @@ def run(args, load_encoder=None, read_suite=None, decode=None, encode_episode=No
         "per_source": {s: {"episodes": sum(r["source"] == s for r in rows),
                            "failed": sum(r["source"] == s and not r["pass"] for r in rows),
                            "worst_cos_min": min((r["cos_min"] for r in rows if r["source"] == s), default=None),
-                           "worst_rel_max": max((r["rel_max"] for r in rows if r["source"] == s), default=None)}
+                           "worst_rel_max": max((r["rel_max"] for r in rows if r["source"] == s), default=None),
+                           "worst_rel_l2": max((r["rel_l2"] for r in rows if r["source"] == s), default=None)}
                        for s in sources},
         "problems": problems, "episodes": rows, "seconds": round(time.time() - t0, 1)}
     return summary, ok
@@ -200,6 +205,7 @@ def main(argv=None):
     p.add_argument("--batch", type=int, default=BATCH)
     p.add_argument("--cos-min", type=float, default=COS_MIN)
     p.add_argument("--rel-max", type=float, default=REL_MAX)
+    p.add_argument("--rel-l2-max", type=float, default=REL_L2_MAX)
     p.add_argument("--device", default="cuda")
     p.add_argument("--out-json", default=None)
     args = p.parse_args(argv)

@@ -11,8 +11,9 @@ The stage 2 features at training time come from the caches (built 2026-10-29 to 
 Per episode and encoder, over the cached (frames, 14, 28, D) float16 array:
 - `cos_min` >= **0.999**: the lowest per-frame cosine similarity between the recomputed and the cached grid (each frame flattened).
 - `rel_max` <= **0.02**: the largest absolute difference over the episode, divided by the largest absolute cached value.
+- `rel_l2` <= **0.02**: the largest per-frame relative L2 error, `||fresh - cached|| / ||cached||` with each frame's grid flattened (added 2026-11-17 after the PR #61 review, still before any run).
 
-Every one of the 24 episode-encoder comparisons must pass, with no missing file, no shape mismatch and no provenance or revision mismatch. The defaults are in the script (`COS_MIN`, `REL_MAX`) and asserted by `src/test_check_cache_fresh.py`.
+Every one of the 24 episode-encoder comparisons must pass, with no missing file, no shape mismatch and no provenance or revision mismatch. The defaults are in the script (`COS_MIN`, `REL_MAX`, `REL_L2_MAX`) and asserted by `src/test_check_cache_fresh.py`.
 
 Why these values. What the recompute cannot reproduce exactly, and its expected size:
 1. **Card and kernel differences.** The caches were written by GPU pods, mostly on L4s (the final DINOv3, C-RADIOv4 and SigLIP 2 pods all ran on nautilus-it-gpu05: `../../LOG.md` 2026-10-29 (m), its 2026-10-30 02:40 UTC status line, and 2026-10-30 (c)), but earlier SigLIP 2 tries wrote some episodes on an RTX 5000 Ada, an RTX 3090 and a stratus1 card (`../../LOG.md` 2026-10-29 (h), 2026-10-29 (m), 2026-10-30 (b)), and the DINOv3 and C-RADIOv4 Jobs had earlier tries too (2026-10-29 (h), (k)) (their cards were not checked for this file), so some cached episodes may come from other cards. Different cards and cuDNN/cuBLAS algorithm choices change the order of fp16 accumulation (and TF32 in convolutions on these cards). Speculative size: of the order of the batch-size effect measured on CPU in `src/test_feature_parity.py` (1e-3 to 4e-3 of the max abs value, `BATCH_REL` comment), not measured on GPUs.
@@ -20,9 +21,13 @@ Why these values. What the recompute cannot reproduce exactly, and its expected 
 3. **float16 storage.** Both sides are rounded to float16: up to about 5e-4 of each value's own size per side.
 4. **Frame decoding and resize.** Same code (`fastwam_data.decode_episode`, `to_224` on CPU) and the same pinned `av` and `torch` versions (`src/setup_env.sh`), so expected identical.
 
-So the numerical noise is expected below about 5e-3 relative max difference and a cosine above 0.9999; 0.02 and 0.999 leave about a fourfold margin. A real weight change (a different checkpoint or fine-tune) moves the features by an amount comparable to their size, which would give cosines well below 0.99 (speculative: no real alternative checkpoint exists for these repos to measure it; the fake test in `src/test_check_cache_fresh.py` uses a 30% weight change and fails all episodes). A change smaller than the tolerance (for example the same weights re-saved at another precision) would pass; that is accepted, since it is at the size of the fp16 noise the training features already carry. DINOv3 is computed in fp32 and should sit far inside the tolerance.
+So the numerical noise is expected below about 5e-3 relative max difference and a cosine above 0.9999; 0.02 and 0.999 leave about a fourfold margin.
 
-**If an encoder lands between the noise level and the bar** (for example `cos_min` between 0.99 and 0.999, or `rel_max` between 0.02 and 0.1), or fails only on episodes written by a non-L4 card: do not loosen the bar. Stop, record the numbers, and ask the user.
+Why a third bar. Each of the other two can miss an error. Cosine ignores scale: a frame whose features all grew by a few percent keeps a cosine of 1. `rel_max` divides by the largest value in the whole episode, and these encoders have a few very large outlier activations, so the divisor can be far above typical values and large errors on ordinary channels would stay under 0.02. The per-frame relative L2 error measures the size of the whole error vector against the size of the frame's features, so it catches a scale change and spread-out errors that the other two do not. Expected size of the numeric noise in this measure: of the order of the per-value relative noise, about 1e-3 to 5e-3 (speculative, the same reasoning as items 1 to 3); 0.02 again leaves about a fourfold margin. For reference, with equal norms a relative L2 error of 0.045 corresponds to a cosine of 0.999, so this bar is the stricter of the two on pure direction changes too.
+
+**The first run also measures the GPU numeric noise.** None of the expected sizes above has been measured on a GPU. The per-episode lines (`cos_min`, `cos_median`, `rel_l2`, `rel_l2_median`, `rel_max`, bit-equal share) are the first measurement of it, and the LOG entry should record them as that. A real weight change (a different checkpoint or fine-tune) moves the features by an amount comparable to their size, which would give cosines well below 0.99 (speculative: no real alternative checkpoint exists for these repos to measure it; the fake test in `src/test_check_cache_fresh.py` uses a 30% weight change and fails all episodes). A change smaller than the tolerance (for example the same weights re-saved at another precision) would pass; that is accepted, since it is at the size of the fp16 noise the training features already carry. DINOv3 is computed in fp32 and should sit far inside the tolerance.
+
+**A result between the bars is a stop for the user, not a reason to loosen them.** If an encoder lands between the expected noise and a bar, or just past one (for example `cos_min` between 0.99 and 0.999, or `rel_max` or `rel_l2` between 0.02 and 0.1), or fails only on episodes written by a non-L4 card: do not change any bar, do not rerun with other values. Stop, record the numbers, and ask the user.
 
 ## Steps
 
@@ -64,7 +69,7 @@ So the numerical noise is expected below about 5e-3 relative max difference and 
    kubectl get job stacking-encoders-pairings-cache-fresh-check -n aria-world -o yaml > results/cache-fresh-check/job-status.yaml
    ```
    The JSON summary is in the log after `=== summary` (the pod's `/work` copy goes with the pod).
-8. **Read the result**: the last lines are `=== OK: ...` or `=== FAIL: ...` (with `PROBLEM` lines) and `=== exit <rc>`. Record in the LOG: the three `[load]` lines, the chosen episodes, the worst `cos_min` and `rel_max` per encoder (`per_source` in the summary), the node and card, pod time and GPU-hours.
+8. **Read the result**: the last lines are `=== OK: ...` or `=== FAIL: ...` (with `PROBLEM` lines) and `=== exit <rc>`. On a FAIL, read each `PROBLEM` line before reading it as a weight change (exit-code table, rc 3). Record in the LOG: the three `[load]` lines, the chosen episodes, the worst `cos_min`, `rel_l2` and `rel_max` per encoder (`per_source` in the summary) as the first GPU measurement of the numeric noise, the node and card, pod time and GPU-hours.
 9. **Delete the Job** after the log is saved: `kubectl delete job stacking-encoders-pairings-cache-fresh-check -n aria-world` (graceful, never `--force`), and the ConfigMap: `kubectl delete configmap stacking-encoders-pairings-freshcheck-src -n aria-world`. Nothing on the PVC is touched.
 
 ## Exit codes (`=== exit <rc>`; podFailurePolicy fails the Job at once on 2, 3, 10, 19, 124)
@@ -72,7 +77,7 @@ So the numerical noise is expected below about 5e-3 relative max difference and 
 | rc | Meaning | What to do |
 |---|---|---|
 | 0 | all 24 comparisons inside the tolerance, provenance and loaded revisions match | log it; the pins stand |
-| 3 | an episode out of tolerance, a cached file missing or of the wrong shape, a `_meta` mismatch, or a loaded commit that is not the pin | stop, tell the user with the log; do not re-extract or edit anything without their OK |
+| 3 | an episode out of tolerance, a cached file missing or of the wrong shape, a `_meta` mismatch, or a loaded commit that is not the pin | **read the `PROBLEM` lines and the `[ep]` lines first**: exit 3 is a weight change only if `[ep]` lines fail the bars. A `PROBLEM` alone can have another cause, for example a leftover `_meta.shard*.json` from an earlier extraction try with another dtype (extraction's default is bf16), or a missing episode file. Then stop and tell the user with the log; do not re-extract, delete or edit anything without their OK |
 | 2 | the check script failed (traceback; for example a dataset path or a gated download refused) | read the traceback, fix by PR, ask before resubmitting |
 | 124 | the check hit its 2,400 s timeout | read the log (slow CephFS reads?), ask the user |
 | 10, 19 | commit not rendered, or a `/src` key differs from the rendered hash | re-read the ConfigMap (step 3), re-render (step 4) |

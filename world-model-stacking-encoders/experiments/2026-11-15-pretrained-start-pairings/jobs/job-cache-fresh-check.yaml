@@ -1,7 +1,7 @@
 # Encoder cache freshness check (pairings stage 2; the user OK'd pinning DINOv3 and SigLIP 2 and this check in chat
 # 2026-11-17). Runs src/check_cache_fresh.py: recomputes 2 seed-chosen cached episodes per suite (8 episodes) for DINOv3,
 # SigLIP 2 and C-RADIOv4 with the pinned Hugging Face revisions (src/extract_features.py REVISIONS) and compares them with
-# the cached .npy under /mnt/proxy/feats. Tolerance and its reasoning: RUN-cache-fresh-check.md (fixed before any run).
+# the cached .npy under /mnt/proxy/feats. Tolerance (cosine, per-frame relative L2, max-abs) and its reasoning: RUN-cache-fresh-check.md (fixed before any run).
 # NOT SUBMITTED (written 2026-11-17 on the Mac). Submitting needs the user's go in the lead's window. Steps: RUN-cache-fresh-check.md.
 # Render before submit: SRC_GIT_COMMIT and the 6 /src sha256 (FILL_ placeholders), as stage 1's RUN-full-train.md step 4.
 #
