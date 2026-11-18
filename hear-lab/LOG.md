@@ -230,3 +230,25 @@ Planning lead's suggestion, not a decision (`speculative`): frame the experiment
 From the lead, 2026-11-17: the direction as stated is too vague and needs to become a concrete question; does not see how Audio Flamingo 3 relates to the research. The planning lead proposed a candidate question in chat (does spatial audio help a Wan 2.2 navigation world action model more than one-channel audio when the target is out of sight); the lead has not chosen yet.
 
 **Next:** the lead decides, with the PI, whether to register a team (which signals a challenge entry) or to ask the organizers for research-only access by email. No form was submitted and no email was sent from this session.
+
+## 2026-11-18 [agent, lead, planning] (options for the research question, for the PI meeting on 2026-11-19)
+**Goal:** turn the direction into a concrete question before the lead's weekly PI meeting (Thursdays, per the lead; the next one is 2026-11-19).
+
+**Did:**
+- The lead emailed the challenge organizers (`rmsaqa.2027@gmail.com`) from the lead's own account, asking whether dataset access is possible for research use without a team registration. The planning lead drafted the text; nothing was sent from this session, and the team registration form was not submitted.
+- Put three candidate research questions to the lead in chat. The lead has not chosen; they go to the PI.
+
+**PR:** direct.
+
+**Found:** nothing new measured or read. The three options (`speculative`, the planning lead's proposals built on `literature/survey/2026-11-16-summary.md` and the prior-work check):
+1. Does direction matter: when the target is out of sight, does a Wan 2.2 navigation world action model do better with spatial audio than with one-channel audio or no audio? Three versions of one model, success at reaching a sounding object, split by whether the target was visible at the start; second measure, whether audio improves the predicted frames for regions out of view. The planning lead's recommendation. Known neighbor: NaVLA2 compares one-channel and binaural audio in a navigation model that is not a world model.
+2. Option 1 plus an encoder comparison: does a spatial audio encoder that scores well on RMS-AQA also help the world action model navigate? Ties the PI's first task to the paper; each extra encoder is another training run.
+3. Does the model need to predict future sound, or is hearing it enough? Wan 2.2 does not generate audio, so this needs a new audio output path; proposed as future work only.
+
+From the lead, 2026-11-18: "i just want the dataset" (not a decision to enter the challenge); wants a direction, or a few options, ready before the PI meeting.
+
+**Not verified:** cost of any option (data must be rendered with SoundSpaces 2.0, and fine-tuning cost for a Wan 2.2 navigation model has not been timed); whether option 1's comparison exists in a paper the searches missed.
+
+**Next:** the lead brings the options to the PI on 2026-11-19, with these questions: which option; what the PI wants taken from RMS-AQA into the world action model work (and whether reproducing the Audio Flamingo 3 baseline is needed at all); whether more compute is available if a timing run shows 200 dollars is not enough; whether to register a challenge team. After the meeting the planning lead writes the research question into `README.md` and a decision record (by pull request).
+
+**Open questions:** the organizers' reply on dataset access; the base model (candidates in the summary; open check whether WNM-3D can run where SoundSpaces 2.0 renders audio).
