@@ -4,7 +4,8 @@
 # final SigLIP 2 cache (direction LOG 2026-10-30 (c)): same image, setup, code path, model, fp16, batch 32, CPU, memory,
 # output folder and file names. Changed: L4 only, 2 shards, Job name, code from the current main (ConfigMap with hashes
 # checked), a refusal to start while feats/siglip2 holds files this Job did not write, and a [gpu] sampler (the L4 nodes
-# export no DCGM). Reasons and the line-by-line diff: RUN-siglip2-reextract.md.
+# export no DCGM); after the PR #62 review also --device cuda, a CUDA + L4 pre-check (exit 13), a _meta device post-check
+# (exit 14) and the two fault hosts excluded. Reasons and the line-by-line diff: RUN-siglip2-reextract.md.
 # NOT SUBMITTED. Runs only after job-siglip2-delete.yaml has completed. Render before submit (RUN step 3).
 apiVersion: batch/v1
 kind: Job
@@ -20,8 +21,8 @@ spec:
   ttlSecondsAfterFinished: 86400
   podFailurePolicy:
     rules:
-    - action: FailJob        # start-up refusals (exit 10, 11, 12, 19): a retry would refuse again
-      onExitCodes: {containerName: main, operator: In, values: [10, 11, 12, 19]}
+    - action: FailJob        # refusals (exit 10-14, 19): a retry would refuse again
+      onExitCodes: {containerName: main, operator: In, values: [10, 11, 12, 13, 14, 19]}
   template:
     spec:
       restartPolicy: Never
@@ -35,6 +36,7 @@ spec:
                 values: [NVIDIA-L4]
               - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
               - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net, ry-gpu-08.sdsc.optiputer.net]}  # GPU faults, 2026-11-03
       containers:
       - name: main
         image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
@@ -71,11 +73,13 @@ spec:
           nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv,noheader -l 30 | sed -u 's/^/[gpu] /' &
           SMI=$!; trap 'kill $SMI 2>/dev/null || true' EXIT
           bash /src/setup_env.sh
+          python -c "import sys, torch; ok = torch.cuda.is_available() and torch.cuda.get_device_name(0).split()[-1] == 'L4'; print('cuda', torch.cuda.is_available(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else '-'); sys.exit(0 if ok else 13)" || { echo "ABORT: no CUDA device or not an L4"; exit 13; }
           for s in libero_spatial libero_object libero_goal libero_10; do
             echo "=== $s shard $I/2"; date -u
             python /src/extract_fastwam.py --root $R/data/lerobot_v30/${s}_no_noops_lerobot --suite $s \
-              --source siglip2 --out $F --shard $I/2 --dtype fp16 --batch 32 
+              --source siglip2 --out $F --shard $I/2 --dtype fp16 --batch 32 --device cuda
           done
+          python -c "import glob, json, sys; fs = sorted(glob.glob('$S/*/_meta.shard${I}of2.json')); bad = [f for f in fs if json.load(open(f)).get('device') != 'cuda']; print('_meta device check:', len(fs), 'files,', len(bad), 'not cuda', bad); sys.exit(0 if len(fs) == 4 and not bad else 14)" || { echo "ABORT: a _meta file of this shard is missing or does not record device cuda"; exit 14; }
           date -u; echo "=== done"
         env:
         - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}
