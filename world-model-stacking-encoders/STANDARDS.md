@@ -28,7 +28,7 @@
   - **Predictor quality:** rank correlation (Spearman, or Kendall τ as in agostinelli2022) between predictor and measured combo gain, plus whether the sign of harmful combos is predicted. We use rank metrics because only the ordering matters for choosing combos.
 - Required statistical tests or number of runs:
   - Demo-level bootstrap CIs (≥1,000 draws) on every probe number. Frames within a demo are correlated, so frame-level CIs are invalid.
-  - Proxy-policy ground truth needs ≥3 training seeds per combo (`07`).
+  - Proxy-policy ground truth needs ≥3 training seeds per combo (`07`). Overridden for the stage 2 first pass only (2026-11-18, "Overrides of general standards" below).
   - With 7 pairs, report the tally and don't claim significance.
 - Known pitfalls in this field (leakage, confounds, etc.):
   - Treating low similarity as complementarity (mentor point 1).
@@ -70,3 +70,4 @@
 | General rule | Override | Reason |
 |---|---|---|
 | `07` Compute and cost: "Each direction sets a compute budget: GPU-hours, API dollars, or both." | Nautilus: the budget is a concurrency cap (8 GPUs / 20 Jobs) plus the `08` utilization rules, not a GPU-hour total. Paid compute: the dollar rule in "Paid compute" above (decisions/005). | NRP Nautilus has no per-hour cost to us. The real risk is idle or under-utilized GPUs in the shared `aria-world` namespace (account at 1/3 idle strikes). Agreed with user 2026-10-16. |
+| `07` Evaluation hygiene: "Use at least 3 seeds for any reported comparison", and this file's "≥3 training seeds per combo". | The first pass of stage 2 of the pretrained-start work (`experiments/2026-11-15-pretrained-start-pairings/`) trains **one training seed per configuration**. Its results are reported as single-training-seed descriptions with the paper's numbers beside them ("same direction as the paper" or not; that PLAN's amendment of 2026-11-18). No claim that one configuration beats another, and no "reproduced", "not reproduced", "harmful" or "helpful" finding, is made from them. Any such claim still needs three training seeds and that PLAN's locked decision rule. The override covers nothing else. | The mentor's advice, relayed by the user on 2026-11-18 ("she said to not go with 3 different seeds and instead to just do one for now"), and the user's "yes" to the amendment the same day. 5 training runs instead of 17. The paper itself reports one trained checkpoint per configuration. |
