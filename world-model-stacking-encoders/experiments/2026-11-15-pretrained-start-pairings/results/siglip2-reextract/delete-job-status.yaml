@@ -1,0 +1,129 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    nrp.ai/username: http://cilogon.org/serverE/users/436081
+  creationTimestamp: "2026-11-18T03:12:17Z"
+  generation: 1
+  labels:
+    batch.kubernetes.io/controller-uid: ce95d49f-cf43-4e33-870c-fb539898b667
+    batch.kubernetes.io/job-name: stacking-encoders-pairings-siglip2-delete
+    controller-uid: ce95d49f-cf43-4e33-870c-fb539898b667
+    job-name: stacking-encoders-pairings-siglip2-delete
+  name: stacking-encoders-pairings-siglip2-delete
+  namespace: aria-world
+  resourceVersion: "15562920684"
+  uid: ce95d49f-cf43-4e33-870c-fb539898b667
+spec:
+  activeDeadlineSeconds: 3600
+  backoffLimit: 1
+  completionMode: NonIndexed
+  completions: 1
+  manualSelector: false
+  parallelism: 1
+  podReplacementPolicy: TerminatingOrFailed
+  selector:
+    matchLabels:
+      batch.kubernetes.io/controller-uid: ce95d49f-cf43-4e33-870c-fb539898b667
+  suspend: false
+  template:
+    metadata:
+      labels:
+        batch.kubernetes.io/controller-uid: ce95d49f-cf43-4e33-870c-fb539898b667
+        batch.kubernetes.io/job-name: stacking-encoders-pairings-siglip2-delete
+        controller-uid: ce95d49f-cf43-4e33-870c-fb539898b667
+        job-name: stacking-encoders-pairings-siglip2-delete
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: feature.node.kubernetes.io/pci-10de.present
+                operator: NotIn
+                values:
+                - "true"
+              - key: topology.kubernetes.io/region
+                operator: In
+                values:
+                - us-west
+      containers:
+      - args:
+        - |
+          set -euo pipefail
+          T=/mnt/proxy/feats/siglip2
+          L=/mnt/proxy/logs/siglip2-delete-$(date -u +%Y%m%d-%H%M%S)
+          echo "=== SigLIP 2 cache deletion: $T"; date -u
+          mountpoint -q /mnt/proxy || { echo "ABORT: /mnt/proxy is not a mount point"; exit 20; }
+          [ -d "$T" ] && [ ! -L "$T" ] || { echo "ABORT: $T is missing or is a symlink"; exit 20; }
+          [ "$(realpath -e "$T")" = /mnt/proxy/feats/siglip2 ] || { echo "ABORT: $T resolves to $(realpath "$T")"; exit 20; }
+          [ "$(stat -c %d "$T")" = "$(stat -c %d /mnt/proxy)" ] || { echo "ABORT: $T is on another filesystem than /mnt/proxy"; exit 20; }
+          echo "--- before"; df -h /mnt/proxy; ls -la /mnt/proxy/feats; du -sh "$T"
+          # Every entry, with its type (f file, d folder, l symlink, ...), relative to $T.
+          find "$T" -xdev -mindepth 1 -printf '%y %P\n' | sort -k2 > $L.list
+          echo "listed $(wc -l < $L.list) entries to $L.list"
+          OK='^(d (libero_spatial|libero_object|libero_goal|libero_10)|f (libero_spatial|libero_object|libero_goal|libero_10)/(ep[0-9]{6}\.npy|ep[0-9]{6}\.stats\.npy|_meta\.shard[0-9]+of[0-9]+\.json|\.ep[0-9]{6}(\.stats)?\.npy\.tmp))$'
+          bad=$(grep -cvE "$OK" $L.list || true)
+          if [ "$bad" != 0 ]; then
+            echo "ABORT: $bad entries outside the cache's layout; nothing deleted:"; grep -vE "$OK" $L.list | head -50; exit 23
+          fi
+          for s in libero_spatial libero_object libero_goal libero_10; do
+            printf '%-15s episodes %5s  stats %5s  _meta %3s  tmp %3s\n' $s \
+              $(grep -cE "^f $s/ep[0-9]{6}\.npy$" $L.list || true) $(grep -cE "^f $s/ep[0-9]{6}\.stats\.npy$" $L.list || true) \
+              $(grep -cE "^f $s/_meta\." $L.list || true) $(grep -cE "^f $s/\.ep" $L.list || true)
+          done
+          echo "files $(grep -c '^f ' $L.list || true), folders $(grep -c '^d ' $L.list || true); deleting $(date -u)"
+          find "$T" -xdev -type f -delete
+          find "$T" -xdev -mindepth 1 -depth -type d -delete
+          left=$(find "$T" -mindepth 1 | wc -l)
+          echo "--- after $(date -u)"; df -h /mnt/proxy; ls -la /mnt/proxy/feats; ls -la "$T"
+          [ "$left" = 0 ] || { echo "ABORT: $left entries left in $T"; find "$T" -mindepth 1 | head -20; exit 24; }
+          echo "=== deleted: $T is empty"; date -u
+        command:
+        - bash
+        - -c
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        imagePullPolicy: IfNotPresent
+        name: main
+        resources:
+          limits:
+            cpu: 600m
+            memory: 600Mi
+          requests:
+            cpu: 500m
+            memory: 512Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /mnt/proxy
+          name: proxy
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: proxy
+        persistentVolumeClaim:
+          claimName: stacking-encoders-proxy
+  ttlSecondsAfterFinished: 86400
+status:
+  completionTime: "2026-11-18T03:15:06Z"
+  conditions:
+  - lastProbeTime: "2026-11-18T03:15:06Z"
+    lastTransitionTime: "2026-11-18T03:15:06Z"
+    message: Reached expected number of succeeded pods
+    reason: CompletionsReached
+    status: "True"
+    type: SuccessCriteriaMet
+  - lastProbeTime: "2026-11-18T03:15:06Z"
+    lastTransitionTime: "2026-11-18T03:15:06Z"
+    message: Reached expected number of succeeded pods
+    reason: CompletionsReached
+    status: "True"
+    type: Complete
+  ready: 0
+  startTime: "2026-11-18T03:12:17Z"
+  succeeded: 1
+  terminating: 0
+  uncountedTerminatedPods: {}
