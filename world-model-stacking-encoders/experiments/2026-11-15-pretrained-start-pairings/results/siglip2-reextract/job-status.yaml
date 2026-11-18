@@ -1,0 +1,213 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    nrp.ai/username: http://cilogon.org/serverE/users/436081
+  creationTimestamp: "2026-11-18T03:15:48Z"
+  generation: 3
+  labels:
+    batch.kubernetes.io/controller-uid: caae46e9-e559-4b95-91e9-5194fd4f903c
+    batch.kubernetes.io/job-name: stacking-encoders-pairings-siglip2-reextract
+    controller-uid: caae46e9-e559-4b95-91e9-5194fd4f903c
+    job-name: stacking-encoders-pairings-siglip2-reextract
+  name: stacking-encoders-pairings-siglip2-reextract
+  namespace: aria-world
+  resourceVersion: "15567319171"
+  uid: caae46e9-e559-4b95-91e9-5194fd4f903c
+spec:
+  activeDeadlineSeconds: 57600
+  backoffLimit: 2
+  completionMode: Indexed
+  completions: 2
+  manualSelector: false
+  parallelism: 2
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes:
+        containerName: main
+        operator: In
+        values:
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 19
+  podReplacementPolicy: Failed
+  selector:
+    matchLabels:
+      batch.kubernetes.io/controller-uid: caae46e9-e559-4b95-91e9-5194fd4f903c
+  suspend: false
+  template:
+    metadata:
+      labels:
+        batch.kubernetes.io/controller-uid: caae46e9-e559-4b95-91e9-5194fd4f903c
+        batch.kubernetes.io/job-name: stacking-encoders-pairings-siglip2-reextract
+        controller-uid: caae46e9-e559-4b95-91e9-5194fd4f903c
+        job-name: stacking-encoders-pairings-siglip2-reextract
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-L4
+              - key: nvidia.com/cuda.driver.major
+                operator: Gt
+                values:
+                - "569"
+              - key: topology.kubernetes.io/region
+                operator: In
+                values:
+                - us-west
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                - k8s-chase-ci-07.calit2.optiputer.net
+                - ry-gpu-08.sdsc.optiputer.net
+      containers:
+      - args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; F=$R/feats; I=$JOB_COMPLETION_INDEX; mkdir -p $R/logs
+          exec > >(tee -a $R/logs/extract-siglip2-$I-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          echo "=== SigLIP 2 re-extraction (L4 only), shard $I/2, Job uid $JOB_UID, src $SRC_GIT_COMMIT"; date -u
+          [[ "$SRC_GIT_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "ABORT: SRC_GIT_COMMIT is not a 40-hex commit (not rendered?)"; exit 10; }
+          [ -n "$JOB_UID" ] || { echo "ABORT: the pod has no batch.kubernetes.io/controller-uid label"; exit 11; }
+          ( cd /src && sha256sum -c - <<'EOF'
+          42eb27b49051f5c7401e55c2730b3d4d3bf3371f28340b40317b8e87ccec66f0  extract_fastwam.py
+          f334c5604f319f779af6b70d06c0505f2c5df482c4531cb8b779b6894384683a  extract_features.py
+          81993810937d2692597d1d161e438f7688dc7809d0017628d9603ef1d196e363  fastwam_data.py
+          7af1f7aa2d595d9e0b7f1fb462f7901c6fa9594d2da7895b0168f0ef3ea2d70d  diagnostics.py
+          880c47cbe741b7fbcd98f44f85e7a1d14747d6c837e0493f4642e5ebbc18ace8  setup_env.sh
+          EOF
+          ) || { echo "ABORT: a /src key differs from the rendered hash (ConfigMap changed after the render, or no render)"; exit 19; }
+          S=$F/siglip2; M=$R/logs/siglip2-reextract-$JOB_UID
+          if compgen -G "$M-shard*.started" > /dev/null; then
+            echo "resume: a pod of this Job started before ($(ls $M-shard*.started | wc -l) marker(s)); its episodes in $S are skipped"
+          else
+            n=0; [ -d $S ] && n=$(find $S -mindepth 1 | wc -l)
+            if [ "$n" != 0 ]; then
+              echo "ABORT: $S holds $n entries and no pod of this Job has started: old cache files; run job-siglip2-delete.yaml first"
+              find $S -mindepth 1 | head -20; exit 12
+            fi
+            echo "fresh start: $S is empty or absent"
+          fi
+          touch $M-shard$I.started
+          nvidia-smi
+          nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv,noheader -l 30 | sed -u 's/^/[gpu] /' &
+          SMI=$!; trap 'kill $SMI 2>/dev/null || true' EXIT
+          bash /src/setup_env.sh
+          python -c "import sys, torch; ok = torch.cuda.is_available() and torch.cuda.get_device_name(0).split()[-1] == 'L4'; print('cuda', torch.cuda.is_available(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else '-'); sys.exit(0 if ok else 13)" || { echo "ABORT: no CUDA device or not an L4"; exit 13; }
+          for s in libero_spatial libero_object libero_goal libero_10; do
+            echo "=== $s shard $I/2"; date -u
+            python /src/extract_fastwam.py --root $R/data/lerobot_v30/${s}_no_noops_lerobot --suite $s \
+              --source siglip2 --out $F --shard $I/2 --dtype fp16 --batch 32 --device cuda
+          done
+          python -c "import glob, json, sys; fs = sorted(glob.glob('$S/*/_meta.shard${I}of2.json')); bad = [f for f in fs if json.load(open(f)).get('device') != 'cuda']; print('_meta device check:', len(fs), 'files,', len(bad), 'not cuda', bad); sys.exit(0 if len(fs) == 4 and not bad else 14)" || { echo "ABORT: a _meta file of this shard is missing or does not record device cuda"; exit 14; }
+          date -u; echo "=== done"
+        command:
+        - bash
+        - -c
+        env:
+        - name: SRC_GIT_COMMIT
+          value: 0c5d1586dd028447c388a2cdcd23efb30ac12cee
+        - name: JOB_UID
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.labels['batch.kubernetes.io/controller-uid']
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: HF_TOKEN
+              name: stacking-encoders-hf
+        - name: HF_HOME
+          value: /work/hf
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: OMP_NUM_THREADS
+          value: "3"
+        - name: MALLOC_ARENA_MAX
+          value: "2"
+        - name: PYTHONPATH
+          value: /src
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        imagePullPolicy: IfNotPresent
+        name: main
+        resources:
+          limits:
+            cpu: 3600m
+            ephemeral-storage: 34Gi
+            memory: 14400Mi
+            nvidia.com/gpu: "1"
+          requests:
+            cpu: "3"
+            ephemeral-storage: 30Gi
+            memory: 12Gi
+            nvidia.com/gpu: "1"
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /work
+          name: work
+        - mountPath: /src
+          name: src
+          readOnly: true
+        - mountPath: /mnt/proxy
+          name: proxy
+        - mountPath: /dev/shm
+          name: dshm
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir:
+          sizeLimit: 34Gi
+        name: work
+      - configMap:
+          defaultMode: 420
+          name: stacking-encoders-pairings-reextract-src
+        name: src
+      - name: proxy
+        persistentVolumeClaim:
+          claimName: stacking-encoders-proxy
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 2Gi
+        name: dshm
+  ttlSecondsAfterFinished: 86400
+status:
+  completedIndexes: 0,1
+  completionTime: "2026-11-18T12:32:56Z"
+  conditions:
+  - lastProbeTime: "2026-11-18T07:50:01Z"
+    lastTransitionTime: "2026-11-18T07:50:01Z"
+    message: Job resumed
+    reason: JobResumed
+    status: "False"
+    type: Suspended
+  - lastProbeTime: "2026-11-18T12:32:56Z"
+    lastTransitionTime: "2026-11-18T12:32:56Z"
+    message: Reached expected number of succeeded pods
+    reason: CompletionsReached
+    status: "True"
+    type: SuccessCriteriaMet
+  - lastProbeTime: "2026-11-18T12:32:57Z"
+    lastTransitionTime: "2026-11-18T12:32:57Z"
+    message: Reached expected number of succeeded pods
+    reason: CompletionsReached
+    status: "True"
+    type: Complete
+  failed: 1
+  ready: 0
+  startTime: "2026-11-18T07:50:01Z"
+  succeeded: 2
+  terminating: 0
+  uncountedTerminatedPods: {}

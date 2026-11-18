@@ -86,3 +86,21 @@ The lead's recommendation: leave it queued overnight; if still Pending in the mo
 **GPU-hours so far** (arithmetic from the container times): about 0.22 + 0.15 + 0.14 = 0.5 L4 GPU-hours.
 
 **Next:** in the morning read `<scratchpad>/siglip2-watch/live/events.log`. If the Job resumed and finished: RUN steps 7 to 9. If still suspended: tell the user, and ask before anything else (resuming by hand, or NRP support about `osd.231`). The earlier open question (dropping the us-west term if Pending is long) is still not approved.
+
+## 2026-11-18 [agent, lead, implementation] (SigLIP 2 re-extraction complete on L4s; Job and ConfigMap deleted; cache check and freshness check wait for the user's go)
+
+**Outcome** (verified; pod logs, `job-status.yaml`, `watcher-events.log` and the two `check15-*.txt` files in `results/siglip2-reextract/`): the Job reached `Complete` at 12:33 UTC (CompletionsReached, succeeded 2, failed 1, the 05:44 storage failure).
+- The watcher resumed the Job at 07:50:00 UTC after `OSD_FULL` and `POOL_FULL` had been off for 2 h (460 samples each). `status.startTime` became 07:50:01, so a resume does reset the deadline clock (verified; was "recalled" in the previous entry). The alarm has not come back: its only on-interval between 05:36 and 18:06 UTC is 05:46-05:49 (1-minute steps, 737 points).
+- Shard 0 (`...-0-p9mdk`, nautilus-it-gpu06.fullerton.edu, NVIDIA L4): container 08:18:29 to 09:46:40 UTC. `resume` path, five hash lines OK. libero_spatial "144 of 217 episodes already done" (411 s for the rest, 22.1 frames/s), libero_object 0 of 229 (1,449 s, 23.2), libero_goal 0 of 217 (1,136 s, 23.6), libero_10 0 of 194 (2,252 s, 23.2). `_meta device check: 4 files, 0 not cuda`, `=== done`.
+- Shard 1 (`...-1-rrbb4`, nautilus-it-gpu05.fullerton.edu, NVIDIA L4): Pending from 07:50 to 10:58; container 10:58:24 to 12:32:54 UTC. `resume` path, five hash lines OK. libero_spatial "82 of 217 episodes already done" (747 s, 22.2 frames/s), libero_object 0 of 228 (1,455 s, 23.2), libero_goal 0 of 216 (1,142 s, 22.9), libero_10 0 of 194 (2,288 s, 22.7). `_meta device check: 4 files, 0 not cuda`, `=== done`.
+- Episode counts per suite, both shards: 434, 457, 433, 388 = 1,712 (arithmetic from the "of n" lines), the expected counts. The "already done" numbers on libero_spatial are the episodes the first pods wrote before the failure and the suspend (expected for a resume; RUN step 6's "0 already done" applies to a first pass).
+- `[gpu]` samples (30 s): shard 0 mean 88.8% after the first 3 minutes, 17 of 171 samples under 40%; shard 1 mean 85.9%, 24 of 183 under 40% (single samples between episodes). The watcher's 15-minute checks: last-20-sample means 85% and 88%. No idle strike.
+- GPU-hours (arithmetic from container times): 0.22 + 0.15 + 0.14 (first three pods) + 1.47 + 1.58 = about 3.6 L4 GPU-hours, against the RUN estimate of 4 to 5. Rate 22 to 23.6 frames/s against the 21.1 basis.
+
+**RUN step 7 done:** logs saved by the watcher as each pod ended (both end with `=== done`); `kubectl delete job stacking-encoders-pairings-siglip2-reextract` and `kubectl delete configmap stacking-encoders-pairings-reextract-src` at about 18:06 UTC; no stacking Job or pod left. The watcher exited on its own at 12:33:35 UTC.
+
+**Deviation from the RUN file, as recorded before:** the Job was suspended and resumed once (not a RUN step), so the cache was written by five pods of one Job on two L4 nodes (gpu05, gpu06) instead of two pods.
+
+**Still on hold:** no Job may read `feats/siglip2` until RUN steps 8 (cache check, CPU) and 9 (freshness check, one L4 for about 10 minutes, SigLIP 2 expected bit-identical on all 8 episodes) pass. Both are new Jobs and wait for the user's go.
+
+**Next:** the user's go for steps 8 and 9.

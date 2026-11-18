@@ -1,0 +1,42 @@
+[extract     528s] ep 158: (158, 14, 28, 1152) (23.1 frames/s overall)
+[extract     535s] ep 160: (169, 14, 28, 1152) (23.1 frames/s overall)
+[extract     543s] ep 162: (168, 14, 28, 1152) (23.1 frames/s overall)
+[gpu] 2026/11/18 08:35:00.288, 100 %, 2146 MiB
+[extract     550s] ep 164: (158, 14, 28, 1152) (23.1 frames/s overall)
+[extract     556s] ep 166: (151, 14, 28, 1152) (23.1 frames/s overall)
+[extract     563s] ep 168: (157, 14, 28, 1152) (23.1 frames/s overall)
+[extract     570s] ep 170: (163, 14, 28, 1152) (23.1 frames/s overall)
+[gpu] 2026/11/18 08:35:30.288, 100 %, 2146 MiB
+[extract     576s] ep 172: (151, 14, 28, 1152) (23.1 frames/s overall)
+[extract     583s] ep 174: (153, 14, 28, 1152) (23.1 frames/s overall)
+[extract     590s] ep 176: (164, 14, 28, 1152) (23.1 frames/s overall)
+[extract     597s] ep 178: (157, 14, 28, 1152) (23.1 frames/s overall)
+[extract     603s] ep 180: (153, 14, 28, 1152) (23.1 frames/s overall)
+[gpu] 2026/11/18 08:36:00.290, 100 %, 2146 MiB
+[extract     610s] ep 182: (168, 14, 28, 1152) (23.1 frames/s overall)
+[extract     617s] ep 184: (145, 14, 28, 1152) (23.1 frames/s overall)
+[extract     625s] ep 186: (187, 14, 28, 1152) (23.1 frames/s overall)
+[extract     631s] ep 188: (162, 14, 28, 1152) (23.1 frames/s overall)
+[gpu] 2026/11/18 08:36:30.291, 99 %, 2146 MiB
+[extract     637s] ep 190: (138, 14, 28, 1152) (23.1 frames/s overall)
+[extract     643s] ep 192: (130, 14, 28, 1152) (23.1 frames/s overall)
+[extract     649s] ep 194: (144, 14, 28, 1152) (23.1 frames/s overall)
+[extract     655s] ep 196: (127, 14, 28, 1152) (23.1 frames/s overall)
+[extract     660s] ep 198: (123, 14, 28, 1152) (23.1 frames/s overall)
+[gpu] 2026/11/18 08:37:00.293, 0 %, 2146 MiB
+[extract     667s] ep 200: (125, 14, 28, 1152) (23.1 frames/s overall)
+[extract     672s] ep 202: (126, 14, 28, 1152) (23.1 frames/s overall)
+[extract     678s] ep 204: (138, 14, 28, 1152) (23.1 frames/s overall)
+[extract     684s] ep 206: (133, 14, 28, 1152) (23.1 frames/s overall)
+[extract     690s] ep 208: (146, 14, 28, 1152) (23.1 frames/s overall)
+[gpu] 2026/11/18 08:37:30.294, 55 %, 2146 MiB
+[extract     696s] ep 210: (144, 14, 28, 1152) (23.1 frames/s overall)
+[extract     702s] ep 212: (139, 14, 28, 1152) (23.1 frames/s overall)
+[extract     708s] ep 214: (135, 14, 28, 1152) (23.1 frames/s overall)
+[extract     715s] ep 216: (164, 14, 28, 1152) (23.1 frames/s overall)
+[extract     721s] ep 218: (150, 14, 28, 1152) (23.1 frames/s overall)
+[gpu] 2026/11/18 08:38:00.295, 100 %, 2146 MiB
+[extract     727s] ep 220: (139, 14, 28, 1152) (23.1 frames/s overall)
+[extract     733s] ep 222: (137, 14, 28, 1152) (23.1 frames/s overall)
+NAME                                                   CPU(cores)   MEMORY(bytes)   
+stacking-encoders-pairings-siglip2-reextract-0-p9mdk   1282m        8483Mi          
