@@ -1976,3 +1976,19 @@ On the user's go ("yep start it", then "ok, dispatch"), four workers wrote the s
 **PR:** #58 (`50f8bdf`). This entry and the PLAN and README status lines: direct (chore).
 
 **Next:** stage 3 design (fusion variants): ask the user which variants to test before writing anything. Implementation session: the `pairings_analysis.py` PR for (a) to (c), then the user's go there for the second volume and the sweep.
+
+## 2026-11-17 [agent, lead, planning] (later: second volume listed in the standards; correction, "Fast-WAM-style" is in liu2026what)
+
+**Goal of the session:** route two messages from peer sessions after a context reset. No planning work started.
+
+**Did:**
+- **Second volume listed (chore, branch `standards-08-runs-pvc`).** The experiment lead reported that the CephFS volume `stacking-encoders-runs` (1Ti, ReadWriteMany) was created on the user's go in that window and is Bound. Checked against the stage 2 `LOG.md` entry of 2026-11-18 and `experiments/2026-11-15-pretrained-start-pairings/jobs/pvc-runs.yaml` (verified by reading; not rechecked with `kubectl`). Added one line to `_standards/08-compute-nautilus.md` ("Our setup", PVCs) and one sentence to `STANDARDS.md` (checkpoint storage). The mount path `/mnt/runs` is the plan in PR #60 (open); no Job has mounted the volume.
+- **Correction to the 2026-11-17 planning entry above (verified).** That entry records, as verified by the literature session, that liu2026what "does not use the phrase 'Fast-WAM style'". That is wrong. The literature lead withdrew the claim (it had searched the arXiv HTML, where figure labels are images) after the presentations session pointed to Fig. 6(b). The lead checked the PDF text (`2610.13024v1.pdf`, sha256 `211c647a...2bf63024`, the user's downloaded copy, `pdftotext`): Fig. 6 on p15 labels panel (a) "Joint denoising / Default formulation", panel (b) "Direct prediction / Fast-WAM-style formulation", panel (c) "Video then action / Inverse dynamics (IDM)". App. B.1's body text says "Following the direct-prediction paradigm of Fast-WAM (Yuan et al., 2026)". So the paper does use "Fast-WAM-style", for its direct-prediction formulation, which is not its default; the default is joint video-action denoising. The other two corrections in that entry (Rectified Flows; the 48 latent channels) are not affected and were not rechecked here.
+- The lead had passed the wrong statement to the user in chat on 2026-11-17; corrected to the user in this session. Reply sent to the literature lead with the page and wording.
+- Project brief (Arbor) updated: PRs #54 to #57 merged, #59 and #60 open, the second volume, encoder revision pinning in progress (relayed from the experiment session's LOG, not rechecked).
+
+**Not done:** the stage 3 design (not started).
+
+**PR:** none. This entry and the two standards lines: direct (chore), on the user's merge OK.
+
+**Next:** stage 3 design (fusion variants): ask the user which variants to test before writing anything.
