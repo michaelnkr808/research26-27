@@ -1,0 +1,40 @@
+=== SigLIP 2 cache deletion: /mnt/proxy/feats/siglip2
+Wed Nov 18 03:13:55 UTC 2026
+--- before
+Filesystem                                                                                                                                                      Size  Used Avail Use% Mounted on
+csi-cephfs-node@90a5afad-c313-4e49-9b5f-317100c6930e.nautilusfs=/volumes/csi/csi-vol-9fc6b0fe-e947-4528-a5c5-c5e80fc7d70d/9f0765b7-9592-498f-ae6c-7f42cf4c5f62  1.0T  834G  191G  82% /mnt/proxy
+total 0
+drwxr-xr-x  9 root root    7 Oct 30 18:35 .
+drwxr-xr-x 16 root root   16 Nov  9 08:03 ..
+drwxr-xr-x  6 root root    4 Oct 30 00:55 c-radiov4
+drwxr-xr-x  6 root root    4 Oct 30 02:29 dinov3
+drwxr-xr-x  2 root root    4 Oct 29 08:45 meta
+drwxr-xr-x  6 root root    4 Oct 30 19:40 siglip2
+drwxr-xr-x  2 root root 1550 Oct 29 14:16 t5
+drwxr-xr-x  6 root root    4 Oct 29 14:51 vae
+drwxr-xr-x  6 root root    4 Oct 30 18:53 vae_b
+234G	/mnt/proxy/feats/siglip2
+listed 3432 entries to /mnt/proxy/logs/siglip2-delete-20261118-031355.list
+libero_spatial  episodes   434  stats   434  _meta   1  tmp   0
+libero_object   episodes   457  stats   457  _meta   1  tmp   0
+libero_goal     episodes   433  stats   433  _meta   1  tmp   0
+libero_10       episodes   388  stats   388  _meta   1  tmp   0
+files 3428, folders 4; deleting Wed Nov 18 03:13:56 UTC 2026
+--- after Wed Nov 18 03:15:02 UTC 2026
+Filesystem                                                                                                                                                      Size  Used Avail Use% Mounted on
+csi-cephfs-node@90a5afad-c313-4e49-9b5f-317100c6930e.nautilusfs=/volumes/csi/csi-vol-9fc6b0fe-e947-4528-a5c5-c5e80fc7d70d/9f0765b7-9592-498f-ae6c-7f42cf4c5f62  1.0T  606G  419G  60% /mnt/proxy
+total 0
+drwxr-xr-x  9 root root    7 Oct 30 18:35 .
+drwxr-xr-x 16 root root   16 Nov  9 08:03 ..
+drwxr-xr-x  6 root root    4 Oct 30 00:55 c-radiov4
+drwxr-xr-x  6 root root    4 Oct 30 02:29 dinov3
+drwxr-xr-x  2 root root    4 Oct 29 08:45 meta
+drwxr-xr-x  2 root root    0 Nov 18 03:15 siglip2
+drwxr-xr-x  2 root root 1550 Oct 29 14:16 t5
+drwxr-xr-x  6 root root    4 Oct 29 14:51 vae
+drwxr-xr-x  6 root root    4 Oct 30 18:53 vae_b
+total 0
+drwxr-xr-x 2 root root 0 Nov 18 03:15 .
+drwxr-xr-x 9 root root 7 Oct 30 18:35 ..
+=== deleted: /mnt/proxy/feats/siglip2 is empty
+Wed Nov 18 03:15:02 UTC 2026

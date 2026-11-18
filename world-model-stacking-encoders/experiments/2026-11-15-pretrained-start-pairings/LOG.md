@@ -43,3 +43,14 @@ On the user's "merge": PR #54 (cache pre-check, merge `a26f64a`), #55 (feature p
 **Reading** (speculative, not verified per episode): the pins load the cache's weights; the DINOv3 and C-RADIOv4 bit-identity shows the pipeline is exact on an L4. The SigLIP 2 mismatches fit card-to-card fp16 numerics: SigLIP 2 try 1 wrote "all of libero_spatial and part of libero_object" on an RTX 5000 Ada (direction `LOG.md` 2026-10-29 (h), line 681), and later tries ran on other cards (RUN tolerance item 1). That does not explain why spatial 276 is bit-equal. Which card wrote each episode is not recorded in the cache. A weight change would give cosines far below these. Per the RUN file, a result past a bar is a stop for the user: no bar changed, no rerun.
 
 **Next:** the user decides between accepting the SigLIP 2 card-numerics gap and re-extracting the SigLIP 2 cache on L4s.
+
+## 2026-11-18 [agent, lead, implementation] (SigLIP 2 cache deleted; L4 re-extraction submitted, Pending)
+
+On the user's choice ("yeah option 1", then "merge" for PR #62, merged as `0c5d158`), following `jobs/RUN-siglip2-reextract.md`:
+- Step 1: no stacking Job or pod running. Steps 2-3: `$C` = `0c5d1586dd028447c388a2cdcd23efb30ac12cee`. ConfigMap `stacking-encoders-pairings-reextract-src`: 5 keys read back equal to `$C`, and the SigLIP 2 pin is present. Rendered `jobs/rendered/job-siglip2-reextract.yaml` (commit 1, no unfilled placeholder outside comments, 5 hashes).
+- Step 4, deletion (verified, `results/siglip2-reextract/stacking-encoders-pairings-siglip2-delete-f4bnk.log`, `delete-job-status.yaml`): created 03:12:17 UTC, ran 03:13:55 to 03:15:02 UTC, exit 0. Listed 3,432 entries (`/mnt/proxy/logs/siglip2-delete-20261118-031355.list`): libero_spatial 434 episodes and 434 stats, libero_object 457 and 457, libero_goal 433 and 433, libero_10 388 and 388, one `_meta` each, no tmp. The cache was 234G. `/mnt/proxy` went from 834G used / 191G free to 606G / 419G. c-radiov4, dinov3, meta, t5, vae and vae_b are still listed. Ends `=== deleted: /mnt/proxy/feats/siglip2 is empty`. Job deleted.
+- Step 5, extraction: `stacking-encoders-pairings-siglip2-reextract` (2 shards, L4 only) created 03:15:49 UTC. At 03:34 UTC both pods are **Pending** with no events (scheduler queue; L4 + us-west + driver > 569 is a narrow set, see the memory note on L4 queues).
+
+**Until the freshness check passes**, no Job may read `feats/siglip2`: the `siglip2` and `dinov3+siglip2` stage 2 configurations are on hold (RUN step 1).
+
+**Next (handoff):** once the pods start, a GPU check about 15 min in (RUN step 6). On completion, save the logs and delete the Job and ConfigMap (step 7). Then the cache check (step 8) and the freshness check rendered to a new file (step 9), with SigLIP 2 expected bit-identical on all 8 episodes. If it is still Pending after several hours, ask the user before widening the card set: widening would break the L4-only point of this re-extraction.
