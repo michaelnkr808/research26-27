@@ -62,3 +62,27 @@ At 04:52 UTC (about 96 min after creation) both pods of `stacking-encoders-pairi
 The lead's recommendation: leave it queued overnight; if still Pending in the morning, drop only the us-west term and keep L4-only (keeps the same-card-type point; cost: cross-region CephFS reads/writes, possibly slower). The user: "okay sure lets leave it queued overnight". The widening is **not approved**; ask again in the morning if still Pending.
 
 **Next:** one check in the morning. If running, RUN step 6 (GPU check about 15 min in). If still Pending, ask the user about dropping the us-west term.
+
+## 2026-11-18 [agent, lead, implementation] (SigLIP 2 re-extraction: shard 0 failed on a full NRP Ceph disk; Job suspended; overnight watcher started)
+
+**What happened** (verified unless marked; pod logs in `results/siglip2-reextract/`, Ceph numbers from the public Prometheus, namespace `rook`):
+- Shard 0 (`...-0-4wr4x`) got nautilus-it-gpu05.fullerton.edu (NVIDIA L4) after about 2 h 15 min Pending; container 05:31:05 to 05:44:33 UTC. Five hash lines OK, `fresh start`, 22.6 frames/s overall, `[gpu]` samples mostly 100%. It wrote the even episodes of libero_spatial up to ep 286, then exit 1: `tee: /mnt/proxy/logs/extract-siglip2-0-20261118-053105.log: No space left on device` and `PermissionError: [Errno 13]` opening `.ep000288.stats.npy.tmp`.
+- The PVC is not full: `df` at 05:49 UTC shows 615G used, 410G free of 1.0T; `feats/siglip2` 15G.
+- Cause (verified from the alarm history; the link to our ENOSPC is the lead's reading): NRP's main Ceph cluster has one disk at its full line. `osd.231` used fraction 0.9496 to 0.9500 over the last 8 h; `OSD_FULL` (HEALTH_ERR) and `POOL_FULL` were on at 23:43-23:51, 23:59-00:30 (several stretches), 00:42-01:30 (several), 01:43-01:44, 02:40-02:41, 05:28-05:31 and 05:46-05:49 UTC (1-minute steps); off all of 2026-11-17 before 23:43. Pool `nautilusfs-data0`: `percent_used` 0.969, `max_avail` 37.6 TB, so the pool as a whole has room. Next four disks: 0.9315, 0.9305, 0.9262, 0.9232.
+- Kubernetes started a retry for shard 0 (`...-0-pzr5h`, gpu06, 05:49:05) and shard 1 got gpu05 (`...-1-q4h6t`, 05:49:44). The retry was still downloading the SigLIP 2 weights (1.9 GB `.incomplete` at 05:56; no episode yet, GPU 0%). Shard 1 ran at 21.5 frames/s with `[gpu]` at 100% and reached ep 163.
+- State of the folder before the suspend (one `ls` through the shard 1 pod): no `ep000288` file, no `*.tmp` file, 217 stats files. A loop meant to list episodes without a stats file printed nothing, but its shell quoting was not checked, so pairing is **not verified** here; the cache check (RUN step 8) covers it.
+
+**Decision.** The lead told the user the options (keep running with two failures left before the Job dies and a restart needs a new deletion; suspend and resume when the storage alarm has stayed off) and recommended suspending. The user: "yeah do what you think is best". Suspending is not a step of `jobs/RUN-siglip2-reextract.md` (its rule for a pod failure is stop and ask; the user was asked).
+
+**Done:**
+- Logs of all three pods and the Job status saved first (`results/siglip2-reextract/`, `job-status-before-suspend.yaml`).
+- `kubectl patch job stacking-encoders-pairings-siglip2-reextract --type=merge -p '{"spec":{"suspend":true}}'`: condition `Suspended` since 05:58:00 UTC, `failed` 1, both running pods removed, the failed pod kept. The Job keeps its uid, so resumed pods take the guard's `resume` path and skip finished episodes. Recalled (Kubernetes docs, not tested here): a resume resets `startTime`, so the 16 h deadline restarts.
+- Watcher `results/siglip2-reextract/watch_siglip2.py` (copy; it runs from the session scratchpad under `caffeinate`, pid 16009, started 05:59:52 UTC, status and events in `<scratchpad>/siglip2-watch/live/`). Rules: every 10 min ask Prometheus whether `OSD_FULL` or `POOL_FULL` was on in the last 2 h (no or thin data counts as not clear); when both were off for 2 h, set `suspend=false` (at most 4 resumes). After a resume, every 5 min: save the log of any finished pod; a filtered log and `kubectl top` 15 min after a pod starts; suspend again on a new pod failure, on an alarm in the last 10 min, or on a pod's `[gpu]` mean under 40% over 10 min on two checks after its first 30 min (the RUN stop rule says delete; the watcher suspends instead and stops). On Complete or Failed it saves logs and `job-status.yaml` and exits. It never deletes anything. If kubectl hangs (expired login) it stops calling kubectl for an hour and logs it. Both paths were dry-run once before the start.
+
+**Mistake to record:** a diagnostic `kubectl exec ... env | grep HF` printed the Hugging Face token into this session's transcript. It was not written to any file (the committed logs were grepped for it).
+
+**For planning (not acted on):** `stacking-encoders-runs` is on the same CephFS (`nautilusfs`), so stage 2 training writes would hit the same refusals while the alarm flaps.
+
+**GPU-hours so far** (arithmetic from the container times): about 0.22 + 0.15 + 0.14 = 0.5 L4 GPU-hours.
+
+**Next:** in the morning read `<scratchpad>/siglip2-watch/live/events.log`. If the Job resumed and finished: RUN steps 7 to 9. If still suspended: tell the user, and ask before anything else (resuming by hand, or NRP support about `osd.231`). The earlier open question (dropping the us-west term if Pending is long) is still not approved.
