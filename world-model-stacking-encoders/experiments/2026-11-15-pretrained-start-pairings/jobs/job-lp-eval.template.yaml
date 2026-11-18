@@ -1,0 +1,259 @@
+# STAGE 2 LIBERO-PLUS EVALUATION TEMPLATE, one Indexed Job of NSHARDS shards per checkpoint, on L4 (PLAN Evaluation, "Then
+# LIBERO-Plus": all 10,030 episodes under each of eval seeds 41, 42, 43 = 30,090 rollouts per checkpoint, paper App. E.3;
+# Comparison statistic "Coverage": episodes that raise are rerun; Open item d answered D1 in D2's order).
+# NOT SUBMITTED. Render with jobs/render.sh lp <config> <seed> --lp-rate R --shards N --parallel P (RUN-stage2-eval.md), only after
+#   the LIBERO-Plus timing shard (job-smoke, LP_TIMING=1) has given R, and only for a checkpoint whose clean evaluation is done
+#   and gated (G1). Never submit this file.
+# HOW THE PROXY RAN IT, CARRIED OVER (../../2026-10-27-proxy-calibration/jobs/rendered/job-eval-dinov3-s1-l4.yaml, which completed
+#   the full benchmark for dinov3 seed 1 on L4 pods, proxy LOG 2026-11-07): the episode list is the committed
+#   ../../2026-10-27-proxy-calibration/results/full-benchmark/full-subset.json (10,030 episodes, subset_id 91072e5da8499c99,
+#   sha256 9f4baa42...7b2), shipped gzipped in a ConfigMap (2.1 MB as JSON is over the 1 MiB ConfigMap limit) mounted at
+#   /subset; the pod gunzips it and checks the sha256 (here exit 21 on a mismatch). rollout.py run --subset <it> with the
+#   default eval seeds 41,42,43 (written out here), --order-seed 0 (the proxy's shuffle: categories differ in CPU cost per step,
+#   so a seeded shuffle spreads them over the shards; LOG 2026-11-05), --envs, --cuda-graph, --shard i/n; one records file per
+#   shard. Differences from the proxy: --clean 0 (clean LIBERO is its own Job here, the proxy added one clean trial per task),
+#   stage 1's pins and exit trap, the ConfigMap is new (stacking-encoders-pairings-lp-subset, RUN-stage2-eval.md step 3), and
+#   backoffLimitPerIndex instead of one shared backoffLimit.
+# RETRIES (PR #60 review item 1): backoffLimitPerIndex 2 per shard and maxFailedIndexes = NSHARDS, so a shard that fails 3 times
+#   is marked failed while the other shards run to the end (stage 1's clean Job used maxFailedIndexes 0, fine for 4 short
+#   shards; here 16 long ones would all be killed). The Job then ends Failed (reason FailedIndexes) once every index is done;
+#   status.failedIndexes names the bad shards. A resubmit of the same rendered file (same EVAL_TRY) reruns every index, but a
+#   shard whose records file is already complete (no .errors.jsonl, unique job keys >= its job count) exits 0 before the model hash,
+#   restore and load ("COMPLETE:"), so only the unfinished shards cost GPU time. podFailurePolicy FailJob on this script's own
+#   deterministic codes still ends the whole Job at once: those are pin or render errors that every shard would hit.
+# SHARDS: NSHARDS indexes, PARALLEL pods at once (the 8-GPU cap counts them with the training pods; the lead may raise
+#   parallelism later with `kubectl patch job ... spec.parallelism`, as the proxy did). Shard i runs jobs[i::NSHARDS] of the
+#   shuffled list (about 30,090 / NSHARDS rollouts). NSHARDS and --order-seed must stay the same for every pod and every resume
+#   of one checkpoint's evaluation (rollout.py check_resume refuses a file written under other settings).
+# RECORDS: /mnt/proxy/rollouts/pairings/<CFGK>-s<SEED>/lp-shard<i>of<NSHARDS>-try<EVAL_TRY>.jsonl, one writer per file. Records
+#   (they hold outcomes) are printed into the pod log only on exit 0; a failed pod's log shows the header and the errors file.
+# DEADLINES (stage 1's rule, as the clean template): ROLLOUT_CAP_S = 2 x ceil(30,090 / NSHARDS) / R x 3,600 s, R = the upper-bound
+#   LIBERO-Plus rate from the timing shard (timing-only episodes per pod-hour, weighted by cell size; RUN-stage2-eval.md). Pod
+#   activeDeadlineSeconds = 1,800 + cap + 120 rounded up to 600 s; Job activeDeadlineSeconds = 20 h + (ceil(NSHARDS / PARALLEL)
+#   + 2) pod deadlines, rounded up to the hour. render.sh refuses to render without R.
+# GPU USE: as the clean evaluation; long pods (several hours each) fall under the portal's 3 h trailing-average checks, so the
+#   15-minute check and the 3 h check in RUN-stage2-eval.md read the in-pod sampler and, where DCGM exports, Prometheus.
+# COMMON TO THE THREE EVALUATION TEMPLATES (job-smoke, job-clean-eval, job-lp-eval):
+#   On NVIDIA L4 only (PLAN Evaluation: a move off L4 is a stop for the user), us-west, driver > 569, the two host exclusions; no
+#   named resources, no tolerations, no priority class. restartPolicy Never; podFailurePolicy FailJob only on this script's own
+#   deterministic codes (2 argparse, 10 not rendered, 13 model.pt hash pin, 15 model.pt missing, 19 /src hash pin, 21 a pinned
+#   input file differs: the LIBERO-Plus episode list or task_classification.json), Ignore on DisruptionTarget; everything else
+#   (1, 16 timeouts, 137, node loss) is retried and resumes from the records file (rollout.py done_keys / check_resume).
+#   Code: ConfigMap stacking-encoders-pairings-eval-src, the same 11 keys as stage 1's stacking-encoders-baseline-eval-src
+#   (rollout.py's import chain plus the three env-bundle scripts), created from the stage 2 source commit; the 11 sha256 are
+#   rendered into the heredoc (exit 19 on a mismatch). The env bundle key must print 9182f8131559 (stage 1's bundle,
+#   /mnt/proxy/env/env-9182f8131559.tar; rollout.py, setup_env.sh, setup_sim.sh and env_bundle.sh are unchanged since stage 1's
+#   commit, git log 2026-11-17).
+#   Checkpoint pin: EXPECT_MODEL_SHA is rendered from the training pod's "=== MODEL" line (none seed 0: stage 1's
+#   b25e63e61d6297d523eb75f9e334f179e5faac58c06aaa81da92d4ca3fcdc732, stage 1 LOG line 152); the pod hashes model.pt and
+#   aborts (13) on a difference.
+#   Encoder configs need the encoder weights from Hugging Face at pod start (rollout.Featurizer, extract_features loaders; DINOv3
+#   is gated): the HF_TOKEN env from Secret stacking-encoders-hf, as every proxy rollout Job used (job-rollout.template.yaml). The
+#   lines tagged @HFTOKEN are deleted by render.sh for config none (stage 1 mounted no secret: only the Wan VAE file is read).
+#   Inputs as stage 1 (job-clean-eval.yaml header): --t5 /mnt/proxy/feats/t5, --vae-path /mnt/proxy/models/Wan2.2_VAE.safetensors,
+#   --tasks /mnt/proxy/lp_tasks.json; the checkpoint from RUN_DIR (on stacking-encoders-proxy, or on the second volume, mounted
+#   read-only at /mnt/runs when render.sh is given --runs-pvc; the lines tagged @RUNSVOL).
+#   Sizing: stage 1's L4 values, which ran this model for none (CPU 4 / 4800m, memory 28Gi / 33Gi, ephemeral 50Gi / 58Gi, /work
+#   58Gi, /dev/shm 4Gi; limits within 1.2x). Encoder configs add the encoders on the GPU and their Hugging Face files in /work/hf
+#   (a few GB; recalled sizes), not host working set beyond a load; the smoke prints memory.peak and anon, and GPU memory per
+#   [gpu] sample, so the first smoke of each config shows whether the L4 holds the model plus the encoders. A CUDA
+#   out-of-memory there is a stop for the user (PLAN: no move off L4 without the user; fewer environments or CUDA_GRAPH 0 are
+#   re-renders the lead can propose).
+#   GPU use (STANDARDS.md line 48; _standards/08 GPU section): stage 1's 4 environments gave 89% in the rollout phase for none
+#   (stage 1 LOG 2026-11-16) and about 50-100% per 30 s sample in the clean evaluation. ENVS is rendered per config from its
+#   smoke: raise it until the 10-minute GPU windows are at or above 40%, otherwise stop for the user (stage 1 rule, PLAN
+#   Compute "Idle GPUs").
+# Exit codes: as the clean template, plus 21 (the gunzipped episode list differs from the committed one). Table: RUN-stage2-eval.md.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-pairings-lp-__CFGK__-s__SEED__
+  namespace: aria-world
+  labels: {experiment: stacking-pairings, kind: lp-eval, config: __CFGK__, seed: "__SEED__"}
+spec:
+  completionMode: Indexed
+  completions: __NSHARDS__
+  parallelism: __PARALLEL__
+  backoffLimitPerIndex: 2
+  maxFailedIndexes: __NSHARDS__   # one shard that keeps failing must not stop the others (PR #60 review item 1)
+  activeDeadlineSeconds: __JOB_DEADLINE_S__
+  ttlSecondsAfterFinished: 86400
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes:
+        containerName: main
+        operator: In
+        values: [2, 10, 13, 15, 19, 21]
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+        status: "True"
+  template:
+    metadata:
+      labels: {experiment: stacking-pairings, kind: lp-eval, config: __CFGK__, seed: "__SEED__"}
+    spec:
+      restartPolicy: Never
+      activeDeadlineSeconds: __POD_DEADLINE_S__
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-L4]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net, ry-gpu-08.sdsc.optiputer.net]}  # GPU faults, 2026-11-03
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          SMI=""; DECLARED=0
+          fail() { DECLARED=1; exit $1; }
+          R=/mnt/proxy; TAG=pairings-lp-$CFGK-s$SEED-shard${SHARD}of${NSHARDS}-try$EVAL_TRY; D=$(date +%Y%m%d-%H%M%S)
+          RUN=$RUN_DIR
+          ROLL=$R/rollouts/pairings/$CFGK-s$SEED
+          OUT=$ROLL/lp-shard${SHARD}of${NSHARDS}-try$EVAL_TRY.jsonl
+          LOG=$R/logs/$TAG-$D.log; GPUCSV=$R/logs/$TAG-gpu-$D.csv
+          mkdir -p $R/logs $ROLL
+          exec > >(tee -a $LOG) 2>&1
+          TEE=$!
+          : > $GPUCSV
+          phase() { echo "=== PHASE $1 $(date -u +%H:%M:%S)"; echo "#phase $1" >> $GPUCSV; }
+          finish() {
+            rc=$?; set +e
+            case $rc in 2|10|13|15|19|21) [ "$DECLARED" = 1 ] || { echo "[exit] code $rc came from a tool, not a decision of this script; reporting 1"; rc=1; } ;; esac
+            [ -n "$SMI" ] && { kill $SMI 2>/dev/null; wait $SMI 2>/dev/null; }
+            echo "#phase end" >> $GPUCSV
+            awk -F', ' 'BEGIN{p="start"} /^#phase/{p=$0; sub(/^#phase /,"",p); next} {v=$2; sub(/ %/,"",v); s[p]+=v; n[p]++; S+=v; N++} END{for(k in n) printf "[gpu-summary] %s: %d samples, mean %.1f%%\n", k, n[k], s[k]/n[k]; if(N) printf "[gpu-summary] all: %d samples, mean %.1f%%\n", N, S/N}' $GPUCSV
+            echo "[cgroup] memory.peak $(cat /sys/fs/cgroup/memory.peak 2>/dev/null || echo n/a) bytes, memory.current $(cat /sys/fs/cgroup/memory.current 2>/dev/null || echo n/a) bytes"
+            echo "[cgroup] $(grep -E '^anon ' /sys/fs/cgroup/memory.stat 2>/dev/null || echo 'anon n/a') (bytes, at exit); $(grep -E '^file ' /sys/fs/cgroup/memory.stat 2>/dev/null || echo 'file n/a') (page cache)"
+            for f in $OUT $OUT.errors.jsonl; do
+              if [ -f $f ]; then
+                echo "=== FILE $(basename $f) sha256 $(sha256sum < $f | cut -d' ' -f1) bytes $(stat -c %s $f) lines $(wc -l < $f)"
+                # the records body (it holds test outcomes) is printed only on exit 0; a failed pod's log shows the header only (PR #48 review S1)
+                if [ "$f" = "$OUT.errors.jsonl" ] || [ $rc = 0 ]; then cat $f; else echo "(records body not printed: pod exit $rc; the file is on the PVC at $f)"; fi
+                echo "=== END $(basename $f)"
+              fi
+            done
+            if [ -f $OUT.errors.jsonl ]; then echo "[errors] $(basename $OUT).errors.jsonl EXISTS: read it before any outcome"; else echo "[errors] no .errors.jsonl for this shard"; fi
+            date -u; echo "=== exit $rc"
+            exec 1>&- 2>&-; wait $TEE 2>/dev/null
+            exit $rc
+          }
+          trap finish EXIT
+          echo "=== STAGE 2 LIBERO-PLUS EVALUATION (test-set use): config $CONFIG seed $SEED, shard ${SHARD}/${NSHARDS} of the 30,090 rollouts (10,030 episodes x eval seeds 41, 42, 43), checkpoint $RUN/model.pt -> $OUT"; date -u
+          echo "SRC_GIT_COMMIT=$SRC_GIT_COMMIT SHARD=$SHARD NSHARDS=$NSHARDS EVAL_TRY=$EVAL_TRY ENVS=$ENVS CUDA_GRAPH=$CUDA_GRAPH ROLLOUT_CAP_S=$ROLLOUT_CAP_S"
+          [[ "$SRC_GIT_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "ABORT: SRC_GIT_COMMIT is not a 40-hex commit (not filled at submit?)"; fail 10; }
+          [[ "$EXPECT_MODEL_SHA" =~ ^[0-9a-f]{64}$ ]] || { echo "ABORT: EXPECT_MODEL_SHA is not a sha256 (not rendered from the training log's === MODEL line?)"; fail 13; }
+          [[ "$SHARD" =~ ^[0-9]+$ && "$NSHARDS" =~ ^[0-9]+$ && "$SHARD" -lt "$NSHARDS" ]] || { echo "ABORT: SHARD '$SHARD' is not an index of NSHARDS '$NSHARDS'"; exit 1; }
+          [[ "$SEED" =~ ^[0-9]+$ && -n "$CONFIG" && "$CFGK" = "$(echo "$CONFIG" | tr '+' '-')" ]] || { echo "ABORT: CONFIG '$CONFIG' / CFGK '$CFGK' / SEED '$SEED' not rendered consistently"; fail 10; }
+          echo "/src = ConfigMap stacking-encoders-pairings-eval-src; checking its 11 keys against the hashes rendered into this manifest (RUN-stage2-eval.md step 4):"
+          ( cd /src && sha256sum -c - <<'EOF'
+          FILL_SHA_rollout.py  rollout.py
+          FILL_SHA_lp_eval.py  lp_eval.py
+          FILL_SHA_proxy_wam.py  proxy_wam.py
+          FILL_SHA_t5_cache.py  t5_cache.py
+          FILL_SHA_diagnostics.py  diagnostics.py
+          FILL_SHA_extract_fastwam.py  extract_fastwam.py
+          FILL_SHA_extract_features.py  extract_features.py
+          FILL_SHA_fastwam_data.py  fastwam_data.py
+          FILL_SHA_setup_env.sh  setup_env.sh
+          FILL_SHA_setup_sim.sh  setup_sim.sh
+          FILL_SHA_env_bundle.sh  env_bundle.sh
+          EOF
+          ) || { echo "ABORT: a /src key differs from the hash rendered at submit (the ConfigMap changed after the render, or the render did not run)"; fail 19; }
+          echo "env bundle key: $(cat /src/setup_env.sh /src/setup_sim.sh /src/env_bundle.sh | sha256sum | cut -c1-12) (the prebuilt bundle is 9182f8131559)"
+          [ -f $RUN/model.pt ] || { echo "ABORT: $RUN/model.pt is missing (did the training Job succeed? is RUN_DIR right?)"; fail 15; }
+          ls -la $RUN/model.pt
+          if [ -e $OUT ]; then echo "MODE: resume (records file exists, $(wc -l < $OUT) lines already)"; else echo "MODE: fresh"; fi
+          EXP=$(( (30090 - SHARD + NSHARDS - 1) / NSHARDS ))   # jobs[SHARD::NSHARDS] of the 30,090
+          # unique job keys (rollout.py job_key: benchmark, suite, episode_id, eval_seed), so a duplicated line cannot count twice;
+          # an unreadable line makes the count 0 and the shard runs normally (rollout.py then resumes or refuses the file)
+          NKEYS=0
+          if [ -f $OUT ]; then
+            NKEYS=$(python3 -c 'import json, sys; print(len({(r["benchmark"], r["suite"], int(r["episode_id"]), int(r["eval_seed"])) for r in (json.loads(x) for x in open(sys.argv[1]) if x.strip())}))' $OUT 2>/dev/null || echo 0)
+          fi
+          if [ -f $OUT ] && [ ! -f $OUT.errors.jsonl ] && [ "$NKEYS" -ge "$EXP" ]; then
+            echo "COMPLETE: $OUT already holds $NKEYS unique job keys of $EXP; nothing to run (a resubmit after another shard failed)"; exit 0
+          fi
+          nvidia-smi || { echo "ABORT: nvidia-smi failed (a faulty GPU node; retryable)"; exit 1; }
+          nproc; df -h $R /work
+          phase model-sha
+          MSHA=$(timeout --kill-after=60 900 sha256sum $RUN/model.pt) || { echo "ABORT: model.pt sha256 failed or timed out (900 s)"; exit 16; }
+          echo "=== MODEL $MSHA"
+          [ "${MSHA%% *}" = "$EXPECT_MODEL_SHA" ] || { echo "ABORT: model.pt sha256 ${MSHA%% *} differs from the pinned $EXPECT_MODEL_SHA (the training log's === MODEL line)"; fail 13; }
+          echo "model.pt sha256 equals the pinned value"
+          nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv,noheader -l 30 > >(tee -a $GPUCSV | sed -u 's/^/[gpu] /') &
+          SMI=$!
+          gunzip -c /subset/full-subset.json.gz > /work/full-subset.json || { echo "ABORT: gunzip of the subset ConfigMap failed"; fail 21; }
+          echo "9f4baa42a971bdfad148e19629c08ce74443aa4f2fe0b1512b512ec4649177b2  /work/full-subset.json" | sha256sum -c - || { echo "ABORT: full-subset.json differs from the committed episode list (subset_id 91072e5da8499c99)"; fail 21; }
+          phase restore
+          . /src/env_bundle.sh restore    # as the smoke and the proxy's rollout Jobs; sourced, so it cannot be wrapped in `timeout`; a failure exits via set -e
+          GRAPH=""; [ "$CUDA_GRAPH" = 1 ] && GRAPH="--cuda-graph"
+          COMMON="--run-dir $RUN --t5 $R/feats/t5 --vae-path $R/models/Wan2.2_VAE.safetensors --tasks $R/lp_tasks.json --subset /work/full-subset.json --eval-seeds 41,42,43 --clean 0 --order-seed 0 $GRAPH --monitor-s 600 --shard $SHARD/$NSHARDS"
+          phase rollout-envs$ENVS
+          echo "FLAGS: python /src/rollout.py run $COMMON --envs $ENVS --out $OUT"
+          T1=$SECONDS; rc=0
+          timeout --kill-after=60 $ROLLOUT_CAP_S python /src/rollout.py run $COMMON --envs $ENVS --out $OUT 2>&1 | sed "/using task orders/d" || rc=$?
+          case $rc in
+            0) ;;
+            2) echo "ABORT: rollout.py exited 2 (argparse: a bad flag, deterministic)"; fail 2 ;;
+            124) echo "ABORT: the rollout pass hit its $ROLLOUT_CAP_S s cap (records so far are in the file; a retry resumes)"; exit 16 ;;
+            137) if [ $(( SECONDS - T1 )) -ge $ROLLOUT_CAP_S ]; then echo "ABORT: the rollout pass hit its $ROLLOUT_CAP_S s cap (killed after the grace; a retry resumes)"; exit 16; fi; exit 137 ;;
+            *) exit $rc ;;
+          esac
+          echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}
+        - {name: EXPECT_MODEL_SHA, value: __MODEL_SHA__}   # the training pod's "=== MODEL" sha256 of model.pt, rendered
+        - {name: CONFIG, value: "__CFG__"}
+        - {name: CFGK, value: "__CFGK__"}
+        - {name: SEED, value: "__SEED__"}
+        - {name: RUN_DIR, value: "__RUN_DIR__"}       # the training Job's out folder (none seed 0: stage 1's baseline-none-s0)
+        - name: HF_TOKEN                              # @HFTOKEN encoder weights from Hugging Face (DINOv3 is gated); not rendered for none
+          valueFrom:                                  # @HFTOKEN
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}   # @HFTOKEN
+        - name: SHARD
+          valueFrom:
+            fieldRef: {fieldPath: "metadata.annotations['batch.kubernetes.io/job-completion-index']"}
+        - {name: NSHARDS, value: "__NSHARDS__"}   # equals spec.completions
+        - {name: EVAL_TRY, value: "__TRY__"}   # names the records files; a new value starts over (render.sh --try)
+        - {name: ENVS, value: "__ENVS__"}      # from this config's smoke (stage 1 rule: raise until GPU >= 40%); none: 4
+        - {name: CUDA_GRAPH, value: "1"}
+        - {name: ROLLOUT_CAP_S, value: "__ROLLOUT_CAP_S__"}   # 2 x the timing-only upper bound per shard (header)
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: /src}
+        - {name: SIM_DIR, value: /work/sim}
+        - {name: MUJOCO_GL, value: egl}
+        - {name: PYOPENGL_PLATFORM, value: egl}
+        - {name: NVIDIA_DRIVER_CAPABILITIES, value: "compute,utility,graphics"}
+        resources:                    # the smoke's values (it ran this model on an L4); limits <= 1.2x requests; header
+          requests: {cpu: "4", memory: 28Gi, nvidia.com/gpu: "1", ephemeral-storage: 50Gi}
+          limits:   {cpu: "4800m", memory: 33Gi, nvidia.com/gpu: "1", ephemeral-storage: 58Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+        - {name: subset, mountPath: /subset, readOnly: true}
+        - {name: runs, mountPath: /mnt/runs, readOnly: true}   # @RUNSVOL (kept only when a second volume is rendered)
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 58Gi}   # pip, LIBERO-Plus + unzipped assets (the bundle)
+      - name: src
+        configMap: {name: stacking-encoders-pairings-eval-src}
+      - name: subset
+        configMap: {name: stacking-encoders-pairings-lp-subset}   # full-subset.json.gz (RUN-stage2-eval.md step 3)
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 4Gi}
+      - name: runs                                              # @RUNSVOL
+        persistentVolumeClaim: {claimName: __RUNS_PVC__, readOnly: true}   # @RUNSVOL
