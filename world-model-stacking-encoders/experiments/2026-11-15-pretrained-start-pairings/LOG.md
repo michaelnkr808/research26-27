@@ -17,3 +17,11 @@ Job and ConfigMap deleted after the log was saved. Nothing on the PVC was writte
 ## 2026-11-17 [agent, lead, implementation] (stage 2 code merged, PRs #54-#57)
 
 On the user's "merge": PR #54 (cache pre-check, merge `a26f64a`), #55 (feature parity and the frame-resize gap test, `397f95e`), #56 (`pairings_analysis.py`, `cdd7941`) and #57 (training tests with sources and none invariance, `be174b0`). Worker worktrees and branches removed. The three rule answers are still flagged "pending the user" in `pairings_analysis.py` until planning's amendment (PR #58) merges and the script is updated by PR.
+
+## 2026-11-18 [agent, lead, implementation] (second volume created; encoder pinning dispatched; PRs #59, #60 open)
+
+**Second volume** (on the user's go in chat, 2026-11-17: second volume "okay sure yeah as long as it doesn't violate nautilus' cluster protocols", size 1Ti "yeah sure as long as its fine with nautilus' policies"). Policy check: `_standards/08` lines 120 and 130 (no per-volume or per-namespace CephFS cap in the NRP docs; creating a PVC is a normal member action; `rook-cephfs` is US West, the jobs' region; 6-month purge for unaccessed volumes). PVC `stacking-encoders-runs`, `rook-cephfs`, ReadWriteMany, 1Ti, manifest `jobs/pvc-runs.yaml`. Server dry run OK. Created 2026-11-18 about 00:23 UTC, Bound (volume `pvc-5b9badfe-4856-457a-ba16-d3ccb283130d`), verified with `kubectl get pvc`. Empty. Stage 2 Jobs use it via `render.sh --runs-pvc stacking-encoders-runs` (PR #60).
+
+**Open PRs:** #59 (`pairings_analysis.py` implements amendment 2026-11-17 item 3, plus the user's two answers on review questions: keep the gate diagnosis over the 1% clean line, and a recorded-decision field for the LIBERO-Plus open case; lead rerun 87 tests OK). #60 (stage 2 Job templates, `render.sh`, RUN steps, wave plan; Opus review approve with fixes, fixes in `180e0e3` and `e993a8f`; lead dry run OK; nothing submitted).
+
+**Encoder pinning** (user: "sure pin it that sounds fine"): a worker is pinning the DINOv3 and SigLIP 2 Hugging Face revisions (C-RADIOv4 is already pinned) to the cache-time revisions, and preparing a check Job that recomputes features for a few cached episodes and compares them to the cache. The check Job needs the user's go before submission.
