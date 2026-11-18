@@ -54,3 +54,11 @@ On the user's choice ("yeah option 1", then "merge" for PR #62, merged as `0c5d1
 **Until the freshness check passes**, no Job may read `feats/siglip2`: the `siglip2` and `dinov3+siglip2` stage 2 configurations are on hold (RUN step 1).
 
 **Next (handoff):** once the pods start, a GPU check about 15 min in (RUN step 6). On completion, save the logs and delete the Job and ConfigMap (step 7). Then the cache check (step 8) and the freshness check rendered to a new file (step 9), with SigLIP 2 expected bit-identical on all 8 episodes. If it is still Pending after several hours, ask the user before widening the card set: widening would break the L4-only point of this re-extraction.
+
+## 2026-11-18 [agent, lead, implementation] (SigLIP 2 re-extraction still Pending; left queued overnight)
+
+At 04:52 UTC (about 96 min after creation) both pods of `stacking-encoders-pairings-siglip2-reextract` are still **Pending** (verified, `kubectl get pods` and pod events). The scheduler message: 0/540 nodes available; 292 fail the node affinity (L4, driver major > 569, us-west, two hostnames excluded), 226 untolerated taints, 20 unschedulable, and of the remaining two, 1 has insufficient `nvidia.com/gpu` and 1 insufficient cpu/memory. So the L4 + us-west + driver set leaves about two candidate nodes.
+
+The lead's recommendation: leave it queued overnight; if still Pending in the morning, drop only the us-west term and keep L4-only (keeps the same-card-type point; cost: cross-region CephFS reads/writes, possibly slower). The user: "okay sure lets leave it queued overnight". The widening is **not approved**; ask again in the morning if still Pending.
+
+**Next:** one check in the morning. If running, RUN step 6 (GPU check about 15 min in). If still Pending, ask the user about dropping the us-west term.
