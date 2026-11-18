@@ -11,14 +11,19 @@
 #
 # Time (estimate, not measured for this Job; basis results/siglip2-reextract/*.log): the 8 known episodes (libero_spatial
 # ep 272-286, even ids) have 101, 97, 119, 94, 95, 96, 97 and 98 frames = 797 frames (log ...-0-4wr4x lines 346-354).
-# Setup (pod start to the first suite, pip included) took 22 to 24 s in all five re-extraction pods; the extractor's
+# Setup (pod start to the first suite, pip included) took 22 to 29 s in the five re-extraction pods (24, 29, 23, 23, 22); the extractor's
 # model load and skip scan took 15 to 22 s before its first episode; SigLIP 2 ran at 22.2 to 23.6 frames/s, so 797
 # frames take about 35 s. The pre-check and post-check each read the 8 episodes in full (about 0.7 GB at 91 MB per
 # file); CephFS read speed for this Job is not measured (the value check Job running now will give the first whole-cache
 # rate), so allow about 1 minute each. Total: about 3 to 5 minutes of container time after the image pull (the pull is
 # not in the logs; about 2 minutes on a node without the image, as the value check Job's pull took 1 min 40 s), about
 # 0.1 L4 GPU-hours. A longer list scales with its frames at about 22 frames/s plus the reads.
-# Deadline: 57600 s (16 h) from Job creation, as the re-extraction: the deadline counts from creation, and the L4 queue
+# Pod time cap: activeDeadlineSeconds 3600 on the pod template (counts from pod start, per pod), so a hung pod (a CephFS
+# stall in a read or a rename) cannot hold the L4 for the rest of the Job deadline; a pod killed by it is retried and
+# resumes from the files (RUN "Retries"). 1 h is about 10 times the estimate above.
+# "Nothing else changed" in the post-check compares names, sizes, mtimes and entry types in the suite folders against
+# the snapshot listing, and sha256 only for the two shard-of-2 _meta files; it is not a byte comparison of other files.
+# Job deadline: 57600 s (16 h) from Job creation, as the re-extraction: the deadline counts from creation, and the L4 queue
 # on the two matching nodes has been 2 to 3 h (re-extraction shard 1 Pending 3 h 8 min; the freshness check Pending
 # over 2 h on 2026-11-18).
 apiVersion: batch/v1
@@ -39,6 +44,7 @@ spec:
   template:
     spec:
       restartPolicy: Never
+      activeDeadlineSeconds: 3600   # per pod, from its start (header, "Pod time cap")
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -88,7 +94,7 @@ spec:
               --source siglip2 --out $F --episodes $ids --dtype fp16 --batch 32 --device cuda < /dev/null
           done < $D/plan.txt
           echo "=== postcheck"; date -u
-          G=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -1)
+          G=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -1) || G=unknown   # its exit codes overlap the FailJob list
           python /src/repair_stage2_episodes.py postcheck --list $L --feats $F --state $D --commit $SRC_GIT_COMMIT \
             --node "$NODE_NAME" --gpu "$G" || { rc=$?; echo "ABORT: postcheck exit $rc"; exit $rc; }
           date -u; echo "=== done"

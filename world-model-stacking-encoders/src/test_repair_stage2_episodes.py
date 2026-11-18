@@ -361,6 +361,13 @@ class Postcheck(Base):
         self.ready(device="cpu")
         self.assertEqual(self.postcheck(self.LIST), R.EXIT_NEW_META)
 
+    def test_missing_new_meta_is_exit_27(self):
+        self.ready()
+        os.remove(os.path.join(self.sp, R.NEW_META))
+        self.assertEqual(self.postcheck(self.LIST), R.EXIT_NEW_META)
+        self.assertFalse(any("(exit 26)" in x for x in self.lines))
+        self.assertEqual(self.record()["problems"].keys(), {"27"})
+
     def test_main_exit_code(self):
         self.ready()
         rc = R.main(["postcheck", "--list", self.write_list(self.LIST), "--feats", self.feats, "--state", self.state,

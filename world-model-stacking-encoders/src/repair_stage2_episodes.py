@@ -4,7 +4,9 @@ Job (experiments/2026-11-15-pretrained-start-pairings/jobs/job-siglip2-repair.ya
   check-list  parse the damaged-episode list only (for the lead on the Mac, before the ConfigMap is made).
   prepare     parse the list, pre-check, snapshot, move the damaged files aside, write the extraction plan.
   postcheck   after the extractor ran: value check of every listed episode, the old _meta files unchanged, the new
-              _meta records device cuda, nothing else in the suite folders changed; writes repair-record.json.
+              _meta records device cuda, nothing else in the suite folders changed (names, sizes, mtimes and
+              entry types against the snapshot listing, not file bytes; sha256 for the two shard-of-2 _meta files);
+              writes repair-record.json.
 
 The list (results/cache-value-check/damaged-episodes.txt, written by RUN-cache-value-check.md step 6) has one line per
 episode, "<source> <suite> <episode id>". Only "siglip2" lines are accepted; a line of another source, a malformed
@@ -392,7 +394,7 @@ def postcheck(list_path, feats, state, commit="", node="", gpu="", dims=CS.DIMS,
             f"(expected after {len(want)}: the same names, the repaired episodes' files and {NEW_META})")
         for n in sorted(set(now) - want):
             bad(EXIT_OTHER_CHANGED, f"{sd}/{n}: new file, not part of the repair")
-        for n in sorted(want - set(now) - mine):
+        for n in sorted(want - set(now) - mine - {NEW_META}):               # a missing new meta is exit 27
             bad(EXIT_OTHER_CHANGED, f"{sd}/{n}: gone")
         for n in sorted(set(before) & set(now) - mine - {NEW_META}):
             if before[n] != now[n]:
@@ -433,7 +435,7 @@ def main(argv=None, out=print):
     c = sub.add_parser("check-list", help="parse the damaged-episode list only (exit 0 or 20)")
     c.add_argument("--list", required=True)
     for name, h in (("prepare", "pre-check, snapshot, move the damaged files aside, write the plan"),
-                    ("postcheck", "value check of the repaired episodes, nothing else changed; repair-record.json")):
+                    ("postcheck", "value check of the repaired episodes; other files compared by name, size, mtime and type; repair-record.json")):
         q = sub.add_parser(name, help=h)
         q.add_argument("--list", required=True, help="damaged-episode list, lines '<source> <suite> <episode id>'")
         q.add_argument("--feats", default="/mnt/proxy/feats")
