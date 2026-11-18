@@ -1997,3 +1997,24 @@ On the user's go ("yep start it", then "ok, dispatch"), four workers wrote the s
 **Next:** stage 3 design (fusion variants): ask the user which variants to test before writing anything. Experiment session: in the morning, read the watcher's events; if the re-extraction is still suspended, the user decides (resume by hand, or NRP support). The sweep waits on the user's go there and should not start while the storage alarm is flapping (the lead's recommendation, not a decision).
 
 **Open questions:** whether to contact NRP support about the full disk (the user's call); whether the paper's authors have replied to the 2026-11-10 email (none recorded).
+
+## 2026-11-18 [agent, lead, planning] (novelty check for the user's question: literature session's report and the lead's blind search agree; one PLAN note)
+
+**Goal:** the user asked "is our research direction actually novel?", then sent the question to the literature session ("is predicting what visual encoders will work together and why a novel research direction") and asked the lead to search too and compare.
+
+**Did:**
+- Request sent to the literature lead with the user's words verbatim; that session ran it on the user's OK in its window. Its report: `literature/reading-list/2026-11-18-novelty-check-encoder-pairing.md` (a searcher plus a reviewer that re-read every hit in arXiv HTML full text). **Not merged**: it goes to main by PR with a fresh reviewer, on the user's word in that window. Until then nothing cites it.
+- The lead's own search, written before reading that report: 22 web searches, arXiv abstracts for 28 IDs, HTML text of 2606.03879, 2605.01896 and 2610.19825 (session scratchpad, not in the repo).
+- **Comparison (both searches; every absence claim is speculative).** They agree on all three questions: predicting which encoder combinations work, and explaining why, is done in nearby fields (multi-encoder VLMs, image classification, audio); not found for pairs or sets of frozen visual encoders in a robot policy, VLA or world action model; no multi-training-seed replication of a frozen-encoder pair result in a video-diffusion world action model found.
+- **Corrections to the lead's own search, from the literature reviewer's full-text reads (relayed, not rechecked by the lead):** (1) before-training set scores exist outside robotics (KAGES 2608.17490, SFDA 2207.03036), so "no validated before-training score in any field" was too strong; (2) Ma et al. 2610.19825 has three-training-seed replication and an input-versus-target encoder factorial, which the lead's grep had missed. The lead's one addition to their file: M2-REPA 2605.01896 (verified in the HTML text by the lead: naive alignment to two foundation models "leads to feature conflicts", RGB-depth video generation).
+- A mistake in passing: the lead told the literature session that three leads were missing from its file before running the check; three were already there. Corrected to that session in the next message.
+- **PLAN:** one dated note under the Parked item "C-RADIOv4 as input only vs target only" (the Ma et al. lead). The user's instruction: "dont add theses to notes maybe i dont yet know if these are good ideas or detours only note down the 5th thing". The lead's other suggestions from the comparison are not recorded, on that instruction.
+- Project brief (Arbor) updated.
+
+**Found:** no result. A literature verdict at lead level, pending its PR.
+
+**Test-set use:** none.
+
+**PR:** none. This entry and the PLAN note: direct (chore), on the user's request to note it.
+
+**Next:** unchanged. Stage 3 design starts with the user's choice of fusion variants. The literature session's novelty report waits on the user's PR OK in that window.
