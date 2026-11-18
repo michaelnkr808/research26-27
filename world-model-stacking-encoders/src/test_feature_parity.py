@@ -7,7 +7,8 @@ rollout.Featurizer.__call__ (what the policy sees at rollout), for dinov3, sigli
 Each path builds its encoder the way it really does: extraction as extract_fastwam.main does
 (ENCODERS[source](device, dtype), dtype = the compute dtype of the cache), rollout through the real
 Featurizer.__init__ (ENCODERS[s](device, rollout.ENC_DTYPE[s])). Each side's variant (hf_id), input resolution, pinned
-revision (C-RADIOv4) and dtype are asserted against the caches' description (data/README.md section 4b, table lines
+Hugging Face revision (all three; DINOv3 and SigLIP 2 pinned 2026-11-17, the repo heads, unchanged since before the caches
+were built) and dtype are asserted against the caches' description (data/README.md section 4b, table lines
 71-76: DINOv3 computed fp32 with D 1024, C-RADIOv4 computed fp16 with D 1152, SigLIP 2 so400m computed fp16 with
 D 1152; the variants are extract_features.py's defaults, which the extraction Jobs used because extract_fastwam.py
 passes no variant). A variant or dtype mismatch fails the test.
@@ -41,7 +42,6 @@ The encoder tests below feed identical uint8 frames to both paths, so they do no
 Run from src/: python test_feature_parity.py
 """
 
-import inspect
 import os
 import sys
 import types
@@ -64,8 +64,10 @@ SOURCES = ("dinov3", "siglip2", "c-radiov4")
 
 # What the caches used (data/README.md lines 71-76 and extract_features.py defaults, recorded in each _meta json).
 CACHE = {
-    "dinov3": {"hf_id": "facebook/dinov3-vitl16-pretrain-lvd1689m", "resolution": 224, "dtype": torch.float32, "D": 1024},
-    "siglip2": {"hf_id": "google/siglip2-so400m-patch14-384", "resolution": 384, "dtype": torch.float16, "D": 1152},
+    "dinov3": {"hf_id": "facebook/dinov3-vitl16-pretrain-lvd1689m", "resolution": 224, "dtype": torch.float32, "D": 1024,
+               "revision": "ea8dc2863c51be0a264bab82070e3e8836b02d51"},
+    "siglip2": {"hf_id": "google/siglip2-so400m-patch14-384", "resolution": 384, "dtype": torch.float16, "D": 1152,
+                "revision": "e8e487298228002f3d8a82e0cd5c8ea9c567f57f"},
     "c-radiov4": {"hf_id": "nvidia/C-RADIOv4-SO400M", "resolution": 448, "dtype": torch.float16, "D": 1152,
                   "revision": "c0457f5dc26ca145f954cd4fc5bb6114e5705ad8"},
 }
@@ -117,8 +119,10 @@ def check_spec(side, source, enc):
     assert enc.hf_id == want["hf_id"], (side, source, enc.hf_id, want["hf_id"])
     assert enc.resolution == want["resolution"], (side, source, enc.resolution, want["resolution"])
     assert enc.dtype == want["dtype"], (side, source, enc.dtype, want["dtype"])
-    if "revision" in want:      # the loader pins it in code; the encoder object does not carry it
-        assert want["revision"] in inspect.getsource(EF.load_cradiov4), (side, source, "revision pin changed")
+    # The revision the loader asks for, and the commit the weights were actually loaded from (config._commit_hash).
+    assert EF.REVISIONS[source] == want["revision"], (side, source, "revision pin changed", EF.REVISIONS[source])
+    assert enc.revision == want["revision"], (side, source, enc.revision, want["revision"])
+    assert enc.loaded_commit == want["revision"], (side, source, "loaded from", enc.loaded_commit, want["revision"])
 
 
 def build_both(source):
