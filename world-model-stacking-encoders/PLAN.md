@@ -39,6 +39,7 @@ Each experiment folder has its own `PLAN.md` (the design, written before running
 ## Parked (not chosen; from presentation feedback, LOG 2026-11-03 (k))
 - D+D redundancy control config in the proxy round.
 - C-RADIOv4 as input only vs target only, to locate the harm (only useful if the proxy shows the drop). User, 2026-11-10: maybe after everything else is done.
+  - Note 2026-11-18 (the user asked for this to be noted; not moved, not decided): a lead from the literature session's novelty check that bears on this item. Ma et al., "What Matters for World Modeling in Vision-Language-Action Models?" (arXiv 2610.19825) run a 2 x 2 test with one encoder as the model's input and another as its prediction target, over three training seeds, and attribute one negative-transfer case to the target side ("primarily governed by the supervisory target representation"), per the literature reviewer's full-text read of App. B.1 to B.3 (relayed; not read by the user or the planning lead; the report `literature/reading-list/2026-11-18-novelty-check-encoder-pairing.md` is not merged yet, so this is a lead and not a citation). Their setting is a VLA with world modeling added, not two encoders concatenated on a VAE grid. The lead's suggestion (speculative): a candidate fusion variant for stage 3. The "only useful if the proxy shows the drop" condition above predates decisions 005 and 006; under the current plan the condition would be stage 2 showing the drop.
 - Dimension-matched features in the frozen-feature tests.
 
 ## Recently done
