@@ -252,3 +252,22 @@ From the lead, 2026-11-18: "i just want the dataset" (not a decision to enter th
 **Next:** the lead brings the options to the PI on 2026-11-19, with these questions: which option; what the PI wants taken from RMS-AQA into the world action model work (and whether reproducing the Audio Flamingo 3 baseline is needed at all); whether more compute is available if a timing run shows 200 dollars is not enough; whether to register a challenge team. After the meeting the planning lead writes the research question into `README.md` and a decision record (by pull request).
 
 **Open questions:** the organizers' reply on dataset access; the base model (candidates in the summary; open check whether WNM-3D can run where SoundSpaces 2.0 renders audio).
+
+## 2026-11-18 [agent, lead, planning] (addendum: the lead leans to WNM-3D as the base; simulator check)
+**Goal:** record the lead's base model choice and run the open check on it (can WNM-3D run where SoundSpaces 2.0 renders audio).
+
+**Did:**
+- The lead asked whether to build on FastWAM (`yuan2026fast`) and then chose WNM-3D: "it makes more sense to do WNM-3D since its a navigation model" (2026-11-18). No decision record yet; the PI meeting is 2026-11-19.
+- Read, as raw text on 2026-11-18: the WNM-3D repository's `README.md`, `docs/TRAINING.md`, `docs/DOWNLOADS.md` and its file tree (146 entries, GitHub trees API, branch `master`), and SoundSpaces' `INSTALLATION.md` (branch `main`). The code itself was not read.
+
+**PR:** direct.
+
+**Found** (`verified` as read from those files):
+- WNM-3D's released training and evaluation run in its own simulator stack: GN-Bench from the companion GN0 repository, on InteriorGS Gaussian-splat scenes with GN-Matrix annotations. Training data is rendered there (`scripts/evaluation/render_dataset.sh` in GN0) and converted to LeRobot format (`scripts/data/convert_interiorgs_to_lerobot.py`); the trainer reads LeRobot-format data (`gammanav/vln/data/dataset/lerobot.py`). Evaluation talks to a GN-Bench WebSocket client. The words Habitat, R2R, RxR, Matterport and VLN-CE do not appear in the README, the two docs or any file path.
+- SoundSpaces 2.0 installs on Habitat only: Python 3.9, habitat-sim on the `RLRAudioPropagationUpdate` branch built with `--audio`, habitat-lab `v0.2.2`.
+- So the answer to the open check is no, not as released: WNM-3D's simulator and the audio simulator are different programs. Two things would have to be built to use WNM-3D with spatial audio: (1) audio-visual navigation data rendered in Habitat with SoundSpaces 2.0 and converted to the LeRobot format the trainer reads; (2) a closed-loop evaluation link between WNM-3D's inference server and Habitat.
+- FastWAM for comparison (survey entry `yuan2026fast`): Wan2.2-5B plus an action expert, code and checkpoints released, robot-arm benchmarks (LIBERO, RoboTwin 2.0), no future video at test time.
+
+**Not verified:** whether the released WNM-3D checkpoints were trained on any Habitat or Matterport3D data (the paper reports VLN-CE R2R; the repository does not mention it), so how well they transfer to Habitat scenes is unknown; how much work (1) and (2) are; whether AstraNav-World, which is evaluated in Habitat but has no released training script for its video part, would be less work overall (`speculative`: the planning lead thinks WNM-3D is still the better start because its training code exists and its data format is not tied to a simulator).
+
+**Next:** the lead raises the base model and this finding with the PI on 2026-11-19. Then a decision record for the base model (by pull request).
