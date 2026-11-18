@@ -1,0 +1,109 @@
+# SigLIP 2 cache re-extraction on NVIDIA L4 only (pairings stage 2). The user chose this in chat on 2026-11-18 ("yeah
+# option 1"): delete the old SigLIP 2 cache, then recompute it in the same place on L4s (cache freshness check, LOG 2026-11-18).
+# Made from ../../2026-10-27-proxy-calibration/jobs/rendered/job-extract-siglip2.yaml, the Job whose last try wrote the
+# final SigLIP 2 cache (direction LOG 2026-10-30 (c)): same image, setup, code path, model, fp16, batch 32, CPU, memory,
+# output folder and file names. Changed: L4 only, 2 shards, Job name, code from the current main (ConfigMap with hashes
+# checked), a refusal to start while feats/siglip2 holds files this Job did not write, and a [gpu] sampler (the L4 nodes
+# export no DCGM). Reasons and the line-by-line diff: RUN-siglip2-reextract.md.
+# NOT SUBMITTED. Runs only after job-siglip2-delete.yaml has completed. Render before submit (RUN step 3).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-pairings-siglip2-reextract
+  namespace: aria-world
+spec:
+  completionMode: Indexed
+  completions: 2
+  parallelism: 2
+  backoffLimit: 2            # about one retry per shard
+  activeDeadlineSeconds: 57600
+  ttlSecondsAfterFinished: 86400
+  podFailurePolicy:
+    rules:
+    - action: FailJob        # start-up refusals (exit 10, 11, 12, 19): a retry would refuse again
+      onExitCodes: {containerName: main, operator: In, values: [10, 11, 12, 19]}
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-L4]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; F=$R/feats; I=$JOB_COMPLETION_INDEX; mkdir -p $R/logs
+          exec > >(tee -a $R/logs/extract-siglip2-$I-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          echo "=== SigLIP 2 re-extraction (L4 only), shard $I/2, Job uid $JOB_UID, src $SRC_GIT_COMMIT"; date -u
+          [[ "$SRC_GIT_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "ABORT: SRC_GIT_COMMIT is not a 40-hex commit (not rendered?)"; exit 10; }
+          [ -n "$JOB_UID" ] || { echo "ABORT: the pod has no batch.kubernetes.io/controller-uid label"; exit 11; }
+          ( cd /src && sha256sum -c - <<'EOF'
+          FILL_SHA_extract_fastwam.py  extract_fastwam.py
+          FILL_SHA_extract_features.py  extract_features.py
+          FILL_SHA_fastwam_data.py  fastwam_data.py
+          FILL_SHA_diagnostics.py  diagnostics.py
+          FILL_SHA_setup_env.sh  setup_env.sh
+          EOF
+          ) || { echo "ABORT: a /src key differs from the rendered hash (ConfigMap changed after the render, or no render)"; exit 19; }
+          S=$F/siglip2; M=$R/logs/siglip2-reextract-$JOB_UID
+          if compgen -G "$M-shard*.started" > /dev/null; then
+            echo "resume: a pod of this Job started before ($(ls $M-shard*.started | wc -l) marker(s)); its episodes in $S are skipped"
+          else
+            n=0; [ -d $S ] && n=$(find $S -mindepth 1 | wc -l)
+            if [ "$n" != 0 ]; then
+              echo "ABORT: $S holds $n entries and no pod of this Job has started: old cache files; run job-siglip2-delete.yaml first"
+              find $S -mindepth 1 | head -20; exit 12
+            fi
+            echo "fresh start: $S is empty or absent"
+          fi
+          touch $M-shard$I.started
+          nvidia-smi
+          nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv,noheader -l 30 | sed -u 's/^/[gpu] /' &
+          SMI=$!; trap 'kill $SMI 2>/dev/null || true' EXIT
+          bash /src/setup_env.sh
+          for s in libero_spatial libero_object libero_goal libero_10; do
+            echo "=== $s shard $I/2"; date -u
+            python /src/extract_fastwam.py --root $R/data/lerobot_v30/${s}_no_noops_lerobot --suite $s \
+              --source siglip2 --out $F --shard $I/2 --dtype fp16 --batch 32 
+          done
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}
+        - name: JOB_UID                               # the Job's uid, so a retried pod can tell its own files from old ones
+          valueFrom:
+            fieldRef: {fieldPath: "metadata.labels['batch.kubernetes.io/controller-uid']"}
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: OMP_NUM_THREADS, value: "3"}   # = CPU request: torch otherwise sizes its pool to the node and gets throttled (2026-10-29 (k))
+        - {name: MALLOC_ARENA_MAX, value: "2"}   # the prefetch thread otherwise gets its own malloc arenas; shard 2 OOM-killed at 6Gi (2026-10-30 (b))
+        - {name: PYTHONPATH, value: /src}
+        resources:                    # from the probe's measured use (memory nautilus-job-sizing-and-estimates)
+          requests: {cpu: "3", memory: 12Gi, nvidia.com/gpu: "1", ephemeral-storage: 30Gi}
+          limits:   {cpu: "3600m", memory: 14400Mi, nvidia.com/gpu: "1", ephemeral-storage: 34Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 34Gi}
+      - name: src
+        configMap: {name: stacking-encoders-pairings-reextract-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 2Gi}

@@ -1,0 +1,75 @@
+# Delete the old SigLIP 2 feature cache, /mnt/proxy/feats/siglip2 on PVC stacking-encoders-proxy, and nothing else.
+# The user chose this in chat on 2026-11-18 ("yeah option 1": delete the old SigLIP 2 cache, recompute it in place on L4s;
+# reason: the cache freshness check, experiment LOG 2026-11-18). Step 4 of RUN-siglip2-reextract.md; the re-extraction
+# Job (job-siglip2-reextract.yaml) starts only after this Job has completed.
+# What it does: refuses unless the target is exactly that path (a real directory on the mounted PVC, not a symlink) and
+# holds only the cache's own layout (4 suite folders; ep<id>.npy, ep<id>.stats.npy, _meta.shard<i>of<n>.json and the
+# extractor's .ep<id>...tmp leftovers); lists every entry to /mnt/proxy/logs/siglip2-delete-<time>.list and counts them
+# per suite; prints df and the feats folder before and after; deletes with find -delete as _standards/08 requires for
+# Ceph (files first, then the emptied folders; siglip2 itself stays as an empty folder); fails unless nothing is left.
+# CPU-only Job, exits on its own (no sleep), requests at or under the exempt size, limits within 20%, no tolerations,
+# us-west (the PVC's region), no retry (a rerun is safe but is the lead's decision). NOT SUBMITTED.
+# Exit codes: 0 deleted, nothing left; 20 wrong path or not a real directory on the PVC; 23 unexpected entries, nothing
+# deleted; 24 entries left after the delete; other non-zero: a command failed (read the log).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-pairings-siglip2-delete
+  namespace: aria-world
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 3600
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          T=/mnt/proxy/feats/siglip2
+          L=/mnt/proxy/logs/siglip2-delete-$(date -u +%Y%m%d-%H%M%S)
+          echo "=== SigLIP 2 cache deletion: $T"; date -u
+          mountpoint -q /mnt/proxy || { echo "ABORT: /mnt/proxy is not a mount point"; exit 20; }
+          [ -d "$T" ] && [ ! -L "$T" ] || { echo "ABORT: $T is missing or is a symlink"; exit 20; }
+          [ "$(realpath -e "$T")" = /mnt/proxy/feats/siglip2 ] || { echo "ABORT: $T resolves to $(realpath "$T")"; exit 20; }
+          [ "$(stat -c %d "$T")" = "$(stat -c %d /mnt/proxy)" ] || { echo "ABORT: $T is on another filesystem than /mnt/proxy"; exit 20; }
+          echo "--- before"; df -h /mnt/proxy; ls -la /mnt/proxy/feats; du -sh "$T"
+          # Every entry, with its type (f file, d folder, l symlink, ...), relative to $T.
+          find "$T" -xdev -mindepth 1 -printf '%y %P\n' | sort -k2 > $L.list
+          echo "listed $(wc -l < $L.list) entries to $L.list"
+          OK='^(d (libero_spatial|libero_object|libero_goal|libero_10)|f (libero_spatial|libero_object|libero_goal|libero_10)/(ep[0-9]{6}\.npy|ep[0-9]{6}\.stats\.npy|_meta\.shard[0-9]+of[0-9]+\.json|\.ep[0-9]{6}(\.stats)?\.npy\.tmp))$'
+          bad=$(grep -cvE "$OK" $L.list || true)
+          if [ "$bad" != 0 ]; then
+            echo "ABORT: $bad entries outside the cache's layout; nothing deleted:"; grep -vE "$OK" $L.list | head -50; exit 23
+          fi
+          for s in libero_spatial libero_object libero_goal libero_10; do
+            printf '%-15s episodes %5s  stats %5s  _meta %3s  tmp %3s\n' $s \
+              $(grep -cE "^f $s/ep[0-9]{6}\.npy$" $L.list || true) $(grep -cE "^f $s/ep[0-9]{6}\.stats\.npy$" $L.list || true) \
+              $(grep -cE "^f $s/_meta\." $L.list || true) $(grep -cE "^f $s/\.ep" $L.list || true)
+          done
+          echo "files $(grep -c '^f ' $L.list || true), folders $(grep -c '^d ' $L.list || true); deleting $(date -u)"
+          find "$T" -xdev -type f -delete
+          find "$T" -xdev -mindepth 1 -depth -type d -delete
+          left=$(find "$T" -mindepth 1 | wc -l)
+          echo "--- after $(date -u)"; df -h /mnt/proxy; ls -la /mnt/proxy/feats; ls -la "$T"
+          [ "$left" = 0 ] || { echo "ABORT: $left entries left in $T"; find "$T" -mindepth 1 | head -20; exit 24; }
+          echo "=== deleted: $T is empty"; date -u
+        resources:
+          requests: {cpu: 500m, memory: 512Mi}
+          limits:   {cpu: 600m, memory: 600Mi}
+        volumeMounts:
+        - {name: proxy, mountPath: /mnt/proxy}
+      volumes:
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
