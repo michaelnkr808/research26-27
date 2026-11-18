@@ -359,6 +359,87 @@ class Values(unittest.TestCase):
                                 values=True)
         self.assertTrue(gaps and all("sum of squares differs" in g or "sum differs" in g for g in gaps), gaps)
 
+    def test_tail_constant(self):
+        self.assertEqual(C.MIN_TAIL, 256)
+
+    def test_vae_zeroed_tail_only(self):
+        feats = os.path.join(self.t.name, "real")
+        os.makedirs(os.path.join(feats, "meta"))
+        np.savez(os.path.join(feats, "meta", "libero_10.npz"), episode_ids=np.array([2]), lengths=np.array([1]))
+        put_values(feats, "vae", "libero_10", 2, 1, dims=C.DIMS)
+        path = os.path.join(feats, "vae", "libero_10", "ep000002.npy")
+        size = os.path.getsize(path)                            # 128 + 112,896 = 113,024; last page 2,432 bytes
+        self.assertEqual(size % 4096, 2432)
+        gaps, _ = C.check_cache(feats, ["vae"], ["libero_10"], C.DIMS, workers=1, out=self.lines.append, values=True)
+        self.assertEqual(gaps, [])
+        zero_bytes(path, size - 2432, 2432)
+        gaps, _ = C.check_cache(feats, ["vae"], ["libero_10"], C.DIMS, workers=1, out=self.lines.append, values=True)
+        self.assertEqual(gaps, [f"vae/libero_10/ep000002: last partial page of .npy is all zero (2432 bytes at offset "
+                                f"{size - 2432})"])
+
+    def test_longer_than_header_file_with_zero_stretch(self):
+        path = self.p("dinov3", "libero_goal", 1)
+        size = os.path.getsize(path)
+        zero_bytes(path, 1000, 3000)                            # unaligned: no whole zero page
+        with open(path, "ab") as fh:
+            fh.write(np.random.default_rng(3).integers(1, 255, 8192, dtype=np.uint8).tobytes())
+        gaps, _ = self.run_check()
+        self.assertEqual(gaps, [f"dinov3/libero_goal/ep000001: header readable but not value-checked (file size "
+                                f"{size + 8192}, header implies {size})"])
+        self.assertIn("  values: 1 of 2 episodes value-checked", self.lines)
+
+    def test_fortran_order_file(self):
+        path = self.p("siglip2", "libero_goal", 0)
+        a = np.load(path)
+        np.save(path, np.asfortranarray(a))
+        gaps, _ = self.run_check()
+        self.assertEqual(gaps, ["siglip2/libero_goal/ep000000: header readable but not value-checked (not C order)"])
+
+    def test_every_episode_value_checked_or_reported(self):
+        # Damage of several kinds; afterwards no episode may be both unreported and not value-checked.
+        zero_bytes(self.p("dinov3", "libero_goal", 1), 1000, 3000)
+        with open(self.p("dinov3", "libero_goal", 1), "ab") as fh:
+            fh.write(b"\1" * 100)
+        np.save(self.p("siglip2", "libero_goal", 0), np.asfortranarray(np.load(self.p("siglip2", "libero_goal", 0))))
+        put_values(self.feats, "c-radiov4", "libero_10", 3, 4)
+        np.save(self.p("c-radiov4", "libero_10", 3), np.load(self.p("c-radiov4", "libero_10", 3)).astype(np.float32))
+        with open(self.p("vae", "libero_goal", 0), "wb") as fh:
+            fh.write(b"junk")
+        tally = C.new_tally()
+        gaps, _ = C.check_cache(self.feats, C.SOURCES, SUITES, DIMS, workers=2, out=self.lines.append, values=True,
+                                tally=tally)
+        for suite, eps in EPS.items():
+            for source in C.SOURCES:
+                for e, _ in eps:
+                    tag = f"{source}/{suite}/ep{e:06d}"
+                    self.assertTrue(tag in tally["checked_tags"] or any(g.startswith(tag + ":") for g in gaps), tag)
+        self.assertFalse(any("(internal)" in g for g in gaps), gaps)
+
+    def test_invariant_guard_reports_unchecked_episode(self):
+        # If value_gaps ever returned no gap without value-checking, check_cache adds a gap instead of passing.
+        real = C.value_gaps
+        C.value_gaps = lambda *a, **k: []
+        try:
+            gaps, _ = self.run_check()
+        finally:
+            C.value_gaps = real
+        self.assertEqual(len(gaps), 12)
+        self.assertTrue(all("not value-checked and no gap (internal)" in g for g in gaps))
+
+    def test_zero_stored_sum_of_squares_no_inf_no_warning(self):
+        import warnings
+        sp = self.p("dinov3", "libero_goal", 0, stats=True)
+        s = np.load(sp)
+        s[2, 1] = 0.0
+        np.save(sp, s)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            gaps, _ = self.run_check()
+        self.assertTrue(gaps and all(g.startswith("dinov3/libero_goal/ep000000:") for g in gaps), gaps)
+        self.assertTrue(any("largest absolute difference" in g and "where the stored sum of squares is 0" in g
+                            for g in gaps), gaps)
+        self.assertFalse(any("inf" in g for g in gaps), gaps)
+
     def test_values_no_writes(self):
         before = sorted((os.path.join(a, f), os.path.getmtime(os.path.join(a, f)))
                         for a, _, fs in os.walk(self.feats) for f in fs)

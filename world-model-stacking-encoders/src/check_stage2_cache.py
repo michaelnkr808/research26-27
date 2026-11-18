@@ -20,14 +20,20 @@ is read in full, read-only, in one sequential pass, and three more kinds of gap 
   a) encoders: per channel, count, sum and sum of squares are recomputed from the .npy the way extract_fastwam.py did
      (x = arr.reshape(-1, D).astype(float64); count, x.sum(0), (x * x).sum(0)) and compared with the .stats.npy.
   b) every source (the VAE too), and the .stats.npy files: any 4096-byte page at a file offset that is a multiple of
-     4096 and holds only zero bytes. The count and the first offset are reported. A refused CephFS flush leaves pages
-     of zeros (LOG 2026-11-18); in real features 2048 float16 values in a row that are all exactly +0 do not occur.
-     Only whole pages count: a last partial page is not scanned (a zeroed tail is caught by a) instead).
+     4096 and holds only zero bytes. The count and the first offset are reported. The last partial page of a file
+     (from the last multiple of 4096 to the end) is also reported when it is all zero and at least MIN_TAIL = 256
+     bytes long (shorter tails are skipped: a 224-byte fake stats file, a DINOv3 stats file's 128-byte tail). A
+     refused CephFS flush leaves pages of zeros (LOG 2026-11-18). Assumption, not measured on real features: a real
+     feature or stats file never holds 128 or more float16 (32 float64) exact zeros in a row at a page boundary;
+     confirm any hit by reading that file's bytes before it goes into a repair list.
   c) every source: any non-finite value (inf or nan) in the .npy.
 With --values, every episode with any gap (header or value) is also listed after the summary, uncapped, one line each:
 "DAMAGED <source> <suite> <episode id>" (the GAP lines stay capped at MAX_SHOWN per block).
 The value part runs on a .npy whose header parses as C-order float16 with the expected last dimension and whose file
-size matches the header; the zero-page scan runs on every file that can be opened, header or not.
+size matches the header. A .npy whose header is readable but fails one of these gets its own gap ("header readable but
+not value-checked (<why>)"), so every episode is either value-checked or has a gap (check_cache also enforces this).
+The zero-page scan runs on every file that can be opened, header or not. Where a stored sum of squares is 0 the
+message gives the absolute difference instead of a relative one.
 
 Tolerance for a) (fixed: RTOL_SUMSQ, RTOL_SUM). The float16 values are exact in float64 and so are their squares
 (11-bit significand, squared 22 bits), so the only difference between this pass and extraction is the summation order
@@ -49,9 +55,13 @@ bound of 4.4e-11 * sum|x_i|.
 Memory per reader thread (--values): a CHUNK_BYTES = 4 MiB read buffer, the carried partial row joined to it (about
 4 MiB), its float64 copy (16 MiB, squared in place), an isfinite mask (2 MiB) and two (D,) float64 accumulators:
 about 26 MiB live, whatever the episode length (measured on the Mac, synthetic files: max RSS 112 MB with 1 thread,
-434 MB with 8, so about 45 MB per thread with allocator slack on top of about 70 MB for Python and numpy) (a 505-frame SigLIP 2 file is 505 x 14 x 28 x 1152 float16 = 456 MB). The
-reads go through the page cache; on Linux each file's cached pages are dropped after reading (posix_fadvise
-DONTNEED, a hint, nothing is written). Bytes read and seconds taken are printed at the end.
+434 MB with 8, so about 45 MB per thread with allocator slack on top of about 70 MB for Python and numpy; a 505-frame
+SigLIP 2 file is 505 x 14 x 28 x 1152 float16 = 456 MB). The reads go through the page cache, which Linux charges to
+the pod's cgroup; right after each 4 MiB read the chunk's range is passed to posix_fadvise(DONTNEED) (Linux only,
+best effort, a hint that changes nothing on disk), so cached pages should be dropped as the read moves on instead of
+whole files staying cached. The kernel may ignore the hint; clean cache is reclaimed at the limit either way, so
+read the cgroup's anon figure, not memory.peak, for the memory actually used. Bytes read and seconds are printed
+at the end.
 """
 
 import argparse
@@ -76,6 +86,7 @@ PAGE = 4096                                                               # zero
 CHUNK_BYTES = 1024 * PAGE                                                 # 4 MiB read per step (--values)
 RTOL_SUMSQ = 1e-9                                                         # docstring, "Tolerance for a)"
 RTOL_SUM = 1e-9
+MIN_TAIL = 256                                                            # last partial page: scanned if this long
 
 
 def expected_shape(source, n, dims):
@@ -86,7 +97,7 @@ def scan_file(path, data=None):
     """One sequential read of a file in CHUNK_BYTES steps (chunk starts are multiples of PAGE). Returns a dict with
     bytes read, the number of all-zero whole pages and the first one's offset. data = (offset, D): also accumulate,
     over the float16 rows from offset on, the row count, non-finite count, per-channel sum and sum of squares."""
-    r = {"bytes": 0, "zero_pages": 0, "first_zero": None}
+    r = {"bytes": 0, "zero_pages": 0, "first_zero": None, "zero_tail": None}
     if data is not None:
         off, d = data
         rowb = 2 * d
@@ -105,6 +116,9 @@ def scan_file(path, data=None):
                     if r["first_zero"] is None:
                         r["first_zero"] = pos + int(z[0]) * PAGE
                     r["zero_pages"] += int(z.size)
+            tail = len(buf) % PAGE                           # only the last chunk of a file has a partial page
+            if tail >= MIN_TAIL and not any(memoryview(buf)[len(buf) - tail:]):
+                r["zero_tail"] = (pos + len(buf) - tail, tail)
             if data is not None and pos + len(buf) > off:
                 chunk = buf[max(0, off - pos):]
                 if carry:
@@ -119,16 +133,27 @@ def scan_file(path, data=None):
                     q += x64.sum(0)
                     rows += k
                 carry = chunk[k * rowb:]
+            if hasattr(os, "posix_fadvise"):                 # Linux: drop this chunk's cached pages (a hint only)
+                try:
+                    os.posix_fadvise(f.fileno(), pos, len(buf), os.POSIX_FADV_DONTNEED)
+                except OSError:
+                    pass
             pos += len(buf)
-        if hasattr(os, "posix_fadvise"):                     # Linux: drop this file's cached pages (a hint only)
-            try:
-                os.posix_fadvise(f.fileno(), 0, 0, os.POSIX_FADV_DONTNEED)
-            except OSError:
-                pass
     r["bytes"] = pos
     if data is not None:
         r.update(rows=rows, nonfinite=bad, sum=s, sumsq=q)
     return r
+
+
+def _worst(diff, ref, what):
+    """Message part for the largest difference: relative to ref where ref > 0, absolute where ref is 0 (no inf)."""
+    pos = ref > 0
+    parts = []
+    if pos.any():
+        parts.append(f"largest {what} {float(np.max(diff[pos] / ref[pos])):.2e}")
+    if (~pos).any():
+        parts.append(f"largest absolute difference {float(np.max(diff[~pos])):.3g} where the stored sum of squares is 0")
+    return ", ".join(parts)
 
 
 def compare_stats(tag, stats, r):
@@ -140,36 +165,60 @@ def compare_stats(tag, stats, r):
     dq = np.abs(r["sumsq"] - sq)
     badq = dq > RTOL_SUMSQ * np.abs(sq)
     if badq.any():
-        rel = float(np.max(dq[badq] / np.maximum(np.abs(sq[badq]), np.finfo(np.float64).tiny)))
         gaps.append(f"{tag}: .stats.npy sum of squares differs from the data in {int(badq.sum())} of {len(sq)} "
-                    f"channel(s) (largest relative difference {rel:.2e}, tolerance {RTOL_SUMSQ:g})")
-    scale = np.sqrt(np.maximum(r["rows"] * np.maximum(sq, 0.0), 0.0))
+                    f"channel(s) ({_worst(dq[badq], np.abs(sq[badq]), 'relative difference')}, "
+                    f"tolerance {RTOL_SUMSQ:g})")
+    scale = np.sqrt(r["rows"] * np.maximum(sq, 0.0))
     ds = np.abs(r["sum"] - stats[1])
     bads = ds > RTOL_SUM * scale
     if bads.any():
-        rel = float(np.max(ds[bads] / np.maximum(scale[bads], np.finfo(np.float64).tiny)))
         gaps.append(f"{tag}: .stats.npy sum differs from the data in {int(bads.sum())} of {len(sq)} channel(s) "
-                    f"(largest difference over sqrt(count * sum of squares) {rel:.2e}, tolerance {RTOL_SUM:g})")
+                    f"({_worst(ds[bads], scale[bads], 'difference over sqrt(count * sum of squares)')}, "
+                    f"tolerance {RTOL_SUM:g})")
+    return gaps
+
+
+def zero_gaps(tag, name, r):
+    """Gap strings for scan_file's zero findings in one file (name: ".npy" or ".stats.npy")."""
+    gaps = []
+    if r["zero_pages"]:
+        gaps.append(f"{tag}: {r['zero_pages']} all-zero {PAGE}-byte page(s) in {name}, first at offset {r['first_zero']}")
+    if r["zero_tail"] is not None:
+        gaps.append(f"{tag}: last partial page of {name} is all zero ({r['zero_tail'][1]} bytes at offset "
+                    f"{r['zero_tail'][0]})")
     return gaps
 
 
 def value_gaps(tag, path, stats_path, source, dims, tally):
-    """Gap strings of the --values checks for one episode; adds bytes read and the value-checked count to tally."""
+    """Gap strings of the --values checks for one episode; adds bytes read and the value-checked episode to tally.
+    An episode is either value-checked or has a gap: a .npy whose header is readable but cannot be value-checked
+    (wrong dtype or width, not C order, file size not what the header implies) gets a gap saying why."""
     gaps, data = [], None
     try:
         a = np.load(path, mmap_mode="r")                     # header only; fails on a file shorter than its header says
-        if (a.dtype == np.float16 and a.ndim >= 2 and a.shape[-1] == dims[source] and a.flags.c_contiguous
-                and os.path.getsize(path) == a.offset + a.nbytes):
+    except Exception:
+        a = None                                             # the header check has reported it; still scan for zeros
+    if a is not None:
+        why = []
+        if a.dtype != np.float16:
+            why.append(f"dtype {a.dtype}")
+        if a.ndim < 2 or a.shape[-1] != dims[source]:
+            why.append(f"last dimension {a.shape[-1] if a.ndim else None}, want {dims[source]}")
+        if not a.flags.c_contiguous:
+            why.append("not C order")
+        size, want = os.path.getsize(path), a.offset + a.nbytes
+        if size != want:
+            why.append(f"file size {size}, header implies {want}")
+        if why:
+            gaps.append(f"{tag}: header readable but not value-checked ({'; '.join(why)})")
+        else:
             data = (a.offset, dims[source])
         del a
-    except Exception:
-        pass                                                 # the header check has reported it; still scan for zeros
     nbytes = 0
     try:
         r = scan_file(path, data)
         nbytes += r["bytes"]
-        if r["zero_pages"]:
-            gaps.append(f"{tag}: {r['zero_pages']} all-zero {PAGE}-byte page(s) in .npy, first at offset {r['first_zero']}")
+        gaps += zero_gaps(tag, ".npy", r)
     except Exception as e:
         r, data = None, None
         gaps.append(f"{tag}: cannot read .npy for the value check ({type(e).__name__}: {e})")
@@ -179,9 +228,7 @@ def value_gaps(tag, path, stats_path, source, dims, tally):
         try:
             rs = scan_file(stats_path)
             nbytes += rs["bytes"]
-            if rs["zero_pages"]:
-                gaps.append(f"{tag}: {rs['zero_pages']} all-zero {PAGE}-byte page(s) in .stats.npy, "
-                            f"first at offset {rs['first_zero']}")
+            gaps += zero_gaps(tag, ".stats.npy", rs)
         except Exception as e:
             gaps.append(f"{tag}: cannot read .stats.npy for the value check ({type(e).__name__}: {e})")
         if data is not None and not r["nonfinite"]:
@@ -195,12 +242,14 @@ def value_gaps(tag, path, stats_path, source, dims, tally):
     with tally["lock"]:
         tally["bytes"] += nbytes
         if data is not None:
-            tally["checked"][tag.rsplit("/", 1)[0]] = tally["checked"].get(tag.rsplit("/", 1)[0], 0) + 1
+            cell = tag.rsplit("/", 1)[0]
+            tally["checked"][cell] = tally["checked"].get(cell, 0) + 1
+            tally["checked_tags"].add(tag)
     return gaps
 
 
 def new_tally():
-    return {"lock": threading.Lock(), "bytes": 0, "checked": {}, "t0": time.time()}
+    return {"lock": threading.Lock(), "bytes": 0, "checked": {}, "checked_tags": set(), "t0": time.time()}
 
 
 def check_episode(feats, source, suite, ep, n, dims, values=False, tally=None):
@@ -298,6 +347,10 @@ def check_cache(feats, sources=SOURCES, suites=SUITES, dims=DIMS, workers=16, ou
                     cells.append((source, suite, 0, len(g)))
                     continue
                 results = list(pool.map(lambda e: check_episode(feats, source, suite, e[0], e[1], dims, values, tally), eps))
+                if values:                                   # invariant: value-checked, or at least one gap
+                    results = [r or ([] if f"{source}/{suite}/ep{e[0]:06d}" in tally["checked_tags"]
+                                     else [f"{source}/{suite}/ep{e[0]:06d}: not value-checked and no gap (internal)"])
+                               for e, r in zip(eps, results)]
                 g = [x for r in results for x in r]
                 if values:                                   # uncapped list for a repair Job (main prints DAMAGED lines)
                     tally.setdefault("damaged", []).extend((source, suite, e[0]) for e, r in zip(eps, results) if r)
