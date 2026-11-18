@@ -25,3 +25,21 @@ On the user's "merge": PR #54 (cache pre-check, merge `a26f64a`), #55 (feature p
 **Open PRs:** #59 (`pairings_analysis.py` implements amendment 2026-11-17 item 3, plus the user's two answers on review questions: keep the gate diagnosis over the 1% clean line, and a recorded-decision field for the LIBERO-Plus open case; lead rerun 87 tests OK). #60 (stage 2 Job templates, `render.sh`, RUN steps, wave plan; Opus review approve with fixes, fixes in `180e0e3` and `e993a8f`; lead dry run OK; nothing submitted).
 
 **Encoder pinning** (user: "sure pin it that sounds fine"): a worker is pinning the DINOv3 and SigLIP 2 Hugging Face revisions (C-RADIOv4 is already pinned) to the cache-time revisions, and preparing a check Job that recomputes features for a few cached episodes and compares them to the cache. The check Job needs the user's go before submission.
+
+## 2026-11-18 [agent, lead, implementation] (PRs #59-#61 merged; encoder cache freshness check: DINOv3 and C-RADIOv4 bit-identical, SigLIP 2 out of tolerance on 5 of 8 episodes; stop for the user)
+
+**Merged** on the user's "merge all 3": #59 (`4b024a8`), #60 (`6963830`), #61 (`5fca500`). Worktrees and branches removed.
+
+**Run** (on the user's go, "and the go to the check job"; verified, `results/cache-fresh-check/stacking-encoders-pairings-cache-fresh-check-tcwjl.log`, `job-status.yaml`). `$C` = `5fca5003e4372f8a2615f8d841b88d7f2055e7f1`. ConfigMap `stacking-encoders-pairings-freshcheck-src`: all 6 keys read back equal to `$C`. Rendered `jobs/rendered/job-cache-fresh-check.yaml` (commit 1, hashes 6; one `FILL_` match left, in a header comment, so RUN step 4's "must print 0" check is off by that comment). Server dry run OK. Created 01:55:20 UTC; pod on nautilus-it-gpu06.fullerton.edu, **NVIDIA L4**; setup 01:56:23, check 01:56:46 to 02:02:57 (366.6 s), `=== exit 3`. Job failed at once (podFailurePolicy). About 0.12 L4 GPU-hours (arithmetic from the timestamps). Job and ConfigMap deleted after the log was saved.
+
+**Loaded revisions** (verified, `[load]` lines): each loaded commit equals its pin. DINOv3 `ea8dc286...` fp32, SigLIP 2 `e8e48729...` fp16, C-RADIOv4 `c0457f5d...` fp16, all on cuda.
+
+**Outcome** (verified): `=== FAIL: 5 episode(s) out of tolerance, 0 problem(s)`. Episodes (seed 0): spatial 276 and 368, object 123 and 140, goal 7 and 32, libero_10 251 and 314.
+- DINOv3: 8 of 8 bit-identical to the cache (max abs diff 0).
+- C-RADIOv4: 8 of 8 bit-identical.
+- SigLIP 2: 3 of 8 bit-identical (spatial 276, libero_10 251 and 314). 5 FAIL: spatial 368 (cos_min 0.999327, cos_median 0.999938, rel_l2 3.67e-02, rel_max 1.33e-01, bit-equal 4.6%), object 123 (0.999829, 0.999975, 1.85e-02, 1.03e-01, 5.9%), object 140 (0.999869, 0.999973, 1.62e-02, 7.50e-02, 5.8%), goal 7 (0.999930, 0.999981, 1.19e-02, 4.80e-02, 6.0%), goal 32 (0.999856, 0.999979, 1.70e-02, 9.15e-02, 5.9%). Cosine passes the 0.999 bar everywhere. rel_l2 fails 0.02 on 1 episode, and rel_max fails 0.02 on all 5.
+- First GPU measurement of the numeric noise: same card type (L4), same batch: 0. SigLIP 2 episodes not bit-equal: rel_l2 1.2e-2 to 3.7e-2, cosine at least 0.99933.
+
+**Reading** (speculative, not verified per episode): the pins load the cache's weights; the DINOv3 and C-RADIOv4 bit-identity shows the pipeline is exact on an L4. The SigLIP 2 mismatches fit card-to-card fp16 numerics: SigLIP 2 try 1 wrote "all of libero_spatial and part of libero_object" on an RTX 5000 Ada (direction `LOG.md` 2026-10-29 (h), line 681), and later tries ran on other cards (RUN tolerance item 1). That does not explain why spatial 276 is bit-equal. Which card wrote each episode is not recorded in the cache. A weight change would give cosines far below these. Per the RUN file, a result past a bar is a stop for the user: no bar changed, no rerun.
+
+**Next:** the user decides between accepting the SigLIP 2 card-numerics gap and re-extracting the SigLIP 2 cache on L4s.
