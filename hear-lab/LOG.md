@@ -209,3 +209,24 @@ Planning lead's suggestion, not a decision (`speculative`): frame the experiment
 - Base model (the lead decides). Candidates in `literature/survey/2026-11-16-summary.md`: WNM-3D, AstraNav-World, UniWAM, or plain Wan 2.2 with an own action head. Open check: whether WNM-3D can be evaluated where SoundSpaces 2.0 renders audio.
 - For the PI: what "running" RMS-AQA means (reproduce the Audio Flamingo 3 baseline by training it, or something lighter); how RMS-AQA connects to the world action model work; whether the 200 dollars covers a training run; challenge entry by 2026-12-10; the navigation setting; whether the PI has dataset access or knows a ready dataset.
 - RMS-AQA dataset access: still pending on Hugging Face.
+
+## 2026-11-17 [agent, lead, planning] (RMS-AQA access: the challenge has a separate team registration form)
+**Goal:** find out why the dataset request is still pending and who to contact.
+
+**Did:**
+- Retested the download with the lead's saved Hugging Face login: a gated file returns 403 with the login and 401 without (`verified`, 2026-11-17). The lead's settings page shows the request as PENDING since Nov 15 (the lead's screenshot).
+- Read the challenge website's page script (`rmsaqachallenge.github.io`, raw JavaScript bundle; the page itself is rendered by script, which is why the 2026-11-15 read missed this) and the public registration form.
+
+**PR:** direct.
+
+**Found** (`verified`, read 2026-11-17):
+- The site's Resources section says: "Teams will register for the challenge by submitting the official registration form." and "The email address on your Hugging Face dataset access request must exactly match the Primary contact email used during challenge registration." The form is a Google Form titled "RMS-AQA Challenge at ICASSP 2027: Team Registration" (`https://forms.gle/vpWYdEp3i6kHX7hV8`). Its description says the primary contact "will receive challenge announcements, data-access instructions, and submission updates". Required fields: primary contact email and name, affiliation, team name, country or region, team members (name, email, affiliation per line), and an eligibility confirmation.
+- Organizers' contact address on the site: `rmsaqa.2027@gmail.com`.
+- The dataset's Community tab on Hugging Face had no discussions.
+- Correction to the 2026-11-15 entry and to `PLAN.md`: access is not only the Hugging Face form. A team registration on the separate Google Form appears to be part of it.
+
+**Not verified:** that the missing team registration is the reason the request is pending (`speculative`; it fits what the site says). Whether the organizers grant access for research use without a challenge entry.
+
+From the lead, 2026-11-17: the direction as stated is too vague and needs to become a concrete question; does not see how Audio Flamingo 3 relates to the research. The planning lead proposed a candidate question in chat (does spatial audio help a Wan 2.2 navigation world action model more than one-channel audio when the target is out of sight); the lead has not chosen yet.
+
+**Next:** the lead decides, with the PI, whether to register a team (which signals a challenge entry) or to ask the organizers for research-only access by email. No form was submitted and no email was sent from this session.
