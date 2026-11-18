@@ -1,0 +1,17 @@
+# Stage 2 run outputs (pairings PLAN amendment 2026-11-15 later, item g; size 1Ti confirmed by the user 2026-11-17:
+# "yeah sure as long as its fine with nautilus' policies"). CephFS (ReadWriteMany), rook-cephfs = US West, same region
+# as the jobs. Holds training checkpoints (ckpt.pt about 20 GB, briefly about 40 GB while writing) and model.pt
+# (6.7 GB) for the 17 stage 2 runs. Not archival (6-month purge): final models also get a backup copy.
+# _standards/08: no per-volume or per-namespace CephFS cap in the docs; creating a PVC is a normal member action.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: stacking-encoders-runs
+  namespace: aria-world
+spec:
+  storageClassName: rook-cephfs
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Ti
