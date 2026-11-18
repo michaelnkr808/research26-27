@@ -65,18 +65,34 @@ def _tokens_to_grid(tokens):
 
 
 class _HFEncoder:
-    def __init__(self, name, hf_id, resolution, device, dtype):
+    def __init__(self, name, hf_id, resolution, device, dtype, revision=None):
         self.name, self.hf_id, self.resolution = name, hf_id, resolution
         self.device, self.dtype = device, dtype
+        self.revision = revision          # the Hugging Face commit asked for (None: the repo's current head)
+        self.loaded_commit = None         # the commit the weights actually came from (model.config._commit_hash)
+
+
+# Hugging Face revisions of the default variants, pinned so the loaders keep producing the features in the caches.
+# DINOv3 and SigLIP 2: the repo head on 2026-11-17, unchanged since 2025-08-19 and 2025-02-21, before the proxy-round
+# caches were built (2026-10-29 to 2026-10-31, extraction commits 2d0bcbd and 439e52f); DINOv3's revision is also the
+# one the 2026-10-19 feasibility extraction recorded (LOG 2026-10-19/20). C-RADIOv4: pinned since 2026-10-17.
+# A --variant (another hf_id) loads that repo's head: these pins belong to the default ids only.
+REVISIONS = {
+    "dinov3": "ea8dc2863c51be0a264bab82070e3e8836b02d51",      # facebook/dinov3-vitl16-pretrain-lvd1689m, checked 2026-11-17
+    "siglip2": "e8e487298228002f3d8a82e0cd5c8ea9c567f57f",     # google/siglip2-so400m-patch14-384, checked 2026-11-17
+    "c-radiov4": "c0457f5dc26ca145f954cd4fc5bb6114e5705ad8",   # nvidia/C-RADIOv4-SO400M, checked 2026-10-17
+}
 
 
 @register("dinov3")
 def load_dinov3(device, dtype, variant=None):
     from transformers import AutoImageProcessor, AutoModel
     hf_id = variant or "facebook/dinov3-vitl16-pretrain-lvd1689m"  # gated: accept license on HF
-    enc = _HFEncoder("dinov3", hf_id, 224, device, dtype)
-    proc = AutoImageProcessor.from_pretrained(hf_id)
-    model = AutoModel.from_pretrained(hf_id, dtype=dtype).to(device).eval()
+    revision = None if variant else REVISIONS["dinov3"]
+    enc = _HFEncoder("dinov3", hf_id, 224, device, dtype, revision)
+    proc = AutoImageProcessor.from_pretrained(hf_id, revision=revision)
+    model = AutoModel.from_pretrained(hf_id, dtype=dtype, revision=revision).to(device).eval()
+    enc.loaded_commit = getattr(model.config, "_commit_hash", None)
     n_skip = 1 + getattr(model.config, "num_register_tokens", 0)  # CLS + registers
 
     @torch.no_grad()
@@ -94,10 +110,14 @@ def load_dinov3(device, dtype, variant=None):
 def load_siglip2(device, dtype, variant=None):
     from transformers import AutoImageProcessor, AutoModel
     hf_id = variant or "google/siglip2-so400m-patch14-384"
-    proc = AutoImageProcessor.from_pretrained(hf_id)
+    revision = None if variant else REVISIONS["siglip2"]
+    proc = AutoImageProcessor.from_pretrained(hf_id, revision=revision)
     res = proc.size["height"]
-    enc = _HFEncoder("siglip2", hf_id, res, device, dtype)
-    vision = AutoModel.from_pretrained(hf_id, dtype=dtype).vision_model.to(device).eval()
+    enc = _HFEncoder("siglip2", hf_id, res, device, dtype, revision)
+    full = AutoModel.from_pretrained(hf_id, dtype=dtype, revision=revision)
+    enc.loaded_commit = getattr(full.config, "_commit_hash", None)
+    vision = full.vision_model.to(device).eval()
+    del full
 
     @torch.no_grad()
     def encode(frames):
@@ -113,10 +133,11 @@ def load_siglip2(device, dtype, variant=None):
 def load_cradiov4(device, dtype, variant=None):
     from transformers import AutoModel
     hf_id = variant or "nvidia/C-RADIOv4-SO400M"
-    enc = _HFEncoder("c-radiov4", hf_id, 448, device, dtype)
-    # Pin the remote code: trust_remote_code runs files from the HF repo.
-    revision = None if variant else "c0457f5dc26ca145f954cd4fc5bb6114e5705ad8"  # checked 2026-10-17
+    # Pin the remote code too: trust_remote_code runs files from the HF repo.
+    revision = None if variant else REVISIONS["c-radiov4"]
+    enc = _HFEncoder("c-radiov4", hf_id, 448, device, dtype, revision)
     model = AutoModel.from_pretrained(hf_id, trust_remote_code=True, revision=revision).to(device).eval()
+    enc.loaded_commit = getattr(model.config, "_commit_hash", None)
     # Weights stay fp32: casting the module to fp16 fails (its remote code upcasts some inputs to
     # fp32, giving a float/Half matmul mismatch). Reduced precision goes through autocast instead.
     amp = dtype != torch.float32
