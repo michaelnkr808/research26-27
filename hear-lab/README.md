@@ -1,6 +1,6 @@
 # HEAR Lab: spatial audio for world action models
 
-**Status:** exploring. Nothing has been run yet; the PI's first task is to get the RMS-AQA benchmark running. A literature survey is done (`literature/survey/`, PRs #49 and #50; start with `literature/survey/2026-11-16-summary.md`). Current agenda: `PLAN.md`. History: `LOG.md`.
+**Status:** exploring. Nothing has been run yet; the PI's first task is to get the RMS-AQA benchmark running. A literature survey and a prior-work check are done (`literature/survey/`, PRs #49, #50 and #51; start with `literature/survey/2026-11-16-summary.md`). Three candidate research questions go to the PI on 2026-11-19 (`LOG.md` 2026-11-18); the dataset request for RMS-AQA is still pending. Current agenda: `PLAN.md`. History: `LOG.md`.
 
 **Question:** What benefits does a world action model gain from being given spatial audio? In the lead's own words (2026-11-15): "relating spatial audio to world action models and investigating what benefits can be gained from providing world action models with spatial audio".
 
