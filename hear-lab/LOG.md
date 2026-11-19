@@ -271,3 +271,29 @@ From the lead, 2026-11-18: "i just want the dataset" (not a decision to enter th
 **Not verified:** whether the released WNM-3D checkpoints were trained on any Habitat or Matterport3D data (the paper reports VLN-CE R2R; the repository does not mention it), so how well they transfer to Habitat scenes is unknown; how much work (1) and (2) are; whether AstraNav-World, which is evaluated in Habitat but has no released training script for its video part, would be less work overall (`speculative`: the planning lead thinks WNM-3D is still the better start because its training code exists and its data format is not tied to a simulator).
 
 **Next:** the lead raises the base model and this finding with the PI on 2026-11-19. Then a decision record for the base model (by pull request).
+
+## 2026-11-18 [agent, lead, planning] (addendum 2: the lead's positions before the PI meeting; RMS-AQA parked)
+**Goal:** record what the lead decided to bring to the PI meeting on 2026-11-19.
+
+**Did:**
+- Gave the lead a status summary and the five questions planned for the PI. The lead answered them directly.
+- Moved the RMS-AQA item in `PLAN.md` from "Now" to "Parked", and updated the `README.md` status and the project brief.
+
+**PR:** direct.
+
+**Found:** nothing new measured or read.
+
+From the lead, 2026-11-18 (answers to the planning lead's numbered list):
+- On what the PI wants from RMS-AQA and whether the Audio Flamingo 3 baseline is needed: "maybe just drop this for now". The planning lead reads this as parking the RMS-AQA task, not only the question (the lead's answer on the team registration supports that reading). The PI assigned the task and has not been told.
+- On the base model: "WNM-3D seems fine but can u reexplain the simulator gap". The gap was explained again in chat (same content as the 2026-11-18 addendum above).
+- On the budget: "training run and we can get more later".
+- On registering a challenge team: "we can figure this out later and doesn't matter if we drop RMS-aqa".
+- Asked for the research question options again; no option chosen.
+
+Consequences the planning lead stated to the lead: with RMS-AQA parked, option 2 (the encoder comparison) loses its tie to the PI's first task; the challenge submission deadline (2026-12-10, preliminary) passes without an entry unless the task is picked up again; the pending access request and the email cost nothing to leave open.
+
+**Not verified:** the PI's view on any of this; what a training run costs (no batch has been timed, and the data has to be rendered first), so whether 200 dollars covers one is unknown.
+
+**Next:** the lead tells the PI on 2026-11-19 that RMS-AQA is parked, and brings the three options, WNM-3D with the simulator gap, and the budget position. After the meeting the planning lead writes the research question into `README.md` and the decision records (base model, setting, audio encoder, data source) by pull request.
+
+**Open questions:** which research question option; the PI's answer on parking RMS-AQA; how much work the two WNM-3D pieces are (Habitat audio-visual data in LeRobot format, and a Habitat evaluation link); whether the released WNM-3D weights transfer to Habitat scenes.
