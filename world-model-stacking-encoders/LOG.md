@@ -2018,3 +2018,25 @@ On the user's go ("yep start it", then "ok, dispatch"), four workers wrote the s
 **PR:** none. This entry and the PLAN note: direct (chore), on the user's request to note it.
 
 **Next:** unchanged. Stage 3 design starts with the user's choice of fusion variants. The literature session's novelty report waits on the user's PR OK in that window.
+
+## 2026-11-18 [agent, lead, planning] (mentor's advice, one training seed per configuration for now: stage 2 PLAN amendment open as PR #63, reviewed, not merged; "Which layer?" dropped from the stage 3 ideas)
+
+**Goal:** act on two things the user brought to the planning window: the mentor's advice on seeds, and a cut to the stage 3 ideas.
+
+**Did:**
+- **The paper's numbers, for the user's question** (verified this session from the PDF text, `pdftotext` of the user's copy; Table 8 pp19-20, channel-wise concatenation block, Table 1 p6, Table 10 p23). Clean LIBERO four-suite average: VAE-only 97.9, DINOv3 98.4, SigLIP 2 98.5, C-RADIOv4 98.2; no clean number is reported for any pair. LIBERO-Plus totals: VAE-only 74.7, DINOv3 84.0, SigLIP 2 83.1, C-RADIOv4 83.5, DINOv3 + SigLIP 2 85.83, DINOv3 + C-RADIOv4 78.59 (one trained checkpoint each; means over three evaluation seeds).
+- **Seeds.** The user, verbatim: "okay so some advice from my mentor: she said to not go with 3 different seeds and instead to just do one for now" (the user's paraphrase of the mentor). The lead recommended following it, named the cost (one seed puts us where the paper is: a drop cannot be told from luck) and proposed a three-point amendment; the user: "yes". On the user's request ("can u pass my mentors advice to experiements agent") the advice went to `vis-lab-experiment` verbatim, as information and not a go.
+- **PR #63** (`stacking-encoders-pairings-one-seed-amendment`, four commits, `2b21db4` to `136ecff`; **open, not merged**): the stage 2 PLAN's amendment of 2026-11-18 with dated pointers in the design text, an override row in `STANDARDS.md`, and status sentences in this folder's `PLAN.md` and `README.md`. Content: only seed 0 of each configuration is committed (5 new training runs, 6 checkpoints evaluated; was 17 and 18); wave 2 is deferred; the locked decision rule is unchanged and applies to a three-seed result only; a one-seed result is seven differences beside the paper's with a direction label each and one overall line, read only when DINOv3 alone is above the no-encoder model, with no threshold; a constraint on adding seeds later (a harm verdict under C-a needs 6 more runs; a configuration without added seeds is "not tested", not "missing") and the limit that remains (deciding with seed 0 known). Nothing was run.
+- **Review of PR #63:** one fresh read-only reviewer (opus), three rounds, each posted as a PR comment (issuecomment-6990238731, -6990319660, -6990337252). Round 1: four must-fix (wave 2 still promised in Decision rule item 6; partial seed additions undefined; the scope exception to "Test-set use" unnamed; the one-seed summary loose) and six minor; all worked in. Round 2: one new must-fix (the overall line ignored the calibration condition), fixed. Round 3: "merge-ready from the reviewer's side: yes"; its two wording nits were applied.
+- **Items the chat had not spelled out** were listed to the user before the merge question (the override of the three-seed standard, the meaning of "same pattern as the paper or not", `none` seeds 1 and 2 deferred, 6 runs not 4, "not tested", the named exception, the calibration condition on the overall line). The merge waits on the user's word.
+- **Stage 3 ideas.** The user: "okay i want to drop the layers stuff also for the how the encoders are combined". The lead asked which of four readings was meant; the user answered "this part:" with a picture of the "1  Which layer?" panel of the presentations session's ideas figure. Recorded in `PLAN.md` under Next item 3: stage 3 does not vary which encoder layer the features come from. The other four ideas on that figure are neither chosen nor dropped. Whether Next item 3 itself is dropped too was asked, not answered.
+- **Relayed from `vis-lab-experiment`, not rechecked** (its messages of 2026-11-18 and 2026-11-19 00:17 UTC; stage 2 `LOG.md`): the SigLIP 2 re-extraction left 8 zero-filled episodes after NRP's Ceph full-disk failure; a value-level check of all four caches (PR #64, merged) found only those 8; the repair Job (PR #65) is reviewed, not merged, not submitted; `siglip2` and `dinov3+siglip2` stay on hold; nothing is sized for a second wave.
+- Project brief (Arbor) and the mentor memory note updated.
+
+**Found:** no result.
+
+**Test-set use:** none.
+
+**PR:** #63, open. This entry and the PLAN note: direct (chore).
+
+**Next:** the user's yes or no on merging PR #63, then the lead tells the experiment session and removes the worktree. The user's answer on Next item 3. Stage 3 design starts with the user's choice among the remaining ideas.
