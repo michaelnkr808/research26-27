@@ -1,0 +1,206 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    cni.projectcalico.org/containerID: abd5db93d3e0ca344ae9efe86361937e25fe0ace6e2bd195127da011fe675395
+    cni.projectcalico.org/podIP: ""
+    cni.projectcalico.org/podIPs: ""
+    kubernetes.io/limit-ranger: 'LimitRanger plugin set: ephemeral-storage request
+      for container main; ephemeral-storage limit for container main'
+    nrp.ai/username: http://cilogon.org/serverE/users/436081
+  creationTimestamp: "2026-11-19T18:50:20Z"
+  generateName: stacking-encoders-pairings-cache-value-check-
+  generation: 1
+  labels:
+    batch.kubernetes.io/controller-uid: 32e9c367-d924-4b87-8da6-9855f1cb3e41
+    batch.kubernetes.io/job-name: stacking-encoders-pairings-cache-value-check
+    controller-uid: 32e9c367-d924-4b87-8da6-9855f1cb3e41
+    job-name: stacking-encoders-pairings-cache-value-check
+  name: stacking-encoders-pairings-cache-value-check-6s22b
+  namespace: aria-world
+  ownerReferences:
+  - apiVersion: batch/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Job
+    name: stacking-encoders-pairings-cache-value-check
+    uid: 32e9c367-d924-4b87-8da6-9855f1cb3e41
+  resourceVersion: "15582907456"
+  uid: 3714275f-1518-4374-a82e-6ba57d8bf9fe
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: feature.node.kubernetes.io/pci-10de.present
+            operator: NotIn
+            values:
+            - "true"
+          - key: topology.kubernetes.io/region
+            operator: In
+            values:
+            - us-west
+  containers:
+  - args:
+    - |
+      set -uo pipefail
+      echo "=== start $(date -u) node=${NODE_NAME:-?}"
+      sha256sum /src/check_stage2_cache.py
+      rc=0
+      python /src/check_stage2_cache.py --feats /mnt/proxy/feats --workers 16 --values || rc=$?
+      echo "[cgroup] memory.peak $(cat /sys/fs/cgroup/memory.peak 2>/dev/null || echo n/a) bytes; $(grep -E '^(anon|file) ' /sys/fs/cgroup/memory.stat 2>/dev/null | tr '\n' ' ')"
+      echo "=== exit $rc $(date -u)"
+      exit $rc
+    command:
+    - bash
+    - -c
+    env:
+    - name: PYTHONUNBUFFERED
+      value: "1"
+    - name: MALLOC_ARENA_MAX
+      value: "2"
+    - name: NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: NVIDIA_VISIBLE_DEVICES
+      value: void
+    image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+    imagePullPolicy: IfNotPresent
+    name: main
+    resources:
+      limits:
+        cpu: 1200m
+        ephemeral-storage: 50Gi
+        memory: 2100Mi
+      requests:
+        cpu: "1"
+        ephemeral-storage: "0"
+        memory: 1800Mi
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /src
+      name: src
+      readOnly: true
+    - mountPath: /mnt/proxy
+      name: proxy
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: nautilus-it-cpu15.fullerton.edu
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Never
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: PreferNoSchedule
+    key: nvidia.com/gpu
+    operator: Exists
+  volumes:
+  - configMap:
+      defaultMode: 420
+      name: stacking-encoders-pairings-valuecheck-src
+    name: src
+  - name: proxy
+    persistentVolumeClaim:
+      claimName: stacking-encoders-proxy
+      readOnly: true
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2026-11-19T21:17:59Z"
+    observedGeneration: 1
+    status: "False"
+    type: PodReadyToStartContainers
+  - lastProbeTime: null
+    lastTransitionTime: "2026-11-19T18:50:20Z"
+    observedGeneration: 1
+    reason: PodCompleted
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2026-11-19T21:17:58Z"
+    observedGeneration: 1
+    reason: PodCompleted
+    status: "False"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2026-11-19T21:17:58Z"
+    observedGeneration: 1
+    reason: PodCompleted
+    status: "False"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2026-11-19T18:50:20Z"
+    observedGeneration: 1
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - allocatedResources:
+      cpu: "1"
+      ephemeral-storage: "0"
+      memory: 1800Mi
+    containerID: containerd://e95360473733019b5f693e9306df725b993ac8833f805af4e2c75da8d9ab2cb6
+    image: docker.io/pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+    imageID: docker.io/pytorch/pytorch@sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2
+    lastState: {}
+    name: main
+    ready: false
+    resources:
+      limits:
+        cpu: 1200m
+        ephemeral-storage: 50Gi
+        memory: 2100Mi
+      requests:
+        cpu: "1"
+        ephemeral-storage: "0"
+        memory: 1800Mi
+    restartCount: 0
+    started: false
+    state:
+      terminated:
+        containerID: containerd://e95360473733019b5f693e9306df725b993ac8833f805af4e2c75da8d9ab2cb6
+        exitCode: 0
+        finishedAt: "2026-11-19T21:17:57Z"
+        reason: Completed
+        startedAt: "2026-11-19T18:55:00Z"
+    user:
+      linux:
+        gid: 0
+        supplementalGroups:
+        - 0
+        uid: 0
+    volumeMounts:
+    - mountPath: /src
+      name: src
+      readOnly: true
+      recursiveReadOnly: Disabled
+    - mountPath: /mnt/proxy
+      name: proxy
+      readOnly: true
+      recursiveReadOnly: Disabled
+  hostIP: 209.129.60.125
+  hostIPs:
+  - ip: 209.129.60.125
+  observedGeneration: 1
+  phase: Succeeded
+  podIP: 10.244.242.110
+  podIPs:
+  - ip: 10.244.242.110
+  qosClass: Burstable
+  startTime: "2026-11-19T18:50:20Z"
