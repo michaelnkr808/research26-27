@@ -1,0 +1,203 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    annotations:
+      nrp.ai/username: http://cilogon.org/serverE/users/436081
+    creationTimestamp: "2026-11-19T05:23:59Z"
+    finalizers:
+    - batch.kubernetes.io/job-tracking
+    generateName: stacking-encoders-pairings-siglip2-repair-
+    generation: 1
+    labels:
+      batch.kubernetes.io/controller-uid: cc5ca522-ae12-45d4-8918-25db85aadc32
+      batch.kubernetes.io/job-name: stacking-encoders-pairings-siglip2-repair
+      controller-uid: cc5ca522-ae12-45d4-8918-25db85aadc32
+      job-name: stacking-encoders-pairings-siglip2-repair
+    name: stacking-encoders-pairings-siglip2-repair-n259r
+    namespace: aria-world
+    ownerReferences:
+    - apiVersion: batch/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Job
+      name: stacking-encoders-pairings-siglip2-repair
+      uid: cc5ca522-ae12-45d4-8918-25db85aadc32
+    resourceVersion: "15581096759"
+    uid: bdf055f6-9f10-4a54-a908-f298cc146515
+  spec:
+    activeDeadlineSeconds: 3600
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: nvidia.com/gpu.product
+              operator: In
+              values:
+              - NVIDIA-L4
+            - key: nvidia.com/cuda.driver.major
+              operator: Gt
+              values:
+              - "569"
+            - key: topology.kubernetes.io/region
+              operator: In
+              values:
+              - us-west
+            - key: kubernetes.io/hostname
+              operator: NotIn
+              values:
+              - k8s-chase-ci-07.calit2.optiputer.net
+              - ry-gpu-08.sdsc.optiputer.net
+    containers:
+    - args:
+      - |
+        set -euo pipefail
+        R=/mnt/proxy; F=$R/feats; mkdir -p $R/logs
+        exec > >(tee -a $R/logs/siglip2-repair-$JOB_UID-$(date +%Y%m%d-%H%M%S).log) 2>&1
+        echo "=== SigLIP 2 repair (L4 only), Job uid $JOB_UID, node $NODE_NAME, src $SRC_GIT_COMMIT"; date -u
+        [[ "$SRC_GIT_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "ABORT: SRC_GIT_COMMIT is not a 40-hex commit (not rendered?)"; exit 10; }
+        [ -n "$JOB_UID" ] || { echo "ABORT: the pod has no batch.kubernetes.io/controller-uid label"; exit 11; }
+        ( cd /src && sha256sum -c - <<'EOF'
+        71b39b055daf740ebf35631dc5a97a32160f6ba36f754e31d99c56bee2265092  repair_stage2_episodes.py
+        fc2ff25f9ce86e17da6c7fbd44f5f60b7807a70501f7e09d97f788960e2f3bea  check_stage2_cache.py
+        1d7ea029550150e1ed987a9d0bf000bf26e22de022bc2bf6050ff1a68fc86b60  extract_fastwam.py
+        f334c5604f319f779af6b70d06c0505f2c5df482c4531cb8b779b6894384683a  extract_features.py
+        81993810937d2692597d1d161e438f7688dc7809d0017628d9603ef1d196e363  fastwam_data.py
+        7af1f7aa2d595d9e0b7f1fb462f7901c6fa9594d2da7895b0168f0ef3ea2d70d  diagnostics.py
+        880c47cbe741b7fbcd98f44f85e7a1d14747d6c837e0493f4642e5ebbc18ace8  setup_env.sh
+        8f9e70a4f155a8251d5546b07f57d395869ced5eb3d64047791eb230f95241ea  damaged-episodes.txt
+        EOF
+        ) || { echo "ABORT: a /src key differs from the rendered hash (ConfigMap changed after the render, or no render)"; exit 19; }
+        D=$R/logs/siglip2-repair-$JOB_UID; L=/src/damaged-episodes.txt
+        echo "=== damaged-episode list ($(wc -l < $L) line(s))"; cat $L
+        nvidia-smi
+        nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv,noheader -l 30 | sed -u 's/^/[gpu] /' &
+        SMI=$!; trap 'kill $SMI 2>/dev/null || true' EXIT
+        bash /src/setup_env.sh
+        python -c "import sys, torch; ok = torch.cuda.is_available() and torch.cuda.get_device_name(0).split()[-1] == 'L4'; print('cuda', torch.cuda.is_available(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else '-'); sys.exit(0 if ok else 13)" || { echo "ABORT: no CUDA device or not an L4"; exit 13; }
+        echo "=== prepare"; date -u
+        python /src/repair_stage2_episodes.py prepare --list $L --feats $F --state $D --node "$NODE_NAME" || { rc=$?; echo "ABORT: prepare exit $rc"; exit $rc; }
+        while read -r s ids; do                    # plan.txt: "<suite> <id>,<id>,..." per suite, written by prepare
+          echo "=== extract $s episodes $ids"; date -u
+          python /src/extract_fastwam.py --root $R/data/lerobot_v30/${s}_no_noops_lerobot --suite $s \
+            --source siglip2 --out $F --episodes $ids --dtype fp16 --batch 32 --device cuda < /dev/null
+        done < $D/plan.txt
+        echo "=== postcheck"; date -u
+        G=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -1) || G=unknown   # its exit codes overlap the FailJob list
+        python /src/repair_stage2_episodes.py postcheck --list $L --feats $F --state $D --commit $SRC_GIT_COMMIT \
+          --node "$NODE_NAME" --gpu "$G" || { rc=$?; echo "ABORT: postcheck exit $rc"; exit $rc; }
+        date -u; echo "=== done"
+      command:
+      - bash
+      - -c
+      env:
+      - name: SRC_GIT_COMMIT
+        value: 16af842dca45c7a9f481e907bf464afe2149f038
+      - name: JOB_UID
+        valueFrom:
+          fieldRef:
+            apiVersion: v1
+            fieldPath: metadata.labels['batch.kubernetes.io/controller-uid']
+      - name: NODE_NAME
+        valueFrom:
+          fieldRef:
+            apiVersion: v1
+            fieldPath: spec.nodeName
+      - name: HF_TOKEN
+        valueFrom:
+          secretKeyRef:
+            key: HF_TOKEN
+            name: stacking-encoders-hf
+      - name: HF_HOME
+        value: /work/hf
+      - name: PYTHONUNBUFFERED
+        value: "1"
+      - name: OMP_NUM_THREADS
+        value: "3"
+      - name: MALLOC_ARENA_MAX
+        value: "2"
+      - name: PYTHONPATH
+        value: /src
+      image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+      imagePullPolicy: IfNotPresent
+      name: main
+      resources:
+        limits:
+          cpu: 3600m
+          ephemeral-storage: 34Gi
+          memory: 14400Mi
+          nvidia.com/gpu: "1"
+        requests:
+          cpu: "3"
+          ephemeral-storage: 30Gi
+          memory: 12Gi
+          nvidia.com/gpu: "1"
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /work
+        name: work
+      - mountPath: /src
+        name: src
+        readOnly: true
+      - mountPath: /mnt/proxy
+        name: proxy
+      - mountPath: /dev/shm
+        name: dshm
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Never
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: PreferNoSchedule
+      key: nvidia.com/gpu
+      operator: Exists
+    volumes:
+    - emptyDir:
+        sizeLimit: 34Gi
+      name: work
+    - configMap:
+        defaultMode: 420
+        name: stacking-encoders-pairings-repair-src
+      name: src
+    - name: proxy
+      persistentVolumeClaim:
+        claimName: stacking-encoders-proxy
+    - emptyDir:
+        medium: Memory
+        sizeLimit: 2Gi
+      name: dshm
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2026-11-19T05:23:59Z"
+      message: '0/541 nodes are available: 2 Insufficient nvidia.com/gpu, 225 node(s)
+        had untolerated taint(s), 23 node(s) were unschedulable, 291 node(s) didn''t
+        match Pod''s node affinity/selector. no new claims to deallocate, preemption:
+        0/541 nodes are available: 2 Insufficient nvidia.com/gpu, 539 Preemption is
+        not helpful for scheduling.'
+      observedGeneration: 1
+      reason: Unschedulable
+      status: "False"
+      type: PodScheduled
+    phase: Pending
+    qosClass: Burstable
+kind: List
+metadata:
+  resourceVersion: ""
