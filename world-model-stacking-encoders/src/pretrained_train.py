@@ -504,8 +504,13 @@ def _stop(out, name, e, log, **extra):
 
 
 def _write_json(path, obj):
+    """The temporary file is flushed and fsync'ed before the rename onto path: a write the storage refuses (CephFS
+    pool full, LOG 2026-11-18) then raises here instead of leaving a file of zeros under the final name."""
     tmp = Path(str(path) + ".tmp")
-    tmp.write_text(json.dumps(obj, indent=1))
+    with open(tmp, "w") as f:                      # same text and encoding as Path.write_text
+        f.write(json.dumps(obj, indent=1))
+        f.flush()
+        os.fsync(f.fileno())
     tmp.replace(path)
 
 
@@ -635,7 +640,10 @@ def _main(args, t0, log, wd):
         return 3
     n_params = sum(q.numel() for q in model.parameters())
     tmp = out / "model.pt.tmp"
-    torch.save({"model": model.state_dict(), "config": cfg}, tmp)
+    with open(tmp, "wb") as f:      # opened before the write so its fsync reports a refused write (see P.save_ckpt)
+        torch.save({"model": model.state_dict(), "config": cfg}, tmp)
+        f.flush()
+        os.fsync(f.fileno())
     tmp.replace(out / "model.pt")
     _write_json(out / "train.json", {"n_params": n_params, "start_step_this_process": start, "end_step": stop,
                                      "micro_batch_history": micro_hist, "history": read_history(out / "history.jsonl", log),

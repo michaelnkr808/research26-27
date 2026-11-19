@@ -22,20 +22,20 @@
 #      The free-space guard (exit 14) reads the volume of RUN_ROOT.
 #   3. --first-batch-report added: PLAN Decision rule item 6 runs the first-batch report for every configuration before any
 #      evaluation. It writes first-batch.json (per-source channel statistics, loss vs predict-zero) before step 1, using no-grad
-#      forwards and the step-0 draws from their own (seed, step) generator (pretrained_train.py lines 216-251, 611-624), so it does
+#      forwards and the step-0 draws from their own (seed, step) generator (pretrained_train.py lines 216-251, 616-629), so it does
 #      not change the training draws (read, not tested; stage 1's full run did not pass it, its sanity Job did).
 #   4. Checkpoint interval per card is rendered (CKPT_L40S, CKPT_L40), per configuration (CHECKPOINT INTERVAL below).
 #   5. A CUDA out-of-memory now exits 20 (FailJob): the script greps the last 300 log lines for "CUDA out of memory" or
 #      "OutOfMemoryError" after a Python exit 1. Stage 1 retried it (exit 1), which would only repeat the OOM at the same
 #      micro-batch three times. PLAN Training: micro-batch "the largest of 8 and 4 under 0.9 x the card's memory"; so the lead
 #      re-renders with MICRO_BATCH 4 (allowed by the rule, logged) and resubmits; a resume at a new micro-batch is supported
-#      (pretrained_train.py lines 599-603). Micro-batch 4 not fitting is a stop for the user (PLAN Hand-off step 4).
+#      (pretrained_train.py lines 604-608). Micro-batch 4 not fitting is a stop for the user (PLAN Hand-off step 4).
 #   6. Pod stdout keeps step lines 1-25 (stage 1 kept only every 100th) so the first-minutes check (micro-batch fit, s/step,
 #      data wait; PLAN Hand-off step 4) reads from `kubectl logs`; awk replaces stage 1's grep filter for that. 25 extra lines.
 #   7. Host memory, the time cap, the pod and Job deadlines: rendered per configuration (below).
 #   8. New ConfigMap stacking-encoders-pairings-train-src (the same 7 keys as stacking-encoders-baseline-src, created from the
-#      stage 2 source commit; the files are unchanged since stage 1's commit, `git log` on 2026-11-17: the last change to
-#      pretrained_train.py, proxy_wam.py, pretrained_sizing.py is 17d9cbb, before stage 1's run).
+#      stage 2 source commit; the files are unchanged since stage 1's commit 17d9cbb except PR #69's fsync change in
+#      pretrained_train.py and proxy_wam.py (writes only, same bytes saved; expected diff: RUN-stage2-train.md step 2).
 #   9. Labels experiment=stacking-pairings, kind, config, seed: to count this sweep's pods for the 8-GPU cap in one command.
 # CHECKPOINT INTERVAL (stage 1 rule: the multiple of 100 steps nearest 45 min = 2,700 s of step time, kept within 30-60 min).
 #   Measured step times exist only for none (Nautilus L40S 4.018 s, L40 5.036 s; stage 1 LOG). For the encoder configs the
@@ -53,7 +53,7 @@
 #   measured anywhere: the first-minutes projection decides (over the cap: stop for the user, PLAN Hand-off step 4).
 # HOST MEMORY (speculative arithmetic; stage 1 measured none only, anon at exit is not the working set). none and resume:
 #   stage 1's 32Gi / 38Gi (a resume holds the about 20 GB checkpoint in RAM, then frees it before the loader starts:
-#   pretrained_train.py line 597 `del state`, loader at line 348). Encoder configs add the loader's episode cache: each feature
+#   pretrained_train.py line 602 `del state`, loader at line 348). Encoder configs add the loader's episode cache: each feature
 #   file is held with its future means (2 x the file, proxy_wam.py lines 137-143, 326-330), for at most about 2 chunks of 16
 #   episodes (horizon = ceil(16 x 162 / 128) + 1 = 22 steps; 277,713 frames / 1,712 episodes = 162 per episode, data/README.md
 #   line 39), plus up to 6 queued fp16 batches (queue maxsize prefetch 3 + assemble 3; one batch is 128 x 1,176 x in_dim x 2 B).
