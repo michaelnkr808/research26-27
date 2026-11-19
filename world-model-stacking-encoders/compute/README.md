@@ -5,7 +5,7 @@ Started 2026-11-19 at the user's request (their words: "start noting like the ti
 ## Files
 
 - `nautilus-job-times.csv`: every `stacking-encoders*` pod in namespace `aria-world` that NRP's public Prometheus still had on 2026-11-19 08:33 UTC (14-day window; the oldest row is from 2026-11-11), and every Job since.
-- Older Jobs (before 2026-11-15) are being collected from the experiment LOGs into a second file with the same columns; times there are only as good as what the LOG recorded.
+- `nautilus-job-times-before-2026-11-15.csv`: Jobs before 2026-11-15, collected from the experiment LOGs, same columns plus `source`; times there are only as good as what the LOG recorded (section at the end).
 
 ## Columns
 
@@ -32,3 +32,14 @@ It measures queue wait and run time per pod (verified from Prometheus for the ro
 ## How to add a row
 
 When a Job ends: `kubectl get pod <pod> -n aria-world -o jsonpath='{.metadata.creationTimestamp} {.status.containerStatuses[0].state.terminated.startedAt} {.status.containerStatuses[0].state.terminated.finishedAt}'`, or the three Prometheus series above for a pod that is already gone. Never estimate a time; leave the cell empty and say why in the note.
+
+## Before 2026-11-15 (`nautilus-job-times-before-2026-11-15.csv`, added 2026-11-19)
+
+Collected by a worker from the experiment LOGs and READMEs (132 rows, each with the LOG file and line in `source`); the lead spot-checked three rows against the LOG lines. It is per Job or per submit-try where the LOG does not name pods. A time is in a cell only if the LOG states it, so many cells are empty: 105 GPU rows, 54 with a recorded wait, 48 with a recorded run time. Extra `phase` values: `deleted`, `deleted_pending` (deleted while still waiting), `DeadlineExceeded`, `OOMKilled`, `BackoffLimitExceeded`.
+
+Reading (arithmetic on the rows that have the number; a lower bound, since about half the GPU rows have no recorded wait):
+- GPU rows with a recorded wait: 242.7 h of queue wait in total (54 rows). GPU rows with a recorded run time: 124.1 h (48 rows). These are sums over pods; pods that waited at the same time overlap in calendar time, so this is not days of calendar delay.
+- 28 GPU rows never ran (deleted while Pending, or expired): 91.3 h of waiting with nothing to show.
+- The longest single waits: 26.2 h, 26.0 h, 19.0 h, 13.9 h, 12.1 h, 12.0 h.
+- A deleted-while-Pending row followed by a resubmit restarts the clock: to total the delay of one task, add its earlier rows.
+- One overlap with the other file: `stacking-encoders-pfb-ext-sam3-background-xph77`. The LOG gives two submit times for it; the Prometheus file has the pod's creation time.
