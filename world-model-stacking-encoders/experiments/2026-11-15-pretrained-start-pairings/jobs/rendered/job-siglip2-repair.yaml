@@ -1,0 +1,133 @@
+# Repair of the damaged SigLIP 2 cache episodes on one NVIDIA L4 (pairings stage 2). The user approved repairing only
+# the damaged episodes on an L4 (LOG 2026-11-18, "re-extract only the damaged episodes on an L4"; each new Job needs its
+# own go). Made from job-siglip2-reextract.yaml: same image, setup_env.sh, env, node affinity (L4 only, driver > 569,
+# us-west, the two fault hosts excluded), HF secret, /src hash check, SRC_GIT_COMMIT render, CUDA + L4 pre-check (exit
+# 13), resources and extraction settings (--source siglip2 --dtype fp16 --batch 32 --device cuda, same --root, --out).
+# Changed: one pod, no shards; --episodes from the damaged list, default --shard 0/1, so the extractor writes a new
+# _meta.shard0of1.json and leaves _meta.shard0of2.json and _meta.shard1of2.json alone; src/repair_stage2_episodes.py
+# does the list check, the value pre-check, the move aside (rename into /mnt/proxy/logs/siglip2-repair-<Job uid>/,
+# never a delete) and the post-check. Its exit codes 20-27 are listed in RUN-siglip2-repair.md. NOT SUBMITTED.
+# Render before submit (RUN step 4): SRC_GIT_COMMIT and the 8 hash lines, one per ConfigMap key.
+#
+# Time (estimate, not measured for this Job; basis results/siglip2-reextract/*.log): the 8 known episodes (libero_spatial
+# ep 272-286, even ids) have 101, 97, 119, 94, 95, 96, 97 and 98 frames = 797 frames (log ...-0-4wr4x lines 346-354).
+# Setup (pod start to the first suite, pip included) took 22 to 29 s in the five re-extraction pods (24, 29, 23, 23, 22); the extractor's
+# model load and skip scan took 15 to 22 s before its first episode; SigLIP 2 ran at 22.2 to 23.6 frames/s, so 797
+# frames take about 35 s. The pre-check and post-check each read the 8 episodes in full (about 0.7 GB at 91 MB per
+# file); CephFS read speed for this Job is not measured (the value check Job running now will give the first whole-cache
+# rate), so allow about 1 minute each. Total: about 3 to 5 minutes of container time after the image pull (the pull is
+# not in the logs; about 2 minutes on a node without the image, as the value check Job's pull took 1 min 40 s), about
+# 0.1 L4 GPU-hours. A longer list scales with its frames at about 22 frames/s plus the reads.
+# Pod time cap: activeDeadlineSeconds 3600 on the pod template (counts from pod start, per pod), so a hung pod (a CephFS
+# stall in a read or a rename) cannot hold the L4 for the rest of the Job deadline; a pod killed by it is retried and
+# resumes from the files (RUN "Retries"). 1 h is about 10 times the estimate above.
+# "Nothing else changed" in the post-check compares names, sizes, mtimes and entry types in the suite folders against
+# the snapshot listing, and sha256 only for the two shard-of-2 _meta files; it is not a byte comparison of other files.
+# Job deadline: 57600 s (16 h) from Job creation, as the re-extraction: the deadline counts from creation, and the L4 queue
+# on the two matching nodes has been 2 to 3 h (re-extraction shard 1 Pending 3 h 8 min; the freshness check Pending
+# over 2 h on 2026-11-18).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-pairings-siglip2-repair
+  namespace: aria-world
+spec:
+  completions: 1
+  parallelism: 1
+  backoffLimit: 2            # a node fault or a crash: the next pod resumes from the files (RUN "Retries")
+  activeDeadlineSeconds: 57600
+  ttlSecondsAfterFinished: 86400
+  podFailurePolicy:
+    rules:
+    - action: FailJob        # refusals and check failures (exit 10, 11, 13, 19-27): a retry would end the same way
+      onExitCodes: {containerName: main, operator: In, values: [10, 11, 13, 19, 20, 21, 22, 23, 24, 25, 26, 27]}
+  template:
+    spec:
+      restartPolicy: Never
+      activeDeadlineSeconds: 3600   # per pod, from its start (header, "Pod time cap")
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-L4]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net, ry-gpu-08.sdsc.optiputer.net]}  # GPU faults, 2026-11-03
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          R=/mnt/proxy; F=$R/feats; mkdir -p $R/logs
+          exec > >(tee -a $R/logs/siglip2-repair-$JOB_UID-$(date +%Y%m%d-%H%M%S).log) 2>&1
+          echo "=== SigLIP 2 repair (L4 only), Job uid $JOB_UID, node $NODE_NAME, src $SRC_GIT_COMMIT"; date -u
+          [[ "$SRC_GIT_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "ABORT: SRC_GIT_COMMIT is not a 40-hex commit (not rendered?)"; exit 10; }
+          [ -n "$JOB_UID" ] || { echo "ABORT: the pod has no batch.kubernetes.io/controller-uid label"; exit 11; }
+          ( cd /src && sha256sum -c - <<'EOF'
+          71b39b055daf740ebf35631dc5a97a32160f6ba36f754e31d99c56bee2265092  repair_stage2_episodes.py
+          fc2ff25f9ce86e17da6c7fbd44f5f60b7807a70501f7e09d97f788960e2f3bea  check_stage2_cache.py
+          1d7ea029550150e1ed987a9d0bf000bf26e22de022bc2bf6050ff1a68fc86b60  extract_fastwam.py
+          f334c5604f319f779af6b70d06c0505f2c5df482c4531cb8b779b6894384683a  extract_features.py
+          81993810937d2692597d1d161e438f7688dc7809d0017628d9603ef1d196e363  fastwam_data.py
+          7af1f7aa2d595d9e0b7f1fb462f7901c6fa9594d2da7895b0168f0ef3ea2d70d  diagnostics.py
+          880c47cbe741b7fbcd98f44f85e7a1d14747d6c837e0493f4642e5ebbc18ace8  setup_env.sh
+          8f9e70a4f155a8251d5546b07f57d395869ced5eb3d64047791eb230f95241ea  damaged-episodes.txt
+          EOF
+          ) || { echo "ABORT: a /src key differs from the rendered hash (ConfigMap changed after the render, or no render)"; exit 19; }
+          D=$R/logs/siglip2-repair-$JOB_UID; L=/src/damaged-episodes.txt
+          echo "=== damaged-episode list ($(wc -l < $L) line(s))"; cat $L
+          nvidia-smi
+          nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv,noheader -l 30 | sed -u 's/^/[gpu] /' &
+          SMI=$!; trap 'kill $SMI 2>/dev/null || true' EXIT
+          bash /src/setup_env.sh
+          python -c "import sys, torch; ok = torch.cuda.is_available() and torch.cuda.get_device_name(0).split()[-1] == 'L4'; print('cuda', torch.cuda.is_available(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else '-'); sys.exit(0 if ok else 13)" || { echo "ABORT: no CUDA device or not an L4"; exit 13; }
+          echo "=== prepare"; date -u
+          python /src/repair_stage2_episodes.py prepare --list $L --feats $F --state $D --node "$NODE_NAME" || { rc=$?; echo "ABORT: prepare exit $rc"; exit $rc; }
+          while read -r s ids; do                    # plan.txt: "<suite> <id>,<id>,..." per suite, written by prepare
+            echo "=== extract $s episodes $ids"; date -u
+            python /src/extract_fastwam.py --root $R/data/lerobot_v30/${s}_no_noops_lerobot --suite $s \
+              --source siglip2 --out $F --episodes $ids --dtype fp16 --batch 32 --device cuda < /dev/null
+          done < $D/plan.txt
+          echo "=== postcheck"; date -u
+          G=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -1) || G=unknown   # its exit codes overlap the FailJob list
+          python /src/repair_stage2_episodes.py postcheck --list $L --feats $F --state $D --commit $SRC_GIT_COMMIT \
+            --node "$NODE_NAME" --gpu "$G" || { rc=$?; echo "ABORT: postcheck exit $rc"; exit $rc; }
+          date -u; echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: 16af842dca45c7a9f481e907bf464afe2149f038}
+        - name: JOB_UID                               # the Job's uid: names this Job's folder for the moved files and state
+          valueFrom:
+            fieldRef: {fieldPath: "metadata.labels['batch.kubernetes.io/controller-uid']"}
+        - name: NODE_NAME                             # for the log and repair-record.json
+          valueFrom:
+            fieldRef: {fieldPath: spec.nodeName}
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: OMP_NUM_THREADS, value: "3"}   # = CPU request: torch otherwise sizes its pool to the node and gets throttled (2026-10-29 (k))
+        - {name: MALLOC_ARENA_MAX, value: "2"}   # the prefetch thread otherwise gets its own malloc arenas; shard 2 OOM-killed at 6Gi (2026-10-30 (b))
+        - {name: PYTHONPATH, value: /src}
+        resources:                    # copied from job-siglip2-reextract.yaml (no measurement of this Job to change them)
+          requests: {cpu: "3", memory: 12Gi, nvidia.com/gpu: "1", ephemeral-storage: 30Gi}
+          limits:   {cpu: "3600m", memory: 14400Mi, nvidia.com/gpu: "1", ephemeral-storage: 34Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}
+        - {name: dshm, mountPath: /dev/shm}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 34Gi}
+      - name: src
+        configMap: {name: stacking-encoders-pairings-repair-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 2Gi}
