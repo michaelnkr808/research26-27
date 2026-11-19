@@ -2040,3 +2040,21 @@ On the user's go ("yep start it", then "ok, dispatch"), four workers wrote the s
 **PR:** #63, open. This entry and the PLAN note: direct (chore).
 
 **Next:** the user's yes or no on merging PR #63, then the lead tells the experiment session and removes the worktree. The user's answer on Next item 3. Stage 3 design starts with the user's choice among the remaining ideas.
+
+## 2026-11-18 [agent, lead, planning] (later: PR #63 merged on the user's word; the layer study and the "Which layer?" idea dropped)
+
+**Goal:** close the two questions left open by the previous entry.
+
+**Did:**
+- The lead asked: merge PR #63, and drop Next item 3 too (recommended yes, the same question the user had just cut)? **The user, verbatim: "yeah merge the pr and the drop that item too".**
+- **PR #63 merged** with `gh pr merge --merge --delete-branch` (merge commit `e2193aa`); main pulled; the lead's worktree and branch removed. The stage 2 PLAN on main now carries the amendment of 2026-11-18 (one training seed per configuration for now). Before the merge question the lead had listed to the user the items the chat had not spelled out (previous entry); the merge OK is the user's answer to them.
+- **`PLAN.md`:** Next item 3 ("Look at what happens between encoder layers, not just at the final output") removed with its 2026-11-18 note; old Next 4 to 6 renumbered 3 to 5; two "Recently done" lines (PR #63; the drop, with the user's words).
+- The experiment session and the presentations session were told (cross-session messages); the project brief and the mentor memory note updated.
+
+**Found:** no result.
+
+**Test-set use:** none.
+
+**PR:** #63 (merged, `e2193aa`). This entry and the PLAN edits: direct (chore).
+
+**Next:** for the experiment session, in its own window and on the user's go there: the SigLIP 2 cache repair, a one-seed report mode for `src/pairings_analysis.py` by PR (stage 2 PLAN, amendment 2026-11-18, item 6), and the sweep request with the one-seed counts. For planning: the stage 3 design, starting with the user's choice among the four remaining ideas (shrinking, volume, how the encoders are joined, how much each encoder's future counts).
