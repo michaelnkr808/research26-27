@@ -2058,3 +2058,25 @@ On the user's go ("yep start it", then "ok, dispatch"), four workers wrote the s
 **PR:** #63 (merged, `e2193aa`). This entry and the PLAN edits: direct (chore).
 
 **Next:** for the experiment session, in its own window and on the user's go there: the SigLIP 2 cache repair, a one-seed report mode for `src/pairings_analysis.py` by PR (stage 2 PLAN, amendment 2026-11-18, item 6), and the sweep request with the one-seed counts. For planning: the stage 3 design, starting with the user's choice among the four remaining ideas (shrinking, volume, how the encoders are joined, how much each encoder's future counts).
+
+## 2026-11-18 [agent, lead, planning] (later: the PI's compute question, run cost and timeline under Nautilus, local A6000s or paid cloud; slide request to the presentations session)
+
+**Goal:** answer the user's question in chat (their words): "okay so get the slides form the presentations agent how much would some of these runs cost in gpu compute, my PI asked and how would it change the timeline/timeframe if we got access to local a6000s or we paid cloud compute".
+
+**Did:**
+- Collected the cost basis from the repo and read Runpod's catalog (read-only, no resource created). Sent the facts below to the presentations session as a slide request (the user's words verbatim; not a go for any cluster or paid action). Its 2026-11-16 cost pictures (17 runs, about 400 card-hours) predate PR #63.
+- No design, PLAN or decision changed. Nothing was run on any cluster or paid service.
+
+**Found:** no experiment result. The cost basis:
+- **Measured earlier (verified in the repo today, not rerun):** one training run, no extra encoder, 23.54 L40S-hours of steps; 24.07 with DINOv3 (sizing check, stage 2 PLAN "Compute and cost"). Stage 1's full run on a Nautilus L40: about 32.18 h. Clean LIBERO evaluation of one checkpoint: about 4.4 L4 GPU-hours (stage 2 PLAN, amendment 2026-11-18, item 5).
+- **Read today (verified, Runpod `list-gpu-types` with pod availability, 2026-11-18):** secure cloud, dollars per hour and stock: L40S 1.09 (low), L40 0.82 (none), A40 0.59 (high), RTX A6000 0.69 (low, EU-SE-1 only), RTX 6000 Ada 1.09 (low), L4 0.69 (low). Community cloud list prices L40S 0.79, A40 0.35, RTX A6000 0.33, L4 0.44; no stock for any 48 GB card in the community read.
+- **Arithmetic (mine; hours x listed rate; training steps only; at-least values, since SigLIP 2, C-RADIOv4 and both pairs are unmeasured and Prediction 7 expects them slower):** one run about 26 dollars at the L40S secure rate (23.54 x 1.09 = 25.66; 24.07 x 1.09 = 26.24). First pass, 5 runs: about 118 to 120 L40S-hours, about 128 to 131 dollars. Wave 2 if added later, 12 runs: about 282 hours, about 308 dollars; all 17: about 400 hours, about 436 dollars. The 6 runs a three-seed harm verdict needs: about 141 hours, about 154 dollars.
+- **Unmeasured (speculative, for scale only):** LIBERO-Plus evaluation, about 50 to 140 L4 pod-hours per checkpoint (30,090 rollouts at the clean rate of 565 to 597 an hour, or at the timing-only 215 an hour), so about 300 to 840 for six, plus 22 clean; at the L4 secure rate about 220 to 600 dollars. Training speed on an RTX A6000 or A40: never timed by us; the lead's guess is slower than the L40 (about 1.5 to 2 days per run). Peak memory of the two-encoder runs: unmeasured (38 GiB for `none` at sizing). Cloud storage and the time to move data and rebuild the environment: not priced, not timed. Stage 3: not designed, no run count.
+- **Timeline (the lead's estimates, speculative):** Nautilus as now, about one to two weeks after the go for the first pass (about 1.5 days of training if five cards come at once, 2 to 5 days of evaluation on at most 8 L4s, plus queue waits and failures of the kind seen so far). Local A6000s: no queue, cap or strike risk; at a guessed 2 days per run, about 2 days of training with five cards, about a week with two, about ten days with one; the number of cards and whether they are shared is not known. Paid cloud: about 3 to 4 days after setup; about 130 dollars if only training is paid, roughly 350 to 730 if evaluation is paid too.
+- The stage 2 PLAN says training on Nautilus and "No paid compute"; local cards or paid cards for stage 2 need a recorded decision by the user and a dated amendment. The paid-compute rule (`STANDARDS.md`, decisions/005: about 30 dollars a month, no launch without the user's go) is unchanged.
+
+**Test-set use:** none.
+
+**PR:** none. This entry: direct (chore).
+
+**Next:** the presentations session builds the pictures and shows the user. For the user: how many local A6000s and whether they are shared; whether to ask the PI for money, cards or both. If either is granted: a timing run on that card (500 steps) before any estimate is trusted, and a stage 2 PLAN amendment before any run moves. Planning's next task is unchanged: the stage 3 design, on the user's choice among the four remaining ideas.
