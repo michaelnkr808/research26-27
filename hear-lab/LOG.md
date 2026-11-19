@@ -323,3 +323,23 @@ Planning lead's suggestion to the lead, not a decision (`speculative`): keep WNM
 **Next:** the lead's OK on PR #68 in the literature window; the PI meeting on 2026-11-19; then the research question and the decision records by pull request.
 
 **Open questions:** WNM-3D or UniWAM as the base; which question; the PI's answer on parking RMS-AQA.
+
+## 2026-11-18 [agent, lead, planning] (addendum 4: the lead narrows to two candidate questions; presentation prep handed to the presentations session)
+**Goal:** record the lead's choice of candidate questions and hand the PI meeting presentation to the presentations session.
+
+**Did:**
+- The lead, 2026-11-18: "okay we'll mark down the two potential research directions as those top two novel ones, pass over to the presentations agent to help me prepare a presentation". The two are questions 1 and 2 of the 2026-11-18 options entry, the ones the novelty check (PR #68, open when this was written) reported as not found. Question 3 is set aside (partly done in other settings; needs a new audio output path).
+- Sent the presentations session a hand-off: purpose, the two questions, where the checked facts are, the lead's positions, and the open points.
+- Updated `PLAN.md` and the project brief.
+
+**PR:** direct.
+
+**Found:** nothing new measured or read.
+
+Point the planning lead raised with the lead: question 2 needs an upstream spatial audio benchmark to rank the encoders by. RMS-AQA was that benchmark and is parked, so question 2 either brings RMS-AQA back or needs another benchmark (`speculative`: published encoder scores might serve; not checked).
+
+**Not verified:** the PI's view; cost of either question (question 2 adds one training run per extra encoder).
+
+**Next:** the PI meeting on 2026-11-19. Then the chosen question goes into `README.md` and a decision record by pull request, with the base model, setting, audio encoder and data source records.
+
+**Open questions:** which of the two questions; WNM-3D or UniWAM as the base; what ranks the encoders in question 2 if RMS-AQA stays parked; the lead's OK on PR #68 (in the literature window).
