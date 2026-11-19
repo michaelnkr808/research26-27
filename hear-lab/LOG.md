@@ -297,3 +297,29 @@ Consequences the planning lead stated to the lead: with RMS-AQA parked, option 2
 **Next:** the lead tells the PI on 2026-11-19 that RMS-AQA is parked, and brings the three options, WNM-3D with the simulator gap, and the budget position. After the meeting the planning lead writes the research question into `README.md` and the decision records (base model, setting, audio encoder, data source) by pull request.
 
 **Open questions:** which research question option; the PI's answer on parking RMS-AQA; how much work the two WNM-3D pieces are (Habitat audio-visual data in LeRobot format, and a Habitat evaluation link); whether the released WNM-3D weights transfer to Habitat scenes.
+
+## 2026-11-18 [agent, lead, planning] (addendum 3: novelty check and simulator gap, from the literature session, PR #68 open)
+**Goal:** at the lead's ask, have the literature session check the novelty of all three candidate questions and look into the WNM-3D simulator gap, including the lead's question "is the reason we can't reuse the NaVLA paper's benchmark because its a vla?".
+
+**Did:**
+- Sent the request to the hear-lab literature session (the lead's words relayed verbatim). It ran two research workers and a fact-check reviewer with its own searches, and opened PR #68 (`literature/survey/2026-11-18-novelty-and-simulator-gap.md`). The reviewer reported no errors; two wording fixes were applied.
+- Relayed the provisional verdicts, then the reviewed result, to the lead in chat. The planning lead read the file's verdict section on the PR branch, not the sources.
+
+**PR:** #68 (the literature session's; open, merge waits for the lead's OK in that window). This entry and the `PLAN.md` notes: direct.
+
+**Found** (as reported in the PR #68 file, `verified` there by its workers and reviewer on 2026-11-18; nothing reproduced; detail and sources in the file):
+- Question 1 (spatial against one-channel against no audio in a Wan 2.2 navigation world action model, split by target visibility): not found. NaVLA2 remains the only spatial against one-channel comparison in an acting agent (a policy, two different encoders). No audio-visual navigation paper opened splits success by target visibility; in SoundSpaces AudioGoal the target has no visual presence by construction, so the split has to be built. The out-of-view frame measure was also not found.
+- Question 2 (does an encoder that ranks better on a spatial audio benchmark navigate better): the claim not found. Nearest: ManiWAV compares three audio encoders by manipulation success, without spatial audio or an upstream benchmark.
+- Question 3 (predict future sound, or only hear it): partly done in two other settings. HEAR (manipulation, one microphone, a vision-language-action policy) removes its audio prediction and keeps audio as input, and success drops (0.81 to 0.73 simulation average, as copied in the file). Audio-Visual World Models version 3 removes the audio part of the forecast in a small navigation world model. Nothing for a pretrained video world action model or with spatial audio.
+- The lead's question: model type is not the obstacle. WNM-3D's server takes RGB frames, an optional instruction and pose and returns (dx, dy, dyaw) blocks, so it can drive any simulator given a client. MINav's obstacle is its release state (dataset, checkpoints and training scripts unreleased; two data-building scripts are stubs; the evaluation config points at episodes and a checkpoint that are not there), and MINav is a different task (instruction chains, discrete actions).
+- No existing benchmark is a drop-in. To build: a Habitat client for WNM-3D's server, an action converter (described in the paper for VLN-CE, not released), a fixed instruction for audio tasks, and a target-visible-at-start flag (SAVi episodes store viewpoints from which the object is visible, so it can be computed). Closest fit by task: SoundSpaces SAVi. Closest by rendering stack: MINav's code (SoundSpaces 2.0 on HM3D), without episodes.
+- WNM-3D's R2R result was run in Habitat (appendix B.2) after training on R2R and RxR, but no Habitat or R2R code is in the WNM-3D, GN0 or WNM-3D-RL repositories, and the released checkpoints were trained only on InteriorGS data.
+- AstraNav-World is not closer (no training script for its video part, no video weights found). UniWAM (Wan2.2-5B, trained and evaluated in Habitat on HM3D, WebSocket policy server, code and gated checkpoints released) is the closest complete stack found; it has no audio, a different habitat-sim version from SoundSpaces 2.0's audio branch, and a different task.
+
+Planning lead's suggestion to the lead, not a decision (`speculative`): keep WNM-3D as the position for the PI meeting and name UniWAM as the alternative; compare the two properly before any decision record.
+
+**Not verified:** the literature session notes that the arXiv listing API was rate limited, so its sweep for papers newer than 2026-11-16 leaned on web search; "not found" is a search result. How much work the four pieces are. Whether UniWAM's habitat-sim version can be reconciled with SoundSpaces 2.0's.
+
+**Next:** the lead's OK on PR #68 in the literature window; the PI meeting on 2026-11-19; then the research question and the decision records by pull request.
+
+**Open questions:** WNM-3D or UniWAM as the base; which question; the PI's answer on parking RMS-AQA.
