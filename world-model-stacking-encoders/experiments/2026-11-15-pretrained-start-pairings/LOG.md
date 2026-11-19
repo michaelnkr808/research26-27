@@ -325,3 +325,14 @@ Times are UTC; the work started on 2026-11-18 (previous entry) and ended after m
 - **The hold on `feats/siglip2` stays:** the freshness check has not run. Its pod `...-2j6dx` is still Pending (created 18:51:08 UTC; Job deadline 00:51 UTC on 2026-11-20).
 - **The other Jobs at 21:19 UTC (verified):** the three training pods and the `none` smoke pod are Pending since 18:51 to 18:52 UTC. At 19:43 UTC nothing had changed. The user (about 19:45 UTC, this window): "yes to that", for one quiet check about every half hour until the three training runs have started and passed their first-minutes checks.
 - **Next:** keep that watch. Freshness check: if it expires unrun, resubmit the same rendered file (the user's go of 18:47 UTC covers the check; a resubmit costs no queue position, LOG 2026-11-19).
+
+## 2026-11-19 [agent, lead, implementation] (five Jobs still Pending after 4 h 20 min: every open L40, L40S and L4 card in us-west is requested; nothing run)
+
+- **State at 23:11 UTC (verified, one watch polling pod phases every 5 minutes since 21:20 UTC):** the three training pods (`...-pnq8l`, `...-4r2mq`, `...-tbgfl`), the freshness-check pod `...-2j6dx` and the smoke pod `...-fb285` are Pending, as since 18:51 to 18:52 UTC. No pod has started, so the design has not locked and nothing has been written to `stacking-encoders-runs`.
+- **Scheduler message, training pods (23:11 UTC):** "0/536 nodes are available: 1 Insufficient memory, 22 node(s) were unschedulable, 222 node(s) had untolerated taint(s), 285 node(s) didn't match Pod's node affinity/selector, 3 Insufficient cpu, 7 Insufficient nvidia.com/gpu."
+- **The card pools (verified, `kubectl get nodes` by label for us-west and public Prometheus `kube_pod_container_resource_requests` of Running pods, 23:11 UTC):**
+  - Training set (L40 or L40S, driver above 569, us-west): 18 nodes carry the labels. 11 of them (`rci-tide-gpu-07` to `-17.sdsu.edu`) have the taint `nautilus.io/reservation` and are closed to us; they show 21 of 42 cards requested. The 7 open nodes are `bak-hpc2.csub.edu` (L40S, 4 cards) and `rci-tide-gpu-01` to `-06.sdsu.edu` (L40, 4 cards each): 28 of 28 cards requested. Free CPU on the six open L40 nodes is 2 to 7 cores each (the training pod asks for 4), so on some a freed card also needs CPU to free with it.
+  - L4: unchanged from the morning. `nautilus-it-gpu05` and `gpu06` 16 of 16 requested each; `gpu01` to `gpu04` reserved, 0 of 64 requested.
+- **Reading:** the manifests are not the cause (the pods fit every open node's limits except for a free card); the wait is the cluster's load. Stage 1's training pod waited 1.3 h on the same seven nodes on 2026-11-16 (ledger).
+- **Ceph at 23:11 UTC:** `OSD_FULL` 0, `POOL_FULL` 0, `OSD_NEARFULL` 1, `POOL_NEARFULL` 0.
+- **Next:** the watch goes on. The freshness check's Job deadline is 00:51 UTC on 2026-11-20; asked the user whether to resubmit the same rendered file if it expires unrun.
