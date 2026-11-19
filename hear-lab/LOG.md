@@ -343,3 +343,29 @@ Point the planning lead raised with the lead: question 2 needs an upstream spati
 **Next:** the PI meeting on 2026-11-19. Then the chosen question goes into `README.md` and a decision record by pull request, with the base model, setting, audio encoder and data source records.
 
 **Open questions:** which of the two questions; WNM-3D or UniWAM as the base; what ranks the encoders in question 2 if RMS-AQA stays parked; the lead's OK on PR #68 (in the literature window).
+
+## 2026-11-19 [agent, lead, planning] (second, adversarial novelty check on questions 1 and 2; PR #68 parts 3 and 4)
+**Goal:** answer the lead's doubt, 2026-11-19: "are you sure nobody has done research on this? Like i feel like the obivious answer and we read the NaVLA paper too" and "can u double check nobody has done this also".
+
+**Did:**
+- Told the lead the planning lead is not sure: "not found" is a search result, and the expected answer to question 1 is already suggested by NaVLA2.
+- Asked the literature session for a second check aimed at breaking the two verdicts (a worker and a reviewer who had not worked on PR #68; a direct arXiv sweep, forward citations of NaVLA2, Audio-Visual World Models, SoundSpaces 2.0, SAVi, BAT, ManiWAV and HEAR, OpenReview including ICLR 2027 submissions, GitHub), and for a statement of what is already known. It is now parts 3 and 4 of PR #68; a separate fact-check reviewer confirmed the verdicts and two corrections to minor entries were applied.
+- Sent the presentations session the changed framing for question 1.
+
+**PR:** #68 (the literature session's; open when this was written, merge waits for the lead's OK in that window). This entry and the `PLAN.md` note: direct.
+
+**Found** (as reported by the literature session from PR #68 parts 3 and 4, `verified` there by its worker and reviewer; the planning lead did not read the sources; nothing reproduced):
+- Question 1 still "not found" as stated: nothing gives a navigation world model spatial, one-channel and no audio as matched conditions, and nothing splits results by whether the target is visible at the start. The reviewer's own searches found no controlled mono against binaural ablation with the same encoder in any audio-visual navigation agent.
+- Question 2 still "not found" as stated. Near misses: a public GitHub repository created about 2026-11-16 (adityakaduskar/acoustic-jepa; not a paper, echolocation only, no vision), where a ranking reversal between static tests and planning is shown only for a random encoder against the learned one; BCNav (arXiv 2609.37084; navigation success falls as sound-direction error grows, one estimator); ADAPT (arXiv 2610.15956; a spatial audio adapter raises success, no encoder ranking); HearVGo (ICLR 2027 submission; 14 omni models on a sound-guided walking benchmark, no world model, no mono condition).
+- Already known: audio beating no audio in audio-goal navigation (SoundSpaces, Look Listen and Act, SAVi, Younes et al. 2022, NaVLA2). The only spatial against mono head-to-head is NaVLA2 Table 2, success rate: no audio 0.206, mono-downmix CLAP branch only 0.219, spatial SpatialAST branch only 0.258, both 0.272. It is not controlled: the branches use different encoders, no seeds or run count are stated.
+- Still new, the literature session's reading (`speculative`): a controlled mono against spatial against none comparison with the encoder held fixed, inside a pretrained video world action model; the split by target visibility (SoundSpaces targets are invisible by design); predicted-frame quality out of view. For question 2: the encoder-rank against acting test with real spatial audio plus vision in a navigation world model.
+
+Correction to what the planning lead told the lead in chat on 2026-11-19: the acoustic-jepa repository was described as hinting that a better-scoring encoder can be worse for planning; its reversal is only between a random encoder and the learned one, so it is a weak hint. Corrected in chat.
+
+Planning lead's suggestion to the lead, not a decision (`speculative`): pitch question 1 as the first controlled test of how much direction adds, and when, inside a world action model; the headline direction (spatial beats mono) would not be surprising by itself.
+
+**Not verified:** OpenReview blocked the PDFs, so some ICLR 2027 submissions (Hear-to-Act, SoundAct, HearVGo) were judged from abstracts only; a mono ablation could be in their full texts.
+
+**Next:** the PI meeting today (2026-11-19); the lead's OK on PR #68 in the literature window; then the research question and decision records by pull request.
+
+**Open questions:** whether a controlled comparison plus the visibility split is enough for the paper (for the PI); which of the two questions; WNM-3D or UniWAM; what ranks the encoders in question 2 if RMS-AQA stays parked.
