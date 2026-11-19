@@ -519,10 +519,18 @@ def train(data, plan, seed, device, log, model_kw=None, ckpt=None, ckpt_every=0,
 
 
 def save_ckpt(path, model, opt, step, **extra):
-    """Model, AdamW, step and RNG states (plus any `extra` entries) to path + .tmp, then renamed over path."""
+    """Model, AdamW, step and RNG states (plus any `extra` entries) to path + .tmp, then renamed over path.
+    The temporary file is fsync'ed before the rename: a write the storage refuses (CephFS pool full, LOG 2026-11-18)
+    then raises here and the previous checkpoint stays, instead of a file of zeros renamed over it. torch.save still
+    gets the path, not the open file, so the bytes do not change (the archive name inside the file comes from the
+    path); the file is opened first, so that handle covers torch.save's writes and its fsync reports their errors."""
+    import os                       # local: this change touches save_ckpt only
     tmp = Path(str(path) + ".tmp")
-    torch.save({"model": model.state_dict(), "opt": opt.state_dict(), "step": step, "rng_cpu": torch.get_rng_state(),
-                "rng_cuda": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None, **extra}, tmp)
+    with open(tmp, "wb") as f:
+        torch.save({"model": model.state_dict(), "opt": opt.state_dict(), "step": step, "rng_cpu": torch.get_rng_state(),
+                    "rng_cuda": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None, **extra}, tmp)
+        f.flush()
+        os.fsync(f.fileno())
     tmp.replace(path)
 
 
