@@ -852,8 +852,8 @@ class OneSeedReport(unittest.TestCase):
         # overall line, label count, tests not computed
         ov = r["overall"]["line"]
         self.assertTrue(ov.startswith("the paper's pattern appears at one training seed ("))
-        for frag in ("dinov3+c-radiov4 - dinov3: d_0 -5.00, paper -5.41", "dinov3+c-radiov4 - c-radiov4: d_0 -3.00, "
-                     "paper -4.91", "dinov3+siglip2 - dinov3: d_0 +1.00, paper +1.83"):
+        for frag in ("dinov3+c-radiov4 - dinov3: d_0 -5.000, paper -5.410", "dinov3+c-radiov4 - c-radiov4: d_0 -3.000, "
+                     "paper -4.910", "dinov3+siglip2 - dinov3: d_0 +1.000, paper +1.830"):
             self.assertIn(frag, ov)
         self.assertIn("OVERALL: " + ov, text)
         self.assertEqual(r["label_counts"], {"same direction as the paper": 7, "opposite direction": 0,
@@ -905,7 +905,7 @@ class OneSeedReport(unittest.TestCase):
         # small sizes still count by sign, and are shown as they are
         r, text, _ = run1(one(**{DL: 80.4, DR: 79.6, R_: 79.8}))
         self.assertEqual(r["overall"]["state"], "appears")
-        self.assertIn("dinov3+siglip2 - dinov3: d_0 +0.40, paper +1.83", r["overall"]["line"])
+        self.assertIn("dinov3+siglip2 - dinov3: d_0 +0.400, paper +1.830", r["overall"]["line"])
         # calibration not same direction: not read, neither appears nor does not appear
         for dval in (69, 70):
             r, text, _ = run1(one(**{D: dval, DR: dval - 5, DL: dval + 1}))
@@ -1030,6 +1030,156 @@ class OneSeedReport(unittest.TestCase):
             self.assertIn("INPUT ERROR", p.stderr)
             self.assertIn("train seed 0 only", p.stderr)
             self.assertFalse(os.path.exists(outs[2]))
+
+
+def counts_entry(config, succ, missing=(0, 0, 0)):
+    """A seed 0 entry with exact LIBERO-Plus successes per eval seed (evaluated = 10,030 - missing)."""
+    e = ck(config, 0, 80, miss=missing)
+    for es, k in zip(P.EVAL_SEEDS, succ):
+        e["libero_plus"][es]["successes"] = k
+    return with_cats(e)
+
+
+def pattern_vals(r):
+    """The three d_0 values with the paper's differences, as the overall line must carry them in one sentence."""
+    out = []
+    for a, b in P.PATTERN:
+        c = cmp_of(r, a, b)
+        out.append(f"{c['comparison']}: {c['value_text']}, paper {P._diff(P.PAPER_TOTAL[a] - P.PAPER_TOTAL[b])}")
+    return "; ".join(out)
+
+
+class OneSeedReviewFixes(unittest.TestCase):
+    def test_per_category_mean_hand_computed(self):
+        e = ck(D, 0, 80)                         # 8,000 successes of 10,000 evaluated under each eval seed
+        e["libero_plus_categories"] = {
+            "41": {"A": {"successes": 3000, "evaluated": 4000}, "B": {"successes": 5000, "evaluated": 6000}},
+            "42": {"A": {"successes": 3200, "evaluated": 4000}, "B": {"successes": 4800, "evaluated": 6000}},
+            "43": {"A": {"successes": 3600, "evaluated": 4000}, "B": {"successes": 4400, "evaluated": 6000}}}
+        ents = [dict(x, libero_plus_categories={es: {"A": {"successes": t["successes"] // 2,
+                                                           "evaluated": t["evaluated"] // 2},
+                                                     "B": {"successes": t["successes"] - t["successes"] // 2,
+                                                           "evaluated": t["evaluated"] - t["evaluated"] // 2}}
+                                                for es, t in x["libero_plus"].items()})
+                for x in one(**{D: e}) if x["config"] != D] + [e]
+        r, text, _ = run1(ents)
+        pc = [x for x in r["checkpoints"] if x["config"] == D][0]["lp_per_category_pts"]
+        # A: 75, 80, 90 -> 245/3; B: 250/3, 80, 220/3 -> 710/9
+        self.assertAlmostEqual(pc["mean_over_eval_seeds"]["A"], 245 / 3, places=9)
+        self.assertAlmostEqual(pc["mean_over_eval_seeds"]["B"], 710 / 9, places=9)
+        self.assertAlmostEqual(pc["per_eval_seed"]["43"]["B"], 220 / 3, places=9)
+        self.assertIn("per category (mean over eval seeds): A 81.67, B 78.89", text)
+        self.assertIn("per category, eval seed 41: A 75.00, B 83.33", text)
+
+    def test_tiny_d0_visible_and_not_an_exact_zero(self):
+        dl = counts_entry(DL, (8025, 8025, 8025))
+        d = counts_entry(D, (8024, 8025, 8025))
+        r, text, _ = run1(one(**{DL: dl, D: d}))
+        c = cmp_of(r, DL, D)
+        self.assertAlmostEqual(c["d_0_pts"], 100 / 10030 / 3)
+        self.assertEqual(c["value_text"], "d_0 +0.003")
+        self.assertEqual(c["label"], "same direction as the paper")
+        self.assertRegex(text, r"dinov3\+siglip2 - dinov3 +d_0 \+0\.003 +paper \+1\.830 +per eval seed 41 \+0\.010, "
+                               r"42 \+0\.000, 43 \+0\.000  label: same direction as the paper")
+        self.assertIn("dinov3+siglip2 - dinov3: d_0 +0.003, paper +1.830", r["overall"]["line"])
+        # an exact 0 prints differently and has its own label
+        r0, text0, _ = run1(one(**{DL: counts_entry(DL, (8025, 8025, 8025)), D: counts_entry(D, (8025, 8025, 8025))}))
+        self.assertEqual(cmp_of(r0, DL, D)["value_text"], "d_0 +0.000")
+        self.assertEqual(cmp_of(r0, DL, D)["label"], "no difference")
+        # a nonzero value that would round to zero at three decimals gets more digits
+        self.assertEqual(P._diff(Fraction(1, 10000)), "+0.0001")
+        self.assertEqual(P._diff(Fraction(-4, 10000)), "-0.0004")
+        self.assertEqual(P._diff(Fraction(0)), "+0.000")
+
+    def test_failed_run_and_coverage_marked_for_the_user(self):
+        r, text, js = run1(one(**{DL: gone(DL, 0, "non-finite loss, rerun failed")}))
+        self.assertIn("TO BRING TO THE USER: dinov3+siglip2 seed 0: no checkpoint (non-finite loss, rerun failed)",
+                      text)
+        self.assertEqual(r["to_bring_to_the_user"], [{"config": DL, "train_seed": 0, "status": "no checkpoint",
+                                                      "detail": "non-finite loss, rerun failed"}])
+        self.assertEqual(r["stops_for_user"], [])
+        r, text, _ = run1(one(**{DR: with_cats(ck(DR, 0, 75, miss=(200, 200, 0)))}))
+        self.assertIn("TO BRING TO THE USER: dinov3+c-radiov4 seed 0: counts as missing on coverage (LIBERO-Plus "
+                      "coverage: 400 of 30090 rollouts missing after reruns, more than 1%)", text)
+        self.assertEqual([p["config"] for p in r["to_bring_to_the_user"]], [DR])
+        self.assertIn("LIBERO-Plus missing 400 of 30090 (per eval seed 41 200, 42 200, 43 0)", text)
+        r, text, _ = run1(one())
+        self.assertEqual(r["to_bring_to_the_user"], [])
+        self.assertNotIn("TO BRING TO THE USER", text)
+        # exit code unchanged: 0 for a failed run
+        with tempfile.TemporaryDirectory() as d:
+            inp = os.path.join(d, "i.json")
+            with open(inp, "w") as f:
+                json.dump({"checkpoints": one(**{DL: gone(DL, 0, "rerun failed")})}, f)
+            p = subprocess.run([sys.executable, "-I", os.path.join(HERE, "pairings_analysis.py"), "--one-seed",
+                                "--input", inp], capture_output=True, text=True)
+            self.assertEqual(p.returncode, 0, p.stderr)
+            self.assertIn("TO BRING TO THE USER: dinov3+siglip2 seed 0: no checkpoint", p.stdout)
+
+    def test_overall_line_carries_three_values_in_every_state(self):
+        cases = [(one(**{D: 69, DR: 64, DL: 70}), "not read: DINOv3 alone is not above the no-encoder model at one "
+                                                  "training seed ("),
+                 (one(**{NONE: gone(NONE, 0)}), "not read: the DINOv3-against-no-encoder comparison has no label ("),
+                 (one(**{R_: gone(R_, 0)}), "not available: no label for "),
+                 (one(**{DR: with_cats(ck(DR, 0, 75, miss=(200, 200, 0)))}), "not available: no label for ")]
+        for es, start in cases:
+            r, text, _ = run1(es)
+            line = r["overall"]["line"]
+            self.assertTrue(line.startswith(start), line)
+            vals = pattern_vals(r)
+            self.assertTrue(line.endswith("(" + vals + ")"), line)
+            for p in ("paper -5.410", "paper -4.910", "paper +1.830"):
+                self.assertIn(p, line)
+            self.assertEqual(line.count("."), vals.count("."))       # one sentence: no other full stop
+            self.assertIn("OVERALL: " + line, text)
+        r, _, _ = run1(one(**{NONE: gone(NONE, 0)}))
+        self.assertIn("dinov3+c-radiov4 - dinov3: d_0 -5.000, paper -5.410", r["overall"]["line"])
+        r, _, _ = run1(one(**{R_: gone(R_, 0)}))
+        self.assertIn("dinov3+c-radiov4 - c-radiov4: no checkpoint, paper -4.910", r["overall"]["line"])
+
+    def test_comparison_columns_aligned(self):
+        e = ck(R_, 0, 78)
+        del e["libero_plus"]
+        e["clean"]["libero_goal"]["episodes"] = 479
+        _, text, _ = run1(one(**{R_: e}))
+        rows = [l for l in text.splitlines() if l.startswith("  ") and " - " in l and "label:" in l]
+        self.assertEqual(len(rows), 7)
+        self.assertEqual(len({l.index(" paper ") for l in rows}), 1, "\n".join(rows))
+        self.assertIn("no LIBERO-Plus result  paper", text)
+
+    def test_category_refusals(self):
+        e = with_cats(ck(D, 0, 80))
+        e["libero_plus_categories"]["42"] = {"Other": dict(e["libero_plus_categories"]["42"][CATS[0]]),
+                                             CATS[1]: e["libero_plus_categories"]["42"][CATS[1]]}
+        with self.assertRaisesRegex(P.InputError, "has categories"):
+            P.analyse_one_seed({"checkpoints": one(**{D: e})})
+        e = ck(D, 0, 80)
+        e["libero_plus_categories"] = {es: {"Other": {"successes": t["successes"], "evaluated": t["evaluated"]}}
+                                       for es, t in e["libero_plus"].items()}
+        with self.assertRaisesRegex(P.InputError, "different category sets"):
+            P.analyse_one_seed({"checkpoints": one(**{D: e})})
+        e = ck(D, 0, 80)
+        t = e["libero_plus"]["41"]
+        e = with_cats(e)
+        e["libero_plus_categories"]["41"] = {CATS[0]: {"successes": 0, "evaluated": 0},
+                                             CATS[1]: {"successes": t["successes"], "evaluated": t["evaluated"]}}
+        with self.assertRaisesRegex(P.InputError, "0 episodes evaluated"):
+            P.analyse_one_seed({"checkpoints": one(**{D: e})})
+        with self.assertRaisesRegex(P.InputError, "libero_plus_categories"):
+            P.analyse_one_seed({"checkpoints": one(**{D: dict(ck(D, 0, 80), libero_plus_categories={})})})
+
+    def test_zero_category_on_a_coverage_checkpoint_is_reported_not_averaged(self):
+        e = ck(DR, 0, 75, miss=(2000, 0, 0))     # over the 1% line on LIBERO-Plus coverage
+        e = with_cats(e)
+        t = e["libero_plus"]["41"]
+        e["libero_plus_categories"]["41"] = {CATS[0]: {"successes": 0, "evaluated": 0},
+                                             CATS[1]: {"successes": t["successes"], "evaluated": t["evaluated"]}}
+        r, text, _ = run1(one(**{DR: e}))
+        pc = [x for x in r["checkpoints"] if x["config"] == DR][0]["lp_per_category_pts"]
+        self.assertIsNone(pc["mean_over_eval_seeds"][CATS[0]])
+        self.assertIsNotNone(pc["mean_over_eval_seeds"][CATS[1]])
+        self.assertEqual(pc["not_given"], [f"{CATS[0]} under eval seed 41: 0 evaluated"])
+        self.assertIn(f"per-category mean not given for: {CATS[0]} under eval seed 41: 0 evaluated", text)
 
 
 if __name__ == "__main__":

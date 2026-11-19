@@ -699,9 +699,24 @@ def _pts(x, nd=2, signed=False):
     return f"{float(x):+.{nd}f}" if signed else f"{float(x):.{nd}f}"
 
 
-def _lp_categories(rec, where, lp_counts):
+def _diff(x):
+    """A difference in points for the one-seed text: three decimals, and more when a nonzero value would round to
+    zero, so a fraction of a point is visible and never looks like an exact 0 ("no difference")."""
+    if x is None:
+        return "n/a"
+    nd = 3
+    while x != 0 and round(abs(Fraction(x)), nd) == 0 and nd < 12:
+        nd += 1
+    return f"{float(x):+.{nd}f}"
+
+
+def _lp_categories(rec, where, lp_counts, over_line=False):
     """Per-category LIBERO-Plus counts per eval seed: {"41": {"<category>": {"successes": k, "evaluated": n}, ...}}.
-    The categories are the same under every eval seed and add up to that eval seed's totals."""
+    The categories are the same under every eval seed and add up to that eval seed's totals. A category with 0
+    evaluated under an eval seed is an input error, except on a checkpoint that already counts as missing on
+    LIBERO-Plus coverage, whose numbers are still reported (PLAN amendment 2026-11-18, item 3): there that category's
+    mean is not given (None) and the gap is listed. src/lp_eval.py has no fixed category list (it reads the
+    categories from LIBERO-Plus's task_classification.json), so names are checked for consistency only."""
     cats = rec.get("libero_plus_categories")
     if not isinstance(cats, dict) or sorted(cats) != sorted(EVAL_SEEDS):
         got = sorted(cats) if isinstance(cats, dict) else cats
@@ -726,6 +741,10 @@ def _lp_categories(rec, where, lp_counts):
             n = _count(e.get("evaluated"), f"{where} eval seed {es} category {g} evaluated")
             if k > n:
                 raise InputError(f"{where}: eval seed {es} category {g}: successes {k} > evaluated {n}")
+            if n == 0 and not over_line:
+                raise InputError(f"{where}: eval seed {es} category {g} has 0 episodes evaluated, while the "
+                                 "checkpoint is within the 1% coverage line (a category is never averaged over "
+                                 "fewer eval seeds)")
             rates[g] = Fraction(100 * k, n) if n else None
             tk, tn = tk + k, tn + n
         k_all, n_all, _ = lp_counts[es]
@@ -735,7 +754,8 @@ def _lp_categories(rec, where, lp_counts):
         per_seed[es] = rates
     mean = {g: (None if any(per_seed[es][g] is None for es in EVAL_SEEDS)
                 else sum((per_seed[es][g] for es in EVAL_SEEDS), Fraction(0)) / len(EVAL_SEEDS)) for g in names}
-    return {"per_eval_seed": per_seed, "mean_over_eval_seeds": mean}
+    gaps = [f"{g} under eval seed {es}: 0 evaluated" for es in EVAL_SEEDS for g in names if per_seed[es][g] is None]
+    return {"per_eval_seed": per_seed, "mean_over_eval_seeds": mean, "names": names, "gaps": gaps}
 
 
 def load_one_seed(obj):
@@ -772,6 +792,10 @@ def load_one_seed(obj):
         raise InputError("no entry for " + ", ".join(lacking) + " (the one-seed report needs seed 0 of all six "
                          'configurations; a training run that still fails after its one rerun is listed with "status":'
                          ' "missing" and a "reason", and is reported as "no checkpoint")')
+    sets = {c: r["categories"]["names"] for c, r in by_config.items() if r.get("categories")}
+    if len({tuple(v) for v in sets.values()}) > 1:
+        raise InputError("libero_plus_categories: the checkpoints carry different category sets: "
+                         + "; ".join(f"{c} {v}" for c, v in sets.items()))
     return by_config
 
 
@@ -784,7 +808,8 @@ def _one_checkpoint(rec, where):
     if "libero_plus_categories" in rec and "libero_plus" not in rec:
         raise InputError(f"{where}: libero_plus_categories given without libero_plus")
     r = _checkpoint(rec, where)            # validation, B, gate, coverage and the open case, as in the locked rule
-    cats = _lp_categories(rec, where, r["lp_counts"]) if r["lp_counts"] is not None else None
+    lp_over = r["missing_frac"] is not None and r["missing_frac"] > MISSING_MAX
+    cats = _lp_categories(rec, where, r["lp_counts"], lp_over) if r["lp_counts"] is not None else None
     rates = r["lp_rates"]
     Y = None
     if rates is not None and None not in rates.values():
@@ -816,7 +841,7 @@ def _one_comparison(cks, a, b):
     paper = PAPER_TOTAL[a] - PAPER_TOTAL[b]
     out = {"comparison": f"{a} - {b}", "a": a, "b": b, "paper_difference_pts": float(paper),
            "paper_difference": _dec(paper), "basis": ONE_SEED_BASIS, "d_0_pts": None, "d_0_exact": None,
-           "d_per_eval_seed_pts": None, "label": None, "no_label_reason": None, "value_text": None}
+           "d_per_eval_seed_pts": None, "d_per_eval_seed_exact": None, "label": None, "no_label_reason": None, "value_text": None}
     absent = [c for c, r in ((a, ra), (b, rb)) if r["status"] == NO_CHECKPOINT]
     if absent:
         out.update(value_text=NO_CHECKPOINT, no_label_reason=NO_CHECKPOINT + ": " + ", ".join(absent))
@@ -826,10 +851,12 @@ def _one_comparison(cks, a, b):
         out.update(value_text=NO_LP, no_label_reason=NO_LP + ": " + ", ".join(no_y))
         return out
     d0 = ra["Y"] - rb["Y"]
-    per = {es: (None if ra["lp_rates"][es] is None or rb["lp_rates"][es] is None
-                else float(ra["lp_rates"][es] - rb["lp_rates"][es])) for es in EVAL_SEEDS}
+    per_x = {es: (None if ra["lp_rates"][es] is None or rb["lp_rates"][es] is None
+                  else ra["lp_rates"][es] - rb["lp_rates"][es]) for es in EVAL_SEEDS}
+    per = {es: None if v is None else float(v) for es, v in per_x.items()}
     out.update(d_0_pts=float(d0), d_0_exact=str(d0), d_per_eval_seed_pts=per,
-               value_text=f"d_0 {_pts(d0, signed=True)}")
+               d_per_eval_seed_exact={es: None if v is None else str(v) for es, v in per_x.items()},
+               value_text=f"d_0 {_diff(d0)}")
     short = [c for c, r in ((a, ra), (b, rb)) if r["status"] == ST_COVERAGE]
     if short:
         out["no_label_reason"] = ", ".join(f"{c} seed 0 {ST_COVERAGE}" for c in short)
@@ -842,8 +869,8 @@ def _one_comparison(cks, a, b):
 
 def _overall(cmps):
     by = {(c["a"], c["b"]): c for c in cmps}
-    vals = "; ".join(f"{by[k]['comparison']}: {by[k]['value_text']}, paper {by[k]['paper_difference']}"
-                     for k in PATTERN)
+    vals = "; ".join(f"{by[k]['comparison']}: {by[k]['value_text']}, "
+                     f"paper {_diff(PAPER_TOTAL[by[k]['a']] - PAPER_TOTAL[by[k]['b']])}" for k in PATTERN)
     cal = by[CALIBRATION]
     pat = [by[k] for k in PATTERN]
     differing = []
@@ -895,7 +922,8 @@ def analyse_one_seed(obj):
                      lp_per_category_pts=None if cats is None else {
                          "mean_over_eval_seeds": {g: fl(v) for g, v in cats["mean_over_eval_seeds"].items()},
                          "per_eval_seed": {es: {g: fl(v) for g, v in d.items()}
-                                           for es, d in cats["per_eval_seed"].items()}},
+                                           for es, d in cats["per_eval_seed"].items()},
+                         "not_given": cats["gaps"]},
                      coverage={"clean_missing_per_suite": r["clean_missing_per_suite"],
                                "clean_missing_total": r["clean_missing_total"], "clean_rollouts": CLEAN_ROLLOUTS,
                                "clean_missing_pct": float(r["clean_missing_frac"] * 100),
@@ -907,12 +935,16 @@ def analyse_one_seed(obj):
     stops = [{"config": c, "train_seed": ONE_SEED, "stop": cks[c]["stop"]} for c in CONFIGS if cks[c].get("stop")]
     decisions = [dict(cks[c]["user_decision"], config=c, train_seed=ONE_SEED) for c in CONFIGS
                  if cks[c].get("user_decision")]
+    # PLAN amendment 2026-11-18, item 3, failure cases: the lead takes these to the user. No exit code changes.
+    to_user = [{"config": c, "train_seed": ONE_SEED, "status": cks[c]["status"],
+                "detail": cks[c]["reason"] if cks[c]["status"] == NO_CHECKPOINT else cks[c]["coverage_reason"]}
+               for c in CONFIGS if cks[c]["status"] in (NO_CHECKPOINT, ST_COVERAGE)]
     return {"report": "one-seed report, PLAN 2026-11-15-pretrained-start-pairings, amendment 2026-11-18, item 3",
             "basis": ONE_SEED_BASIS, "train_seeds": [ONE_SEED], "deferred_seeds": DEFERRED,
             "overall": _overall(cmps), "label_counts": counts, "comparisons": cmps, "checkpoints": ck_out,
             "decision_rule_tests": {t: TESTS_NOT_COMPUTED for t in RULE_TESTS},
             "outcome_branches_item_8_and_extension_item_7": NOT_IN_PLAY,
-            "stops_for_user": stops, "user_decisions": decisions}
+            "stops_for_user": stops, "user_decisions": decisions, "to_bring_to_the_user": to_user}
 
 
 def report_one_seed(res):
@@ -925,13 +957,16 @@ def report_one_seed(res):
     for p in res["user_decisions"]:
         lines.append(f"  USER DECISION (recorded): {p['config']} seed 0: LIBERO-Plus evaluation "
                      f"'{p['user_decision_libero_plus']}', decided: {p['decided']}")
+    for p in res["to_bring_to_the_user"]:
+        lines.append(f"  TO BRING TO THE USER: {p['config']} seed 0: {p['status']} ({p['detail']})")
     lines.append(f"comparisons, d_0 = Y(a, 0) - Y(b, 0), paper's difference beside it ({ONE_SEED_BASIS}):")
+    vw = max(len(c["value_text"]) for c in res["comparisons"])
     for c in res["comparisons"]:
-        per = ("" if c["d_per_eval_seed_pts"] is None else "  per eval seed " + ", ".join(
-            f"{es} {_pts(v, signed=True)}" for es, v in c["d_per_eval_seed_pts"].items()))
+        paper = _diff(Fraction(c["paper_difference"]))
+        per = ("" if c["d_per_eval_seed_exact"] is None else "  per eval seed " + ", ".join(
+            f"{es} {_diff(None if v is None else Fraction(v))}" for es, v in c["d_per_eval_seed_exact"].items()))
         lab = c["label"] if c["label"] else f"no label ({c['no_label_reason']})"
-        lines.append(f"  {c['comparison']:<30} {c['value_text']:<16} paper {c['paper_difference']:<6}{per}  "
-                     f"label: {lab}")
+        lines.append(f"  {c['comparison']:<30} {c['value_text']:<{vw}}  paper {paper:<7}{per}  label: {lab}")
     lines.append(f"checkpoints, train seed 0 ({ONE_SEED_BASIS}; {EVAL_SD_NOTE}):")
     for e in res["checkpoints"]:
         if e["status"] == NO_CHECKPOINT:
@@ -943,14 +978,22 @@ def report_one_seed(res):
         lp = ("LIBERO-Plus: none" if e["lp_rates_pts"] is None else
               f"Y {_pts(e['Y_pts'], 3)}  eval-seed SD {_pts(e['eval_seed_sd_pts'], 3)}  rates "
               + ", ".join(f"{es} {_pts(v, 3)}" for es, v in e["lp_rates_pts"].items())
-              + f"  LIBERO-Plus missing {cov['lp_missing_total']} of {cov['lp_rollouts']}")
+              + f"  LIBERO-Plus missing {cov['lp_missing_total']} of {cov['lp_rollouts']} (per eval seed "
+              + ", ".join(f"{es} {m}" for es, m in cov["lp_missing_per_eval_seed"].items()) + ")")
         lines.append(f"  {e['config']:<18} status {e['status']}  B {_pts(e['B_pts'])}  clean missing "
                      f"{cov['clean_missing_total']} of {cov['clean_rollouts']}  gate G1 {gate}  {lp}")
         lines.append("      clean suites: " + ", ".join(f"{k} {_pts(v)}" for k, v in
-                                                       e["clean_suite_rates_pts"].items()))
+                                                       e["clean_suite_rates_pts"].items())
+                     + "; clean missing per suite: " + ", ".join(f"{k} {m}" for k, m in
+                                                                   cov["clean_missing_per_suite"].items()))
         if e["lp_per_category_pts"]:
+            pc = e["lp_per_category_pts"]
             lines.append("      per category (mean over eval seeds): " + ", ".join(
-                f"{g} {_pts(v)}" for g, v in e["lp_per_category_pts"]["mean_over_eval_seeds"].items()))
+                f"{g} {_pts(v)}" for g, v in pc["mean_over_eval_seeds"].items()))
+            for es, d in pc["per_eval_seed"].items():
+                lines.append(f"      per category, eval seed {es}: " + ", ".join(f"{g} {_pts(v)}" for g, v in d.items()))
+            if pc["not_given"]:
+                lines.append("      per-category mean not given for: " + "; ".join(pc["not_given"]))
         if e["coverage_reason"]:
             lines.append(f"      {ST_COVERAGE}: {e['coverage_reason']}")
     lines.append(f"decision rule tests ({', '.join(RULE_TESTS)}): {TESTS_NOT_COMPUTED}")
