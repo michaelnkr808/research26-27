@@ -1,0 +1,98 @@
+=== start Wed Nov 18 21:40:43 UTC 2026 node=pas.sunn.net.internet2.edu
+fc2ff25f9ce86e17da6c7fbd44f5f60b7807a70501f7e09d97f788960e2f3bea  /src/check_stage2_cache.py
+feats=/mnt/proxy/feats sources=['dinov3', 'siglip2', 'c-radiov4', 'vae'] suites=['libero_goal', 'libero_spatial', 'libero_object', 'libero_10'] values=on
+dinov3 libero_goal: 433 meta episodes, 433 complete, 0 with a gap
+  provenance: model=facebook/dinov3-vitl16-pretrain-lvd1689m hf_id=None resolution=224 compute_dtype=fp32 (1 file(s))
+  values: 433 of 433 episodes value-checked
+dinov3 libero_spatial: 434 meta episodes, 434 complete, 0 with a gap
+  provenance: model=facebook/dinov3-vitl16-pretrain-lvd1689m hf_id=None resolution=224 compute_dtype=fp32 (1 file(s))
+  values: 434 of 434 episodes value-checked
+dinov3 libero_object: 457 meta episodes, 457 complete, 0 with a gap
+  provenance: model=facebook/dinov3-vitl16-pretrain-lvd1689m hf_id=None resolution=224 compute_dtype=fp32 (1 file(s))
+  values: 457 of 457 episodes value-checked
+dinov3 libero_10: 388 meta episodes, 388 complete, 0 with a gap
+  provenance: model=facebook/dinov3-vitl16-pretrain-lvd1689m hf_id=None resolution=224 compute_dtype=fp32 (1 file(s))
+  values: 388 of 388 episodes value-checked
+siglip2 libero_goal: 433 meta episodes, 433 complete, 0 with a gap
+  provenance: model=google/siglip2-so400m-patch14-384 hf_id=None resolution=384 compute_dtype=fp16 (2 file(s))
+  values: 433 of 433 episodes value-checked
+siglip2 libero_spatial: 434 meta episodes, 426 complete, 8 with a gap
+  provenance: model=google/siglip2-so400m-patch14-384 hf_id=None resolution=384 compute_dtype=fp16 (2 file(s))
+  values: 426 of 434 episodes value-checked
+  GAP siglip2/libero_spatial/ep000272: cannot read .npy header (ValueError: This file contains pickled (object) data. If you trust the file you can load it unsafely using the `allow_pickle=` keyword argument or `pickle.load()`.)
+  GAP siglip2/libero_spatial/ep000272: 22270 all-zero 4096-byte page(s) in .npy, first at offset 0
+  GAP siglip2/libero_spatial/ep000272: last partial page of .npy is all zero (2176 bytes at offset 91217920)
+  GAP siglip2/libero_spatial/ep000272: 6 all-zero 4096-byte page(s) in .stats.npy, first at offset 0
+  GAP siglip2/libero_spatial/ep000272: last partial page of .stats.npy is all zero (3200 bytes at offset 24576)
+  GAP siglip2/libero_spatial/ep000274: cannot read .npy header (ValueError: This file contains pickled (object) data. If you trust the file you can load it unsafely using the `allow_pickle=` keyword argument or `pickle.load()`.)
+  GAP siglip2/libero_spatial/ep000274: 21388 all-zero 4096-byte page(s) in .npy, first at offset 0
+  GAP siglip2/libero_spatial/ep000274: last partial page of .npy is all zero (2176 bytes at offset 87605248)
+  GAP siglip2/libero_spatial/ep000274: 6 all-zero 4096-byte page(s) in .stats.npy, first at offset 0
+  GAP siglip2/libero_spatial/ep000274: last partial page of .stats.npy is all zero (3200 bytes at offset 24576)
+  GAP siglip2/libero_spatial/ep000276: cannot read .npy header (ValueError: This file contains pickled (object) data. If you trust the file you can load it unsafely using the `allow_pickle=` keyword argument or `pickle.load()`.)
+  GAP siglip2/libero_spatial/ep000276: 26239 all-zero 4096-byte page(s) in .npy, first at offset 0
+  GAP siglip2/libero_spatial/ep000276: last partial page of .npy is all zero (2176 bytes at offset 107474944)
+  GAP siglip2/libero_spatial/ep000276: 6 all-zero 4096-byte page(s) in .stats.npy, first at offset 0
+  GAP siglip2/libero_spatial/ep000276: last partial page of .stats.npy is all zero (3200 bytes at offset 24576)
+  ... 22 more gaps in siglip2 libero_spatial
+siglip2 libero_object: 457 meta episodes, 457 complete, 0 with a gap
+  provenance: model=google/siglip2-so400m-patch14-384 hf_id=None resolution=384 compute_dtype=fp16 (2 file(s))
+  values: 457 of 457 episodes value-checked
+siglip2 libero_10: 388 meta episodes, 388 complete, 0 with a gap
+  provenance: model=google/siglip2-so400m-patch14-384 hf_id=None resolution=384 compute_dtype=fp16 (2 file(s))
+  values: 388 of 388 episodes value-checked
+c-radiov4 libero_goal: 433 meta episodes, 433 complete, 0 with a gap
+  provenance: model=nvidia/C-RADIOv4-SO400M hf_id=None resolution=448 compute_dtype=fp16 (1 file(s))
+  values: 433 of 433 episodes value-checked
+c-radiov4 libero_spatial: 434 meta episodes, 434 complete, 0 with a gap
+  provenance: model=nvidia/C-RADIOv4-SO400M hf_id=None resolution=448 compute_dtype=fp16 (1 file(s))
+  values: 434 of 434 episodes value-checked
+c-radiov4 libero_object: 457 meta episodes, 457 complete, 0 with a gap
+  provenance: model=nvidia/C-RADIOv4-SO400M hf_id=None resolution=448 compute_dtype=fp16 (1 file(s))
+  values: 457 of 457 episodes value-checked
+c-radiov4 libero_10: 388 meta episodes, 388 complete, 0 with a gap
+  provenance: model=nvidia/C-RADIOv4-SO400M hf_id=None resolution=448 compute_dtype=fp16 (1 file(s))
+  values: 388 of 388 episodes value-checked
+vae libero_goal: 433 meta episodes, 433 complete, 0 with a gap
+  provenance: model=Wan2.2_VAE (FastWAM loader) hf_id=None resolution=None compute_dtype=bf16 (10 file(s))
+  values: 433 of 433 episodes value-checked
+vae libero_spatial: 434 meta episodes, 434 complete, 0 with a gap
+  provenance: model=Wan2.2_VAE (FastWAM loader) hf_id=None resolution=None compute_dtype=bf16 (13 file(s))
+  values: 434 of 434 episodes value-checked
+vae libero_object: 457 meta episodes, 457 complete, 0 with a gap
+  provenance: model=Wan2.2_VAE (FastWAM loader) hf_id=None resolution=None compute_dtype=bf16 (11 file(s))
+  values: 457 of 457 episodes value-checked
+vae libero_10: 388 meta episodes, 388 complete, 0 with a gap
+  provenance: model=Wan2.2_VAE (FastWAM loader) hf_id=None resolution=None compute_dtype=bf16 (8 file(s))
+  values: 388 of 388 episodes value-checked
+volume: 834 GiB used, 190 GiB free of 1024 GiB (report only, no threshold)
+=== summary
+dinov3     libero_goal     episodes  433  gaps 0
+dinov3     libero_spatial  episodes  434  gaps 0
+dinov3     libero_object   episodes  457  gaps 0
+dinov3     libero_10       episodes  388  gaps 0
+siglip2    libero_goal     episodes  433  gaps 0
+siglip2    libero_spatial  episodes  434  gaps 37
+siglip2    libero_object   episodes  457  gaps 0
+siglip2    libero_10       episodes  388  gaps 0
+c-radiov4  libero_goal     episodes  433  gaps 0
+c-radiov4  libero_spatial  episodes  434  gaps 0
+c-radiov4  libero_object   episodes  457  gaps 0
+c-radiov4  libero_10       episodes  388  gaps 0
+vae        libero_goal     episodes  433  gaps 0
+vae        libero_spatial  episodes  434  gaps 0
+vae        libero_object   episodes  457  gaps 0
+vae        libero_10       episodes  388  gaps 0
+values: 6840 episodes value-checked, 756.09 GB read in 9183 s (82 MB/s, 16 reader threads)
+=== damaged episodes (every episode with a gap of any kind, uncapped): 8
+DAMAGED siglip2 libero_spatial 272
+DAMAGED siglip2 libero_spatial 274
+DAMAGED siglip2 libero_spatial 276
+DAMAGED siglip2 libero_spatial 278
+DAMAGED siglip2 libero_spatial 280
+DAMAGED siglip2 libero_spatial 282
+DAMAGED siglip2 libero_spatial 284
+DAMAGED siglip2 libero_spatial 286
+=== FAIL: 37 gap(s)
+[cgroup] memory.peak 1351278592 bytes; anon 606208 file 169689088 
+=== exit 1 Thu Nov 19 00:13:47 UTC 2026
