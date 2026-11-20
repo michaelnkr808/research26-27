@@ -1,6 +1,6 @@
 # 002 — Base model WNM-3D, setting simulated navigation
 - **Date:** 2026-11-19
-- **Status:** proposed 2026-11-19, on the lead's "go" in the planning window to a plan that listed "WNM-3D as the base" and "navigation as the setting" among the decision records. It becomes accepted on the lead's merge OK for this pull request. The PI has not been asked to confirm it; the PI's written feedback of 2026-11-19 takes WNM-3D as the base (see Context).
+- **Status:** accepted 2026-11-19 (proposed the same day on the lead's "go" in the planning window; accepted on the lead's merge OK for PR #72, "merge both prs"). The PI has not been asked to confirm it; the PI's written feedback of 2026-11-19 takes WNM-3D as the base (see Context).
 - **Context:** The direction needs a world action model to add audio to, and a setting to test it in. The lead's words, from `LOG.md`:
   - Setting, 2026-11-16: "why do we need a robot arm doing manipulation with spatial audio? i feel like that doesn't make sense for a task where audio would be useful ... i feel that adding audio to a WAM would help moreso with navigation over like the tasks that a robot arm would do".
   - Base family, 2026-11-16: "id prefer to work with wan 2.2".
