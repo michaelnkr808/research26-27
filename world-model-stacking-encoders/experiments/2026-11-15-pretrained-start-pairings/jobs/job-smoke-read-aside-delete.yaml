@@ -6,25 +6,30 @@
 #     gone within 70 s, so `kubectl logs` has nothing (LOG 2026-11-20). The pod tee'd its log to the volume. This Job prints
 #     every file named /mnt/proxy/logs/pairings-smoke-none-s0-* and every file under
 #     /mnt/proxy/rollouts/pairings-smoke/none-s0/ between "@@@ BEGIN <path> sha256 <h> bytes <n> lines <n>" and
-#     "@@@ END <path>" lines (a file over 64 MB is listed, not printed). RUN-stage2-eval.md step 8 then reads them from
-#     this Job's pod log.
+#     "@@@ END <path>" lines (a file over 8 MB is listed, not printed: the node rotates container logs at about 10 MB).
+#     RUN-stage2-eval.md step 8 then reads them from this Job's pod log. To rebuild a file from the log: take the lines
+#     between its BEGIN and END lines, drop the one newline the script adds after the file, and compare bytes and sha256
+#     with the BEGIN line. The volume is read-only here, so the pod log is the only copy of the output: follow it live
+#     with `kubectl logs -f` from the pod's start (the smoke's pod object vanished within 70 s of its end).
 #   DELETE. The repair Job (uid e5377cd5-8d1c-47a8-84c5-d2ce617540df, LOG 2026-11-19) renamed the 8 damaged libero_spatial
 #     episodes' files (ep000272 to ep000286, even ids; .npy and .stats.npy) into
 #     /mnt/proxy/logs/siglip2-repair-e5377cd5-8d1c-47a8-84c5-d2ce617540df/libero_spatial/. Since then the repaired cache passed
 #     the whole-cache value check and the freshness check (LOG 2026-11-20). This Job lists that folder with size and sha256,
 #     refuses unless every entry is one of those 16 file names and the cache holds a non-empty replacement for each of the
-#     8 episodes, then deletes with find -delete (_standards/08, Ceph) and fails unless the folder is empty. The folder
-#     itself and repair-record.json one level up stay.
+#     8 episodes (non-empty only: the value and freshness checks are what cleared the cache), then deletes those names one
+#     by one with find -delete (_standards/08, Ceph) and fails unless the folder is empty. The folder itself and
+#     repair-record.json one level up stay.
 # Scope of write access: the PVC is one volume with two mounts. /mnt/proxy is the whole volume, read-only (volumeMount
 #   readOnly; the script refuses unless /proc/mounts shows it ro). /mnt/aside is the subPath
-#   logs/siglip2-repair-e5377cd5-8d1c-47a8-84c5-d2ce617540df/libero_spatial, read-write. The container cannot write
-#   anywhere else on the volume.
+#   logs/siglip2-repair-e5377cd5-8d1c-47a8-84c5-d2ce617540df/libero_spatial, read-write; the script refuses unless it
+#   is the same folder (inode) as that path seen through /mnt/proxy. The container cannot write anywhere else on the volume.
 # Style as job-siglip2-delete.yaml: CPU-only node affinity, us-west (the PVC's region), exits on its own (no sleep), no
 #   tolerations, requests at or under the exempt size, limits within 20%. backoffLimit 1: a retry is safe (the read
 #   repeats; the delete accepts a folder that holds a subset of the 16 names, or nothing).
 # Exit codes: 0 both parts done; 20 a mount is not as described (nothing read, nothing deleted); 23 the aside folder holds
 #   an unexpected entry or a replacement is missing (nothing deleted); 24 entries left after the delete; 30 the read part
-#   found no smoke log (the delete part still ran); other non-zero: a command failed (read the log).
+#   found no smoke log (the delete part still ran). The script does not stop on a failed command (no set -e): read the log
+#   for error lines even after exit 0.
 # NOT SUBMITTED when written. Submitting: Ceph health check first (_standards/08), then kubectl create -f.
 apiVersion: batch/v1
 kind: Job
@@ -69,12 +74,14 @@ spec:
           case ",$PO," in *,ro,*) ;; *) echo "ABORT (20): /mnt/proxy is not mounted read-only (options: '$PO')"; exit 20 ;; esac
           case ",$AO," in *,rw,*) ;; *) echo "ABORT (20): /mnt/aside is not a read-write mount (options: '$AO')"; exit 20 ;; esac
           [ -d "$CACHE" ] || { echo "ABORT (20): $CACHE is missing"; exit 20; }
+          RO=/mnt/proxy/logs/siglip2-repair-e5377cd5-8d1c-47a8-84c5-d2ce617540df/libero_spatial
+          [ -d "$RO" ] && [ "$(stat -c %i "$A")" = "$(stat -c %i "$RO")" ] || { echo "ABORT (20): $A is not the folder $RO (inodes $(stat -c %i "$A" 2>&1) / $(stat -c %i "$RO" 2>&1))"; exit 20; }
 
           # --- READ
           echo "=== READ $(date -u)"
           show() {
             local f=$1 b; b=$(stat -c %s "$f")
-            if [ "$b" -gt 67108864 ]; then echo "@@@ SKIPPED $f bytes $b (over 64 MB)"; return; fi
+            if [ "$b" -gt 8388608 ]; then echo "@@@ SKIPPED $f bytes $b (over 8 MB)"; return; fi
             echo "@@@ BEGIN $f sha256 $(sha256sum < "$f" | cut -d' ' -f1) bytes $b lines $(wc -l < "$f")"
             cat "$f"; echo
             echo "@@@ END $f"
@@ -113,8 +120,8 @@ spec:
             [ -f "$A/$p" ] || continue
             echo "to delete: $p bytes $(stat -c %s "$A/$p") sha256 $(sha256sum < "$A/$p" | cut -d' ' -f1); replacement bytes $(stat -c %s "$CACHE/$p")"
           done
-          find "$A" -xdev -mindepth 1 -maxdepth 1 -type f -delete
-          left=$(find "$A" -mindepth 1 | wc -l)
+          for p in $EXP; do find "$A" -xdev -mindepth 1 -maxdepth 1 -type f -name "$p" -delete; done
+          left=$(find "$A" -mindepth 1 | wc -l) || { echo "ABORT (24): could not list $A after the delete"; exit 24; }
           echo "--- after $(date -u)"; ls -la --time-style=full-iso "$A"; df -h /mnt/proxy | tail -1
           [ "$left" = 0 ] || { echo "ABORT (24): $left entries left in $A"; exit 24; }
           echo "=== deleted: $n file(s); $A is empty"

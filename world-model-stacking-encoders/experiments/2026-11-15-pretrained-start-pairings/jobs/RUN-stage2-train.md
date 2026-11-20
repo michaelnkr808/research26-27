@@ -71,6 +71,7 @@ As `../../2026-11-15-pretrained-start-baseline/jobs/RUN-full-train.md` ("What ea
 | 20 | CUDA out of memory at the rendered micro-batch | fails at once | step 9 (re-render with 4); at 4: stop for the user |
 | 1 with "CUDA out of memory" in the pod log | the same, but the traceback reached the PVC log after the script's check (tee lag) | retried at the same micro-batch | delete the Job and treat it as exit 20 |
 | 10 | commit not 40-hex, or CONFIG / CFGK / SEED not rendered consistently | fails at once | re-render |
+| 137 with the container's `reason: OOMKilled` (pod status) | host memory limit reached (the first `dinov3+siglip2` pod, 2026-11-20, at the first render's 43Gi) | not in the fail-at-once list, so it is retried at the same limit and would be killed again | save the pod log and status, delete the Job (graceful), stop for the user: the memory values are the user's decision |
 | 1 with an `OSError` (or a `RuntimeError` from `torch.save`) raised in `save_ckpt` in the pod log | the storage refused a checkpoint write (the fsync before the rename raised, PR #69, or the write itself failed); the previous `ckpt.pt` is untouched | retried; the retry resumes from the last good `ckpt.pt` | the refused write can leave a full-size `ckpt.pt.tmp` behind (the next save overwrites it). The retry's free-space guard counts it, so with little free space the retry stops with exit 14 (FailJob) on purpose: tell the user. Do not delete the `.tmp` by hand without the user's OK |
 
 ## After each Job ends
