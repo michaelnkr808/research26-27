@@ -1,6 +1,6 @@
 # _standards/08 rules mapped to the stage 2 Job templates
 
-Written 2026-11-17 by a worker for the done check of the stage 2 manifests. Line numbers are in the templates as committed with this file (`job-train.template.yaml` = train, `job-smoke.template.yaml` = smoke, `job-clean-eval.template.yaml` = clean, `job-lp-eval.template.yaml` = lp); rendered files add 1 to 3 header lines on top. Found with grep, comment lines excluded. "RUN" points to `RUN-stage2-train.md` (RUN-T), `RUN-stage2-eval.md` (RUN-E) and `RUN-stage2-waves.md` (RUN-W).
+Written 2026-11-17 by a worker for the done check of the stage 2 manifests. Line numbers are in the templates as committed with this file (`job-train.template.yaml` = train, `job-smoke.template.yaml` = smoke, `job-clean-eval.template.yaml` = clean, `job-lp-eval.template.yaml` = lp); rendered files add 1 to 3 header lines on top. The train template's header has grown by 17 lines since (PR #70 and the 2026-11-20 host-memory change): add 17 to every train line number below. Found with grep, comment lines excluded. "RUN" points to `RUN-stage2-train.md` (RUN-T), `RUN-stage2-eval.md` (RUN-E) and `RUN-stage2-waves.md` (RUN-W).
 
 ## Workload type and Job rules (08 "Pick the right workload type")
 
@@ -20,7 +20,7 @@ Written 2026-11-17 by a worker for the done check of the stage 2 manifests. Line
 |---|---|---|
 | No `sleep` / never-ending Job | as above | |
 | No tolerations without admin OK | none in any template | grep finds only header comments saying "no tolerations" |
-| No under-used requests (namespace ban risk) | requests train 278; smoke 225; clean 210; lp 238 | sized from stage 1's measured use (train: 32Gi; L4 eval: 28Gi; CPU 4 for the L4 templates; train CPU 2 since 2026-11-20, stage 1's training peak was 1.07 cores, template CHANGES item 10), pairs' memory from arithmetic in the train header; the exit trap prints `[cgroup]` peak and anon to resize from a measurement |
+| No under-used requests (namespace ban risk) | requests train 278; smoke 225; clean 210; lp 238 | sized from stage 1's measured use (train: 32Gi; L4 eval: 28Gi; CPU 4 for the L4 templates; train CPU 2 since 2026-11-20, stage 1's training peak was 1.07 cores, template CHANGES item 10), encoder configurations' memory re-sized on 2026-11-20 from measured use (single encoders 22 to 28 GiB anonymous: 40Gi; the first pair pod was OOM-killed at 43Gi: 64Gi; train header HOST MEMORY); the exit trap prints `[cgroup]` peak and anon to resize from a measurement |
 | Never force-delete pods | RUN-T step 6, RUN-E (stage 1's steps referenced) | "graceful, never `--force`" |
 
 ## GPU utilization (08 "GPU utilization: how it's actually checked")
@@ -37,7 +37,7 @@ Written 2026-11-17 by a worker for the done check of the stage 2 manifests. Line
 
 | Rule | Where | How |
 |---|---|---|
-| Limits within 20% of requests | requests / limits train 278; smoke 225; clean 210; lp 238 / train 279; smoke 226; clean 211; lp 239 | CPU train 2 / 2400m (1.2x), L4 templates 4 / 4800m (1.2x); memory 32Gi / 38Gi (1.19x), pairs 36Gi / 43Gi (1.19x), eval 28Gi / 33Gi (1.18x); ephemeral 38Gi / 44Gi (1.16x), 50Gi / 58Gi (1.16x) |
+| Limits within 20% of requests | requests / limits train 278; smoke 225; clean 210; lp 238 / train 279; smoke 226; clean 211; lp 239 | CPU train 2 / 2400m (1.2x), L4 templates 4 / 4800m (1.2x); memory train `none` 32Gi / 38Gi (1.19x), single encoders 40Gi / 48Gi (1.2x), pairs 64Gi / 76Gi (1.19x), eval 28Gi / 33Gi (1.18x); ephemeral 38Gi / 44Gi (1.16x), 50Gi / 58Gi (1.16x) |
 | Over 50 Gi of ephemeral scratch: request `ephemeral-storage` explicitly | train 278, 279; smoke 225, 226; clean 210, 211; lp 238, 239; `/work` sizeLimit train 288; smoke 235; clean 220; lp 249 | as stage 1 |
 | `/dev/shm` as a memory emptyDir | train 284; smoke 231; clean 216; lp 244 | 2Gi train, 4Gi eval |
 

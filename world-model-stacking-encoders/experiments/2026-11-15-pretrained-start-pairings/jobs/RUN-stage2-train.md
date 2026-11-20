@@ -9,11 +9,11 @@ Written 2026-11-17 by a worker, Mac only. Nothing here has been submitted; the o
 | config | Job name | micro-batch | --ckpt-every L40S / L40 | time cap | pod / Job deadline | host memory req / limit |
 |---|---|---|---|---|---|---|
 | none (seeds 1, 2) | stacking-encoders-pairings-train-none-s<seed> | 8 | 700 / 500 | 62 h | 64 h / 96 h | 32Gi / 38Gi |
-| dinov3 | ...-train-dinov3-s<seed> | 8 | 700 / 500 | 63 h | 65 h / 97 h | 32Gi / 38Gi |
-| siglip2 | ...-train-siglip2-s<seed> | 8 | 700 / 500 | 63 h | 65 h / 97 h | 32Gi / 38Gi |
-| c-radiov4 | ...-train-c-radiov4-s<seed> | 8 | 700 / 500 | 63 h | 65 h / 97 h | 32Gi / 38Gi |
-| dinov3+siglip2 | ...-train-dinov3-siglip2-s<seed> | 8 | 600 / 500 | 65 h | 67 h / 99 h | 36Gi / 43Gi |
-| dinov3+c-radiov4 | ...-train-dinov3-c-radiov4-s<seed> | 8 | 600 / 500 | 65 h | 67 h / 99 h | 36Gi / 43Gi |
+| dinov3 | ...-train-dinov3-s<seed> | 8 | 700 / 500 | 63 h | 65 h / 97 h | 40Gi / 48Gi |
+| siglip2 | ...-train-siglip2-s<seed> | 8 | 700 / 500 | 63 h | 65 h / 97 h | 40Gi / 48Gi |
+| c-radiov4 | ...-train-c-radiov4-s<seed> | 8 | 700 / 500 | 63 h | 65 h / 97 h | 40Gi / 48Gi |
+| dinov3+siglip2 | ...-train-dinov3-siglip2-s<seed> | 8 | 600 / 500 | 65 h | 67 h / 99 h | 64Gi / 76Gi |
+| dinov3+c-radiov4 | ...-train-dinov3-c-radiov4-s<seed> | 8 | 600 / 500 | 65 h | 67 h / 99 h | 64Gi / 76Gi |
 
 Only `none` has measured step times on Nautilus. Everything for the encoder configurations is a linear extrapolation of the one sizing measurement for `dinov3` (+2.2% per step; speculative) and is checked in the first minutes (step 8). Out folder: `/mnt/proxy/runs/pairings-<cfgk>-s<seed>`, or `/mnt/runs/runs/pairings-<cfgk>-s<seed>` with `--runs-pvc` (second volume). `none` seed 0 is stage 1's run and render.sh refuses it.
 
@@ -60,7 +60,7 @@ Only `none` has measured step times on Nautilus. Everything for the encoder conf
    - **First-batch report**: the `[first batch] loss at start` line; the per-source channel statistics are in `first-batch.json` on the PVC (fault checks, PLAN Decision rule item 6).
    - **Free space**: the `PVC free:` line.
    - **Checkpoint write time** (the first write comes at the rendered `--ckpt-every`, 30 to 60 min in, so read it after this check): the first `[ckpt] step <n> written to ... in <s>s` line. Note it in the LOG next to stage 1's: about 21 s per write on an L40S in sanity check 4 (`../../2026-11-15-pretrained-start-baseline/LOG.md`, 2026-11-16) and about 26 to 28 s per write on the L40 in the full run (same LOG, 2026-11-17). Since PR #69 the fsync is inside this time (`pretrained_train.save` times the whole `save_ckpt` call), so it can be longer than stage 1's, and the `[projection] with checkpoint writes` line logged right after it uses it. The step watchdog does not beat during a save: a save that stalls past `--step-watchdog-s` (default 1,800 s in `pretrained_train.py`, not overridden by the template) ends the pod with exit 17 (`WATCHDOG_EXIT`), which the Job retries; the retry resumes from the previous `ckpt.pt`, because the rename never ran.
-   - The first pair run's exit-trap `[cgroup]` lines size the rest (host memory is estimated, not measured, for every encoder configuration).
+   - **Host memory** (re-sized 2026-11-20 from measurements, template header HOST MEMORY: single encoders held 22 to 28 GiB anonymous at this check; the first pair pod was OOM-killed at the first render's 43Gi limit 20 min in, so a pair's peak is not measured): read `anon` from the pod's `/sys/fs/cgroup/memory.stat` at this check and again after the first checkpoint write, and log it against the limit (single encoders 48Gi, pairs 76Gi; the three single-encoder Jobs created before the change have 38Gi). **A pair whose anon nears 76Gi: stop for the user.** The exit-trap `[cgroup]` lines of the first pair run that ends size the rest.
 9. **Micro-batch 4 re-render**: `./render.sh train <config> <seed> --micro-batch 4 --commit $C` (same `$C`, and the same `--runs-pvc` as the first render, or none if it had none: a different volume would start a fresh run and ignore the existing `ckpt.pt`), delete the old Job (graceful), wait until its pod is gone, create the new one. The run resumes from `ckpt.pt` if one exists, else it starts fresh (a folder without `ckpt.pt` is renamed `.stale-<date>`, never deleted).
 
 ## Exit codes
@@ -71,6 +71,7 @@ As `../../2026-11-15-pretrained-start-baseline/jobs/RUN-full-train.md` ("What ea
 | 20 | CUDA out of memory at the rendered micro-batch | fails at once | step 9 (re-render with 4); at 4: stop for the user |
 | 1 with "CUDA out of memory" in the pod log | the same, but the traceback reached the PVC log after the script's check (tee lag) | retried at the same micro-batch | delete the Job and treat it as exit 20 |
 | 10 | commit not 40-hex, or CONFIG / CFGK / SEED not rendered consistently | fails at once | re-render |
+| 137 with the container's `reason: OOMKilled` (pod status) | host memory limit reached (the first `dinov3+siglip2` pod, 2026-11-20, at the first render's 43Gi) | not in the fail-at-once list, so it is retried at the same limit and would be killed again | save the pod log and status, delete the Job (graceful), stop for the user: the memory values are the user's decision |
 | 1 with an `OSError` (or a `RuntimeError` from `torch.save`) raised in `save_ckpt` in the pod log | the storage refused a checkpoint write (the fsync before the rename raised, PR #69, or the write itself failed); the previous `ckpt.pt` is untouched | retried; the retry resumes from the last good `ckpt.pt` | the refused write can leave a full-size `ckpt.pt.tmp` behind (the next save overwrites it). The retry's free-space guard counts it, so with little free space the retry stops with exit 14 (FailJob) on purpose: tell the user. Do not delete the `.tmp` by hand without the user's OK |
 
 ## After each Job ends

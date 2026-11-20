@@ -1,0 +1,141 @@
+# One-off CPU-only Job: read the `none` LIBERO-Plus timing smoke's files, and delete the 16 moved-aside SigLIP 2 files.
+# The user's go, lead's window, 2026-11-20: "1. yes 2. yes 3. yes" (2 = a small CPU-only Job that reads the timing check's
+# log off the volume; 3 = delete the 16 moved-aside damaged SigLIP 2 files). One Job does both, on PVC
+# stacking-encoders-proxy, and nothing else.
+#   READ. The smoke Job stacking-encoders-pairings-smoke-none-s0 completed 2026-11-20 09:55:54 UTC and its pod object was
+#     gone within 70 s, so `kubectl logs` has nothing (LOG 2026-11-20). The pod tee'd its log to the volume. This Job prints
+#     every file named /mnt/proxy/logs/pairings-smoke-none-s0-* and every file under
+#     /mnt/proxy/rollouts/pairings-smoke/none-s0/ between "@@@ BEGIN <path> sha256 <h> bytes <n> lines <n>" and
+#     "@@@ END <path>" lines (a file over 8 MB is listed, not printed: the node rotates container logs at about 10 MB).
+#     RUN-stage2-eval.md step 8 then reads them from this Job's pod log. To rebuild a file from the log: take the lines
+#     between its BEGIN and END lines, drop the one newline the script adds after the file, and compare bytes and sha256
+#     with the BEGIN line. The volume is read-only here, so the pod log is the only copy of the output: follow it live
+#     with `kubectl logs -f` from the pod's start (the smoke's pod object vanished within 70 s of its end).
+#   DELETE. The repair Job (uid e5377cd5-8d1c-47a8-84c5-d2ce617540df, LOG 2026-11-19) renamed the 8 damaged libero_spatial
+#     episodes' files (ep000272 to ep000286, even ids; .npy and .stats.npy) into
+#     /mnt/proxy/logs/siglip2-repair-e5377cd5-8d1c-47a8-84c5-d2ce617540df/libero_spatial/. Since then the repaired cache passed
+#     the whole-cache value check and the freshness check (LOG 2026-11-20). This Job lists that folder with size and sha256,
+#     refuses unless every entry is one of those 16 file names and the cache holds a non-empty replacement for each of the
+#     8 episodes (non-empty only: the value and freshness checks are what cleared the cache), then deletes those names one
+#     by one with find -delete (_standards/08, Ceph) and fails unless the folder is empty. The folder itself and
+#     repair-record.json one level up stay.
+# Scope of write access: the PVC is one volume with two mounts. /mnt/proxy is the whole volume, read-only (volumeMount
+#   readOnly; the script refuses unless /proc/mounts shows it ro). /mnt/aside is the subPath
+#   logs/siglip2-repair-e5377cd5-8d1c-47a8-84c5-d2ce617540df/libero_spatial, read-write; the script refuses unless it
+#   is the same folder (inode) as that path seen through /mnt/proxy. The container cannot write anywhere else on the volume.
+# Style as job-siglip2-delete.yaml: CPU-only node affinity, us-west (the PVC's region), exits on its own (no sleep), no
+#   tolerations, requests at or under the exempt size, limits within 20%. backoffLimit 1: a retry is safe (the read
+#   repeats; the delete accepts a folder that holds a subset of the 16 names, or nothing).
+# Exit codes: 0 both parts done; 20 a mount is not as described (nothing read, nothing deleted); 23 the aside folder holds
+#   an unexpected entry or a replacement is missing (nothing deleted); 24 entries left after the delete; 30 the read part
+#   found no smoke log (the delete part still ran). The script does not stop on a failed command (no set -e): read the log
+#   for error lines even after exit 0.
+# NOT SUBMITTED when written. Submitting: Ceph health check first (_standards/08), then kubectl create -f.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-pairings-smoke-read-aside-delete
+  namespace: aria-world
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 21600     # counts from creation, queue included; the work is minutes
+  ttlSecondsAfterFinished: 86400
+  podFailurePolicy:
+    rules:
+    - action: FailJob              # a refusal or a missing log: a retry would not change it
+      onExitCodes: {containerName: main, operator: In, values: [20, 23, 24, 30]}
+    - action: Ignore               # node reboot or drain: retry without counting
+      onPodConditions: [{type: DisruptionTarget}]
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: feature.node.kubernetes.io/pci-10de.present, operator: NotIn, values: ["true"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -uo pipefail
+          echo "=== start $(date -u) node=${NODE_NAME:-?}"
+          A=/mnt/aside
+          CACHE=/mnt/proxy/feats/siglip2/libero_spatial
+          EXP="ep000272.npy ep000272.stats.npy ep000274.npy ep000274.stats.npy ep000276.npy ep000276.stats.npy ep000278.npy ep000278.stats.npy ep000280.npy ep000280.stats.npy ep000282.npy ep000282.stats.npy ep000284.npy ep000284.stats.npy ep000286.npy ep000286.stats.npy"
+          # --- mounts: /mnt/proxy read-only, /mnt/aside a separate read-write mount
+          grep -E ' (/mnt/proxy|/mnt/aside) ' /proc/mounts
+          PO=$(awk '$2=="/mnt/proxy"{o=$4} END{print o}' /proc/mounts)
+          AO=$(awk '$2=="/mnt/aside"{o=$4} END{print o}' /proc/mounts)
+          case ",$PO," in *,ro,*) ;; *) echo "ABORT (20): /mnt/proxy is not mounted read-only (options: '$PO')"; exit 20 ;; esac
+          case ",$AO," in *,rw,*) ;; *) echo "ABORT (20): /mnt/aside is not a read-write mount (options: '$AO')"; exit 20 ;; esac
+          [ -d "$CACHE" ] || { echo "ABORT (20): $CACHE is missing"; exit 20; }
+          RO=/mnt/proxy/logs/siglip2-repair-e5377cd5-8d1c-47a8-84c5-d2ce617540df/libero_spatial
+          [ -d "$RO" ] && [ "$(stat -c %i "$A")" = "$(stat -c %i "$RO")" ] || { echo "ABORT (20): $A is not the folder $RO (inodes $(stat -c %i "$A" 2>&1) / $(stat -c %i "$RO" 2>&1))"; exit 20; }
+
+          # --- READ
+          echo "=== READ $(date -u)"
+          show() {
+            local f=$1 b; b=$(stat -c %s "$f")
+            if [ "$b" -gt 8388608 ]; then echo "@@@ SKIPPED $f bytes $b (over 8 MB)"; return; fi
+            echo "@@@ BEGIN $f sha256 $(sha256sum < "$f" | cut -d' ' -f1) bytes $b lines $(wc -l < "$f")"
+            cat "$f"; echo
+            echo "@@@ END $f"
+          }
+          READ_RC=30
+          ls -la --time-style=full-iso /mnt/proxy/logs/ | grep -F pairings-smoke || echo "no pairings-smoke file in /mnt/proxy/logs"
+          ls -laR --time-style=full-iso /mnt/proxy/rollouts/pairings-smoke/none-s0/ || echo "no rollouts folder for the none smoke"
+          for f in /mnt/proxy/logs/pairings-smoke-none-s0-*; do
+            [ -f "$f" ] || continue
+            case "$f" in *.log) READ_RC=0 ;; esac
+            show "$f"
+          done
+          while IFS= read -r f; do show "$f"; done < <(find /mnt/proxy/rollouts/pairings-smoke/none-s0 -type f 2>/dev/null | sort)
+          [ "$READ_RC" = 0 ] || echo "READ PROBLEM (30): no /mnt/proxy/logs/pairings-smoke-none-s0-*.log"
+
+          # --- DELETE
+          echo "=== DELETE $(date -u): $A = logs/siglip2-repair-e5377cd5-8d1c-47a8-84c5-d2ce617540df/libero_spatial"
+          df -h /mnt/proxy | tail -1
+          ls -la --time-style=full-iso "$A"
+          LIST=$(find "$A" -xdev -mindepth 1 -printf '%y %P\n' | sort -k2)
+          n=0; bad=0
+          while read -r t p; do
+            [ -n "$t" ] || continue
+            n=$((n+1))
+            case " $EXP " in
+              *" $p "*) [ "$t" = f ] || { echo "UNEXPECTED type $t: $p"; bad=1; } ;;
+              *) echo "UNEXPECTED entry: $t $p"; bad=1 ;;
+            esac
+          done <<< "$LIST"
+          echo "entries in the aside folder: $n (16 on a first run)"
+          for p in $EXP; do
+            [ -s "$CACHE/$p" ] || { echo "MISSING or empty replacement in the cache: $CACHE/$p"; bad=1; }
+          done
+          if [ "$bad" != 0 ]; then echo "ABORT (23): nothing deleted"; exit 23; fi
+          for p in $EXP; do
+            [ -f "$A/$p" ] || continue
+            echo "to delete: $p bytes $(stat -c %s "$A/$p") sha256 $(sha256sum < "$A/$p" | cut -d' ' -f1); replacement bytes $(stat -c %s "$CACHE/$p")"
+          done
+          for p in $EXP; do find "$A" -xdev -mindepth 1 -maxdepth 1 -type f -name "$p" -delete; done
+          left=$(find "$A" -mindepth 1 | wc -l) || { echo "ABORT (24): could not list $A after the delete"; exit 24; }
+          echo "--- after $(date -u)"; ls -la --time-style=full-iso "$A"; df -h /mnt/proxy | tail -1
+          [ "$left" = 0 ] || { echo "ABORT (24): $left entries left in $A"; exit 24; }
+          echo "=== deleted: $n file(s); $A is empty"
+          echo "=== exit $READ_RC $(date -u)"
+          exit $READ_RC
+        env:
+        - name: NODE_NAME
+          valueFrom: {fieldRef: {fieldPath: spec.nodeName}}
+        resources:
+          requests: {cpu: 500m, memory: 512Mi}
+          limits:   {cpu: 600m, memory: 600Mi}
+        volumeMounts:
+        - {name: proxy, mountPath: /mnt/proxy, readOnly: true}
+        - {name: proxy, mountPath: /mnt/aside, subPath: logs/siglip2-repair-e5377cd5-8d1c-47a8-84c5-d2ce617540df/libero_spatial}
+      volumes:
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
