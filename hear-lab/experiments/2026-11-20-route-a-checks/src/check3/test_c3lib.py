@@ -236,6 +236,61 @@ class Selection(unittest.TestCase):
 
 
 class CsvAndSummary(unittest.TestCase):
+    def test_summary_keeps_by_eye_answers(self):
+        import summarize_check3 as S
+        cfg = c3lib.load_config(CONFIG)
+        p = os.environ.get("C3_TEST_UNSEEN_PARQUET")
+        if not p:
+            self.fail("set C3_TEST_UNSEEN_PARQUET")
+        import pyarrow.parquet as pq
+        split = "InteriorGS_test_unseen"
+        n = pq.ParquetFile(p).metadata.num_rows
+        rows = c3lib.select_rows(n, "all", cfg["seed"])
+        cand = c3lib.review_candidates(rows, cfg["n_review"], cfg["seed"])[:2]
+        with tempfile.TemporaryDirectory() as td:
+            out = Path(td)
+            gm = out / "gm"
+            gm.mkdir()
+            os.symlink(p, gm / f"{split}.parquet")
+            H, W = 360, 480
+            with open(out / f"check3_{split}.csv", "w", newline="") as fh:
+                w = csv.DictWriter(fh, fieldnames=c3lib.CSV_FIELDS)
+                w.writeheader()
+                for r in cand:
+                    w.writerow(dict({k: "" for k in c3lib.CSV_FIELDS}, split=split, row_index=r, trajectory_id=r,
+                                    scene="s", label_ins_id="1", label_label="chair", status="ok",
+                                    n_label_entries=1, within_radius_path=0, within_radius_straight=0,
+                                    path_length_m=5.0, depth_tol_primary_m=0.15, depth_tol_strict_m=0.05,
+                                    depth_tol_loose_m=0.3, visible_primary=1, visible_strict=1, visible_loose=1,
+                                    n_seen_primary=1, n_box_points=2, n_in_image=2, n_invalid_depth=0,
+                                    render_s=0.1))
+                    (out / "review_raw" / split).mkdir(parents=True, exist_ok=True)
+                    np.savez_compressed(out / "review_raw" / split / f"{r}.npz", rgb=np.zeros((H, W, 3), np.uint8),
+                                        depth=np.full((H, W), 5.0, np.float32), u=np.array([10.0, 20.0]),
+                                        v=np.array([10.0, 20.0]), in_image=np.array([True, True]),
+                                        seen_primary=np.array([True, False]))
+            argv = sys.argv
+            try:
+                sys.argv = ["summarize_check3.py", "--config", str(CONFIG), "--gn-matrix-dir", str(gm),
+                            "--out-dir", str(out), "--splits", split]
+                S.main()
+                idx = out / "review" / "review_index.csv"
+                with open(idx) as fh:
+                    recs = list(csv.DictReader(fh))
+                self.assertEqual(len(recs), 2)
+                recs[0]["by_eye_agrees"] = "yes"
+                with open(idx, "w", newline="") as fh:
+                    w = csv.DictWriter(fh, fieldnames=list(recs[0].keys()))
+                    w.writeheader()
+                    w.writerows(recs)
+                S.main()
+                with open(idx) as fh:
+                    again = list(csv.DictReader(fh))
+                self.assertEqual(again[0]["by_eye_agrees"], "yes")
+                self.assertEqual(again[1]["by_eye_agrees"], "")
+            finally:
+                sys.argv = argv
+
     def test_resume_and_summary(self):
         import summarize_check3 as S
         cfg = c3lib.load_config(CONFIG)

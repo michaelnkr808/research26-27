@@ -49,9 +49,10 @@ pip freeze > /root/check3_pip_freeze.txt
 
 ## 2. Code from this repo
 
-From the Mac (the lead's machine), copy the experiment's config and this folder:
+From the Mac (the lead's machine), create the folder on the machine, then copy the experiment's config and this folder:
 
 ```bash
+ssh -p <port> root@<host> mkdir -p /root/route-a-checks
 scp -P <port> -r hear-lab/experiments/2026-11-20-route-a-checks/config.yaml hear-lab/experiments/2026-11-20-route-a-checks/src root@<host>:/root/route-a-checks/
 ```
 
@@ -153,7 +154,7 @@ If the machine drops or the run stops, start the same command again: finished ep
 
 - `check3_InteriorGS_test_unseen.csv`, `check3_InteriorGS_train_seen.csv`: one row per selected episode. Status `ok`, `missing_id` (label_ins_id not in labels.json) or `missing_box` (entry has no bounding_box). Visibility at 0.15 m (primary) and at 0.05 m and 0.30 m: seen point counts, share of box points seen, and the flag. Also straight-line start-to-goal distance, GN-Matrix path length, the two within-3.0-m flags, number of in-image points that hit empty depth, distance from the camera to the box centre, horizontal distance from the GN-Matrix goal position to the target box, and render time.
 - `summary.json`, `summary.txt`: counts per split (visible, not visible, missing, and each by within 3.0 m), timing, and the per-scene frame diagnostic (how many splat centres fall inside label boxes as given vs mirrored; `identity` should win in nearly every scene).
-- `review/<split>/NN_row<row>.png` (10 per split) and `review/review_index.csv` (fill in `by_eye_agrees`). Green points: seen at 0.15 m; red: inside the image but hidden.
+- `review/<split>/NN_row<row>.png` (10 per split) and `review/review_index.csv` (fill in `by_eye_agrees`; rerunning the summary keeps answers already filled in). Green points: seen at 0.15 m; red: inside the image but hidden.
 - `review_raw/`, `scenes.jsonl`, `run_meta/<time>.json` (config, parquet hashes, intrinsics, preflight, host, GPU, gsplat version).
 
 Copy all of it off the machine before it is destroyed (`scp -r -P <port> root@<host>:/root/check3_full <somewhere outside the repo>`), together with `/root/check3_pip_freeze.txt`, `/root/check3_dataset_revisions.txt` and `/root/check3_scenes.txt`. The review images and `review_raw/` are InteriorGS renders: keep them out of git until the InteriorGS terms have been read. Which files go into `results/` is the lead's call.

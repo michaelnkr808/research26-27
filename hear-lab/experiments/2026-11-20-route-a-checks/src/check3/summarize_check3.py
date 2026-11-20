@@ -185,7 +185,14 @@ def main():
     (out / "summary.json").write_text(json.dumps(summary, indent=2, default=str))
     if review_rows:
         (out / "review").mkdir(parents=True, exist_ok=True)
-        with open(out / "review" / "review_index.csv", "w", newline="", encoding="utf-8") as fh:
+        idx_path = out / "review" / "review_index.csv"
+        # Keep any by-eye answers already filled in (rerunning must not erase them).
+        if idx_path.exists():
+            with open(idx_path, "r", newline="", encoding="utf-8") as fh:
+                old = {(r["split"], str(r["row_index"])): r.get("by_eye_agrees", "") for r in csv.DictReader(fh)}
+            for r in review_rows:
+                r["by_eye_agrees"] = old.get((r["split"], str(r["row_index"])), "") or ""
+        with open(idx_path, "w", newline="", encoding="utf-8") as fh:
             w = csv.DictWriter(fh, fieldnames=list(review_rows[0].keys()))
             w.writeheader()
             w.writerows(review_rows)
