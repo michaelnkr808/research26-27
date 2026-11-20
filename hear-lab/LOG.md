@@ -369,3 +369,31 @@ Planning lead's suggestion to the lead, not a decision (`speculative`): pitch qu
 **Next:** the PI meeting today (2026-11-19); the lead's OK on PR #68 in the literature window; then the research question and decision records by pull request.
 
 **Open questions:** whether a controlled comparison plus the visibility split is enough for the paper (for the PI); which of the two questions; WNM-3D or UniWAM; what ranks the encoders in question 2 if RMS-AQA stays parked.
+
+## 2026-11-19 [agent, lead, planning] (PI feedback after the 2026-11-19 meeting; three checks sent to the literature session)
+**Goal:** record the PI's feedback and start the follow-ups it names.
+
+**Did:**
+- The lead held the PI meeting and gave the planning lead a screenshot of the PI's written follow-up (chat messages, 2026-11-19, 8:15 PM to 8:33 PM). The screenshot starts partway through the thread; anything said earlier or in the meeting itself is not known to the planning lead.
+- Identified the first linked paper from its arXiv abstract page (one web fetch). The second link (CVPR open access) refused the fetch (HTTP 403), so that paper is not identified beyond its file name.
+- Asked the literature session for three checks (below).
+
+**PR:** direct.
+
+**Found:**
+From the PI (quoted from the screenshot):
+- "And if you can use WNM-3D's own simulator for simulating audio-visual training data, then we will not use SoundSpaces 2.0"
+- A link: arxiv.org/pdf/2610.21588.
+- A link: openaccess.thecvf.com/content/CVPR2026/papers/Ryu_Hear_you_are_Teaching_LLMs_Spatial_Reasoning_with_Vision_and_CVPR_2026_paper.pdf.
+- "Also, it would be a good idea to pursue research in a direction that addresses aspects not covered in existing audio-VLA studies (e.g., long-form processing)" and "Is it good?"
+From the lead, in reply to the PI: "Okay yeah I can definitely look into that too".
+
+arXiv 2610.21588 (`verified` from the abstract page only, 2026-11-19; the PDF was too large for the fetch tool): "Hear, Localize, and Reason: Spatially Aware Scene Understanding for Audio-Visual LLMs", Kim Sung-Bin, Lee Jung-Mok, Jinwoo Jung, Oh Hyun-Bin, Hyeonggon Ryu, David Harwath, Tae-Hyun Oh; submitted 2026-10-15; comments field "NeurIPS 2026". Abstract: a benchmark (HLR-AVSceneQA) with a hear, localize, reason hierarchy, and a model (HLR-LLM) that adds a binaural spatial audio branch next to the monaural semantic audio pathway of an audio-visual foundation model. It is a question-answering model, not a navigation or acting model (from the abstract). How its data was made, and what is released, were not read.
+
+The planning lead's reading (`speculative`): both links are about teaching an audio-visual language model to reason about where sounds are, so they look like method and data references for the spatial audio branch, not competitors on the navigation question. "Long-form processing" probably means handling long stretches of audio over time; the PI's meaning was not confirmed.
+
+**Not verified:** whether GN-Bench can render any audio (only its documentation and file list were read on 2026-11-18); the content of the CVPR 2026 paper; what existing audio-VLA studies do about audio length; which of the two candidate questions the PI prefers, and the PI's answers on RMS-AQA, WNM-3D against UniWAM, and the budget.
+
+**Next:** the literature session reports on (A) whether WNM-3D's own simulator can produce spatial audio and what it would take, (B) the two papers, (C) what existing audio-VLA studies cover and leave out, long-form audio first. The lead tells the planning lead what else the PI said. Then the research question and decision records by pull request. PR #68 was open when this was written.
+
+**Open questions:** as under "Not verified"; whether the PI's long-form suggestion replaces the two candidate questions or adds to them.
