@@ -14,7 +14,9 @@ Prerequisite: a rented Linux x64 machine set up as in RUN.md steps 1 to 4 (packa
     file mit_kemar_normal_pinna.sofa
     sha256sum mit_kemar_normal_pinna.sofa | tee /workspace/hrtf/sofa.sha256
 
-`file` should say "Hierarchical Data Format (version 5)" (SOFA files are HDF5/netCDF-4; `recalled`). If it says HTML or the file is tiny, the download failed: stop and report. Paste the sha256 into the report; the script logs it again.
+The URL is `verified`: it downloaded on 2026-11-20 (1171764 bytes, HDF5, sha256 `e7035994f5fd754058424c061380ee92b1d5ed58fccef2887a4266916616acdf`); the downloaded file here should match that size and hash. `file` should say "Hierarchical Data Format (version 5)".
+
+Terms: MIT's KEMAR page says the measurements are "made available to the research community"; no formal licence was found. Cite Gardner and Martin 1994. If it says HTML or the file is tiny, the download failed: stop and report. Paste the sha256 into the report; the script logs it again.
 
 ## 2. Rerun check 1 to regenerate the run directory (new output folder)
 
@@ -46,7 +48,7 @@ CPU only. Per settings set it runs 4 simulations (default and kemar, each free-f
 
 The log header lists the SOFA sha256, the library sha256, the config hash, every settings set and the reproduction-check note. Then, per settings set and condition, one `[variant]` line (with every configuration override and the HRTF used; for kemar a `[rlr] RLRA_SetListenerHRTF(...)` line before each simulation), then one line per impulse response in the `diagnose_left_ear.py` format (onsets per ear, peaks, `xcorr R-L` in ms, `ILD` in dB), each followed by a `[test]` or `[info]` PASS/FAIL line from the unchanged check 1 left-before-right function. `[test]` lines are `az090` (listener's left, expected left ear first) and `left_test` (the check 1 placement); `[info]` lines are the other azimuths, where the left ear is not expected first. A `[summary]` block ends the log. Any `RLRA_SetListenerHRTF` error is logged as `[variant] ... failed` and the other variants still run: report it as a finding.
 
-- Default condition, free field: should reproduce the earlier diagnostic: a level difference, delays within +-0.09 ms at every azimuth (that earlier result was measured in this project, check 1 diagnosis of 2026-11-20).
+- Default condition, free field: should reproduce the earlier diagnostic: a level difference, delays of largest magnitude 0.091 ms over all azimuths (that earlier result was measured in this project, check 1 diagnosis of 2026-11-20).
 - KEMAR condition, free field: a physical head gives an interaural time difference of roughly 0.6 to 0.7 ms at +-90 degrees, with the left ear first for +90 (`recalled` textbook figure, not measured here), so `xcorr R-L` near +0.6 to +0.7 ms at `az090` and the opposite sign at `az270`. If the value is much smaller, the library may be ignoring or resampling the file: report the numbers, do not tune anything.
 - The `left_test` line is the check 1 question: PASS means the left ear's first sample at 0.1 x its own peak comes before the right ear's with the measured head in the full scene.
 - A KEMAR run is one measured head, not the library default; a PASS here does not change the check 1 result for the default HRTF, it only says whether switching HRTF is a fix.

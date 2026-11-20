@@ -55,7 +55,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--rlr-root", type=Path, required=True)
     ap.add_argument("--scenes-root", type=Path, required=True)
     ap.add_argument("--parquet", type=Path, required=True)
-    ap.add_argument("--run-dir", type=Path, required=True, help="the check1-run1 output folder (needs run_info.json and <settings>/run_record.json)")
+    ap.add_argument("--run-dir", type=Path, required=True, help="the check 1 run output folder, e.g. results/check1-run2 (needs run_info.json and <settings>/run_record.json)")
     ap.add_argument("--hrtf", type=Path, required=True, help="the SOFA file for the kemar condition (mit_kemar_normal_pinna.sofa)")
     ap.add_argument("--out", type=Path, required=True, help="must not exist")
     return ap
