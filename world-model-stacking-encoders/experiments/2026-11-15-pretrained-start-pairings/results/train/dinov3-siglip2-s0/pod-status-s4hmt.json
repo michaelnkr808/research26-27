@@ -1,0 +1,165 @@
+{
+ "metadata": {
+  "name": "stacking-encoders-pairings-train-dinov3-siglip2-s0-s4hmt",
+  "uid": "4415f565-fb1b-4a6f-b09c-3cdcefe397c0",
+  "creationTimestamp": "2026-11-20T06:19:29Z",
+  "labels": {
+   "batch.kubernetes.io/controller-uid": "d090b7ef-2707-4037-ab63-549f7e5a1883",
+   "batch.kubernetes.io/job-name": "stacking-encoders-pairings-train-dinov3-siglip2-s0",
+   "config": "dinov3-siglip2",
+   "controller-uid": "d090b7ef-2707-4037-ab63-549f7e5a1883",
+   "experiment": "stacking-pairings",
+   "job-name": "stacking-encoders-pairings-train-dinov3-siglip2-s0",
+   "kind": "train",
+   "seed": "0"
+  }
+ },
+ "spec": {
+  "nodeName": "rci-tide-gpu-05.sdsu.edu",
+  "resources": {
+   "limits": {
+    "cpu": "2400m",
+    "ephemeral-storage": "44Gi",
+    "memory": "43Gi",
+    "nvidia.com/gpu": "1"
+   },
+   "requests": {
+    "cpu": "2",
+    "ephemeral-storage": "38Gi",
+    "memory": "36Gi",
+    "nvidia.com/gpu": "1"
+   }
+  }
+ },
+ "status": {
+  "conditions": [
+   {
+    "lastProbeTime": null,
+    "lastTransitionTime": "2026-11-20T07:22:47Z",
+    "observedGeneration": 1,
+    "status": "False",
+    "type": "PodReadyToStartContainers"
+   },
+   {
+    "lastProbeTime": null,
+    "lastTransitionTime": "2026-11-20T07:01:14Z",
+    "observedGeneration": 1,
+    "status": "True",
+    "type": "Initialized"
+   },
+   {
+    "lastProbeTime": null,
+    "lastTransitionTime": "2026-11-20T07:22:45Z",
+    "observedGeneration": 1,
+    "reason": "PodFailed",
+    "status": "False",
+    "type": "Ready"
+   },
+   {
+    "lastProbeTime": null,
+    "lastTransitionTime": "2026-11-20T07:22:45Z",
+    "observedGeneration": 1,
+    "reason": "PodFailed",
+    "status": "False",
+    "type": "ContainersReady"
+   },
+   {
+    "lastProbeTime": null,
+    "lastTransitionTime": "2026-11-20T07:01:14Z",
+    "observedGeneration": 1,
+    "status": "True",
+    "type": "PodScheduled"
+   }
+  ],
+  "containerStatuses": [
+   {
+    "allocatedResources": {
+     "cpu": "2",
+     "ephemeral-storage": "38Gi",
+     "memory": "36Gi",
+     "nvidia.com/gpu": "1"
+    },
+    "containerID": "containerd://34e05758246cd3f550b486fea661f9dd81a8a66cafbb4b723f4a48233ceb4994",
+    "image": "docker.io/pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime",
+    "imageID": "docker.io/pytorch/pytorch@sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2",
+    "lastState": {},
+    "name": "main",
+    "ready": false,
+    "resources": {
+     "limits": {
+      "cpu": "2400m",
+      "ephemeral-storage": "44Gi",
+      "memory": "43Gi",
+      "nvidia.com/gpu": "1"
+     },
+     "requests": {
+      "cpu": "2",
+      "ephemeral-storage": "38Gi",
+      "memory": "36Gi",
+      "nvidia.com/gpu": "1"
+     }
+    },
+    "restartCount": 0,
+    "started": false,
+    "state": {
+     "terminated": {
+      "containerID": "containerd://34e05758246cd3f550b486fea661f9dd81a8a66cafbb4b723f4a48233ceb4994",
+      "exitCode": 137,
+      "finishedAt": "2026-11-20T07:22:44Z",
+      "reason": "OOMKilled",
+      "startedAt": "2026-11-20T07:02:50Z"
+     }
+    },
+    "user": {
+     "linux": {
+      "gid": 0,
+      "supplementalGroups": [
+       0
+      ],
+      "uid": 0
+     }
+    },
+    "volumeMounts": [
+     {
+      "mountPath": "/work",
+      "name": "work"
+     },
+     {
+      "mountPath": "/src",
+      "name": "src",
+      "readOnly": true,
+      "recursiveReadOnly": "Disabled"
+     },
+     {
+      "mountPath": "/mnt/proxy",
+      "name": "proxy"
+     },
+     {
+      "mountPath": "/dev/shm",
+      "name": "dshm"
+     },
+     {
+      "mountPath": "/mnt/runs",
+      "name": "runs"
+     }
+    ]
+   }
+  ],
+  "hostIP": "146.244.204.28",
+  "hostIPs": [
+   {
+    "ip": "146.244.204.28"
+   }
+  ],
+  "observedGeneration": 1,
+  "phase": "Failed",
+  "podIP": "10.244.239.77",
+  "podIPs": [
+   {
+    "ip": "10.244.239.77"
+   }
+  ],
+  "qosClass": "Burstable",
+  "startTime": "2026-11-20T07:01:14Z"
+ }
+}
