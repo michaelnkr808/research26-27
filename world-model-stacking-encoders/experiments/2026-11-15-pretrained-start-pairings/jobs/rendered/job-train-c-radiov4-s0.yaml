@@ -10,7 +10,7 @@
 #   byte for byte: card set (L40 or L40S by gpu.product, us-west, driver > 569, the two host exclusions; no named resources, no
 #   tolerations, no priority class), retries (backoffLimit 3, podFailurePolicy FailJob on this script's own deterministic exit
 #   codes, Ignore on DisruptionTarget), resume logic (fresh / resume / complete / stale rename), Wan staging and sha256 checks,
-#   /src hash pin (exit 19), step watchdog (exit 17), GPU sampler and phases, exit trap, CPU 4 / 4800m, ephemeral 38Gi / 44Gi,
+#   /src hash pin (exit 19), step watchdog (exit 17), GPU sampler and phases, exit trap, ephemeral 38Gi / 44Gi,
 #   /work 24Gi, /dev/shm 2Gi, ttlSecondsAfterFinished 86,400. Stage 1's header explains each of those; it is not repeated here.
 # CHANGES (each for a stated reason):
 #   1. Config and seed are rendered (env CONFIG, CFGK, SEED): --config $CONFIG --seed $SEED. CONFIG is pretrained_train.py's
@@ -38,6 +38,14 @@
 #      stage 2 source commit; the files are unchanged since stage 1's commit 17d9cbb except PR #69's fsync change in
 #      pretrained_train.py and proxy_wam.py (writes only, same bytes saved; expected diff: RUN-stage2-train.md step 2).
 #   9. Labels experiment=stacking-pairings, kind, config, seed: to count this sweep's pods for the 8-GPU cap in one command.
+#   10. CPU request 2 / limit 2400m (2026-11-20; stage 1's was 4 / 4800m). Reason: stage 1's full run (config none) peaked at
+#      1.07 cores over any 5 minutes (Prometheus container_cpu_usage_seconds_total, pod ...-full-train-vzc7p), and on the open
+#      L40 nodes (20 CPUs for 4 cards) free CPU is often under 4, so a 4-CPU pod cannot take a freed card that a 1 or 2 CPU
+#      pod can (stage 2 LOG 2026-11-20: three Pending training pods for 10 h while 9 pods asking 1 to 2 CPUs got cards).
+#      Unmeasured for the encoder configurations, whose loader does more CPU work (episode cache, future means, batch
+#      assembly): the first-minutes data-wait check (RUN-stage2-train.md step 8) is where a CPU limit that is too low shows,
+#      together with `kubectl top pod` against 2.4. OMP_NUM_THREADS stays 3 (stage 1's value; not changed, so CPU-side
+#      numerics are untouched). The code reads no CPU count: the loader thread counts are fixed flags and nproc is only printed.
 # CHECKPOINT INTERVAL (stage 1 rule: the multiple of 100 steps nearest 45 min = 2,700 s of step time, kept within 30-60 min).
 #   Measured step times exist only for none (Nautilus L40S 4.018 s, L40 5.036 s; stage 1 LOG). For the encoder configs the
 #   sizing check measured dinov3 at +2.2% per step over none (Modal L40S; sizing LOG line 41). Speculative linear extrapolation
@@ -261,7 +269,7 @@ spec:
           echo "=== MODEL $MSHA"
           echo "=== done"
         env:
-        - {name: SRC_GIT_COMMIT, value: 2a9c058312efc14a3d65d9563007627c1243a82b}
+        - {name: SRC_GIT_COMMIT, value: c2a2e1644573b126b0a083bbdccaabd02474525a}
         - {name: CONFIG, value: "c-radiov4"}            # pretrained_train.py --config (sources joined by +)
         - {name: CFGK, value: "c-radiov4"}             # the same with + as -, for names
         - {name: SEED, value: "0"}
@@ -276,8 +284,8 @@ spec:
         - {name: OMP_NUM_THREADS, value: "3"}
         - {name: MALLOC_ARENA_MAX, value: "2"}
         resources:                    # limits <= 1.2x requests; sources in the header
-          requests: {cpu: "4", memory: 32Gi, nvidia.com/gpu: "1", ephemeral-storage: 38Gi}
-          limits:   {cpu: "4800m", memory: 38Gi, nvidia.com/gpu: "1", ephemeral-storage: 44Gi}
+          requests: {cpu: "2", memory: 32Gi, nvidia.com/gpu: "1", ephemeral-storage: 38Gi}
+          limits:   {cpu: "2400m", memory: 38Gi, nvidia.com/gpu: "1", ephemeral-storage: 44Gi}
         volumeMounts:
         - {name: work, mountPath: /work}
         - {name: src, mountPath: /src, readOnly: true}
