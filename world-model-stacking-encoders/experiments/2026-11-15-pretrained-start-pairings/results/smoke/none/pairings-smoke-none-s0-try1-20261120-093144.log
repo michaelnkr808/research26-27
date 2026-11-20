@@ -1,0 +1,230 @@
+=== STAGE 2 TIMING-ONLY SMOKE on L4: config none seed 0; clean pass (40 clean tasks x trial 0) 0, LIBERO-Plus timing shard (one episode per suite x category cell, 28) 1; checkpoint /mnt/proxy/runs/baseline-none-s0/model.pt -> /mnt/proxy/rollouts/pairings-smoke/none-s0
+Fri Nov 20 09:31:44 UTC 2026
+SRC_GIT_COMMIT=2a9c058312efc14a3d65d9563007627c1243a82b SMOKE_TRY=1 ENVS=4 CUDA_GRAPH=1 PASS_CAP_S=5400
+/src = ConfigMap stacking-encoders-pairings-eval-src; checking its 11 keys against the hashes rendered into this manifest (RUN-stage2-eval.md step 4):
+rollout.py: OK
+lp_eval.py: OK
+proxy_wam.py: OK
+t5_cache.py: OK
+diagnostics.py: OK
+extract_fastwam.py: OK
+extract_features.py: OK
+fastwam_data.py: OK
+setup_env.sh: OK
+setup_sim.sh: OK
+env_bundle.sh: OK
+env bundle key: 9182f8131559 (the prebuilt bundle is 9182f8131559)
+-rw-r--r-- 1 root root 6724568138 Nov 17 16:43 /mnt/proxy/runs/baseline-none-s0/model.pt
+Fri Nov 20 09:31:45 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.09              KMD Version: 615.71.09     CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA L4                      On  |   00000000:C6:00.0 Off |                    0 |
+| N/A   43C    P8             17W /   72W |       0MiB /  23034MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+47
+Filesystem                                                                                                                                                      Size  Used Avail Use% Mounted on
+csi-cephfs-node@90a5afad-c313-4e49-9b5f-317100c6930e.nautilusfs=/volumes/csi/csi-vol-9fc6b0fe-e947-4528-a5c5-c5e80fc7d70d/9f0765b7-9592-498f-ae6c-7f42cf4c5f62  1.0T  835G  190G  82% /mnt/proxy
+/dev/mapper/ubuntu--vg-k8s                                                                                                                                      4.3T  3.5T  846G  81% /work
+=== PHASE model-sha 09:31:45
+=== MODEL b25e63e61d6297d523eb75f9e334f179e5faac58c06aaa81da92d4ca3fcdc732  /mnt/proxy/runs/baseline-none-s0/model.pt
+model.pt sha256 equals the pinned value
+=== PHASE restore 09:36:19
+[gpu] 2026/11/20 09:36:19.610, 0 %, 0 MiB
+[gpu] 2026/11/20 09:36:49.617, 0 %, 0 MiB
+[gpu] 2026/11/20 09:37:19.619, 0 %, 0 MiB
+[gpu] 2026/11/20 09:37:49.620, 0 %, 0 MiB
+[gpu] 2026/11/20 09:38:19.621, 0 %, 0 MiB
+debconf: delaying package configuration, since apt-utils is not installed
+[gpu] 2026/11/20 09:38:49.623, 0 %, 0 MiB
+[gpu] 2026/11/20 09:39:19.626, 0 %, 0 MiB
+[gpu] 2026/11/20 09:39:49.628, 0 %, 0 MiB
+[gpu] 2026/11/20 09:40:20.167, 0 %, 0 MiB
+[gpu] 2026/11/20 09:40:50.169, 0 %, 0 MiB
+[gpu] 2026/11/20 09:41:20.170, 0 %, 0 MiB
+[gpu] 2026/11/20 09:41:50.171, 0 %, 0 MiB
+[gpu] 2026/11/20 09:42:20.173, 0 %, 0 MiB
+[gpu] 2026/11/20 09:42:50.174, 0 %, 0 MiB
+[gpu] 2026/11/20 09:43:20.175, 0 %, 0 MiB
+[gpu] 2026/11/20 09:43:50.177, 0 %, 0 MiB
+[gpu] 2026/11/20 09:44:20.178, 0 %, 0 MiB
+[gpu] 2026/11/20 09:44:50.179, 0 %, 0 MiB
+[gpu] 2026/11/20 09:45:20.181, 0 %, 0 MiB
+articulated_objects
+new_objects
+scenes
+serving_region.xml
+stable_hope_objects
+stable_scanned_objects
+textures
+turbosquid_objects
+wall.xml
+wall_frames.stl
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+sim ok: numpy 1.26.4 mujoco 3.3.2 robosuite 1.4.0
+TIMING restore: untar 130 s, debs + assets unzip + checks 436 s (/mnt/proxy/env/env-9182f8131559.tar)
+fastwam ok, torch 2.7.1+cu128 cuda True
+/work/sim/LIBERO-plus/libero/libero/benchmark/task_classification.json: OK
+=== PHASE rollout-lp-timing-envs4 09:45:47
+FLAGS: python /src/rollout.py run --run-dir /mnt/proxy/runs/baseline-none-s0 --t5 /mnt/proxy/feats/t5 --vae-path /mnt/proxy/models/Wan2.2_VAE.safetensors --tasks /mnt/proxy/lp_tasks.json --timing-only --cuda-graph --monitor-s 600 --shard 0/1 --lp-timing-shard /work/sim/LIBERO-plus/libero/libero/benchmark/task_classification.json --clean-seed 41 --envs 4 --out /mnt/proxy/rollouts/pairings-smoke/none-s0/smoke-lp-timing-try1.jsonl
+[gpu] 2026/11/20 09:45:50.181, 0 %, 1 MiB
+[gpu] 2026/11/20 09:46:20.209, 0 %, 6614 MiB
+[gpu] 2026/11/20 09:46:50.211, 0 %, 6614 MiB
+[gpu] 2026/11/20 09:47:20.213, 0 %, 6614 MiB
+[gpu] 2026/11/20 09:47:50.247, 100 %, 15054 MiB
+[gpu] 2026/11/20 09:48:20.264, 100 %, 15054 MiB
+[rollout      92s] checkpoint /mnt/proxy/runs/baseline-none-s0: config none seed 0 commit d69968214eb24a53e1673deb4ad563a7a1777659; 28 jobs in shard 0/1, order seed 0; torch threads 4, cuda graph True, timing only True
+[rollout      92s] 28 jobs, 0 already in /mnt/proxy/rollouts/pairings-smoke/none-s0/smoke-lp-timing-try1.jsonl, 28 to run on 4 envs
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+[rollout     153s] pr[gpu] 2026/11/20 09:48:50.265, 64 %, 14923 MiB
+[gpu] 2026/11/20 09:49:20.267, 100 %, 14923 MiB
+[gpu] 2026/11/20 09:49:50.268, 100 %, 14984 MiB
+[gpu] 2026/11/20 09:50:20.269, 79 %, 13957 MiB
+[gpu] 2026/11/20 09:50:50.271, 100 %, 14638 MiB
+[gpu] 2026/11/20 09:51:20.272, 81 %, 14577 MiB
+[gpu] 2026/11/20 09:51:50.273, 100 %, 14812 MiB
+[gpu] 2026/11/20 09:52:20.275, 65 %, 14796 MiB
+[gpu] 2026/11/20 09:52:50.276, 47 %, 14720 MiB
+ogress: 0 done, 0 errors, 24 queued, 4 running; 0 episodes/h; mean batch 2.0; policy busy 68%; cgroup memory now/peak GB (32.26, 35.43)
+[rollout     163s] episode ('libero_plus', 'libero_goal', 1, 41): 430 steps, wall 67.4s
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+[rollout     163s] episode ('libero_plus', 'libero_object', 2222, 41): 430 steps, wall 68.2s
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+[rollout     163s] episode ('libero_plus', 'libero_goal', 2313, 41): 430 steps, wall 68.2s
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+[rollout     163s] episode ('libero_plus', 'libero_spatial', 2111, 41): 430 steps, wall 68.3s
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+[rollout     213s] progress: 4 done, 0 errors, 20 queued, 4 running; 119 episodes/h; mean batch 2.0; policy busy 78%; cgroup memory now/peak GB (33.65, 35.43)
+[rollout     218s] episode ('libero_plus', 'libero_spatial', 259, 41): 430 steps, wall 53.0s
+[rollout     219s] episode ('libero_plus', 'libero_object', 1, 41): 430 steps, wall 55.5s
+[rollout     220s] episode ('libero_plus', 'libero_spatial', 1, 41): 430 steps, wall 56.3s
+[rollout     254s] episode ('libero_plus', 'libero_10', 1, 41): 730 steps, wall 90.8s
+[rollout     270s] episode ('libero_plus', 'libero_goal', 282, 41): 430 steps, wall 51.5s
+[rollout     273s] progress: 9 done, 0 errors, 15 queued, 4 running; 179 episodes/h; mean batch 1.9; policy busy 82%; cgroup memory now/peak GB (34.34, 35.43)
+[rollout     273s] episode ('libero_plus', 'libero_goal', 1888, 41): 430 steps, wall 53.6s
+[rollout     309s] episode ('libero_plus', 'libero_10', 1102, 41): 730 steps, wall 89.4s
+[rollout     325s] episode ('libero_plus', 'libero_spatial', 1726, 41): 430 steps, wall 54.7s
+[rollout     327s] episode ('libero_plus', 'libero_spatial', 985, 41): 430 steps, wall 53.6s
+/work/sim/LIBERO-plus/libero/libero/envs/env_wrapper.py:52: DeprecationWarning: The binary mode of fromstring is deprecated, as it behaves surprisingly on unicode inputs. Use frombuffer instead
+  x = cv2.imdecode(np.fromstring(x.make_blob(), np.uint8),
+[rollout     333s] progress: 13 done, 0 errors, 11 queued, 4 running; 194 episodes/h; mean batch 1.9; policy busy 84%; cgroup memory now/peak GB (34.61, 35.43)
+[rollout     342s] episode ('libero_plus', 'libero_10', 1934, 41): 730 steps, wall 88.1s
+/work/sim/LIBERO-plus/libero/libero/envs/env_wrapper.py:52: DeprecationWarning: The binary mode of fromstring is deprecated, as it behaves surprisingly on unicode inputs. Use frombuffer instead
+  x = cv2.imdecode(np.fromstring(x.make_blob(), np.uint8),
+[rollout     375s] episode ('libero_plus', 'libero_object', 1819, 41): 430 steps, wall 48.3s
+[rollout     392s] episode ('libero_plus', 'libero_10', 683, 41): 730 steps, wall 83.0s
+[rollout     394s] progress: 16 done, 0 errors, 8 queued, 4 running; 191 episodes/h; mean batch 1.8; policy busy 85%; cgroup memory now/peak GB (34.59, 35.43)
+[rollout     399s] episode ('libero_plus', 'libero_spatial', 1375, 41): 430 steps, wall 74.0s
+[rollout     414s] episode ('libero_plus', 'libero_goal', 1509, 41): 430 steps, wall 72.2s
+[rollout     422s] epis[gpu] 2026/11/20 09:53:20.277, 100 %, 14720 MiB
+[gpu] 2026/11/20 09:53:50.279, 100 %, 14511 MiB
+[gpu] 2026/11/20 09:54:20.280, 80 %, 15034 MiB
+[gpu] 2026/11/20 09:54:50.291, 100 %, 14494 MiB
+[gpu] 2026/11/20 09:55:20.292, 0 %, 13119 MiB
+[gpu] 2026/11/20 09:55:50.294, 0 %, 12530 MiB
+ode ('libero_plus', 'libero_object', 1043, 41): 430 steps, wall 47.0s
+[rollout     451s] episode ('libero_plus', 'libero_goal', 691, 41): 430 steps, wall 51.8s
+[rollout     454s] progress: 20 done, 0 errors, 4 queued, 4 running; 199 episodes/h; mean batch 1.8; policy busy 86%; cgroup memory now/peak GB (34.64, 35.43)
+[rollout     467s] episode ('libero_plus', 'libero_goal', 1099, 41): 430 steps, wall 52.8s
+[rollout     474s] episode ('libero_plus', 'libero_object', 647, 41): 430 steps, wall 51.7s
+[rollout     478s] episode ('libero_plus', 'libero_10', 290, 41): 730 steps, wall 85.8s
+[rollout     500s] episode ('libero_plus', 'libero_spatial', 609, 41): 430 steps, wall 49.1s
+[rollout     514s] progress: 24 done, 0 errors, 0 queued, 4 running; 205 episodes/h; mean batch 1.8; policy busy 87%; cgroup memory now/peak GB (35.04, 35.43)
+[rollout     525s] episode ('libero_plus', 'libero_object', 249, 41): 430 steps, wall 46.3s
+[rollout     544s] episode ('libero_plus', 'libero_object', 1397, 41): 430 steps, wall 77.1s
+[rollout     546s] episode ('libero_plus', 'libero_10', 2246, 41): 730 steps, wall 71.7s
+[rollout     574s] progress: 27 done, 0 errors, 0 queued, 1 running; 202 episodes/h; mean batch 1.8; policy busy 83%; cgroup memory now/peak GB (27.49, 35.43)
+[rollout     600s] episode ('libero_plus', 'libero_10', 1485, 41): 730 steps, wall 99.4s
+[rollout     601s] finished: 28 records, 0 errors in 508s (198 episodes/h); 761 policy calls, mean batch 1.7, policy busy 80%; cgroup memory now/peak GB (24.85, 35.43)
+[pass] lp-timing: rc 0, 605 s wall, 28 records
+=== done
+[gpu-summary] rollout-lp-timing-envs4: 21 samples, mean 62.7%
+[gpu-summary] restore: 19 samples, mean 0.0%
+[gpu-summary] all: 40 samples, mean 32.9%
+[cgroup] memory.peak 35433152512 bytes, memory.current 23183060992 bytes
+[cgroup] anon 1687552 (bytes, at exit); file 22400716800 (page cache)
+=== FILE smoke-lp-timing-try1.jsonl sha256 2f7b2c80b19d1beb14af43421f4c6ac02c0b1cbf61dad341a4c612ba4ea0f173 bytes 10962 lines 28
+{"benchmark": "libero_plus", "suite": "libero_goal", "episode_id": 1, "category": "Background Textures", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "open the middle drawer of the cabinet", "wall_s": 67.43, "worker_peak_rss_mb": 2198}
+{"benchmark": "libero_plus", "suite": "libero_object", "episode_id": 2222, "category": "Light Conditions", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the alphabet soup and place it in the basket", "wall_s": 68.19, "worker_peak_rss_mb": 2598}
+{"benchmark": "libero_plus", "suite": "libero_goal", "episode_id": 2313, "category": "Light Conditions", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "open the middle drawer of the cabinet", "wall_s": 68.2, "worker_peak_rss_mb": 2231}
+{"benchmark": "libero_plus", "suite": "libero_spatial", "episode_id": 2111, "category": "Light Conditions", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl between the plate and the ramekin and place it on the plate", "wall_s": 68.34, "worker_peak_rss_mb": 2481}
+{"benchmark": "libero_plus", "suite": "libero_spatial", "episode_id": 259, "category": "Robot Initial States", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl between the plate and the ramekin and place it on the plate", "wall_s": 52.96, "worker_peak_rss_mb": 2547}
+{"benchmark": "libero_plus", "suite": "libero_object", "episode_id": 1, "category": "Background Textures", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the alphabet soup and place it in the basket", "wall_s": 55.51, "worker_peak_rss_mb": 2882}
+{"benchmark": "libero_plus", "suite": "libero_spatial", "episode_id": 1, "category": "Background Textures", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl between the plate and the ramekin and place it on the plate", "wall_s": 56.3, "worker_peak_rss_mb": 2921}
+{"benchmark": "libero_plus", "suite": "libero_10", "episode_id": 1, "category": "Background Textures", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 730, "instruction": "turn on the stove and put the moka pot on it", "wall_s": 90.76, "worker_peak_rss_mb": 2783}
+{"benchmark": "libero_plus", "suite": "libero_goal", "episode_id": 282, "category": "Robot Initial States", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "open the middle drawer of the cabinet", "wall_s": 51.55, "worker_peak_rss_mb": 2547}
+{"benchmark": "libero_plus", "suite": "libero_goal", "episode_id": 1888, "category": "Objects Layout", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "open the middle drawer of the cabinet", "wall_s": 53.64, "worker_peak_rss_mb": 2946}
+{"benchmark": "libero_plus", "suite": "libero_10", "episode_id": 1102, "category": "Language Instructions", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 730, "instruction": "please make sure the basket contains both the alphabet soup and the tomato sauce", "wall_s": 89.36, "worker_peak_rss_mb": 3005}
+{"benchmark": "libero_plus", "suite": "libero_spatial", "episode_id": 1726, "category": "Objects Layout", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl between the plate and the ramekin and place it on the plate", "wall_s": 54.68, "worker_peak_rss_mb": 2753}
+{"benchmark": "libero_plus", "suite": "libero_spatial", "episode_id": 985, "category": "Language Instructions", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "grasp the darkhued rounded container situated between the flat dish used for serving food and the small glazed ceramic dish and set it down onto the flat dish used for serving food", "wall_s": 53.64, "worker_peak_rss_mb": 3063}
+{"benchmark": "libero_plus", "suite": "libero_10", "episode_id": 1934, "category": "Objects Layout", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 730, "instruction": "turn on the stove and put the moka pot on it", "wall_s": 88.14, "worker_peak_rss_mb": 2821}
+{"benchmark": "libero_plus", "suite": "libero_object", "episode_id": 1819, "category": "Objects Layout", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the alphabet soup and place it in the basket", "wall_s": 48.29, "worker_peak_rss_mb": 3068}
+{"benchmark": "libero_plus", "suite": "libero_10", "episode_id": 683, "category": "Camera Viewpoints", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 730, "instruction": "put both the alphabet soup and the tomato sauce in the basket", "wall_s": 83.03, "worker_peak_rss_mb": 3043}
+{"benchmark": "libero_plus", "suite": "libero_spatial", "episode_id": 1375, "category": "Sensor Noise", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl between the plate and the ramekin and place it on the plate", "wall_s": 74.05, "worker_peak_rss_mb": 2778}
+{"benchmark": "libero_plus", "suite": "libero_goal", "episode_id": 1509, "category": "Sensor Noise", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "open the middle drawer of the cabinet", "wall_s": 72.17, "worker_peak_rss_mb": 3056}
+{"benchmark": "libero_plus", "suite": "libero_object", "episode_id": 1043, "category": "Language Instructions", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "as part of our grocery organization please pick up the alphabet soup and place it in the basket", "wall_s": 47.01, "worker_peak_rss_mb": 3068}
+{"benchmark": "libero_plus", "suite": "libero_goal", "episode_id": 691, "category": "Camera Viewpoints", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "open the middle drawer of the cabinet", "wall_s": 51.81, "worker_peak_rss_mb": 2778}
+{"benchmark": "libero_plus", "suite": "libero_goal", "episode_id": 1099, "category": "Language Instructions", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "please make sure the middle drawer of the cabinet is open", "wall_s": 52.77, "worker_peak_rss_mb": 3060}
+{"benchmark": "libero_plus", "suite": "libero_object", "episode_id": 647, "category": "Camera Viewpoints", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the alphabet soup and place it in the basket", "wall_s": 51.73, "worker_peak_rss_mb": 3068}
+{"benchmark": "libero_plus", "suite": "libero_10", "episode_id": 290, "category": "Robot Initial States", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 730, "instruction": "put both the alphabet soup and the tomato sauce in the basket", "wall_s": 85.84, "worker_peak_rss_mb": 3046}
+{"benchmark": "libero_plus", "suite": "libero_spatial", "episode_id": 609, "category": "Camera Viewpoints", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl between the plate and the ramekin and place it on the plate", "wall_s": 49.14, "worker_peak_rss_mb": 2778}
+{"benchmark": "libero_plus", "suite": "libero_object", "episode_id": 249, "category": "Robot Initial States", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the alphabet soup and place it in the basket", "wall_s": 46.3, "worker_peak_rss_mb": 3046}
+{"benchmark": "libero_plus", "suite": "libero_object", "episode_id": 1397, "category": "Sensor Noise", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the alphabet soup and place it in the basket", "wall_s": 77.08, "worker_peak_rss_mb": 3095}
+{"benchmark": "libero_plus", "suite": "libero_10", "episode_id": 2246, "category": "Light Conditions", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 730, "instruction": "turn on the stove and put the moka pot on it", "wall_s": 71.67, "worker_peak_rss_mb": 3068}
+{"benchmark": "libero_plus", "suite": "libero_10", "episode_id": 1485, "category": "Sensor Noise", "config": "none", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/proxy/runs/baseline-none-s0", "subset_id": "smoke", "timing_only": true, "steps": 730, "instruction": "put both the alphabet soup and the tomato sauce in the basket", "wall_s": 99.42, "worker_peak_rss_mb": 3119}
+=== END smoke-lp-timing-try1.jsonl
+Fri Nov 20 09:55:52 UTC 2026
+=== exit 0
