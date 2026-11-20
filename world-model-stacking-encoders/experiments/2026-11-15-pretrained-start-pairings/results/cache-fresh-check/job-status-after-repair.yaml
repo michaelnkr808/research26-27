@@ -1,0 +1,193 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    nrp.ai/username: http://cilogon.org/serverE/users/436081
+  creationTimestamp: "2026-11-20T00:53:16Z"
+  generation: 1
+  labels:
+    batch.kubernetes.io/controller-uid: 3dc7dfd9-11ce-4363-8242-73668cdaf8be
+    batch.kubernetes.io/job-name: stacking-encoders-pairings-cache-fresh-check
+    controller-uid: 3dc7dfd9-11ce-4363-8242-73668cdaf8be
+    job-name: stacking-encoders-pairings-cache-fresh-check
+  name: stacking-encoders-pairings-cache-fresh-check
+  namespace: aria-world
+  resourceVersion: "15586997345"
+  uid: 3dc7dfd9-11ce-4363-8242-73668cdaf8be
+spec:
+  activeDeadlineSeconds: 21600
+  backoffLimit: 1
+  completionMode: NonIndexed
+  completions: 1
+  manualSelector: false
+  parallelism: 1
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes:
+        containerName: main
+        operator: In
+        values:
+        - 2
+        - 3
+        - 10
+        - 19
+        - 124
+    - action: Ignore
+      onPodConditions:
+      - status: "True"
+        type: DisruptionTarget
+  podReplacementPolicy: Failed
+  selector:
+    matchLabels:
+      batch.kubernetes.io/controller-uid: 3dc7dfd9-11ce-4363-8242-73668cdaf8be
+  suspend: false
+  template:
+    metadata:
+      labels:
+        batch.kubernetes.io/controller-uid: 3dc7dfd9-11ce-4363-8242-73668cdaf8be
+        batch.kubernetes.io/job-name: stacking-encoders-pairings-cache-fresh-check
+        controller-uid: 3dc7dfd9-11ce-4363-8242-73668cdaf8be
+        job-name: stacking-encoders-pairings-cache-fresh-check
+    spec:
+      activeDeadlineSeconds: 3600
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-L4
+              - key: nvidia.com/cuda.driver.major
+                operator: Gt
+                values:
+                - "569"
+              - key: topology.kubernetes.io/region
+                operator: In
+                values:
+                - us-west
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                - k8s-chase-ci-07.calit2.optiputer.net
+                - ry-gpu-08.sdsc.optiputer.net
+      containers:
+      - args:
+        - |
+          set -uo pipefail
+          echo "=== CACHE FRESHNESS CHECK (read-only): DINOv3, SigLIP 2, C-RADIOv4 against /mnt/proxy/feats"; date -u
+          echo "SRC_GIT_COMMIT=$SRC_GIT_COMMIT"
+          [[ "$SRC_GIT_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "ABORT: SRC_GIT_COMMIT is not a 40-hex commit (not rendered?)"; exit 10; }
+          echo "/src = ConfigMap stacking-encoders-pairings-freshcheck-src; checking its 6 keys against the hashes rendered into this manifest:"
+          ( cd /src && sha256sum -c - <<'EOF'
+          e85d7bf05a35b882354b791f8bdb1d68f315f201c471ca4d266d7f2e4ba20ec7  check_cache_fresh.py
+          f334c5604f319f779af6b70d06c0505f2c5df482c4531cb8b779b6894384683a  extract_features.py
+          1d7ea029550150e1ed987a9d0bf000bf26e22de022bc2bf6050ff1a68fc86b60  extract_fastwam.py
+          81993810937d2692597d1d161e438f7688dc7809d0017628d9603ef1d196e363  fastwam_data.py
+          7af1f7aa2d595d9e0b7f1fb462f7901c6fa9594d2da7895b0168f0ef3ea2d70d  diagnostics.py
+          880c47cbe741b7fbcd98f44f85e7a1d14747d6c837e0493f4642e5ebbc18ace8  setup_env.sh
+          EOF
+          ) || { echo "ABORT: a /src key differs from the rendered hash (ConfigMap changed after the render, or no render)"; exit 19; }
+          nvidia-smi || { echo "ABORT: nvidia-smi failed (a faulty GPU node; retryable)"; exit 1; }
+          nproc; df -h /work /mnt/proxy
+          nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv,noheader -l 15 | sed -u 's/^/[gpu] /' &
+          SMI=$!
+          trap 'kill $SMI 2>/dev/null' EXIT
+          echo "=== PHASE setup $(date -u +%H:%M:%S)"
+          rc=0; timeout --kill-after=60 900 bash /src/setup_env.sh > /work/pip-env.log 2>&1 || rc=$?
+          [ $rc = 0 ] || { tail -50 /work/pip-env.log; echo "ABORT: setup_env.sh failed or timed out (rc $rc; retryable)"; exit 16; }
+          grep -iE '^(torch|torchvision|transformers|huggingface.hub|av|numpy)==' /work/pip-env.log
+          echo "=== PHASE check $(date -u +%H:%M:%S)"
+          rc=0; T1=$SECONDS
+          timeout --kill-after=60 2400 python /src/check_cache_fresh.py --data-root /mnt/proxy/data/lerobot_v30 \
+            --feats /mnt/proxy/feats --device cuda --out-json /work/cache-fresh-check.json || rc=$?
+          if [ $rc = 137 ] && [ $(( SECONDS - T1 )) -ge 2400 ]; then echo "ABORT: the check hit its 2400 s timeout (killed after the grace)"; rc=124; fi
+          [ $rc = 124 ] && echo "ABORT: the check hit its 2400 s timeout"
+          date -u; echo "=== exit $rc"
+          exit $rc
+        command:
+        - bash
+        - -c
+        env:
+        - name: SRC_GIT_COMMIT
+          value: 2a9c058312efc14a3d65d9563007627c1243a82b
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: HF_TOKEN
+              name: stacking-encoders-hf
+        - name: HF_HOME
+          value: /work/hf
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: PYTHONPATH
+          value: /src
+        - name: OMP_NUM_THREADS
+          value: "3"
+        - name: MALLOC_ARENA_MAX
+          value: "2"
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        imagePullPolicy: IfNotPresent
+        name: main
+        resources:
+          limits:
+            cpu: 3600m
+            ephemeral-storage: 34Gi
+            memory: 12Gi
+            nvidia.com/gpu: "1"
+          requests:
+            cpu: "3"
+            ephemeral-storage: 30Gi
+            memory: 10Gi
+            nvidia.com/gpu: "1"
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /work
+          name: work
+        - mountPath: /src
+          name: src
+          readOnly: true
+        - mountPath: /mnt/proxy
+          name: proxy
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir:
+          sizeLimit: 24Gi
+        name: work
+      - configMap:
+          defaultMode: 420
+          name: stacking-encoders-pairings-freshcheck-src
+        name: src
+      - name: proxy
+        persistentVolumeClaim:
+          claimName: stacking-encoders-proxy
+          readOnly: true
+  ttlSecondsAfterFinished: 86400
+status:
+  completionTime: "2026-11-20T06:16:56Z"
+  conditions:
+  - lastProbeTime: "2026-11-20T06:16:56Z"
+    lastTransitionTime: "2026-11-20T06:16:56Z"
+    message: Reached expected number of succeeded pods
+    reason: CompletionsReached
+    status: "True"
+    type: SuccessCriteriaMet
+  - lastProbeTime: "2026-11-20T06:16:56Z"
+    lastTransitionTime: "2026-11-20T06:16:56Z"
+    message: Reached expected number of succeeded pods
+    reason: CompletionsReached
+    status: "True"
+    type: Complete
+  ready: 0
+  startTime: "2026-11-20T00:53:16Z"
+  succeeded: 1
+  terminating: 0
+  uncountedTerminatedPods: {}
