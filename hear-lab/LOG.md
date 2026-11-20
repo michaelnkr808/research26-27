@@ -419,3 +419,19 @@ Planning lead's suggestions to the lead, not decisions (`speculative`): the PI's
 **Next:** the lead's OK on PRs #68 and #71 in the literature window; the lead relays the rest of the PI's feedback and picks the simulator route with the PI; then the research question and decision records by pull request.
 
 **Open questions:** stay in GN-Bench and build the audio, or move to Habitat; what the research question becomes after the long-form suggestion; RMS-AQA, base model and budget answers from the PI.
+
+## 2026-11-19 [agent, lead, planning] (addendum: the PI's feedback is complete as recorded; budget position)
+**Did:** asked the lead for the rest of the PI's feedback. The lead, 2026-11-19: "thats all the feedback i got, ignore the budget we have $200 before asking for more budget lets use what we have".
+
+**PR:** direct.
+
+**Found:** nothing new measured or read. What this settles and leaves open:
+- The PI's feedback is the three points in the "PI feedback" entry above (WNM-3D's own simulator if it can make the data; two papers; pursue what audio-VLA studies do not cover, for example long-form processing). The PI gave no answer on which candidate question, on parking RMS-AQA, or on UniWAM. The PI's messages take WNM-3D as the base (the planning lead's reading).
+- Budget (the lead): work within the 200 dollars first; asking for more comes later. Replaces "more asked for later if it is not enough" as a plan to raise with the PI now.
+- RMS-AQA stays parked; the PI did not bring it back.
+
+**Not verified:** what any option costs against 200 dollars (nothing timed).
+
+**Next:** the lead chooses the simulator route and the research question (with the PI where needed); the planning lead then writes the question and the decision records by pull request. Before either simulator route is chosen it should be sized.
+
+**Open questions:** simulator route; the research question after the long-form suggestion and what the PI means by "long-form"; the lead's OK on PRs #68 and #71.
