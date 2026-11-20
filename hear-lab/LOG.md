@@ -503,3 +503,24 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **Next:** the lead's merge OK on PR #72 and PR #73. Then the route choice with the PI (decision 003), and, if the lead wants them, the checks above planned for the experiment session, each with the lead's OK there.
 
 **Open questions:** route A or B; seeds against the budget; request VGGT-Omega access or use a workaround; what the PI means by "long-form".
+
+## 2026-11-19 [agent, lead, planning] (PRs #72 and #73 merged; route A first; access check)
+**Goal:** act on the lead's answers to the four open decisions (merge PR #72, merge PR #73, the route, VGGT-Omega).
+
+**Did:**
+- The lead, 2026-11-19: "merge both prs 3. yeah thats fine 4. i think i might already have this token but give me the link to go check". Point 3 answered the planning lead's recommendation "to start with WNM-3D's own simulator and commit only after a few real checks come back".
+- Changed the Status lines of `decisions/001` and `002` to accepted, then merged PR #72 and PR #73 (`gh pr merge --merge --delete-branch`). Removed the planning lead's two worktrees and both workers' worktrees and branches.
+- Checked the lead's saved Hugging Face login with HEAD requests only (nothing downloaded): `facebook/VGGT-Omega`, file `vggt_omega_1b_512.pt`, returned HTTP 302 (a redirect to the file, so access is granted); `spatialverse/InteriorGS`, file `.gitattributes`, returned HTTP 403 (no access yet); the login itself answered 200 (`verified`, 2026-11-19).
+- Rewrote `PLAN.md` "Now" and "Next" around the route decision. Items removed from "Now" because they are settled or replaced: "Scope the direction with the PI" (the meeting was held; decisions 001 and 002), "Choose the base model" (decision 002), "Find the data" (no ready set was found in three search rounds; the data is to be rendered, by route A or route B).
+
+**PR:** #72 and #73, both merged. This entry and the `PLAN.md` rewrite: direct.
+
+**Found:** nothing measured beyond the access check above.
+
+**Decided by the lead:** route A first (WNM-3D's own simulator plus a sound engine), not committed until real checks come back; route B (Habitat with SoundSpaces 2.0) as the fallback. Decision `003` is written when the checks are back. No check is approved yet.
+
+**Not verified:** that the 403 on InteriorGS means the terms are not accepted (it fits; `.gitattributes` may also be refused for another reason); everything listed under "Not verified" in the sizing entry above.
+
+**Next:** the lead accepts the InteriorGS terms. With the lead's go, the planning lead hands the three checks to the experiment session as direction; each rental needs the lead's OK in that session. The PI questions go to the next Thursday meeting.
+
+**Open questions:** whether the engine runs and the floor plans line up; what a training step costs; seeds against the budget; the PI's answers.
