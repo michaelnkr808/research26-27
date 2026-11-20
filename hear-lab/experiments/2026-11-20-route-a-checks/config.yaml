@@ -28,3 +28,93 @@ check3:
   depth_tolerance_sensitivity_m: [0.05, 0.30]
   success_radius_m: 3.0
   n_review_images_per_split: 10
+check2:
+  # Detailed design: PLAN.md, "Amendment 2026-11-20 (b)". Placeholders in <angle brackets> are filled at run time.
+  seed: 20261120
+  gpu: {type: H200, count: 1, provider: vast.ai, on_demand: true}
+  machine_filters: {cuda_max_good_min: 12.9, disk_gb: 300, ram_gb_min: 192, cpu_cores_min: 16, reliability_min: 0.99}
+  env:
+    python: "3.11"
+    torch: 2.8.0
+    torchvision: 0.23.0
+    torchaudio: 2.8.0
+    torch_index: https://download.pytorch.org/whl/cu129
+    cuda_toolkit: "12.9"
+    flash_attn: unpinned   # docs give no version; record what pip installs
+  episodes:
+    split: InteriorGS_train_seen
+    selection: first 48 by trajectory_id (indices 0 to 47), as rendered on rental 2
+    n: 48
+    renders_local: <lead Mac scratchpad path to the 48 MP4s>
+    renders_remote: /workspace/check2/renders
+  converter:
+    script: scripts/data/convert_interiorgs_to_lerobot.py
+    output_root: data/interiorgs_lerobot_check2
+    num_workers: 8
+    defaults_kept: {frame_stride: 3, camera_height: 1.0, pose_source: auto, instruction_column: instruction, resize_scale: 1.0, fallback_fps: 10.0, min_output_frames: 9, video_codec: libx264}
+  hf_revisions:
+    wnm_3d_stage3: {repo: TeleEmbodied/WNM-3D, revision: 5b8c08dd52028ef4a29e7b87966f27582032fb4f, include: "wnm_3d_stage3_release/**", bytes: 27113385590}
+    vggt_omega: {repo: facebook/VGGT-Omega, revision: 1041e80fc0e911235d3426b0a3d9a81075111a53, file: vggt_omega_1b_512.pt, bytes: 4576706117, gated: true}
+    wan22_ti2v_5b: {repo: Wan-AI/Wan2.2-TI2V-5B, revision: 921dbaf3f1674a56f47e83fb80a34bac8a8f203e, files: [models_t5_umt5-xxl-enc-bf16.pth, Wan2.2_VAE.pth]}
+    wan21_i2v_14b_480p: {repo: Wan-AI/Wan2.1-I2V-14B-480P, revision: 6b73f84e66371cdfe870c72acd6826e1d61cf279, files: [models_clip_open-clip-xlm-roberta-large-vit-huge-14.pth]}
+    umt5_xxl: {repo: google/umt5-xxl, revision: 66cb9e7e85526fe440a945569e42c72fb6cbc0ad, files: [tokenizer_config.json, tokenizer.json, spiece.model, special_tokens_map.json, config.json]}
+    gn_matrix: {repo: TeleEmbodied/GN-Matrix, revision: 50a68253b5436f0595779cd3f91baf65228a0238, file: InteriorGS/InteriorGS_train_seen.parquet}
+  launcher:
+    script: scripts/train/wnm_3d_stage2.sh
+    env:
+      NUM_GPUS: 1
+      # GLOBAL_BATCH_SIZE not set: launcher computes 1 x PER_DEVICE_BS, no gradient accumulation (decided 2026-11-20)
+      MAX_STEPS: 60
+      LOGGING_STEPS: 10   # released default, kept; per-step times come from the callback
+      SAVE_STRATEGY: "no"
+      SEED: 20261120
+      AUTO_DOWNLOAD_WEIGHTS: "false"
+      DEEPSPEED_CFG: zero2
+      INTERIORGS_DATA_ROOT: data/interiorgs_lerobot_check2
+      PRETRAINED_MODEL_PATH: checkpoints/wnm_3d_stage3_release
+      VGGT_OMEGA_CKPT: checkpoints/vggt_omega_1b_512.pt
+      OUTPUT_DIR: /workspace/check2/runs/<trial_id>
+      PYTHONPATH: /workspace/check2/src/check2   # machine copy of src/check2, uploaded with a sha256 list
+    hydra_extra: []
+  downloads:
+    mode: launcher-checked files plus tokenizer only (about 19 GB of Wan/UMT5; about 51 GB in total), decided 2026-11-20
+    missing_file_policy: stop and report
+  key_check:
+    script: src/check2/   # not written yet
+    device: cpu
+    load: strict=False per shard, as base.py does; record missing and unexpected keys
+    pass: {missing: 0, unexpected: 0}
+    on_fail: stop before timing, report to the lead
+  callback:
+    location: src/check2/   # sitecustomize.py plus a TrainerCallback; not written yet
+    remote_copy: /workspace/check2/src/check2
+    hook: lazy import hook on transformers.trainer, training process only (LOCAL_RANK set), no top-level torch/transformers import
+    record_points: [on_train_begin, on_step_end]
+    sync_cost: not measured, expected small
+    output: <OUTPUT_DIR>/check2_steps.jsonl
+    per_optimizer_step: [global_step, time, memory_allocated, max_memory_allocated, memory_reserved, max_memory_reserved]
+    cuda_synchronize: true
+    reset_peak_counters: false
+  batch_search:
+    first: 12
+    down_if_oom: [8, 6, 4, 3, 2, 1]
+    up_if_fits: [16, 24]
+    up_trial_steps: {warmup: 10, timed: 10}
+    fallback_deepspeed_cfg: zero2_offload   # only if batch 1 does not fit with zero2; reported as a deviation
+    fallback_config_error_is_not_oom: true   # an optimizer/offload error is reported as a config error and stops for the lead
+  timing:
+    cross_check: progress-bar updates in the timestamped launcher log (carriage returns split into lines)
+    warmup_steps: 10
+    timed_steps: 50
+    gpu_check_after_first_step_min: 3
+    nvidia_smi_interval_s: 1
+  stop_rules_min:
+    setup_from_instance_start: 90
+    downloads: 60
+    conversion: 30
+    key_check: 30
+    trial_to_first_step: 60
+    hard_stop_from_instance_start: 300
+  paths:
+    remote_root: /workspace/check2
+    results_local: ~/Desktop/hear-lab-route-a-results/check2-run1
