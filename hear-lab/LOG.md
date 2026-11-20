@@ -562,3 +562,21 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **Next:** the lead answers the experiment session's pending choices in its window. RMS-AQA stays parked; whether to register a challenge team is the lead's and the PI's call (a registration signals a challenge entry under the lab's name), and nothing in the current plan needs the dataset. Decision `003` after the checks.
 
 **Open questions:** if the 8-GPU recipe cannot be rented within the budget, training on fewer GPUs is a change from the documented recipe that needs the lead's approval and a recorded note; the timed step comes first. The PI questions listed in `PLAN.md`.
+
+## 2026-11-20 [agent, experiment] (route A checks 1 and 3 run; PR #75)
+**Goal:** run the three route A bring-up checks handed over on 2026-11-19.
+
+**Did:** wrote the experiment folder `experiments/2026-11-20-route-a-checks/` (PLAN before running, one dated amendment before any rented run); two Opus workers wrote the check 1 and check 3 code. On the lead's OKs in the experiment window, rented one RTX 3090 on Vast.ai (a first attempt failed to schedule and was destroyed at once), ran check 1, a diagnostic for its failed ear test, and the full check 3, rendered 48 training episodes for check 2, then destroyed the machine. Total spend 0.96 USD of the 200. Check 2 not run: its GPU and the VGGT-Omega question are with the lead.
+
+**PR:** #75 (open, reviewer comment pending).
+
+**Found** (detail and exact numbers in the experiment `LOG.md` and `README.md`; all `verified` this session):
+- The sound engine (RLR-Audio-Propagation, bare library) runs on a current Linux image, returns one-channel and two-ear impulse responses for a real InteriorGS scene, with arrival times matching physics, and is fast (well under a second per response on one CPU thread).
+- Its default head model, as configured, gives a level difference between the ears but almost no time difference. The pre-set left-ear-first test therefore failed. Not yet tried: a measured HRTF file or a higher spherical-harmonic order.
+- Floor plans line up with GN-Bench's maps by eye in four scenes; the pre-set overlap score passed in two of four (misses on unknown border cells and openings). Check 1 is "not passed" by its own rule.
+- About one start in five in test_unseen has the target in view at the start (1114 of 5000); about a third in the train_seen sample. The not-visible group is large.
+- The GN-Matrix goal position is a median of about 1.3 m from the target object (test_unseen), with a quarter of episodes more than 3.6 m away: relevant to putting the sound on the object.
+
+**Next:** the lead decides the check 2 GPU and the VGGT-Omega file check; reviewer comment on PR #75; the lead's call on whether check 1's misses block route A, and on trying a measured HRTF.
+
+**Open questions:** does a level-only two-ear cue matter for the research question; InteriorGS terms (PDF) not yet read.
