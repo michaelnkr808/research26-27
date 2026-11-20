@@ -61,3 +61,146 @@ Seen so far: only local numbers from one InteriorGS scene (`0001_839920`, its sm
 3. **Goal position against goal object.** In `0001_839920` the GN-Matrix goal position is a median of about 5 m from the goal instance's box (9 or 10 of 38 episodes within 3 m, depending on which worker's distance measure). Check 3 adds a per-episode column `goal_to_box_horiz_m` and reports its distribution, since it bears on placing the sound at the goal object. No rule depends on it in these checks.
 4. **"Within 3.0 m".** Check 3 writes both a path-length flag and a straight-line flag and reports both. GN-Bench's own success test uses a geodesic distance; neither flag is that exact quantity.
 5. **Outputs stay out of git** until the InteriorGS terms (a PDF linked from the dataset card, not yet read) have been read: `results/.gitignore` ignores everything the runs write. Summaries of counts are committed only after the lead clears it.
+
+## Amendment 2026-11-20 (b): check 2 detailed design
+
+Written before check 2 runs and before its rental is asked for. Settled by the user on 2026-11-20 (relayed by the lead): one H200, on-demand on Vast.ai; the launcher's VGGT-Omega file check stays as released, so the real file is downloaded with the lead's Hugging Face token, which is removed from the machine afterwards; the start is the released stage 3 checkpoint; the inputs are the 48 train_seen episodes already rendered with GN0's `render_dataset.sh` as released (LOG.md, "Renders for check 2"), converted on the check 2 machine with the converter as released. Nothing here has been run. All WNM-3D line numbers are at commit `7fe2d5f` (full sha 7fe2d5f93a8dc4e2a5a2ec6fe174746928ecdcbb), read from GitHub on 2026-11-20 (`verified` by reading unless marked otherwise). Hugging Face sizes and revisions were read from the public Hub API on 2026-11-20 (`verified`).
+
+Rule for this check: no setting that changes the model or the loss is changed. Everything that has to differ on one GPU is listed in step 4 with its reason, and the same list goes next to the numbers in LOG.md.
+
+### 1. Machine and environment
+
+- One H200 (141 GB) on Vast.ai, on-demand, HEAR Lab team account. Offer filters: `cuda_max_good >= 12.9` (the reference build is CUDA 12.9, see below; the driver needed for CUDA 12.9 is about 575 or newer, `recalled`), disk 300 GB (step 8), RAM at least 192 GB and at least 16 CPU cores (step 8, `speculative` sizing), reliability at least 0.99, created with `--cancel-unavail`, SSH attached per instance (`vastai attach ssh`).
+- Image: a CUDA 12.9 devel Ubuntu 22.04 image (for example `nvidia/cuda:12.9.1-devel-ubuntu22.04`; that the tag exists is `recalled`, the lead checks it when quoting). The CUDA toolkit itself comes from conda, as the install guide says, so the image only has to pass the driver through. Miniforge is installed first (install guide prerequisite, `docs/INSTALLATION.md` lines 20 to 27).
+- Environment exactly as `docs/INSTALLATION.md` section 1 says, in a conda env named `wnm_3d`:
+  1. `conda create -n wnm_3d python=3.11 -y` (lines 72 to 73); `python -m pip install --upgrade pip setuptools wheel` (line 80).
+  2. `torch==2.8.0 torchvision==0.23.0 torchaudio==2.8.0` from `https://download.pytorch.org/whl/cu129` (lines 88 to 92).
+  3. `conda install -c "nvidia/label/cuda-12.9.0" -c nvidia -c conda-forge cuda-toolkit=12.9 -y` (lines 98 to 103).
+  4. `git clone https://github.com/TeleHuman/WNM-3D.git`, `git checkout 7fe2d5f93a8dc4e2a5a2ec6fe174746928ecdcbb`, `python -m pip install -e .` (line 111). This pins what `pyproject.toml` pins (lines 27 to 59: Python ~=3.11, torch 2.8.0, numpy 1.26.4, transformers 4.51.3, peft 0.5.0, diffusers 0.30.2, accelerate >= 1.0, and others); `deepspeed` is unpinned there (line 53).
+  5. `python -m pip install flash-attn --no-build-isolation` (line 126). The guide gives no version; `pyproject.toml` asks for `flash-attn>=2.8` in the `gpu` extra (lines 62 to 64). A prebuilt wheel for this exact set (flash-attn 2.8.3.post2, CUDA 12, torch 2.8, Python 3.11, Linux x86_64) is listed on the FlashAttention GitHub releases (`verified` from the release asset list, 2026-11-20); that the pip source package fetches such a wheel instead of compiling is `recalled`.
+  6. `python -m pip install --upgrade huggingface_hub hf_xet` for the `hf` command (`docs/DOWNLOADS.md` line 32; the launcher calls `hf`, `scripts/train/wnm_3d_base.sh` lines 86 to 91).
+  7. Check as the guide says (lines 138 to 146: torch version, CUDA runtime, CUDA available, `gammanav` importable), plus `import flash_attn` and `import deepspeed`.
+- Recorded into the run folder before anything else runs: `pip freeze`, `conda list`, `nvidia-smi` (driver, GPU name, memory), `nvcc --version`, `git rev-parse HEAD` in WNM-3D, `df -h`, `free -g`, `nproc`. Versions not pinned by the docs (deepspeed, flash-attn, everything else pip resolves) are recorded this way, not chosen.
+- Not installed: GN0, GN-Bench, InteriorGS. Neither conversion nor training reads scene files (the converter reads only the MP4s and the GN-Matrix parquet, `scripts/data/convert_interiorgs_to_lerobot.py` lines 2 to 12 and 200 to 239). FlashAttention 3 (`flash_attn_interface`) is not installed either: the code prefers it when it can be imported (`gammanav/vln/model/wnm_3d/modules/attention.py` lines 5 to 16 and 155 to 157), but the install guide installs only `flash-attn`, so the timing is for the documented FlashAttention 2 path.
+
+### 2. Data path
+
+- Before renting: on the lead's Mac, list the 48 MP4s (they sit in the experiment lead's scratchpad, LOG.md "Renders for check 2", which a routine cleanup can clear), check the count and the layout `<render-root>/<scene>/<trajectory_id>.mp4`, which is what GN0 writes (`gn0/evaluation/local.py` line 91, GN0 `c927781`) and what the converter reads (converter line 216), and write an md5 list. If the files are gone, stop: re-rendering is a new run for the lead to approve.
+- Upload the 48 MP4s with `scp` (or `rsync`) to `<machine>/workspace/check2/renders/`; recompute the md5 list on the machine and compare. Expected total about 100 MB.
+- Annotations: GN-Matrix (`TeleEmbodied/GN-Matrix`, not gated per the Hub API) at revision `50a68253b5436f0595779cd3f91baf65228a0238`, the same revision check 3 used: `hf download TeleEmbodied/GN-Matrix InteriorGS/InteriorGS_train_seen.parquet --repo-type dataset --revision 50a68253b5436f0595779cd3f91baf65228a0238 --local-dir /workspace/check2/gn_matrix`. No token.
+- Convert as released, the documented command (`docs/TRAINING.md` lines 66 to 74) with only the paths changed:
+  ```
+  cd /workspace/WNM-3D && conda activate wnm_3d
+  python scripts/data/convert_interiorgs_to_lerobot.py \
+    --render-root /workspace/check2/renders \
+    --annotations /workspace/check2/gn_matrix/InteriorGS/InteriorGS_train_seen.parquet \
+    --output-root data/interiorgs_lerobot_check2 \
+    --num-workers 8
+  ```
+  All other options stay at their defaults: `--frame-stride 3`, `--camera-height 1.0`, `--pose-source auto`, `--instruction-column instruction`, `--min-output-frames 9`, `--video-codec libx264` (converter lines 756 to 848). With no per-frame camera files next to the renders, `auto` rebuilds poses from the annotation path (route A memo, piece 5); that is the released recipe and is kept. The converter accepts a subset of the parquet's rows and counts the rest as missing videos unless `--require-all-videos` is given (lines 215 to 234), so no filtering is needed.
+- Checks after conversion, all written to the run folder: the converter's `[INFO]` line shows `matched=48`, `short_videos=0`, and `missing_videos` equal to the parquet's row count minus 48 (line 912); the `[DONE]` line shows `episodes=48` (line 955); `meta/info.json` has `total_episodes: 48` and a `total_frames` equal to the sum of the episodes' `length` in `meta/episodes.jsonl` (lines 681 to 686); 48 episode parquet files and 48 episode MP4s exist under `data/` and `videos/` (lines 413 to 425); the pose source recorded in the metadata is the annotations one (line 728); for one episode, the converted video's frame count equals the source frame count divided by 3, rounded up (line 222). Any mismatch stops the run before training.
+
+### 3. Model inputs
+
+All downloads are pinned to a revision. Sizes are from the Hub API (`verified`, 2026-11-20).
+
+- Stage 3 checkpoint: `hf download TeleEmbodied/WNM-3D --include "wnm_3d_stage3_release/**" --local-dir checkpoints --revision 5b8c08dd52028ef4a29e7b87966f27582032fb4f` (command from `docs/DOWNLOADS.md` lines 48 to 50, revision added). Not gated. Six safetensors shards, 27,113,385,590 bytes in total (about 25.3 GiB; the guide says "approximately 26 GiB", `docs/INSTALLATION.md` lines 51 to 53), plus `model.safetensors.index.json`, `config.json`, `action_normalization.json` and `experiment_cfg/`. Each shard's sha256 is listed by the Hub (the LFS oid) and is checked with `sha256sum` after download. Its `config.json` matches the launcher's model settings (Wan2.2 5B DiT, dim 3072, 30 layers, 33 frames, 160 by 320, VGGT adapter on, `skip_component_loading: true`; `verified` by reading the file at that revision).
+- VGGT-Omega: `facebook/VGGT-Omega`, file `vggt_omega_1b_512.pt`, revision `1041e80fc0e911235d3426b0a3d9a81075111a53`, 4,576,706,117 bytes. Gated with manual approval; the lead's login has access (HEAD request 302, hear-lab LOG 2026-11-19). Command from `docs/DOWNLOADS.md` lines 109 to 110 with the revision added: `HF_TOKEN=<lead token> hf download facebook/VGGT-Omega vggt_omega_1b_512.pt --revision 1041e80fc0e911235d3426b0a3d9a81075111a53 --local-dir checkpoints`. The token is passed only in that one command's environment and is never written to a file; right after, `~/.cache/huggingface/token` and `~/.cache/huggingface/stored_tokens` are checked to be absent and the shell history line is deleted. The file's sha256 is computed and recorded (the anonymous Hub listing hides it). With `PRETRAINED_MODEL_PATH` set, the model does not open this file (`skip_component_loading`, `gammanav/vln/model/wnm_3d/action_head/wan_flow_matching_action_tf.py` lines 512 to 527; launcher line 244); it is downloaded because the launcher's check requires it (launcher lines 143 to 147), as the user decided.
+- Wan and UMT5 files the launcher checks (launcher lines 121 to 142): the design downloads only those files, pinned, instead of letting the launcher fetch the whole repositories (see "Questions for the lead", item 2):
+  - `Wan-AI/Wan2.2-TI2V-5B` at `921dbaf3f1674a56f47e83fb80a34bac8a8f203e`: `models_t5_umt5-xxl-enc-bf16.pth` (11,361,920,418 bytes) and `Wan2.2_VAE.pth` (2,818,839,170) into `checkpoints/Wan2.2-TI2V-5B/`.
+  - `Wan-AI/Wan2.1-I2V-14B-480P` at `6b73f84e66371cdfe870c72acd6826e1d61cf279`: `models_clip_open-clip-xlm-roberta-large-vit-huge-14.pth` (4,772,359,047) into `checkpoints/Wan2.1-I2V-14B-480P/`.
+  - `google/umt5-xxl` at `66cb9e7e85526fe440a945569e42c72fb6cbc0ad`: `tokenizer_config.json`, `tokenizer.json`, `spiece.model`, `special_tokens_map.json`, `config.json` (about 21 MB) into `checkpoints/umt5-xxl/`. The tokenizer is the one input of these that training does read: the transform loads it with `AutoTokenizer.from_pretrained(tokenizer_path)` (`gammanav/vln/model/wnm_3d/transform/wnm_3d_cotrain.py` lines 43 and 153 to 154; launcher line 238).
+  - All three repositories are not gated (Hub API). The text encoder, image encoder, VAE and DiT files are not opened when `skip_component_loading` is true: the whole loading block sits under `if not config.skip_component_loading` (`wan_flow_matching_action_tf.py` lines 342 to 420), and the encoder and VAE constructors only store the path (`wan_video_text_encoder.py` line 241, `wan_video_image_encoder.py` line 420, `wan_video_vae.py` line 1555). Not run yet; the run itself confirms it, because the launcher is started with `AUTO_DOWNLOAD_WEIGHTS=false` (step 4), so a missing file stops with an error instead of starting a large download.
+- Download total under this design: about 51 GB (27.1 + 4.6 + 19.0). Letting the launcher fetch the three repositories whole would add about 168 GB instead of 19 GB (34.2 + 82.3 + 51.9 GB, Hub API sizes).
+
+### 4. Launcher and the settings that differ
+
+The released command for training from a checkpoint is the stage II launcher with `INTERIORGS_DATA_ROOT`, `PRETRAINED_MODEL_PATH` and `OUTPUT_DIR` set (`docs/TRAINING.md` lines 152 to 160; `scripts/train/wnm_3d_stage2.sh`, which exports defaults and calls `wnm_3d_base.sh`). Check 2 runs, from the WNM-3D root:
+
+```
+NUM_GPUS=1 PER_DEVICE_BS=<12, or the search value> GLOBAL_BATCH_SIZE=96 \
+MAX_STEPS=12 LOGGING_STEPS=1 SAVE_STRATEGY=no SEED=20261120 AUTO_DOWNLOAD_WEIGHTS=false \
+INTERIORGS_DATA_ROOT=data/interiorgs_lerobot_check2 \
+PRETRAINED_MODEL_PATH=checkpoints/wnm_3d_stage3_release \
+VGGT_OMEGA_CKPT=checkpoints/vggt_omega_1b_512.pt \
+OUTPUT_DIR=/workspace/check2/runs/<trial_id> \
+bash scripts/train/wnm_3d_stage2.sh +training_args.skip_memory_metrics=false \
+  2>&1 | <timestamp each line> | tee /workspace/check2/runs/<trial_id>.log
+```
+
+First the same command with `DRY_RUN=true` prints the full `torch.distributed.run` command with every Hydra argument (launcher lines 258 to 262); that text is saved and its settings are checked against the list below before the real run.
+
+Settings that differ from the documented recipe (8 GPUs, per-device batch 12, ZeRO-2, bf16, 33 frames at 320 by 160; launcher lines 37 to 65 and 186 to 239), each with its reason:
+
+1. `NUM_GPUS=1` (recipe 8, launcher line 37, stage II line 47). Reason: the user chose one H200.
+2. `GLOBAL_BATCH_SIZE=96` set explicitly. Left alone, the launcher would compute it as GPUs times per-device batch, 12 on one GPU (launcher line 43). With 96 set, the trainer sets gradient accumulation to 96 / per-device batch (`gammanav/vln/experiment/base.py` lines 566 to 573, `gammanav/vln/experiment/utils.py` lines 75 to 80), so one optimizer step sees the recipe's 96 samples (8 by 12). This keeps the recipe's effective batch; it is listed because it differs from what the launcher would do by itself on one GPU (see "Questions for the lead", item 1). Every per-device batch in the search below divides 96.
+3. `PER_DEVICE_BS`: 12 as in the recipe; smaller only if 12 does not fit (search below).
+4. `MAX_STEPS=12` (stage II default 70,000, line 49): warm-up plus timed steps (step 5). The cosine schedule and its 5 % warm-up (`WARMUP_RATIO` 0.05, launcher line 48) are then spread over 12 steps, so the learning rate values differ from a long run; this does not change the compute per step.
+5. `LOGGING_STEPS=1` (default 10, launcher line 49), so every step gets a timestamped log entry. Cost: the trainer then also collects the VGGT adapter gradient norm and the moving-average losses every step (`base.py` lines 215 to 218 and 262 to 287), which adds a few small device-to-host copies per step.
+6. `SAVE_STRATEGY=no` (default `steps`, launcher line 52) so that no trainer checkpoint with optimizer state is written. The final model save in `train()` still happens as released (`base.py` lines 621 to 627), into the trial's output folder, and is deleted after the trial's logs are copied. Before the first real run, the saved `experiment_cfg/conf.yaml` is checked to read `save_strategy: 'no'` as a string (Hydra's handling of a bare `no` on the command line is `recalled`, not checked); if it reads `false`, stop and ask.
+7. `SEED=20261120` (launcher default 42, line 55): this experiment's seed. No effect on cost.
+8. `AUTO_DOWNLOAD_WEIGHTS=false` (default true, line 67): a missing file stops the launcher instead of starting a download (lines 101 to 106). Affects downloading only.
+9. Data root and start point: `INTERIORGS_DATA_ROOT` is the 48 converted train_seen episodes (stage II default is the DAgger set, line 41) and `PRETRAINED_MODEL_PATH` is the stage 3 release. `docs/TRAINING.md` lines 34 to 38 say `_release` folders "are not used by default for continued training"; the launcher accepts any folder with safetensors (launcher lines 148 to 153) and the user chose the stage 3 release.
+10. `+training_args.skip_memory_metrics=false`: switches on the Hugging Face trainer's own memory report so that a torch peak figure is recorded (that the 4.51.3 trainer reports `init_mem_gpu_*` and `train_mem_gpu_*` with this switch is `recalled`). Measurement only. If Hydra rejects the key, the run goes ahead without it and only `nvidia-smi` memory is reported.
+11. One output folder per trial: the trainer exits without training if the output folder already holds a finished model (`utils.py` lines 32 to 40, `base.py` lines 417 to 420).
+
+Kept as released: `DEEPSPEED_CFG=zero2` (`gammanav/vln/configs/deepspeed/zero2.json`), `bf16=true`, `tf32=true`, `train_architecture=full`, 33 frames, 320 by 160, frame stride 1, the VGGT adapter settings, `DATALOADER_NUM_WORKERS=4`, `LEARNING_RATE` 1e-5, the thread caps (launcher lines 10 to 18), `torch.compile` of the text encoder, image encoder and VAE encoder (on by default, `wan_flow_matching_action_tf.py` lines 2513 to 2540; `DISABLE_TORCH_COMPILE` is not set), and `REPORT_TO=tensorboard`.
+
+Memory savers: activation checkpointing is already on in the recipe. The DiT sets `self.gradient_checkpointing = True` in its constructor (`gammanav/vln/model/wnm_3d/modules/wan_video_dit_action_casual_chunk.py` line 1853) and checkpoints every block during training (lines 2252 to 2259); the separate `gradient_checkpointing: false` in `conf.yaml` (line 59) is the Hugging Face switch and stays as released. The only memory saver the released configs offer as a switch is `DEEPSPEED_CFG=zero2_offload` (`zero2_offload.json` lines 21 to 26: optimizer state on the CPU). `zero3.json` exists too, but on one GPU stage 3 has nothing to shard and no offload is set in it, so it is not used. No allocator settings, no other switches.
+
+Batch-size search (each trial is a fresh launch with a fresh output folder):
+- Start at 12. A trial "fits" only if all its optimizer steps finish; a CUDA out-of-memory error at any point means it does not fit.
+- If 12 does not fit: try 8, 6, 4, 3, 2, 1 in that order and stop at the first that fits. That one gets the full timing protocol.
+- If 12 fits: it gets the full timing protocol. Then try 16, then 24, each with 2 warm-up and 3 timed steps, stopping at the first that does not fit. These answer "largest batch that fits" and are reported apart from the main timing.
+- If even 1 does not fit with `zero2`: repeat the downward search from 12 with `DEEPSPEED_CFG=zero2_offload`, reported as a deviation (the optimizer step then runs on the CPU with DeepSpeed's CPU Adam; that it computes the same AdamW update as the GPU path is `speculative`). If that also fails at 1, the result is "does not fit on one H200", reported with the error, and work stops.
+
+### 5. Timing protocol
+
+- Each full timing trial: 12 optimizer steps (`MAX_STEPS=12`); steps 1 and 2 are warm-up and excluded; steps 3 to 12 are timed (10 steps). At per-device batch 12 one optimizer step is 8 micro-batches, so the warm-up covers 16 micro-batches, which is meant to absorb `torch.compile`, CUDA graph capture and data loader start-up. All 12 step times are still written, so a slow warm-up that runs into the timed steps can be seen; the window is not moved after the fact.
+- Seconds per optimizer step: the difference between consecutive wall-clock times of the `train/loss` scalar in the TensorBoard event file (the trainer writes it every step with `LOGGING_STEPS=1`; read with `tensorboard`'s event reader, which is a project dependency, `pyproject.toml` line 57). Cross-check: the per-line timestamps in the tee'd launcher log. Reported: median, mean, minimum and maximum over the 10 timed steps, and all 12 values.
+- Samples per second: 96 / median seconds per step (and per-device batch times accumulation steps, if the search changed the batch).
+- Per micro-batch: the trainer's own `training_step_time` log entries (`base.py` lines 211 to 213, `gammanav/vln/utils/timer.py` lines 15 to 23) are recorded, labelled approximate: they use `time.time()` without a CUDA synchronisation and leave out the optimizer step.
+- Peak GPU memory: (a) torch, from the trainer's memory report (item 10 above); (b) `nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used,memory.total,power.draw --format=csv -l 1` running beside the trial, written to `<trial_id>.nvidia-smi.csv`, maximum of `memory.used`. Both reported, with their labels (the `nvidia-smi` figure includes the CUDA context and the allocator's cache).
+- GPU utilisation: the mean of the `nvidia-smi` samples over the timed window, and one look by hand 3 minutes after the first step is logged. If utilisation sits near zero while steps are slow, that is reported (it would point at data loading or CPU work); it is not fixed during this check.
+- Also recorded: the trainer's end metrics (`train_runtime`, `train_samples_per_second`, `train_steps_per_second`), labelled as including warm-up and model loading; the time from launch to the first logged step (model load plus compile); the gradient accumulation line the trainer prints (`base.py` lines 571 to 573); `loss_log.jsonl`; `trainer_state.json`; `experiment_cfg/conf.yaml`.
+- Where logs go: `/workspace/check2/runs/<trial_id>/` and `/workspace/check2/runs/<trial_id>.log` on the machine; then step 6.
+- Not claimed: no loss or quality result (12 steps on 48 episodes say nothing about learning); no measured figure for 8 GPUs. Any 8-GPU or full-run number written next to the results is simple arithmetic from the one-GPU figure (for example "8 times the samples per second if scaling were perfect", or "hours for N steps at the measured rate"), labelled as arithmetic, not measured; it ignores communication between GPUs. No training beyond the timed steps.
+
+### 6. Outputs
+
+- Copied off the machine with `rsync` to `~/Desktop/hear-lab-route-a-results/check2-run1/` on the lead's Mac, outside every git worktree (LOG.md, "Raw outputs lost"). Copied: the environment records (step 1), the converter log and checks (step 2), the download hashes (step 3), the dry-run command, every trial's log, `nvidia-smi` CSV, TensorBoard events, `trainer_state.json`, `loss_log.jsonl`, `experiment_cfg/`, and the converted dataset's `meta/` folder. Not copied: model weights, the converted videos and the final model saves.
+- Before destroy: a sha256 manifest of everything copied is made on the machine and checked on the Mac (same file count, same hashes). The token check of step 3 is repeated. Then the instance is destroyed and the credit read before and after goes in LOG.md.
+
+### 7. Cost and stop rules
+
+Time per phase, `speculative`: these are estimates, not from a timed batch, because no batch of this model has been timed anywhere yet (that is what check 2 is for; `../../STANDARDS.md` asks for an estimate from a timed batch, which does not exist here).
+- Start, SSH and recording the machine: about 10 minutes.
+- Environment (step 1): about 30 to 45 minutes if the flash-attn wheel is fetched rather than compiled. Stop and report if the environment is not verified 90 minutes after the instance starts.
+- Downloads (about 51 GB) and the render upload: about 10 to 30 minutes, depending on the host's bandwidth. Stop and report at 60 minutes.
+- Conversion and its checks: about 10 minutes. Stop and report at 30 minutes.
+- Main timing trial: model loading and compile, then 12 steps: about 30 to 45 minutes. Stop a trial that has not logged its first step 60 minutes after launch.
+- Batch search: up to three more trials, about 20 to 30 minutes each.
+- Copy-off and checks: about 15 minutes.
+- Total about 2.5 to 4.5 hours. Hard stop: 5 hours after the instance starts, whatever the state; copy off what exists and report. The lead quotes the actual price; the only H200 figure on record is a read-only offer search from 2026-11-20 with single H200 offers from 3.514 USD/h (LOG.md), which would put the hard stop at roughly 18 USD (arithmetic). Hosts that charge for downloaded data add to this (rental 2's charge, LOG.md), so the offer's download price is part of the quote.
+
+### 8. Open risks the user should know
+
+- Driver: the cu129 PyTorch wheels need a host driver new enough for CUDA 12.9 (about 575 or later, `recalled`). Hosts with older drivers are filtered out; a mismatch shows as `CUDA available: False` in the install check.
+- flash-attn: if pip cannot match the prebuilt wheel (for example a C++ ABI difference), it compiles from source, which can take an hour or more and a lot of RAM (`recalled`); `MAX_JOBS` is then set to limit parallel compile jobs. The 90-minute setup stop covers this. Without flash-attn the code silently falls back to PyTorch attention with the padding mask disabled (`attention.py` lines 215 to 242), which would no longer be the released path, so a missing flash-attn stops the run.
+- DeepSpeed builds some of its CUDA ops on first use (`recalled`), which needs the conda CUDA 12.9 toolkit's `nvcc`; the offload fallback needs its CPU Adam op compiled.
+- Memory: the checkpoint holds about 13.6 billion parameters (27.1 GB at 2 bytes each, arithmetic), of which the 5B-class DiT and the adapters are trained in full (`train_architecture=full`). With fp32 master weights and Adam state for the trained part, per-device batch 12 may not fit in 141 GB (`speculative`); the search handles this, and a "does not fit" is itself a result.
+- CPU RAM: the model is first built on the CPU in fp32 (`model_dtype: float32`, `configs/model/wnm_3d/wnm_3d.yaml` line 15; `base.py` lines 499 to 531), about 54 GB by arithmetic, plus a 5 GB shard at a time; the offload fallback adds the optimizer state on the CPU. Hence the 192 GB RAM filter (`speculative`).
+- Disk: about 51 GB of downloads, a conda env of roughly 15 to 20 GB (`speculative`), a final model save per trial (about 27 GB, deleted after each trial), the dataset (well under 1 GB). 300 GB leaves room, including for the full-repository downloads if the lead prefers them.
+- Silent partial loading: the start weights are loaded with `strict=False` and the missing and unexpected keys are not printed (`base.py` lines 514 to 526). A key mismatch would go unnoticed; it would not change the timing much, but "started from stage 3" could not be confirmed from the logs (see "Questions for the lead", item 4).
+- Compile warm-up: `torch.compile` with `dynamic=False` recompiles when an input shape changes (for example a short last batch); a recompile inside the timed window shows as an outlier step and is reported, not removed.
+- Normalisation statistics are recomputed from the 48 episodes (`compute_statistics: true`, `configs/data/wnm_3d/interiorgs_wan22.yaml` line 138), as released. This changes the loss values, not the compute.
+- The renders exist in one place only (the lead's scratchpad); see step 2.
+- The stage 3 release's own `experiment_cfg/conf.yaml` records per-device batch 1, global batch 8 and 10 steps, which is not the documented recipe; this design follows the launcher and the guide, not that file.
+
+### Questions for the lead
+
+None of these stops the design; each has a default above that the lead can change before the rental.
+1. Effective batch on one GPU: the design sets `GLOBAL_BATCH_SIZE=96` so each step matches the recipe's 96 samples through gradient accumulation (default above). The alternative is the launcher's own one-GPU arithmetic (global batch = per-device batch, no accumulation), which gives shorter steps and a per-micro-batch time directly, but a different effective batch from the recipe.
+2. Wan and UMT5 downloads: the design downloads only the files the launcher checks plus the tokenizer (about 19 GB), pinned, and runs with `AUTO_DOWNLOAD_WEIGHTS=false`. The released launcher on its own would download the three repositories whole (about 168 GB) on first launch. The training code does not read the extra files when starting from a checkpoint (step 3, read from the code, not yet run). The full download costs more time, disk and possibly host download charges.
+3. Start point: the user chose the stage 3 release; `docs/TRAINING.md` lines 34 to 38 say release folders are not the default for continued training (the launcher accepts them). Also on the Hub: `wnm_3d_stage1_release` and `wnm_3d_stage2_release`. Only relevant if the lead wants the start to match a documented stage transition; for timing the three are the same architecture (`speculative` for stages 1 and 2, whose configs were not read).
+4. Key check: a short script that builds the model with the same Hydra settings, loads the stage 3 shards and prints the counts of missing and unexpected keys would confirm the start weights. It needs a new file under `src/`, which is outside this amendment's files. Recommended, since it costs a few minutes on the same machine.
