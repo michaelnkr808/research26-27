@@ -5,17 +5,17 @@
 Entries marked **open** are not decided yet. An open entry is filled by a pull request once the lead (and the PI where it applies) has decided it. Nobody fills one in by guessing.
 
 ## Scope
-- **Research question:** What benefits does a world action model gain from being given spatial audio? (Full wording in `README.md`.)
-- **In scope / out of scope:** **open.** To be set with the PI together with "what done looks like".
+- **Research question:** What benefits does a world action model gain from being given spatial audio? (Full wording in `README.md`.) The specific question is in `decisions/001-research-question.md`.
+- **In scope / out of scope:** partly set by `decisions/001` and `decisions/002`: simulated navigation with WNM-3D is in scope; the encoder comparison and long-form audio are deferred, and predicting future sound is set aside. The rest is **open**, to be set with the PI together with "what done looks like".
 
 ## Domain sources
 - Key venues, journals, or conferences: **open**, filled from the literature survey.
 - Canonical references or textbooks: **open**, filled from the literature survey.
-- Trusted datasets or benchmarks: RMS-AQA (`chen2026rmsaqa`) is the first benchmark the direction handles, as the PI's first task. Others: **open**, filled from the literature survey.
+- Trusted datasets or benchmarks: RMS-AQA (`chen2026rmsaqa`) was to be the first benchmark the direction handles, as the PI's first task; the lead parked it on 2026-11-18 (`PLAN.md`, Parked). Others: **open**, filled from the literature survey.
 - Sources to treat with caution: **open**.
 
 ## Methods and evaluation
-- Standard baselines: **open.** Whatever model is chosen, the same model without the audio input is a required baseline, so that any gain can be tied to the audio and not to other changes.
+- Standard baselines: **open.** Whatever model is chosen, the same model without the audio input is a required baseline, so that any gain can be tied to the audio and not to other changes. Decision `001` adds the same model with one-channel audio as a second required baseline, so that any gain can be tied to the spatial part of the audio.
 - Metrics (and why): **open.**
 - Required statistical tests or number of runs: the general rule applies (`../_standards/07-ml-practices.md`: at least 3 seeds for any reported comparison).
 - Known pitfalls in this field (leakage, confounds, etc.): **open**, filled from the literature survey.
@@ -33,7 +33,7 @@ Two places are available. **Vast.ai comes first.** Every run is planned for Vast
 Only the experiment lead session (`hear-lab-experiment`) rents, submits, or manages compute.
 
 **Vast.ai**
-- Compute budget: 200 US dollars of credit on the HEAR Lab team account. The planning lead read this balance from the account with the `vastai` tool on 2026-11-15 (`verified`), and the lead said the same day that it is the whole compute budget for now.
+- Compute budget: 200 US dollars of credit on the HEAR Lab team account. The planning lead read this balance from the account with the `vastai` tool on 2026-11-15 (`verified`), and the lead said the same day that it is the whole compute budget for now. The lead, 2026-11-19: work within this credit before asking for more.
 - Every rental needs the lead's OK first, in the experiment lead's own session. Before asking, the experiment lead states the machine (GPU, memory, disk, the host's reliability score), the hourly price, the expected hours, and the total. The time estimate comes from a real timed batch. One OK covers one rental.
 - On-demand instances by default. An interruptible instance, which can be taken away mid-run, needs the lead's OK.
 - Hosts can go offline, and destroying an instance deletes everything on it. Long runs save checkpoints, and results and logs are copied off the instance and checked before it is destroyed.
@@ -51,7 +51,7 @@ Only the experiment lead session (`hear-lab-experiment`) rents, submits, or mana
 ## Conventions
 - Notation or terminology: working definitions are in `README.md` until the literature survey replaces them.
 - Figure and table conventions: **open.**
-- Target output format or venue: a paper for Interspeech. The lead gives the deadline as the end of February 2027; the date and the paper format are not yet checked against the official call for papers.
+- Target output format or venue: a paper for Interspeech. Paper submission deadline 2027-02-09 and paper update deadline 2027-02-16, from the official Interspeech 2027 dates page (read 2026-11-15; the lead had given the end of February). The paper format is not checked: the call for papers was not open on 2026-11-15.
 
 ## Overrides of general standards
 | General rule | Override | Reason |
