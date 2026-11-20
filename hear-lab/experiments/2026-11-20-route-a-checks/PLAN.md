@@ -51,3 +51,13 @@ Vast.ai, on-demand, HEAR Lab team account. Checks 1 and 3 and the episode render
 **Status:** planned.
 
 ## Amendments
+
+### 2026-11-20: corrections found while writing the code, before any run on a rented machine
+
+Seen so far: only local numbers from one InteriorGS scene (`0001_839920`, its small files on the experiment lead's Mac), computed by the workers' unit tests. No rented machine, no audio, no render. Stated here so that nothing is decided after the real results.
+
+1. **Camera field of view.** GN-Bench uses the config's `HFOV` value 70 as the vertical field of view (`GN_Bench_simulator.py`, `fovy = math.radians(fov)`, GN-Bench-Tools `0ce8367`), so the 480 by 360 image is 70 degrees tall and about 86 degrees wide. The design above said "70 degree horizontal". Check 3 uses the camera the simulator actually renders; the design is otherwise unchanged.
+2. **"Occupied" in the wall share was not defined above.** The code reads it as occupancy value 0 (the InteriorGS card's occupied value) and also reports GN-Bench's own notion (pixel value below 200, not passable). On `0001_839920` the local numbers were 0.87 (value 0) and 0.97 (not passable). The 0.9 bar stays on the value-0 share as first written. Both numbers are reported for all four scenes with the overlay images, and whether a value-0 miss is a real misalignment (for example the grey unknown border around outer walls) is left to the lead from the images. The bar is not changed after the fact.
+3. **Goal position against goal object.** In `0001_839920` the GN-Matrix goal position is a median of about 5 m from the goal instance's box (9 or 10 of 38 episodes within 3 m, depending on which worker's distance measure). Check 3 adds a per-episode column `goal_to_box_horiz_m` and reports its distribution, since it bears on placing the sound at the goal object. No rule depends on it in these checks.
+4. **"Within 3.0 m".** Check 3 writes both a path-length flag and a straight-line flag and reports both. GN-Bench's own success test uses a geodesic distance; neither flag is that exact quantity.
+5. **Outputs stay out of git** until the InteriorGS terms (a PDF linked from the dataset card, not yet read) have been read: `results/.gitignore` ignores everything the runs write. Summaries of counts are committed only after the lead clears it.
