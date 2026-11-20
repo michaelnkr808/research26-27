@@ -533,3 +533,11 @@ Times are UTC; the work started on 2026-11-18 (previous entry) and ended after m
 - **Test-set use:** none read this entry (progress counts only).
 - **Ledger:** one row (the `dinov3+c-radiov4` pod, queue 1.57 h, Running).
 - **Next step:** with the user: whether to leave the pair runs at 2.4 cores (the running one stays above 40% so far) or raise the CPU for the still-Pending `dinov3+siglip2` Job by PR and recreate it. The pair's trailing 3 h GPU mean against 40% at about 22:00 UTC and its first checkpoints; `dinov3+siglip2` first-minutes checks when it starts; the per-shard LIBERO-Plus rate when the first shards end. Still open with the user: the second run of the aside-folder delete; the CPU request of the L4 templates.
+
+## 2026-11-20 [agent, lead, implementation] (the user's answer on the pair runs' CPU: leave them as they are)
+
+- **Asked (this window, after the 20:35 UTC status check):** leave the running `dinov3+c-radiov4` pod alone and recheck its 3 h GPU mean at about 22:00 UTC; raise the CPU of the still-Pending `dinov3+siglip2` Job by PR and recreate it, yes or no. The consequence given: a slower run and less room above NRP's 40% line.
+- **The user, verbatim:** "Yeah leave it alone and if i get a warning ill lyk and if the other two jobs are similiar to the running pair just leave it".
+- **So (the lead's reading):** no CPU change to any pair Job, no template PR, nothing recreated. `dinov3+siglip2` stays in the queue as rendered (2 CPUs / 2400m, 64Gi / 76Gi). If it runs like `dinov3+c-radiov4` (GPU about 50%, CPU throttling), it is left running. An NRP warning email, if one comes, reaches the lead through the user. No scheduled recheck at 22:00 UTC; checks happen on the user's request (standing rule).
+- **Nothing run, nothing changed on the cluster.** Test-set use: none.
+- **Next step:** at the next status request: the pair's trailing GPU mean and checkpoints, the first-minutes checks of `dinov3+siglip2` if it has started (host memory against 76Gi still applies: near the limit is a stop for the user), the LIBERO-Plus per-shard rate once the first shards end.
