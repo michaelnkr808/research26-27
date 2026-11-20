@@ -1,0 +1,121 @@
+=== STAGE 2 PAIRINGS TRAINING: config dinov3+siglip2 seed 0, 21,696 steps, out /mnt/runs/runs/pairings-dinov3-siglip2-s0; full log on the PVC: /mnt/proxy/logs/pairings-dinov3-siglip2-s0-20261120-070250.log
+Fri Nov 20 07:02:50 UTC 2026
+SRC_GIT_COMMIT=c2a2e1644573b126b0a083bbdccaabd02474525a CONFIG=dinov3+siglip2 CFGK=dinov3-siglip2 SEED=0 MICRO_BATCH=8 TRAIN_TIMEOUT_S=234000 CKPT_L40S=600 CKPT_L40=500 RUN_ROOT=/mnt/runs/runs
+/src = ConfigMap stacking-encoders-pairings-train-src; checking its 7 keys against the hashes rendered into this manifest (RUN-stage2-train.md step 4):
+pretrained_train.py: OK
+pretrained_sizing.py: OK
+action_expert_init.py: OK
+proxy_wam.py: OK
+diagnostics.py: OK
+t5_cache.py: OK
+setup_env.sh: OK
+CARD NVIDIA L40 -> --ckpt-every 500 (stage 1 rule: nearest 100 steps to 45 min of step time; per-config values in RUN-stage2-train.md)
+MODE: fresh
+PVC free: 1024 GiB on the volume of /mnt/runs/runs (need 70 for mode fresh; RUN-stage2-train.md also needs 40 GB per running job before submit)
+Fri Nov 20 07:02:50 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.09              KMD Version: 615.71.09     CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA L40                     On  |   00000000:CA:00.0 Off |                    0 |
+| N/A   26C    P8             37W /  300W |       0MiB /  46068MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+3
+Filesystem                                                                                                                                                      Size  Used Avail Use% Mounted on
+csi-cephfs-node@90a5afad-c313-4e49-9b5f-317100c6930e.nautilusfs=/volumes/csi/csi-vol-9fc6b0fe-e947-4528-a5c5-c5e80fc7d70d/9f0765b7-9592-498f-ae6c-7f42cf4c5f62  1.0T  835G  190G  82% /mnt/proxy
+/dev/mapper/k8s-k8s                                                                                                                                             1.8T  657G  1.2T  37% /work
+=== PHASE setup 07:02:50
+[gpu] 2026/11/20 07:02:50.483, 0 %, 0 MiB
+=== PHASE stage-wan 07:03:18
+[gpu] 2026/11/20 07:03:20.484, 0 %, 0 MiB
+[gpu] 2026/11/20 07:03:50.484, 0 %, 0 MiB
+staged diffusion_pytorch_model-00001-of-00003.safetensors 9825014472 bytes
+staged diffusion_pytorch_model-00003-of-00003.safetensors 178558176 bytes
+staging took 55 s
+[gpu] 2026/11/20 07:04:20.484, 0 %, 0 MiB
+[gpu] 2026/11/20 07:04:50.484, 0 %, 0 MiB
+diffusion_pytorch_model-00001-of-00003.safetensors: OK
+diffusion_pytorch_model-00003-of-00003.safetensors: OK
+diffusion_pytorch_model.safetensors.index.json: OK
+config.json: OK
+staging + sha256 took 93 s
+=== PHASE train 07:04:51
+FLAGS: python /src/pretrained_train.py --feats /mnt/proxy/feats --suites libero_spatial,libero_object,libero_goal,libero_10 --t5 /mnt/proxy/feats/t5 --config dinov3+siglip2 --seed 0 --wan-dir /work/wan/Wan2.2-TI2V-5B --micro-batch 8 --first-batch-report --ckpt-every 500 --out /mnt/runs/runs/pairings-dinov3-siglip2-s0   (mode fresh; look for 'resuming from' in the log)
+[gpu] 2026/11/20 07:05:20.484, 0 %, 3 MiB
+[gpu] 2026/11/20 07:05:50.485, 0 %, 3 MiB
+[gpu] 2026/11/20 07:06:20.485, 0 %, 3 MiB
+[gpu] 2026/11/20 07:06:50.485, 0 %, 3 MiB
+[gpu] 2026/11/20 07:07:20.485, 0 %, 3 MiB
+[gpu] 2026/11/20 07:07:50.485, 0 %, 3 MiB
+[gpu] 2026/11/20 07:08:20.485, 0 %, 3 MiB
+[gpu] 2026/11/20 07:08:50.485, 0 %, 3 MiB
+[gpu] 2026/11/20 07:09:20.485, 0 %, 3 MiB
+[gpu] 2026/11/20 07:09:50.485, 0 %, 3 MiB
+[train     302s] 1712 episodes, 277713 frames, 40 tasks, in_dim 2224; plan 21696 optimizer steps of 128, this run to step 21696, micro-batch 8 x 16
+[train     303s] [load] read diffusion_pytorch_model-00001-of-00003.safetensors in 0.7s
+[train     303s] [load] read diffusion_pytorch_model-00003-of-00003.safetensors in 0.0s
+[train     304s] [load] every loaded tensor re-read from its file and compared (max |diff| 0) in 0.8s
+[train     305s] [action expert] derived from the video expert by Fast-WAM's recipe: {'copied': 80, 'resized': 146, 'fresh': 4, 'derived': 226}
+[train     305s] [load] {'loaded': 228, 'partly loaded': 3, 'derived': 226, 'fresh': 6}
+[gpu] 2026/11/20 07:10:20.485, 0 %, 7851 MiB
+[gpu] 2026/11/20 07:10:50.485, 0 %, 7851 MiB
+[gpu] 2026/11/20 07:11:20.486, 0 %, 7851 MiB
+[gpu] 2026/11/20 07:11:50.486, 0 %, 7851 MiB
+[gpu] 2026/11/20 07:12:20.486, 0 %, 7851 MiB
+[train     461s] [first batch] loss at start {'model': {'total': 8.522677659988403, 'vae': 3.027201272547245, 'dinov3': 1.9019268229603767, 'siglip2': 1.796776469796896, 'action': 1.7967730835080147}, 'predict_zero': {'total': 6.714830189943314, 'vae': 1.7450978942215443, 'dinov3': 1.9019268229603767, 'siglip2': 1.796776469796896, 'action': 1.2710290886461735}}
+[gpu] 2026/11/20 07:12:50.486, 0 %, 11627 MiB
+[train     498s] {"step": 0, "lr": 0.0, "loss": 8.52274, "loss/vae": 3.02726, "loss/dinov3": 1.90193, "loss/siglip2": 1.79678, "loss/action": 1.79678, "grad_norm": 25.74648, "s_step": 9.27772, "data_wait_s": 27.44377, "peak_reserved_bytes": 39252393984, "micro_batch": 8}
+[train     505s] {"step": 1, "lr": 0.0, "loss": 7.94568, "loss/vae": 2.83051, "loss/dinov3": 1.7818, "loss/siglip2": 1.68166, "loss/action": 1.65171, "grad_norm": 24.5109, "s_step": 7.2604, "data_wait_s": 0.00289, "peak_reserved_bytes": 39793459200, "micro_batch": 8}
+[gpu] 2026/11/20 07:13:20.487, 0 %, 38487 MiB
+[train     512s] {"step": 2, "lr": 0.0, "loss": 8.702, "loss/vae": 3.12775, "loss/dinov3": 2.01736, "loss/siglip2": 1.90334, "loss/action": 1.65355, "grad_norm": 25.29357, "s_step": 7.14158, "data_wait_s": 0.00257, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[train     519s] {"step": 3, "lr": 0.0, "loss": 8.40443, "loss/vae": 2.93962, "loss/dinov3": 1.94644, "loss/siglip2": 1.8277, "loss/action": 1.69067, "grad_norm": 25.9969, "s_step": 7.1024, "data_wait_s": 0.00321, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[train     527s] {"step": 4, "lr": 0.0, "loss": 7.70081, "loss/vae": 2.70631, "loss/dinov3": 1.75133, "loss/siglip2": 1.6509, "loss/action": 1.59227, "grad_norm": 22.16655, "s_step": 7.14636, "data_wait_s": 0.00372, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[train     535s] {"step": 5, "lr": 0.0, "loss": 7.82294, "loss/vae": 2.68858, "loss/dinov3": 1.79673, "loss/siglip2": 1.69771, "loss/action": 1.63993, "grad_norm": 22.74579, "s_step": 8.50437, "data_wait_s": 0.00519, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[gpu] 2026/11/20 07:13:50.487, 0 %, 38593 MiB
+[train     542s] {"step": 6, "lr": 0.0, "loss": 7.76601, "loss/vae": 2.6246, "loss/dinov3": 1.7942, "loss/siglip2": 1.69285, "loss/action": 1.65437, "grad_norm": 22.15327, "s_step": 7.16989, "data_wait_s": 0.00366, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[train     550s] {"step": 7, "lr": 0.0, "loss": 7.27568, "loss/vae": 2.4446, "loss/dinov3": 1.6952, "loss/siglip2": 1.59191, "loss/action": 1.54396, "grad_norm": 20.82296, "s_step": 7.15095, "data_wait_s": 0.0064, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[train     557s] {"step": 8, "lr": 0.0, "loss": 7.71058, "loss/vae": 2.56696, "loss/dinov3": 1.82339, "loss/siglip2": 1.71852, "loss/action": 1.6017, "grad_norm": 20.88878, "s_step": 7.16389, "data_wait_s": 0.00512, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[train     564s] {"step": 9, "lr": 0.0, "loss": 7.0285, "loss/vae": 2.22653, "loss/dinov3": 1.63973, "loss/siglip2": 1.54359, "loss/action": 1.61865, "grad_norm": 20.01377, "s_step": 7.16648, "data_wait_s": 0.00187, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[gpu] 2026/11/20 07:14:20.487, 0 %, 38593 MiB
+[train     584s] {"step": 10, "lr": 0.0, "loss": 6.94854, "loss/vae": 2.22819, "loss/dinov3": 1.65918, "loss/siglip2": 1.56122, "loss/action": 1.49995, "grad_norm": 17.89212, "s_step": 19.88078, "data_wait_s": 0.00219, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[train     595s] {"step": 11, "lr": 0.0, "loss": 7.42401, "loss/vae": 2.23535, "loss/dinov3": 1.79315, "loss/siglip2": 1.69296, "loss/action": 1.70255, "grad_norm": 19.7031, "s_step": 11.01787, "data_wait_s": 0.00193, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[gpu] 2026/11/20 07:14:50.488, 0 %, 38593 MiB
+[train     603s] {"step": 12, "lr": 0.0, "loss": 7.30838, "loss/vae": 2.19143, "loss/dinov3": 1.81596, "loss/siglip2": 1.7092, "loss/action": 1.59179, "grad_norm": 18.43956, "s_step": 7.38431, "data_wait_s": 0.0018, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[train     610s] {"step": 13, "lr": 0.0, "loss": 6.69132, "loss/vae": 1.9839, "loss/dinov3": 1.74386, "loss/siglip2": 1.65557, "loss/action": 1.30799, "grad_norm": 15.53399, "s_step": 7.17985, "data_wait_s": 0.0023, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[train     617s] {"step": 14, "lr": 0.0, "loss": 6.92677, "loss/vae": 1.98388, "loss/dinov3": 1.8709, "loss/siglip2": 1.7678, "loss/action": 1.30419, "grad_norm": 15.71962, "s_step": 7.18831, "data_wait_s": 0.00202, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[train     624s] {"step": 15, "lr": 0.0, "loss": 6.71242, "loss/vae": 1.88025, "loss/dinov3": 1.8102, "loss/siglip2": 1.70652, "loss/action": 1.31546, "grad_norm": 13.94906, "s_step": 7.21997, "data_wait_s": 0.00173, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[gpu] 2026/11/20 07:15:20.488, 0 %, 38593 MiB
+[train     632s] {"step": 16, "lr": 0.0, "loss": 6.72787, "loss/vae": 1.88107, "loss/dinov3": 1.87775, "loss/siglip2": 1.76842, "loss/action": 1.20063, "grad_norm": 13.20776, "s_step": 7.20171, "data_wait_s": 0.00202, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[train     639s] {"step": 17, "lr": 0.0, "loss": 5.68363, "loss/vae": 1.45666, "loss/dinov3": 1.53075, "loss/siglip2": 1.44486, "loss/action": 1.25136, "grad_norm": 11.35218, "s_step": 7.22428, "data_wait_s": 0.00194, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[train     646s] {"step": 18, "lr": 0.0, "loss": 6.47348, "loss/vae": 1.62375, "loss/dinov3": 1.83712, "loss/siglip2": 1.72905, "loss/action": 1.28357, "grad_norm": 11.41081, "s_step": 7.20523, "data_wait_s": 0.00209, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[train     653s] {"step": 19, "lr": 0.0, "loss": 5.81321, "loss/vae": 1.37983, "loss/dinov3": 1.67281, "loss/siglip2": 1.57588, "loss/action": 1.18469, "grad_norm": 9.56728, "s_step": 7.21603, "data_wait_s": 0.0018, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[train     653s] [projection] after 20 steps: 8.133 s/step (steps 2-20 of this process, compute only; data wait so far 27.5 s); full run of 21696 steps = 49.01 h; remaining 21676 steps of this run = 48.97 h
+[gpu] 2026/11/20 07:15:50.488, 100 %, 38593 MiB
+[train     661s] {"step": 20, "lr": 0.0, "loss": 6.31788, "loss/vae": 1.52281, "loss/dinov3": 1.90331, "loss/siglip2": 1.78927, "loss/action": 1.10249, "grad_norm": 9.32514, "s_step": 7.21585, "data_wait_s": 0.00161, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[train     668s] {"step": 21, "lr": 0.0, "loss": 6.07032, "loss/vae": 1.40218, "loss/dinov3": 1.78799, "loss/siglip2": 1.69355, "loss/action": 1.18661, "grad_norm": 8.75813, "s_step": 7.25929, "data_wait_s": 0.00171, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[train     675s] {"step": 22, "lr": 0.0, "loss": 5.35577, "loss/vae": 1.10684, "loss/dinov3": 1.56973, "loss/siglip2": 1.48075, "loss/action": 1.19845, "grad_norm": 7.67356, "s_step": 7.26831, "data_wait_s": 0.00183, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[train     683s] {"step": 23, "lr": 0.0, "loss": 5.67021, "loss/vae": 1.16187, "loss/dinov3": 1.74611, "loss/siglip2": 1.64095, "loss/action": 1.12127, "grad_norm": 7.14401, "s_step": 7.26097, "data_wait_s": 0.0019, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[gpu] 2026/11/20 07:16:20.489, 100 %, 38593 MiB
+[train     690s] {"step": 24, "lr": 0.0, "loss": 5.22161, "loss/vae": 0.99577, "loss/dinov3": 1.66156, "loss/siglip2": 1.58135, "loss/action": 0.98293, "grad_norm": 6.01885, "s_step": 7.23546, "data_wait_s": 0.002, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[train     697s] {"step": 25, "lr": 0.0, "loss": 5.457, "loss/vae": 1.07706, "loss/dinov3": 1.70954, "loss/siglip2": 1.61524, "loss/action": 1.05515, "grad_norm": 6.34498, "s_step": 7.246, "data_wait_s": 0.00189, "peak_reserved_bytes": 39904608256, "micro_batch": 8}
+[gpu] 2026/11/20 07:16:50.489, 93 %, 38593 MiB
+[gpu] 2026/11/20 07:17:20.489, 56 %, 38593 MiB
+[gpu] 2026/11/20 07:17:50.490, 100 %, 38593 MiB
+[gpu] 2026/11/20 07:18:20.490, 100 %, 38593 MiB
+[gpu] 2026/11/20 07:18:50.490, 0 %, 38593 MiB
+[gpu] 2026/11/20 07:19:20.490, 0 %, 38593 MiB
+[gpu] 2026/11/20 07:19:50.490, 0 %, 38593 MiB
+[gpu] 2026/11/20 07:20:20.491, 100 %, 38593 MiB
+[gpu] 2026/11/20 07:20:50.491, 94 %, 38593 MiB
