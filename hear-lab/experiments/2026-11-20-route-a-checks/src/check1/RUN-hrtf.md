@@ -36,13 +36,15 @@ Expect the same as run 1: `FAIL left_ear_before_right_ear` in both settings sets
     python hrtf_followup.py --rlr-root /workspace/rlr-audio-propagation \
       --scenes-root /workspace/data/InteriorGS --parquet <same parquet path> \
       --run-dir ../../results/check1-run2 --hrtf /workspace/hrtf/mit_kemar_normal_pinna.sofa \
-      --out ../../results/hrtf-followup1 2>&1 | tee /workspace/hrtf-followup1-console.txt
+      --out ../../results/<NEW-OUT-FOLDER> 2>&1 | tee /workspace/<NEW-OUT-FOLDER>-console.txt
+
+`<NEW-OUT-FOLDER>` is a folder name that must not exist yet. The reported result is in `hrtf-followup2`; the first attempt, `hrtf-followup1`, hit the sweep bug fixed in `6d85f6d`.
 
 CPU only. Per settings set it runs 4 simulations (default and kemar, each free-field sweep and left test); the sweeps are quick (no mesh, direct only), the left tests take as long as in check 1. `--out` must not exist.
 
 ## 4. Copy back before the machine is destroyed
 
-`results/hrtf-followup1/` (log `hrtf_followup.log`, `hrtf_followup_summary.json`, the `.npy` impulse responses), `/workspace/hrtf-followup1-console.txt`, `/workspace/hrtf/sofa.sha256`, and `results/check1-run2/` if it differs from run 1.
+`results/<NEW-OUT-FOLDER>/` (log `hrtf_followup.log`, `hrtf_followup_summary.json`, the `.npy` impulse responses), `/workspace/<NEW-OUT-FOLDER>-console.txt`, `/workspace/hrtf/sofa.sha256`, and `results/check1-run2/` if it differs from run 1.
 
 ## What normal output looks like
 

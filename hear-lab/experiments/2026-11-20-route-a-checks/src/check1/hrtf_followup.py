@@ -117,7 +117,7 @@ def main(argv=None) -> int:
     log("[header] measured-HRTF follow-up to check 1 (see the module docstring of hrtf_followup.py)")
     log(f"[header] reproduction check: for the default condition the free-field sweep (heading 0, direct only) should "
         f"reproduce the earlier diagnostic (diagnose_left_ear.py, sweep_free_field_heading0): level difference "
-        f"between the ears, interaural delay within +-0.09 ms at every angle")
+        f"between the ears, interaural delay of largest magnitude 0.091 ms over all angles")
     log(f"[header] SOFA file {a.hrtf} sha256 {sofa_sha}")
     log(f"[header] library {lib_path} sha256 {sha256(lib_path)}")
     log(f"[header] config {a.config} sha256 {sha256(a.config)}; sample rate {sr}; speed of sound {cfg['speed_of_sound_m_s']}")
