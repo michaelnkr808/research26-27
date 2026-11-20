@@ -72,13 +72,13 @@ def parse_args(argv=None) -> argparse.Namespace:
 
 
 def sweep_positions(listener, heading_deg: float, offset_m: float, azimuths=AZIMUTHS_DEG):
-    """(tag, source position) per azimuth; +90 deg is the listener's left (poses.agent_axes convention)."""
+    """(tag, listener position, source position) per azimuth, the triples simulate() unpacks; +90 deg is the listener's left (poses.agent_axes convention)."""
     listener = np.asarray(listener, dtype=np.float64)
     fwd, left, _r, _u = poses.agent_axes(heading_deg)
     out = []
     for az in azimuths:
         t = math.radians(az)
-        out.append((f"az{az:03d}", listener + offset_m * (math.cos(t) * fwd + math.sin(t) * left)))
+        out.append((f"az{az:03d}", listener, listener + offset_m * (math.cos(t) * fwd + math.sin(t) * left)))
     return out
 
 

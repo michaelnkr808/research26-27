@@ -39,7 +39,7 @@ class HrtfFollowup(unittest.TestCase):
     def test_azimuth_geometry(self):
         for heading in (0.0, 37.0, -120.0):
             lis = np.array([1.0, 2.0, 1.3])
-            pos = dict(hf.sweep_positions(lis, heading, 2.0))
+            pos = {tag: spos for tag, _l, spos in hf.sweep_positions(lis, heading, 2.0)}
             self.assertEqual(list(pos)[0], "az000")
             self.assertEqual(len(pos), 12)
             fwd, left, right, _up = hf.poses.agent_axes(heading)
@@ -50,7 +50,17 @@ class HrtfFollowup(unittest.TestCase):
             for p in pos.values():
                 self.assertAlmostEqual(float(np.linalg.norm(p - lis)), 2.0, places=9)
         # heading 0: left is +y
-        self.assertTrue(np.allclose(dict(hf.sweep_positions([0, 0, 0], 0.0, 2.0))["az090"], [0, 2, 0]))
+        self.assertTrue(np.allclose({t: s for t, _l, s in hf.sweep_positions([0, 0, 0], 0.0, 2.0)}["az090"], [0, 2, 0]))
+
+    def test_sweep_output_unpacks_like_simulate(self):
+        lis = np.array([1.0, 2.0, 1.3])
+        pairs = hf.sweep_positions(lis, 0.0, 2.0)
+        n = 0
+        for tag, lpos, spos in pairs:  # same unpacking as simulate() in main()
+            self.assertTrue(np.allclose(lpos, lis))
+            self.assertEqual(len(spos), 3)
+            n += 1
+        self.assertEqual(n, 12)
 
     def test_test_line_labels_and_unchanged_pass_function(self):
         ir = np.zeros((2, 200), dtype=np.float32)
