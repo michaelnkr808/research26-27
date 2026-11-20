@@ -2,7 +2,7 @@
 
 What this does: one timed real training step of WNM-3D on one H200, started from the released stage 3 checkpoint, on the 48 train_seen episodes rendered on rental 2 (PLAN.md, "Amendment 2026-11-20 (b): check 2 detailed design"; parameters in `../../config.yaml`, block `check2`). Commands are in the amendment's order. Nothing here changes a WNM-3D file or the launcher.
 
-Placeholders: `<host>` and `<port>` (SSH, from `vastai ssh-url <instance>` after `vastai attach ssh`), `<REPO>` (this repo on the lead's Mac), `<RENDERS>` (the folder on the Mac that holds `<scene>/<trajectory_id>.mp4` for the 48 renders), `<HF_TOKEN>` (the lead's Hugging Face token, typed only into the one VGGT-Omega command in step 4; never written into a file, never into this repo). Stop rules (minutes from instance start unless said): environment verified by 90, downloads done within 60 of starting them, conversion within 30, key check within 30, first logged step within 60 of each launch, hard stop at 300.
+Placeholders: `<host>` and `<port>` (SSH, from `vastai ssh-url <instance>` after `vastai attach ssh`), `<id>` (the Vast.ai instance id), `<REPO>` (this repo on the lead's Mac), `<RENDERS>` (the folder on the Mac that holds `<scene>/<trajectory_id>.mp4` for the 48 renders). The lead's Hugging Face token has no placeholder: the user types it at a hidden prompt in step 4, and it is never written into a command, a file, this repo or an agent transcript. Stop rules (minutes from instance start unless said): environment verified by 90, downloads done within 60 of starting them, conversion within 30, key check within 30, first logged step within 60 of each launch, hard stop at 300.
 
 Machine paths: WNM-3D at `/workspace/WNM-3D`, everything for this check under `/workspace/check2`.
 
@@ -12,10 +12,13 @@ Machine paths: WNM-3D at `/workspace/WNM-3D`, everything for this check under `/
 cd <REPO>
 git rev-parse HEAD                                   # record in LOG.md: the commit src/check2 comes from
 ls <RENDERS>/*/*.mp4 | wc -l                         # must be 48; if not, stop (re-rendering is a new run)
+# the renders sit in a session scratchpad, which a cleanup can clear: copy them somewhere durable first
+mkdir -p ~/Desktop/hear-lab-route-a-results/check2-renders && rsync -a <RENDERS>/ ~/Desktop/hear-lab-route-a-results/check2-renders/
 (cd <RENDERS> && find . -name '*.mp4' | sort | xargs md5 -r) > /tmp/check2_renders.md5
 cd hear-lab/experiments/2026-11-20-route-a-checks/src/check2
-/opt/homebrew/bin/python3.11 -m unittest -v test_check2   # all pass (the real-Trainer test is skipped on the Mac)
-shasum -a 256 check2_steplog.py check2_keycheck.py sitecustomize.py test_check2.py > /tmp/check2_src.sha256
+USE_TF=0 /opt/homebrew/bin/python3.11 -m unittest -v test_check2   # all pass (the real-Trainer test is skipped on the Mac)
+rm -rf __pycache__
+shasum -a 256 check2_steplog.py check2_keycheck.py sitecustomize.py test_check2.py fetch_vggt.sh RUN.md > /tmp/check2_src.sha256
 ~~~
 
 ## 1. Machine record (on the machine)
@@ -29,6 +32,8 @@ df -h > df.txt; free -g > free.txt; nproc > nproc.txt; cat /etc/os-release > os.
 ~~~
 
 The driver must support CUDA 12.9 (about 575 or newer). If not, stop.
+
+From the Mac, record the instance (image tag, offer, price): `vastai show instance <id> --raw > /tmp/check2_instance.json`, then upload it with the files of step 3 (`rsync -av -e "ssh -p <port>" /tmp/check2_instance.json root@<host>:/workspace/check2/env/`).
 
 ## 2. Environment (WNM-3D docs/INSTALLATION.md section 1 at 7fe2d5f)
 
@@ -73,11 +78,13 @@ python -c "import sitecustomize; print(sitecustomize.__file__)" > preexisting_si
 cat preexisting_sitecustomize.txt                     # "No module named" means the image has none
 ~~~
 
+If a file path prints, the image has its own `sitecustomize`, which ours would shadow without a word: stop and tell the lead.
+
 ## 3. Uploads (from the Mac)
 
 ~~~bash
 cd <REPO>/hear-lab/experiments/2026-11-20-route-a-checks
-rsync -av -e "ssh -p <port>" src/check2/ root@<host>:/workspace/check2/src/check2/
+rsync -av --exclude __pycache__ -e "ssh -p <port>" src/check2/ root@<host>:/workspace/check2/src/check2/
 rsync -av -e "ssh -p <port>" /tmp/check2_src.sha256 root@<host>:/workspace/check2/env/
 rsync -av -e "ssh -p <port>" <RENDERS>/ root@<host>:/workspace/check2/renders/
 rsync -av -e "ssh -p <port>" /tmp/check2_renders.md5 root@<host>:/workspace/check2/env/
@@ -100,6 +107,8 @@ cd /workspace/check2/src/check2 && python -m unittest -v test_check2 2>&1 | tee 
 ## 4. Downloads (pinned; about 51 GB)
 
 ~~~bash
+source /workspace/miniforge3/etc/profile.d/conda.sh && conda activate wnm_3d
+date -u +%FT%TZ > /workspace/check2/env/downloads_start.txt   # the 60-minute download stop counts from here
 cd /workspace/WNM-3D && mkdir -p checkpoints
 hf download TeleEmbodied/GN-Matrix InteriorGS/InteriorGS_train_seen.parquet --repo-type dataset \
   --revision 50a68253b5436f0595779cd3f91baf65228a0238 --local-dir /workspace/check2/gn_matrix
@@ -113,14 +122,18 @@ hf download google/umt5-xxl tokenizer_config.json tokenizer.json spiece.model sp
   --revision 66cb9e7e85526fe440a945569e42c72fb6cbc0ad --local-dir checkpoints/umt5-xxl
 ~~~
 
-VGGT-Omega (gated). Type the token only into this command; a leading space keeps it out of history where HISTCONTROL=ignorespace, and the history is cleared anyway:
+VGGT-Omega (gated). The user types the token, not an agent. In a separate Terminal window on the Mac (a normal terminal, not a `!` command inside Claude Code: `!` commands cannot answer an interactive prompt and their output goes into the session transcript), the user runs:
 
 ~~~bash
- HF_TOKEN=<HF_TOKEN> hf download facebook/VGGT-Omega vggt_omega_1b_512.pt \
-  --revision 1041e80fc0e911235d3426b0a3d9a81075111a53 --local-dir checkpoints
-history -c
-ls ~/.cache/huggingface/token ~/.cache/huggingface/stored_tokens 2>&1   # both must be "No such file"
-env | grep -c HF_TOKEN                                                  # must print 0
+ssh -t -p <port> root@<host> bash /workspace/check2/src/check2/fetch_vggt.sh
+~~~
+
+`fetch_vggt.sh` (uploaded and sha256-checked in step 3) asks for the token at a hidden prompt (`read -rsp`), passes it only in the environment of the one `hf download` (revision `1041e80f`), unsets it, and prints whether a token file exists under `${HF_HOME:-$HOME/.cache/huggingface}`. The user closes that window afterwards. Then, in the working session:
+
+~~~bash
+HFH="${HF_HOME:-$HOME/.cache/huggingface}"
+ls "$HFH/token" "$HFH/stored_tokens" 2>&1   # both must be "No such file"
+env | grep -c HF_TOKEN                      # must print 0
 ~~~
 
 Checksums (Hub LFS sha256 values, read 2026-11-20) and sizes:
@@ -142,6 +155,7 @@ sha256sum -c /workspace/check2/env/downloads.sha256
 stat -c '%s %n' vggt_omega_1b_512.pt                     # must be 4576706117
 sha256sum vggt_omega_1b_512.pt > /workspace/check2/env/vggt.sha256   # recorded (the anonymous Hub listing hides it)
 du -sh /workspace/WNM-3D/checkpoints/* > /workspace/check2/env/checkpoint_sizes.txt
+date -u +%FT%TZ > /workspace/check2/env/downloads_end.txt
 ~~~
 
 Any mismatch: stop.
@@ -149,6 +163,7 @@ Any mismatch: stop.
 ## 5. Conversion (docs/TRAINING.md lines 66 to 74, paths only changed)
 
 ~~~bash
+source /workspace/miniforge3/etc/profile.d/conda.sh && conda activate wnm_3d
 cd /workspace/WNM-3D
 python scripts/data/convert_interiorgs_to_lerobot.py \
   --render-root /workspace/check2/renders \
@@ -194,24 +209,28 @@ export PRETRAINED_MODEL_PATH=checkpoints/wnm_3d_stage3_release
 export VGGT_OMEGA_CKPT=checkpoints/vggt_omega_1b_512.pt
 export PYTHONUNBUFFERED=1
 EOF
+source /workspace/miniforge3/etc/profile.d/conda.sh && conda activate wnm_3d
 cd /workspace/WNM-3D && source /workspace/check2/launch_env.sh
 DRY_RUN=true PER_DEVICE_BS=12 MAX_STEPS=60 OUTPUT_DIR=/workspace/check2/runs/dryrun \
   bash scripts/train/wnm_3d_stage2.sh | tee /workspace/check2/runs/dryrun.log
 grep -o 'save_strategy=[^ ]*\|per_device_train_batch_size=[^ ]*\|global_batch_size=[^ ]*\|max_steps=[^ ]*\|deepspeed=[^ ]*\|bf16=[^ ]*\|num_frames=[^ ]*\|image_resolution_[a-z]*=[^ ]*\|pretrained_model_path=[^ ]*\|skip_component_loading=[^ ]*' /workspace/check2/runs/dryrun.log
 ~~~
 
-Check against PLAN step 4: per-device 12, global 12, max_steps 60, zero2.json, bf16 true, 33 frames, 320 by 160, the stage 3 path, skip_component_loading true. Before the first real trial, also check that the trial's saved `experiment_cfg/conf.yaml` reads `save_strategy: 'no'` (a string); if it reads `false`, stop and ask.
+Check against PLAN step 4: per-device 12, global 12, max_steps 60, zero2.json, bf16 true, 33 frames, 320 by 160, the stage 3 path, skip_component_loading true. `PYTHONUNBUFFERED=1` (in `launch_env.sh`, needed for the timestamped log) is not a launcher setting; it is listed with the other differences next to the numbers.
+
+The dry run exits before `experiment_cfg/conf.yaml` is written (WNM-3D `base.py` line 414 writes it when a trial starts), so the save-strategy check is made in the first minute of the first trial (step 7).
 
 Key check (CPU only, about 54 GB RAM; stop at 30 minutes):
 
 ~~~bash
+source /workspace/miniforge3/etc/profile.d/conda.sh && conda activate wnm_3d
 cd /workspace/check2/src/check2
 CUDA_VISIBLE_DEVICES= python check2_keycheck.py --wnm3d-root /workspace/WNM-3D \
   --dry-run-log /workspace/check2/runs/dryrun.log --out /workspace/check2/keycheck 2>&1 | tee /workspace/check2/keycheck.log
 tail -1 /workspace/check2/keycheck.log
 ~~~
 
-The last line must read `pass=True missing=0 unexpected=0 exit=0`. Exit 2 (keys missing or unexpected) or 3 (loading raised): stop before timing and report `/workspace/check2/keycheck/keycheck.json` to the lead; nothing is fixed.
+The last line must read `pass=True missing=0 unexpected=0 exit=0`. Exit 2 (keys missing or unexpected) or 3 (loading raised): stop before timing and report `/workspace/check2/keycheck/keycheck.json` to the lead; nothing is fixed. The field `index_matches_shards` is informational and not part of the pass rule (a shard file named in the index but absent raises, which is exit 3). Unlike the trainer, the key check does not instantiate the training arguments, call `set_seed` or initialise torch.distributed before building the model (`base.py` lines 402 to 403); none of these changes the key set, but the CPU build has never run anywhere, so an exit 3 here costs rental minutes. If a machine with the WNM-3D environment is ever available before the H200 rental, running steps 2 and 6 there first is cheaper.
 
 ## 7. Batch trials
 
@@ -224,6 +243,7 @@ set -uo pipefail
 ID=$1; BS=$2; STEPS=$3; WARM=$4
 RUN=/workspace/check2/runs/$ID
 [ -e "$RUN" ] && { echo "output folder exists: $RUN"; exit 1; }
+source /workspace/miniforge3/etc/profile.d/conda.sh && conda activate wnm_3d   # survives an SSH reconnect
 cd /workspace/WNM-3D && source /workspace/check2/launch_env.sh
 nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used,memory.total,power.draw --format=csv -l 1 > "$RUN.nvidia-smi.csv" &
 SMI=$!
@@ -235,8 +255,8 @@ PYTHONPATH=/workspace/check2/src/check2 PER_DEVICE_BS=$BS MAX_STEPS=$STEPS OUTPU
 RC=${PIPESTATUS[0]}
 kill $SMI
 echo "exit $RC" >> "$RUN.log"
-if grep -q -E 'CUDA out of memory|OutOfMemoryError' "$RUN.log"; then echo "RESULT $ID: OOM"
-elif grep -q -E 'ZeRO-Offload with a client provided optimizer|ZeRORuntimeException' "$RUN.log"; then echo "RESULT $ID: CONFIG ERROR (not a fit result; stop for the lead)"
+if [ "$RC" -ne 0 ] && grep -q -E 'CUDA out of memory|OutOfMemoryError' "$RUN.log"; then echo "RESULT $ID: OOM"
+elif [ "$RC" -ne 0 ] && grep -q -E 'ZeRO-Offload with a client provided optimizer|ZeRORuntimeException' "$RUN.log"; then echo "RESULT $ID: CONFIG ERROR (not a fit result; stop for the lead)"
 elif [ "$RC" -ne 0 ]; then echo "RESULT $ID: FAILED exit $RC (read the log; a missing-file error is reported as such)"
 elif [ ! -s "$RUN/check2_steps.jsonl" ]; then echo "RESULT $ID: NO STEP LOG (stop; the hook did not attach)"
 else echo "RESULT $ID: FITS"
@@ -245,7 +265,13 @@ fi
 EOF
 ~~~
 
-While a trial runs, in a second shell: once training starts, check that `/workspace/check2/runs/<id>/check2_steps.jsonl` exists and that `grep '\[check2\] step logger attached' /workspace/check2/runs/<id>.log` finds one line (if not, stop the trial: `pkill -f experiment.py`). Look at `nvidia-smi` by hand 3 minutes after the first step (if the timed window ends first, say so and use the CSV). Stop a launch that has no logged step 60 minutes after it started.
+While a trial runs, in a second shell. In the first minute of the first trial, check the save strategy the trainer saved (if it reads `false`, stop the trial with `pkill -f experiment.py` and ask the lead):
+
+~~~bash
+grep -n save_strategy /workspace/check2/runs/bs12/experiment_cfg/conf.yaml   # must read save_strategy: 'no' (a string)
+~~~
+
+Then, once training starts, check that `/workspace/check2/runs/<id>/check2_steps.jsonl` exists and that `grep '\[check2\] step logger attached' /workspace/check2/runs/<id>.log` finds one line (if not, stop the trial: `pkill -f experiment.py`). Look at `nvidia-smi` by hand 3 minutes after the first step (if the timed window ends first, say so and use the CSV). Stop a launch that has no logged step 60 minutes after it started.
 
 Order (PLAN step 4, "Batch-size search"):
 
@@ -269,6 +295,8 @@ A CONFIG ERROR from the offload trial is not "does not fit": stop and report it.
 
 After each trial, keep the logs and delete the final model save (about 27 GB): `find /workspace/check2/runs/<id> -name '*.safetensors' -delete` (plus any `global_step*` folder). Record the minutes the save took (the last timestamped lines of the log).
 
+For LOG.md, next to the step times: the callback's time for step k is read before the trainer's logging and saving work of step k (transformers 4.51.3 calls `on_step_end` before `_maybe_log_save_evaluate`), so that work lands in step k+1's interval; with logging every 10 steps this moves a little time between neighbouring steps and does not change totals. The `train_end` line is read after the last step and is not in any timed interval; it gives the final peak.
+
 ## 8. Copy back and destroy
 
 On the machine:
@@ -291,4 +319,4 @@ rsync -av -e "ssh -p <port>" root@<host>:/workspace/check2/copy_manifest.sha256 
 cd ~/Desktop/hear-lab-route-a-results/check2-run1 && shasum -a 256 -c copy_manifest.sha256 | grep -vc ': OK$'   # must print 0
 ~~~
 
-Then on the machine repeat the token check of step 4 (`ls ~/.cache/huggingface/token ~/.cache/huggingface/stored_tokens`, both missing). Read the credit, destroy the instance (`vastai destroy instance <id>`), read the credit again, and write machine, price, hours, cost and every result into LOG.md (the lead's session).
+Then on the machine repeat the token check of step 4 (`HFH="${HF_HOME:-$HOME/.cache/huggingface}"; ls "$HFH/token" "$HFH/stored_tokens"`, both missing). Read the credit, destroy the instance (`vastai destroy instance <id>`), read the credit again, and write machine, price, hours, cost and every result into LOG.md (the lead's session).

@@ -75,21 +75,22 @@ check2:
       VGGT_OMEGA_CKPT: checkpoints/vggt_omega_1b_512.pt
       OUTPUT_DIR: /workspace/check2/runs/<trial_id>
       PYTHONPATH: /workspace/check2/src/check2   # machine copy of src/check2, uploaded with a sha256 list
+      PYTHONUNBUFFERED: 1   # not a launcher setting; needed for the timestamped log, listed with the differences
     hydra_extra: []
   downloads:
     mode: launcher-checked files plus tokenizer only (about 19 GB of Wan/UMT5; about 51 GB in total), decided 2026-11-20
     missing_file_policy: stop and report
   key_check:
-    script: src/check2/   # not written yet
+    script: src/check2/check2_keycheck.py
     device: cpu
     load: strict=False per shard, as base.py does; record missing and unexpected keys
     pass: {missing: 0, unexpected: 0}
     on_fail: stop before timing, report to the lead
   callback:
-    location: src/check2/   # sitecustomize.py plus a TrainerCallback; not written yet
+    location: src/check2/   # sitecustomize.py (hook) and check2_steplog.py (callback)
     remote_copy: /workspace/check2/src/check2
     hook: lazy import hook on transformers.trainer, training process only (LOCAL_RANK set), no top-level torch/transformers import
-    record_points: [on_train_begin, on_step_end]
+    record_points: [on_train_begin, on_step_end, on_train_end]   # on_train_end is after the last step, outside every timed interval; gives the final peak
     sync_cost: not measured, expected small
     output: <OUTPUT_DIR>/check2_steps.jsonl
     per_optimizer_step: [global_step, time, memory_allocated, max_memory_allocated, memory_reserved, max_memory_reserved]
