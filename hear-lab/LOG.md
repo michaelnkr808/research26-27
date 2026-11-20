@@ -435,3 +435,21 @@ Planning lead's suggestions to the lead, not decisions (`speculative`): the PI's
 **Next:** the lead chooses the simulator route and the research question (with the PI where needed); the planning lead then writes the question and the decision records by pull request. Before either simulator route is chosen it should be sized.
 
 **Open questions:** simulator route; the research question after the long-form suggestion and what the PI means by "long-form"; the lead's OK on PRs #68 and #71.
+
+## 2026-11-19 [agent, literature] (PRs #68 and #71 merged; NaVLA2 encoder check; reading list corrected)
+**Goal:** answer the planning lead's literature requests of 2026-11-18 and 2026-11-19 (novelty of the candidate questions, the WNM-3D simulator gap, the adversarial second check, the PI follow-ups) and land them by pull request.
+
+**Did:**
+- PR #68 (`literature/survey/2026-11-18-novelty-and-simulator-gap.md`): parts 1 and 2 by two workers (2026-11-18), parts 3 and 4 by two more (2026-11-19), each round with a separate fact-check reviewer comment on the PR (own searches, raw sources); review fixes applied as new commits. Merged on the lead's OK ("merge", 2026-11-19).
+- PR #71 (`literature/survey/2026-11-19-pi-followups-simulator-audio-papers-gaps.md`): parts A, B and C by three workers, one fact-check reviewer comment (one error and six imprecisions, all applied). Merged on the same OK.
+- For the presentations session: read NaVLA2's AAAI-26 PDF (main text, `pdftotext`) for whether the same encoder ever gets one-channel and two-channel input. It does not: the only audio ablation (Table 2) switches a CLAP branch on the mono downmix and a SpatialAST branch on the binaural signal; no seeds or run count stated (`verified`, main text; the appendix is not in that PDF, so not checked).
+- Reading list: the lead corrected the 2026-11-15 list (SAIL was not read) and has read WNM-3D (direct merge 5acb920).
+- One script was refused by the permission classifier: a worker brief that told it to retry a refused (HTTP 403) PDF download with a browser-like request. The instruction was dropped; the paper then downloaded normally (HTTP 200).
+
+**PR:** #68, #71.
+
+**Found:** recorded in the planning lead's 2026-11-19 entries above and in the two survey files; not repeated here.
+
+**Not verified:** OpenReview submissions behind HTTP 403 (SoundAct, Hear-to-Act, HearVGo and others) rest on abstracts or project pages; NaVLA2's appendix; whether InteriorGS's collision meshes include walls and floors.
+
+**Next:** none for the literature session until the lead picks the simulator route and the research question.
