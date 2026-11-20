@@ -95,10 +95,11 @@ case $KIND in
   train)
     [ "$CONFIG.$SEED" != none.0 ] || die "none seed 0 is stage 1's run (/mnt/proxy/runs/baseline-none-s0); it is not retrained"
     # per config: time cap (h), host memory, checkpoint interval per card; arithmetic in job-train.template.yaml's header
+    # (host memory of the encoder configs: measured 2026-11-20, header HOST MEMORY; the first render's 32Gi / 38Gi and 36Gi / 43Gi were too low)
     case $CONFIG in
       none)                           CAP_H=62; MEMR=32Gi; MEML=38Gi; CK_S=700; CK_L=500 ;;
-      dinov3|siglip2|c-radiov4)       CAP_H=63; MEMR=32Gi; MEML=38Gi; CK_S=700; CK_L=500 ;;
-      dinov3+siglip2|dinov3+c-radiov4) CAP_H=65; MEMR=36Gi; MEML=43Gi; CK_S=600; CK_L=500 ;;
+      dinov3|siglip2|c-radiov4)       CAP_H=63; MEMR=40Gi; MEML=48Gi; CK_S=700; CK_L=500 ;;
+      dinov3+siglip2|dinov3+c-radiov4) CAP_H=65; MEMR=64Gi; MEML=76Gi; CK_S=600; CK_L=500 ;;
     esac
     CAP=$(( CAP_H * 3600 )); POD=$(ceil $(( CAP + 4680 )) 3600); JOBD=$(( (CAP_H + 34) * 3600 ))
     add __MICRO_BATCH__ "$MB"; add __CKPT_L40S__ "$CK_S"; add __CKPT_L40__ "$CK_L"; add __TRAIN_TIMEOUT_S__ "$CAP"
