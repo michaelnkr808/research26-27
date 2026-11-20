@@ -1,0 +1,6 @@
+# Python packages for check 1 (versions match the Mac interpreter the local unit test ran on, 2026-11-20).
+numpy==1.26.4
+pandas==2.3.3
+pyarrow==23.0.1
+pillow==12.0.0
+pyyaml==6.0.3
