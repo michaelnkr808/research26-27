@@ -453,3 +453,23 @@ Planning lead's suggestions to the lead, not decisions (`speculative`): the PI's
 **Not verified:** OpenReview submissions behind HTTP 403 (SoundAct, Hear-to-Act, HearVGo and others) rest on abstracts or project pages; NaVLA2's appendix; whether InteriorGS's collision meshes include walls and floors.
 
 **Next:** none for the literature session until the lead picks the simulator route and the research question.
+
+## 2026-11-19 [agent, lead, planning] (sizing started: the lead's go; decision records 001 and 002 open as PR #72)
+**Goal:** act on the lead's answers to the three open decisions.
+
+**Did:**
+- The planning lead had asked three things: whether to plan a sizing of the two simulator routes; what the research question becomes after the PI's long-form hint (suggestion: fold it into question 1, and ask the PI what "long-form" means); and the lead's OK on PRs #68 and #71. The lead, 2026-11-19: "1. Yeah plan that that sounds good 2. Yeah I agree, we can focus on long form tasks later 3. okay i answered". PRs #68 and #71 were merged by the literature session on the lead's word.
+- Presented a plan. It stated the planning lead's reading of answer 2 ("Question 1 is the research question: does direction matter, with the three audio versions and the out-of-sight split. The long-form and memory angle comes later as an extension, and so does the encoder comparison. Correct me if that's off, because task 3 writes it down.") and four tasks: size route A (keep WNM-3D's rooms, add sound), size route B (move WNM-3D to Habitat with SoundSpaces 2.0), decision records for what is settled (the research question, WNM-3D as the base, navigation as the setting, with README and STANDARDS updates), and a comparison with a recommendation. The lead: "go".
+- Downloaded read-only copies of eight public repositories at pinned commits to the session scratch directory for the workers (GN0 c927781, GN-Bench-Tools 0ce8367, WNM-3D 7fe2d5f, GN0-VLN-CE ac4ebed, rlr-audio-propagation 4fd446b, habitat-gs 8387881, NaVLA 436ad6b, sound-spaces 287184f). Nothing in them is run.
+- Started two workers (Opus), one per route, each owning one memo in `writing/`.
+- Wrote `decisions/001-research-question.md` and `decisions/002-base-model-and-setting.md` with matching `README.md` and `STANDARDS.md` updates, and opened PR #72. A reviewer is checking it.
+
+**PR:** #72 (open). This entry and the `PLAN.md` Now items: direct.
+
+**Found:** nothing measured or read for a result. A third way to get sound into WNM-3D's rooms came up in the literature file and is covered inside route A: Habitat-GS, a habitat-sim fork that renders Gaussian splats, lists InteriorGS scenes and keeps an audio build flag (`literature/survey/2026-11-19-pi-followups-simulator-audio-papers-gaps.md`, part A).
+
+**Not verified:** anything about effort or cost for either route (that is what the memos estimate, and their figures will be estimates).
+
+**Next:** the workers' reports; the comparison; one pull request for the three sizing files. The lead's merge OK on PR #72. Then the route choice (the lead and the PI), decision 003, and the experiment PLAN.
+
+**Open questions:** the simulator route; what the PI means by "long-form"; the number of seeds against the 200 dollar budget (the general rule is at least 3 per reported comparison; three versions at three seeds each have not been costed).
