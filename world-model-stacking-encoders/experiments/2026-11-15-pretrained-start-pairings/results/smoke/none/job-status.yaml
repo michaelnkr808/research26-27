@@ -1,0 +1,287 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    nrp.ai/username: http://cilogon.org/serverE/users/436081
+  creationTimestamp: "2026-11-19T18:52:22Z"
+  generation: 1
+  labels:
+    config: none
+    experiment: stacking-pairings
+    kind: smoke
+    seed: "0"
+  name: stacking-encoders-pairings-smoke-none-s0
+  namespace: aria-world
+  resourceVersion: "15588824818"
+  uid: e3c2d6da-3cb1-4de5-8e91-883055da19ce
+spec:
+  activeDeadlineSeconds: 79200
+  backoffLimit: 2
+  completionMode: NonIndexed
+  completions: 1
+  manualSelector: false
+  parallelism: 1
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes:
+        containerName: main
+        operator: In
+        values:
+        - 2
+        - 10
+        - 13
+        - 15
+        - 19
+        - 21
+    - action: Ignore
+      onPodConditions:
+      - status: "True"
+        type: DisruptionTarget
+  podReplacementPolicy: Failed
+  selector:
+    matchLabels:
+      batch.kubernetes.io/controller-uid: e3c2d6da-3cb1-4de5-8e91-883055da19ce
+  suspend: false
+  template:
+    metadata:
+      labels:
+        batch.kubernetes.io/controller-uid: e3c2d6da-3cb1-4de5-8e91-883055da19ce
+        batch.kubernetes.io/job-name: stacking-encoders-pairings-smoke-none-s0
+        config: none
+        controller-uid: e3c2d6da-3cb1-4de5-8e91-883055da19ce
+        experiment: stacking-pairings
+        job-name: stacking-encoders-pairings-smoke-none-s0
+        kind: smoke
+        seed: "0"
+    spec:
+      activeDeadlineSeconds: 13200
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-L4
+              - key: nvidia.com/cuda.driver.major
+                operator: Gt
+                values:
+                - "569"
+              - key: topology.kubernetes.io/region
+                operator: In
+                values:
+                - us-west
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                - k8s-chase-ci-07.calit2.optiputer.net
+                - ry-gpu-08.sdsc.optiputer.net
+      containers:
+      - args:
+        - |
+          set -euo pipefail
+          SMI=""; DECLARED=0
+          fail() { DECLARED=1; exit $1; }
+          R=/mnt/proxy; TAG=pairings-smoke-$CFGK-s$SEED-try$SMOKE_TRY; D=$(date +%Y%m%d-%H%M%S)
+          RUN=$RUN_DIR
+          ROLL=$R/rollouts/pairings-smoke/$CFGK-s$SEED
+          OUT_CLEAN=$ROLL/smoke-clean-try$SMOKE_TRY.jsonl; OUT_LP=$ROLL/smoke-lp-timing-try$SMOKE_TRY.jsonl
+          OUTS=""; [ "$CLEAN_SMOKE" = 1 ] && OUTS="$OUTS $OUT_CLEAN $OUT_CLEAN.errors.jsonl"; [ "$LP_TIMING" = 1 ] && OUTS="$OUTS $OUT_LP $OUT_LP.errors.jsonl"
+          LOG=$R/logs/$TAG-$D.log; GPUCSV=$R/logs/$TAG-gpu-$D.csv
+          mkdir -p $R/logs $ROLL
+          exec > >(tee -a $LOG) 2>&1
+          TEE=$!
+          : > $GPUCSV
+          phase() { echo "=== PHASE $1 $(date -u +%H:%M:%S)"; echo "#phase $1" >> $GPUCSV; }
+          finish() {
+            rc=$?; set +e
+            case $rc in 2|10|13|15|19|21) [ "$DECLARED" = 1 ] || { echo "[exit] code $rc came from a tool, not a decision of this script; reporting 1"; rc=1; } ;; esac
+            [ -n "$SMI" ] && { kill $SMI 2>/dev/null; wait $SMI 2>/dev/null; }
+            echo "#phase end" >> $GPUCSV
+            awk -F', ' 'BEGIN{p="start"} /^#phase/{p=$0; sub(/^#phase /,"",p); next} {v=$2; sub(/ %/,"",v); s[p]+=v; n[p]++; S+=v; N++} END{for(k in n) printf "[gpu-summary] %s: %d samples, mean %.1f%%\n", k, n[k], s[k]/n[k]; if(N) printf "[gpu-summary] all: %d samples, mean %.1f%%\n", N, S/N}' $GPUCSV
+            echo "[cgroup] memory.peak $(cat /sys/fs/cgroup/memory.peak 2>/dev/null || echo n/a) bytes, memory.current $(cat /sys/fs/cgroup/memory.current 2>/dev/null || echo n/a) bytes"
+            echo "[cgroup] $(grep -E '^anon ' /sys/fs/cgroup/memory.stat 2>/dev/null || echo 'anon n/a') (bytes, at exit); $(grep -E '^file ' /sys/fs/cgroup/memory.stat 2>/dev/null || echo 'file n/a') (page cache)"
+            for f in $OUTS; do
+              if [ -f $f ]; then
+                echo "=== FILE $(basename $f) sha256 $(sha256sum < $f | cut -d' ' -f1) bytes $(stat -c %s $f) lines $(wc -l < $f)"
+                cat $f   # timing-only records: job key, wall time, fixed steps, errors; no outcome (rollout.py --timing-only)
+                echo "=== END $(basename $f)"
+              fi
+            done
+            for f in $OUTS; do case $f in *.errors.jsonl) [ -f $f ] && echo "[errors] $(basename $f) EXISTS: read it";; esac; done
+            date -u; echo "=== exit $rc"
+            exec 1>&- 2>&-; wait $TEE 2>/dev/null
+            exit $rc
+          }
+          trap finish EXIT
+          echo "=== STAGE 2 TIMING-ONLY SMOKE on L4: config $CONFIG seed $SEED; clean pass (40 clean tasks x trial 0) $CLEAN_SMOKE, LIBERO-Plus timing shard (one episode per suite x category cell, 28) $LP_TIMING; checkpoint $RUN/model.pt -> $ROLL"; date -u
+          echo "SRC_GIT_COMMIT=$SRC_GIT_COMMIT SMOKE_TRY=$SMOKE_TRY ENVS=$ENVS CUDA_GRAPH=$CUDA_GRAPH PASS_CAP_S=$PASS_CAP_S"
+          [[ "$CLEAN_SMOKE$LP_TIMING" =~ ^[01][01]$ && "$CLEAN_SMOKE$LP_TIMING" != 00 ]] || { echo "ABORT: CLEAN_SMOKE '$CLEAN_SMOKE' / LP_TIMING '$LP_TIMING' must be 0 or 1, not both 0"; fail 10; }
+          [[ "$SRC_GIT_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "ABORT: SRC_GIT_COMMIT is not a 40-hex commit (not filled at submit?)"; fail 10; }
+          [[ "$EXPECT_MODEL_SHA" =~ ^[0-9a-f]{64}$ ]] || { echo "ABORT: EXPECT_MODEL_SHA is not a sha256 (not rendered from the training log's === MODEL line?)"; fail 13; }
+          [[ "$SEED" =~ ^[0-9]+$ && -n "$CONFIG" && "$CFGK" = "$(echo "$CONFIG" | tr '+' '-')" ]] || { echo "ABORT: CONFIG '$CONFIG' / CFGK '$CFGK' / SEED '$SEED' not rendered consistently"; fail 10; }
+          echo "/src = ConfigMap stacking-encoders-pairings-eval-src; checking its 11 keys against the hashes rendered into this manifest (RUN-stage2-eval.md step 4):"
+          ( cd /src && sha256sum -c - <<'EOF'
+          a097769427138a53828055e888be936545a9feef67e4e488b2fbb4ffceaf7227  rollout.py
+          6f7ed893bc826ad8d0465ea5f34992d1fb548a5114a00d0f233055795512db6d  lp_eval.py
+          961945ecaf0be1aa94316a0afa3b7e2d250d33afff00d76dddebfbc6b93b6cfc  proxy_wam.py
+          61181a74af8825eff0e0b8cb3a220f8483d9f1982642cd90b753cb9e5a87d708  t5_cache.py
+          7af1f7aa2d595d9e0b7f1fb462f7901c6fa9594d2da7895b0168f0ef3ea2d70d  diagnostics.py
+          1d7ea029550150e1ed987a9d0bf000bf26e22de022bc2bf6050ff1a68fc86b60  extract_fastwam.py
+          f334c5604f319f779af6b70d06c0505f2c5df482c4531cb8b779b6894384683a  extract_features.py
+          81993810937d2692597d1d161e438f7688dc7809d0017628d9603ef1d196e363  fastwam_data.py
+          880c47cbe741b7fbcd98f44f85e7a1d14747d6c837e0493f4642e5ebbc18ace8  setup_env.sh
+          bf9651099926914da0e4b32b04d317260a38be8d4b87dcba9813637d1ed91ae3  setup_sim.sh
+          f3017146fd7e89b79709f5639c003d0688ccafce8257705c566290ccb99b4ef9  env_bundle.sh
+          EOF
+          ) || { echo "ABORT: a /src key differs from the hash rendered at submit (the ConfigMap changed after the render, or the render did not run)"; fail 19; }
+          echo "env bundle key: $(cat /src/setup_env.sh /src/setup_sim.sh /src/env_bundle.sh | sha256sum | cut -c1-12) (the prebuilt bundle is 9182f8131559)"
+          [ -f $RUN/model.pt ] || { echo "ABORT: $RUN/model.pt is missing (did the training Job succeed? is RUN_DIR right?)"; fail 15; }
+          ls -la $RUN/model.pt
+          for f in $OUT_CLEAN $OUT_LP; do if [ -e $f ]; then echo "MODE: resume $(basename $f) ($(wc -l < $f) lines already)"; fi; done
+          nvidia-smi || { echo "ABORT: nvidia-smi failed (a faulty GPU node; retryable)"; exit 1; }
+          nproc; df -h $R /work
+          phase model-sha
+          MSHA=$(timeout --kill-after=60 900 sha256sum $RUN/model.pt) || { echo "ABORT: model.pt sha256 failed or timed out (900 s)"; exit 16; }
+          echo "=== MODEL $MSHA"
+          [ "${MSHA%% *}" = "$EXPECT_MODEL_SHA" ] || { echo "ABORT: model.pt sha256 ${MSHA%% *} differs from the pinned $EXPECT_MODEL_SHA (the training log's === MODEL line)"; fail 13; }
+          echo "model.pt sha256 equals the pinned value"
+          nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv,noheader -l 30 > >(tee -a $GPUCSV | sed -u 's/^/[gpu] /') &
+          SMI=$!
+          phase restore
+          . /src/env_bundle.sh restore    # as the smoke and the proxy's rollout Jobs; sourced, so it cannot be wrapped in `timeout`; a failure exits via set -e
+          GRAPH=""; [ "$CUDA_GRAPH" = 1 ] && GRAPH="--cuda-graph"
+          BASE="--run-dir $RUN --t5 $R/feats/t5 --vae-path $R/models/Wan2.2_VAE.safetensors --tasks $R/lp_tasks.json --timing-only $GRAPH --monitor-s 600 --shard 0/1"
+          pass() {   # $1 name, $2 records file, rest: the pass's own flags; timing-only, so no outcome is computed or logged
+            local name=$1 out=$2 rc=0 T1; shift 2
+            phase rollout-$name-envs$ENVS
+            echo "FLAGS: python /src/rollout.py run $BASE $* --envs $ENVS --out $out"
+            T1=$SECONDS
+            timeout --kill-after=60 $PASS_CAP_S python /src/rollout.py run $BASE "$@" --envs $ENVS --out $out 2>&1 | sed "/using task orders/d" || rc=$?
+            echo "[pass] $name: rc $rc, $(( SECONDS - T1 )) s wall, $(wc -l < $out 2>/dev/null || echo 0) records"
+            case $rc in
+              0) ;;
+              2) echo "ABORT: rollout.py exited 2 (argparse: a bad flag, deterministic)"; fail 2 ;;
+              124) echo "ABORT: the $name pass hit its $PASS_CAP_S s cap (records so far are in the file; a retry resumes)"; exit 16 ;;
+              137) if [ $(( SECONDS - T1 )) -ge $PASS_CAP_S ]; then echo "ABORT: the $name pass hit its $PASS_CAP_S s cap (killed after the grace)"; exit 16; fi; exit 137 ;;
+              *) exit $rc ;;
+            esac
+          }
+          if [ "$CLEAN_SMOKE" = 1 ]; then pass clean $OUT_CLEAN --clean 1; fi
+          if [ "$LP_TIMING" = 1 ]; then
+            CLS=$SIM_DIR/LIBERO-plus/libero/libero/benchmark/task_classification.json
+            echo "faa87cce3e3ba434da01df7c77523a391b5f2912e4774330b0aa1be5f6a999e6  $CLS" | sha256sum -c - || { echo "ABORT: task_classification.json differs from the one data/README.md records"; fail 21; }
+            pass lp-timing $OUT_LP --lp-timing-shard $CLS --clean-seed 41
+          fi
+          echo "=== done"
+        command:
+        - bash
+        - -c
+        env:
+        - name: SRC_GIT_COMMIT
+          value: 2a9c058312efc14a3d65d9563007627c1243a82b
+        - name: EXPECT_MODEL_SHA
+          value: b25e63e61d6297d523eb75f9e334f179e5faac58c06aaa81da92d4ca3fcdc732
+        - name: CONFIG
+          value: none
+        - name: CFGK
+          value: none
+        - name: SEED
+          value: "0"
+        - name: RUN_DIR
+          value: /mnt/proxy/runs/baseline-none-s0
+        - name: SMOKE_TRY
+          value: "1"
+        - name: CLEAN_SMOKE
+          value: "0"
+        - name: LP_TIMING
+          value: "1"
+        - name: ENVS
+          value: "4"
+        - name: CUDA_GRAPH
+          value: "1"
+        - name: PASS_CAP_S
+          value: "5400"
+        - name: HF_HOME
+          value: /work/hf
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: PYTHONPATH
+          value: /src
+        - name: SIM_DIR
+          value: /work/sim
+        - name: MUJOCO_GL
+          value: egl
+        - name: PYOPENGL_PLATFORM
+          value: egl
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: compute,utility,graphics
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        imagePullPolicy: IfNotPresent
+        name: main
+        resources:
+          limits:
+            cpu: 4800m
+            ephemeral-storage: 58Gi
+            memory: 33Gi
+            nvidia.com/gpu: "1"
+          requests:
+            cpu: "4"
+            ephemeral-storage: 50Gi
+            memory: 28Gi
+            nvidia.com/gpu: "1"
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /work
+          name: work
+        - mountPath: /src
+          name: src
+          readOnly: true
+        - mountPath: /mnt/proxy
+          name: proxy
+        - mountPath: /dev/shm
+          name: dshm
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir:
+          sizeLimit: 58Gi
+        name: work
+      - configMap:
+          defaultMode: 420
+          name: stacking-encoders-pairings-eval-src
+        name: src
+      - name: proxy
+        persistentVolumeClaim:
+          claimName: stacking-encoders-proxy
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 4Gi
+        name: dshm
+  ttlSecondsAfterFinished: 86400
+status:
+  completionTime: "2026-11-20T09:55:54Z"
+  conditions:
+  - lastProbeTime: "2026-11-20T09:55:54Z"
+    lastTransitionTime: "2026-11-20T09:55:54Z"
+    message: Reached expected number of succeeded pods
+    reason: CompletionsReached
+    status: "True"
+    type: SuccessCriteriaMet
+  - lastProbeTime: "2026-11-20T09:55:55Z"
+    lastTransitionTime: "2026-11-20T09:55:55Z"
+    message: Reached expected number of succeeded pods
+    reason: CompletionsReached
+    status: "True"
+    type: Complete
+  ready: 0
+  startTime: "2026-11-19T18:52:22Z"
+  succeeded: 1
+  terminating: 0
+  uncountedTerminatedPods: {}
