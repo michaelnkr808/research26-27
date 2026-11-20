@@ -473,3 +473,33 @@ Planning lead's suggestions to the lead, not decisions (`speculative`): the PI's
 **Next:** the workers' reports; the comparison; one pull request for the three sizing files. The lead's merge OK on PR #72. Then the route choice (the lead and the PI), decision 003, and the experiment PLAN.
 
 **Open questions:** the simulator route; what the PI means by "long-form"; the number of seeds against the 200 dollar budget (the general rule is at least 3 per reported comparison; three versions at three seeds each have not been costed).
+
+## 2026-11-19 [agent, lead, planning] (sizing memos for the two simulator routes: PR #73 open and reviewed; PR #72 reviewed)
+**Goal:** size the two ways to get audio-visual data and a closed-loop test for WNM-3D, and compare them.
+
+**Did:**
+- Two workers (Opus) each wrote one memo from the pinned code copies, nothing run: `writing/2026-11-19-sizing-route-a-audio-in-wnm3d-simulator.md` and `writing/2026-11-19-sizing-route-b-habitat-soundspaces.md`. The planning lead reran both done checks, wrote `writing/2026-11-19-sizing-comparison-simulator-routes.md`, and opened PR #73 with all three.
+- A read-only reviewer (Opus) checked more than 12 code claims per memo against the pinned copies and posted 18 findings on PR #73 (4 must fix, 14 should fix). Each worker fixed its memo in a new commit after checking the findings in the code; the planning lead fixed the comparison. The resolution is a comment on the pull request.
+- PR #72 (decisions 001 and 002): a read-only reviewer checked every quote against this LOG and every model fact against the survey files; one quote was out of order ("WNM-3D seems fine but can u reexplain the simulator gap" was said before the gap was explained again, not after) and several wordings were too strong (for example "the PI's preference" for a conditional sentence). Fixed in a second commit; resolution posted on the pull request.
+- Chat with the lead on 2026-11-19 that the decision records cite and that was not logged before: the lead asked whether building on a Wan 2.2 world action model and adding an audio encoder was the wrong approach; the planning lead answered that adding inputs to a pretrained video model is how these models are built, named Cosmos 3 as the alternative with native two-channel audio, and recommended staying with the Wan 2.2 route. The lead also asked whether a simulator has to be built (answer: no, the simulators exist; what has to be built is the connection or the audio), and whether WNM-3D has its own simulator (answer: yes, GN-Bench, without audio).
+
+**PR:** #73 (open), #72 (open, open). This entry and the `PLAN.md` Now item: direct.
+
+**Found** (from the three files in PR #73; code claims `verified` there by the workers and sampled by the reviewer at the pinned commits; every effort figure is an estimate, `speculative`; nothing was run):
+- Effort for the data and testing pieces, one person with coding agents: route A about 17 to 30 working days, at most about 24 to 42 with all add-ons; route B about 13 to 35, up to about 42 with a DAgger round in Habitat. The ranges overlap. Neither includes the audio encoder or any compute.
+- Same in both routes: the audio encoder attaches in the same two places in WNM-3D's model code; RLR is the sound engine either way; WNM-3D's training frames are spaced by distance, not time, so seconds of audio per frame is a convention; the size of the not-visible group is unknown until computed; the trainer has a setting for one fixed instruction, so removing the target's name from the instruction is a configuration change; all three versions must share one pose source because the trainer derives action labels from poses.
+- Training cost is the largest open item: the documented recipe is full fine-tuning on 8 GPUs with a per-device batch of 12; three versions at 3 seeds is 9 runs; the budget is 200 dollars; no training step has been timed.
+- VGGT-Omega: the training launcher exits unless the checkpoint file exists (`scripts/train/wnm_3d_base.sh` lines 143 to 147), and the model is gated with manual approval, but when training starts from a released checkpoint the model code takes those weights from the checkpoint and does not open the standalone file. Ways to start without the file were read from the code and not tested. Requesting access stays the clean option; the choice is the lead's.
+- Route A specifics: GN-Bench instructions name the target and often its room; the released checkpoint already trained on the train_seen episodes; geometry would come from floor plans and object boxes with assumed materials.
+- Route B specifics: Matterport3D or HM3D access takes a request and calendar time; the released weights have never seen Habitat scenes; on HM3D the continuous SoundSpaces simulator cannot be used as is, because it needs per-scene metadata SoundSpaces ships only for its own scene sets.
+- Sound through walls is on by default in the bare RLR library and in SoundSpaces' continuous simulator, and off in the Habitat-GS wrapper's documented defaults.
+
+Correction to what the planning lead told the lead in chat: "training won't start without VGGT-Omega, so access has to be requested" was too strong; see the VGGT-Omega point above. Corrected in chat.
+
+Planning lead's recommendation, not a decision (`speculative`): start with route A and commit to it only after real checks come back (the PI's answer on whether RLR outside Habitat counts as not using SoundSpaces 2.0; the InteriorGS and VGGT-Omega access steps; whether the engine runs on a rented Linux machine and the floor plans line up with the simulator's map; one timed training step; the visible and not-visible counts). Route B as the fallback.
+
+**Not verified:** every effort figure; whether RLR runs on a current Linux image; what a training step costs; the InteriorGS terms on derived data; the launcher workarounds.
+
+**Next:** the lead's merge OK on PR #72 and PR #73. Then the route choice with the PI (decision 003), and, if the lead wants them, the checks above planned for the experiment session, each with the lead's OK there.
+
+**Open questions:** route A or B; seeds against the budget; request VGGT-Omega access or use a workaround; what the PI means by "long-form".
