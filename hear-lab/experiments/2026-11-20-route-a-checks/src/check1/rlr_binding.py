@@ -130,6 +130,7 @@ def load_library(path: Path) -> ctypes.CDLL:
         "RLRA_ClearListeners": (E, [RLRA_Context]),
         "RLRA_GetListenerCount": (c_size_t, [RLRA_Context]),
         "RLRA_SetListenerPosition": (E, [RLRA_Context, c_size_t, POINTER(c_float)]),
+        "RLRA_SetListenerHRTF": (E, [RLRA_Context, c_size_t, c_char_p]),  # header line 342
         "RLRA_SetListenerOrientationQuaternion": (E, [RLRA_Context, c_size_t, POINTER(c_float)]),
         "RLRA_AddObject": (E, [RLRA_Context]),
         "RLRA_GetObjectCount": (c_size_t, [RLRA_Context]),
@@ -263,6 +264,15 @@ class RLRContext:
         _check(self.lib.RLRA_SetListenerOrientationQuaternion(self.ctx, idx, q),
                "RLRA_SetListenerOrientationQuaternion")
         return idx
+
+    def set_listener_hrtf(self, listener: int, path) -> None:
+        """RLRA_SetListenerHRTF (header line 342): call after add_listener; a ".sofa" path selects an AES SOFA
+        file. Not called anywhere unless a caller asks (None or "" would switch back to the default HRTF and is
+        refused here so a default-HRTF run never touches this function)."""
+        if path is None or str(path) == "":
+            raise ValueError("set_listener_hrtf needs a path; do not call it for the default HRTF")
+        self.log(f"[rlr] RLRA_SetListenerHRTF(listener {listener}, {str(path)!r})")
+        _check(self.lib.RLRA_SetListenerHRTF(self.ctx, listener, str(path).encode()), "RLRA_SetListenerHRTF")
 
     def clear_listeners(self):
         _check(self.lib.RLRA_ClearListeners(self.ctx), "RLRA_ClearListeners")
