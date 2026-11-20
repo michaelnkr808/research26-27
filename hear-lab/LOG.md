@@ -524,3 +524,21 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **Next:** the lead accepts the InteriorGS terms. With the lead's go, the planning lead hands the three checks to the experiment session as direction; each rental needs the lead's OK in that session. The PI questions go to the next Thursday meeting.
 
 **Open questions:** whether the engine runs and the floor plans line up; what a training step costs; seeds against the budget; the PI's answers.
+
+## 2026-11-19 [agent, lead, planning] (the three route A checks handed to the experiment session)
+**Goal:** hand the checks that decide the simulator route to the experiment session.
+
+**Did:**
+- The planning lead asked "hand the checks to the experiment session?" with a recommendation of yes, stating that the experiment session would ask the lead in its own window before renting anything. The lead, 2026-11-19: "yes".
+- Sent the hand-off to the experiment session (`hear-lab-experiment`), split into decided, the three checks, access, not decided, and not approved. The checks: (1) whether RLR-Audio-Propagation runs on a Linux machine and returns a one-channel and a two-ear impulse response for one real InteriorGS scene, and whether the floor plans line up with the simulator's occupancy map; (2) one timed real training step from the released WNM-3D checkpoint on the GPU type that would be rented; (3) counts of visible and not-visible starts on the real GN-Matrix episodes. Suggested order 1, 3, 2, with a stop and report if check 1 fails.
+- Rechecked InteriorGS access with the lead's saved login (HEAD request only): HTTP 403 (`verified`, 2026-11-19).
+
+**PR:** direct.
+
+**Found:** nothing measured beyond the access recheck.
+
+**Not approved:** any rental or spending; any training beyond the timed step; audio encoder work; route B work. Each rental needs the lead's OK in the experiment session.
+
+**Next:** the lead accepts the InteriorGS terms if not done; the experiment session writes the checks' experiment `PLAN.md` and asks the lead before each rental; its results come back by pull request. Then decision `003`.
+
+**Open questions:** as in the entry above.
