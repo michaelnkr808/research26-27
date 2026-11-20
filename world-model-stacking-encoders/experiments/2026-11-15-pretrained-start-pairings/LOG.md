@@ -336,3 +336,13 @@ Times are UTC; the work started on 2026-11-18 (previous entry) and ended after m
 - **Reading:** the manifests are not the cause (the pods fit every open node's limits except for a free card); the wait is the cluster's load. Stage 1's training pod waited 1.3 h on the same seven nodes on 2026-11-16 (ledger).
 - **Ceph at 23:11 UTC:** `OSD_FULL` 0, `POOL_FULL` 0, `OSD_NEARFULL` 1, `POOL_NEARFULL` 0.
 - **Next:** the watch goes on. The freshness check's Job deadline is 00:51 UTC on 2026-11-20; asked the user whether to resubmit the same rendered file if it expires unrun.
+
+## 2026-11-20 [agent, lead, implementation] (freshness check after the repair: first try expired unrun at its 6 h deadline, resubmitted on the user's word; the three training pods and the smoke pod still Pending after 6 h)
+
+- **First try (verified, `results/cache-fresh-check/job-status-after-repair-try1.yaml`):** Job `stacking-encoders-pairings-cache-fresh-check` uid `5ed7af1b-ed8b-4b7e-a610-4d7235df1ed6`, pod `...-2j6dx`, created 2026-11-19 18:51:07 UTC, never scheduled; the Job failed with `DeadlineExceeded` at 00:51:07 UTC (6 h, queue included). No container, no log. It says nothing about the cache. Job deleted (graceful) at 00:53 UTC.
+- **The user (this window, about 23:30 UTC on 2026-11-19), asked whether to resubmit the identical Job without asking again if it expires:** "yeah sure resubmit".
+- **Second try (verified):** the same rendered file `jobs/rendered/job-cache-fresh-check-after-repair.yaml` (unchanged since `2d206a5`), the same source commit `2a9c058`, the same ConfigMap `stacking-encoders-pairings-freshcheck-src` (all 6 keys read back equal to `2a9c058` by sha256 right before the create). Ceph right before the create: `OSD_FULL` 0, `POOL_FULL` 0, `OSD_NEARFULL` 1, `POOL_NEARFULL` 0. GPU count: 4 pods of ours Pending plus this one, cap 8. Server dry run OK. **Created 2026-11-20 00:53:16 UTC, uid `3dc7dfd9-11ce-4363-8242-73668cdaf8be`**, pod `...-rw7pl` Pending. Its deadline ends 06:53 UTC.
+- **The other Jobs at 00:52 UTC (verified):** the three training pods and the `none` smoke pod are Pending, 6 h after creation. Nothing has started; the design has not locked.
+- **Ledger:** row added for `...-2j6dx` (6.00 h, `never_started`).
+- **The hold on `feats/siglip2` stays** (value check passed 2026-11-19; freshness check not run).
+- **Next:** the watch goes on. Freshness check: on its end, log to `results/cache-fresh-check/`, RUN steps 8 and 9; if it expires again, the user's word covers one more identical resubmit of this check.
