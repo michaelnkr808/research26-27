@@ -1,0 +1,273 @@
+{
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": {
+        "annotations": {
+            "cni.projectcalico.org/containerID": "3f4ed6a11b1576b85ffcbbdb1049a75ce60ccb17f6a5cd9723b8df24842f8d02",
+            "cni.projectcalico.org/podIP": "",
+            "cni.projectcalico.org/podIPs": "",
+            "kubernetes.io/limit-ranger": "LimitRanger plugin set: ephemeral-storage request for container main; ephemeral-storage limit for container main",
+            "nrp.ai/username": "http://cilogon.org/serverE/users/436081"
+        },
+        "creationTimestamp": "2026-11-20T17:21:04Z",
+        "generateName": "stacking-encoders-pairings-smoke-read-aside-delete-",
+        "generation": 1,
+        "labels": {
+            "batch.kubernetes.io/controller-uid": "d6aa69b1-24cb-451b-b660-bfad01395317",
+            "batch.kubernetes.io/job-name": "stacking-encoders-pairings-smoke-read-aside-delete",
+            "controller-uid": "d6aa69b1-24cb-451b-b660-bfad01395317",
+            "job-name": "stacking-encoders-pairings-smoke-read-aside-delete"
+        },
+        "name": "stacking-encoders-pairings-smoke-read-aside-delete-8lcn7",
+        "namespace": "aria-world",
+        "ownerReferences": [
+            {
+                "apiVersion": "batch/v1",
+                "blockOwnerDeletion": true,
+                "controller": true,
+                "kind": "Job",
+                "name": "stacking-encoders-pairings-smoke-read-aside-delete",
+                "uid": "d6aa69b1-24cb-451b-b660-bfad01395317"
+            }
+        ],
+        "resourceVersion": "15592112912",
+        "uid": "78b04637-5c8c-499a-9ac2-cd50d0ada47e"
+    },
+    "spec": {
+        "affinity": {
+            "nodeAffinity": {
+                "requiredDuringSchedulingIgnoredDuringExecution": {
+                    "nodeSelectorTerms": [
+                        {
+                            "matchExpressions": [
+                                {
+                                    "key": "feature.node.kubernetes.io/pci-10de.present",
+                                    "operator": "NotIn",
+                                    "values": [
+                                        "true"
+                                    ]
+                                },
+                                {
+                                    "key": "topology.kubernetes.io/region",
+                                    "operator": "In",
+                                    "values": [
+                                        "us-west"
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "containers": [
+            {
+                "args": [
+                    "set -uo pipefail\necho \"=== start $(date -u) node=${NODE_NAME:-?}\"\nA=/mnt/aside\nCACHE=/mnt/proxy/feats/siglip2/libero_spatial\nEXP=\"ep000272.npy ep000272.stats.npy ep000274.npy ep000274.stats.npy ep000276.npy ep000276.stats.npy ep000278.npy ep000278.stats.npy ep000280.npy ep000280.stats.npy ep000282.npy ep000282.stats.npy ep000284.npy ep000284.stats.npy ep000286.npy ep000286.stats.npy\"\n# --- mounts: /mnt/proxy read-only, /mnt/aside a separate read-write mount\ngrep -E ' (/mnt/proxy|/mnt/aside) ' /proc/mounts\nPO=$(awk '$2==\"/mnt/proxy\"{o=$4} END{print o}' /proc/mounts)\nAO=$(awk '$2==\"/mnt/aside\"{o=$4} END{print o}' /proc/mounts)\ncase \",$PO,\" in *,ro,*) ;; *) echo \"ABORT (20): /mnt/proxy is not mounted read-only (options: '$PO')\"; exit 20 ;; esac\ncase \",$AO,\" in *,rw,*) ;; *) echo \"ABORT (20): /mnt/aside is not a read-write mount (options: '$AO')\"; exit 20 ;; esac\n[ -d \"$CACHE\" ] || { echo \"ABORT (20): $CACHE is missing\"; exit 20; }\nRO=/mnt/proxy/logs/siglip2-repair-e5377cd5-8d1c-47a8-84c5-d2ce617540df/libero_spatial\n[ -d \"$RO\" ] \u0026\u0026 [ \"$(stat -c %i \"$A\")\" = \"$(stat -c %i \"$RO\")\" ] || { echo \"ABORT (20): $A is not the folder $RO (inodes $(stat -c %i \"$A\" 2\u003e\u00261) / $(stat -c %i \"$RO\" 2\u003e\u00261))\"; exit 20; }\n\n# --- READ\necho \"=== READ $(date -u)\"\nshow() {\n  local f=$1 b; b=$(stat -c %s \"$f\")\n  if [ \"$b\" -gt 8388608 ]; then echo \"@@@ SKIPPED $f bytes $b (over 8 MB)\"; return; fi\n  echo \"@@@ BEGIN $f sha256 $(sha256sum \u003c \"$f\" | cut -d' ' -f1) bytes $b lines $(wc -l \u003c \"$f\")\"\n  cat \"$f\"; echo\n  echo \"@@@ END $f\"\n}\nREAD_RC=30\nls -la --time-style=full-iso /mnt/proxy/logs/ | grep -F pairings-smoke || echo \"no pairings-smoke file in /mnt/proxy/logs\"\nls -laR --time-style=full-iso /mnt/proxy/rollouts/pairings-smoke/none-s0/ || echo \"no rollouts folder for the none smoke\"\nfor f in /mnt/proxy/logs/pairings-smoke-none-s0-*; do\n  [ -f \"$f\" ] || continue\n  case \"$f\" in *.log) READ_RC=0 ;; esac\n  show \"$f\"\ndone\nwhile IFS= read -r f; do show \"$f\"; done \u003c \u003c(find /mnt/proxy/rollouts/pairings-smoke/none-s0 -type f 2\u003e/dev/null | sort)\n[ \"$READ_RC\" = 0 ] || echo \"READ PROBLEM (30): no /mnt/proxy/logs/pairings-smoke-none-s0-*.log\"\n\n# --- DELETE\necho \"=== DELETE $(date -u): $A = logs/siglip2-repair-e5377cd5-8d1c-47a8-84c5-d2ce617540df/libero_spatial\"\ndf -h /mnt/proxy | tail -1\nls -la --time-style=full-iso \"$A\"\nLIST=$(find \"$A\" -xdev -mindepth 1 -printf '%y %P\\n' | sort -k2)\nn=0; bad=0\nwhile read -r t p; do\n  [ -n \"$t\" ] || continue\n  n=$((n+1))\n  case \" $EXP \" in\n    *\" $p \"*) [ \"$t\" = f ] || { echo \"UNEXPECTED type $t: $p\"; bad=1; } ;;\n    *) echo \"UNEXPECTED entry: $t $p\"; bad=1 ;;\n  esac\ndone \u003c\u003c\u003c \"$LIST\"\necho \"entries in the aside folder: $n (16 on a first run)\"\nfor p in $EXP; do\n  [ -s \"$CACHE/$p\" ] || { echo \"MISSING or empty replacement in the cache: $CACHE/$p\"; bad=1; }\ndone\nif [ \"$bad\" != 0 ]; then echo \"ABORT (23): nothing deleted\"; exit 23; fi\nfor p in $EXP; do\n  [ -f \"$A/$p\" ] || continue\n  echo \"to delete: $p bytes $(stat -c %s \"$A/$p\") sha256 $(sha256sum \u003c \"$A/$p\" | cut -d' ' -f1); replacement bytes $(stat -c %s \"$CACHE/$p\")\"\ndone\nfor p in $EXP; do find \"$A\" -xdev -mindepth 1 -maxdepth 1 -type f -name \"$p\" -delete; done\nleft=$(find \"$A\" -mindepth 1 | wc -l) || { echo \"ABORT (24): could not list $A after the delete\"; exit 24; }\necho \"--- after $(date -u)\"; ls -la --time-style=full-iso \"$A\"; df -h /mnt/proxy | tail -1\n[ \"$left\" = 0 ] || { echo \"ABORT (24): $left entries left in $A\"; exit 24; }\necho \"=== deleted: $n file(s); $A is empty\"\necho \"=== exit $READ_RC $(date -u)\"\nexit $READ_RC\n"
+                ],
+                "command": [
+                    "bash",
+                    "-c"
+                ],
+                "env": [
+                    {
+                        "name": "NODE_NAME",
+                        "valueFrom": {
+                            "fieldRef": {
+                                "apiVersion": "v1",
+                                "fieldPath": "spec.nodeName"
+                            }
+                        }
+                    },
+                    {
+                        "name": "NVIDIA_VISIBLE_DEVICES",
+                        "value": "void"
+                    }
+                ],
+                "image": "pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime",
+                "imagePullPolicy": "IfNotPresent",
+                "name": "main",
+                "resources": {
+                    "limits": {
+                        "cpu": "600m",
+                        "ephemeral-storage": "50Gi",
+                        "memory": "600Mi"
+                    },
+                    "requests": {
+                        "cpu": "500m",
+                        "ephemeral-storage": "0",
+                        "memory": "512Mi"
+                    }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "volumeMounts": [
+                    {
+                        "mountPath": "/mnt/proxy",
+                        "name": "proxy",
+                        "readOnly": true
+                    },
+                    {
+                        "mountPath": "/mnt/aside",
+                        "name": "proxy",
+                        "subPath": "logs/siglip2-repair-e5377cd5-8d1c-47a8-84c5-d2ce617540df/libero_spatial"
+                    }
+                ]
+            }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "enableServiceLinks": true,
+        "nodeName": "nautilus-it-cpu09.fullerton.edu",
+        "preemptionPolicy": "PreemptLowerPriority",
+        "priority": 0,
+        "restartPolicy": "Never",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "serviceAccount": "default",
+        "serviceAccountName": "default",
+        "terminationGracePeriodSeconds": 30,
+        "tolerations": [
+            {
+                "effect": "NoExecute",
+                "key": "node.kubernetes.io/not-ready",
+                "operator": "Exists",
+                "tolerationSeconds": 300
+            },
+            {
+                "effect": "NoExecute",
+                "key": "node.kubernetes.io/unreachable",
+                "operator": "Exists",
+                "tolerationSeconds": 300
+            },
+            {
+                "effect": "PreferNoSchedule",
+                "key": "nvidia.com/gpu",
+                "operator": "Exists"
+            }
+        ],
+        "volumes": [
+            {
+                "name": "proxy",
+                "persistentVolumeClaim": {
+                    "claimName": "stacking-encoders-proxy"
+                }
+            }
+        ]
+    },
+    "status": {
+        "conditions": [
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2026-11-20T17:23:28Z",
+                "observedGeneration": 1,
+                "status": "False",
+                "type": "PodReadyToStartContainers"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2026-11-20T17:21:04Z",
+                "observedGeneration": 1,
+                "status": "True",
+                "type": "Initialized"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2026-11-20T17:23:27Z",
+                "observedGeneration": 1,
+                "reason": "PodFailed",
+                "status": "False",
+                "type": "Ready"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2026-11-20T17:23:27Z",
+                "observedGeneration": 1,
+                "reason": "PodFailed",
+                "status": "False",
+                "type": "ContainersReady"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2026-11-20T17:21:04Z",
+                "observedGeneration": 1,
+                "status": "True",
+                "type": "PodScheduled"
+            }
+        ],
+        "containerStatuses": [
+            {
+                "allocatedResources": {
+                    "cpu": "500m",
+                    "ephemeral-storage": "0",
+                    "memory": "512Mi"
+                },
+                "containerID": "containerd://d826a517fc58001b68cfce4e9390f07c861f61ac99945ef3fd6c6d053519d828",
+                "image": "docker.io/pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime",
+                "imageID": "docker.io/pytorch/pytorch@sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2",
+                "lastState": {},
+                "name": "main",
+                "ready": false,
+                "resources": {
+                    "limits": {
+                        "cpu": "600m",
+                        "ephemeral-storage": "50Gi",
+                        "memory": "600Mi"
+                    },
+                    "requests": {
+                        "cpu": "500m",
+                        "ephemeral-storage": "0",
+                        "memory": "512Mi"
+                    }
+                },
+                "restartCount": 0,
+                "started": false,
+                "state": {
+                    "terminated": {
+                        "containerID": "containerd://d826a517fc58001b68cfce4e9390f07c861f61ac99945ef3fd6c6d053519d828",
+                        "exitCode": 23,
+                        "finishedAt": "2026-11-20T17:23:25Z",
+                        "reason": "Error",
+                        "startedAt": "2026-11-20T17:23:23Z"
+                    }
+                },
+                "user": {
+                    "linux": {
+                        "gid": 0,
+                        "supplementalGroups": [
+                            0
+                        ],
+                        "uid": 0
+                    }
+                },
+                "volumeMounts": [
+                    {
+                        "mountPath": "/mnt/proxy",
+                        "name": "proxy",
+                        "readOnly": true,
+                        "recursiveReadOnly": "Disabled"
+                    },
+                    {
+                        "mountPath": "/mnt/aside",
+                        "name": "proxy"
+                    }
+                ]
+            }
+        ],
+        "hostIP": "209.129.60.119",
+        "hostIPs": [
+            {
+                "ip": "209.129.60.119"
+            }
+        ],
+        "observedGeneration": 1,
+        "phase": "Failed",
+        "podIP": "10.244.146.246",
+        "podIPs": [
+            {
+                "ip": "10.244.146.246"
+            }
+        ],
+        "qosClass": "Burstable",
+        "startTime": "2026-11-20T17:21:04Z"
+    }
+}
