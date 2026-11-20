@@ -2080,3 +2080,22 @@ On the user's go ("yep start it", then "ok, dispatch"), four workers wrote the s
 **PR:** none. This entry: direct (chore).
 
 **Next:** the presentations session builds the pictures and shows the user. For the user: how many local A6000s and whether they are shared; whether to ask the PI for money, cards or both. If either is granted: a timing run on that card (500 steps) before any estimate is trusted, and a stage 2 PLAN amendment before any run moves. Planning's next task is unchanged: the stage 3 design, on the user's choice among the four remaining ideas.
+
+## 2026-11-19 [agent, lead, planning] (alphaXiv MCP server connected by the user; a caution rule in `STANDARDS.md`; status relays from the experiment session)
+
+**Goal:** answer the user's question "would it be a good idea to connect this: https://www.alphaxiv.org/docs/mcp", and record what followed.
+
+**Did:**
+- Read the docs page through a helper agent (one fetch, 2026-11-19; not tried by the lead). As reported from the page (recalled from that report, not rechecked): 21 tools; paper search, a paper tool that returns an AI-generated report by default and the extracted full text on request, a PDF question tool, a tool that reads a paper's GitHub repository; tools that change the user's alphaXiv library; OAuth sign-in or an API key; search and reading count against a quota whose size is not stated; no privacy section.
+- The lead recommended connecting it, mainly for the literature session, with one rule: the AI-generated report is a lead, and anything cited is checked against the paper's own text. The user then ran `claude mcp add --transport http alphaxiv -s user https://api.alphaxiv.org/mcp/v1` (output: added to the user config). Its tools were not visible in this session afterwards (sign-in through `/mcp` and a new session are needed).
+- **`STANDARDS.md`:** one line under "Domain sources", "Sources to treat with caution", with that rule and "read tools only".
+- Relays received from the experiment session on 2026-11-19 (peer messages, not rechecked by the lead; the record is the stage 2 `LOG.md`): the 8 SigLIP 2 episodes repaired and passing their check; PRs #66, #67, #69 merged on the user's word there; the user's go for the stage 2 sweep given there about 18:47 UTC; seed 0 training for `dinov3`, `c-radiov4`, `dinov3+c-radiov4`, the LIBERO-Plus timing smoke and the two cache checks queued at 18:53 UTC. The lead read PR #67's added code against the amendment's item 3 and posted a comment (no change asked; "no LIBERO-Plus result" is a state item 3 did not name, to be added to the PLAN at that section's next amendment).
+- The experiment session's Job-time ledger (`compute/`) and its L4 pool finding were passed to the presentations session as information for the timeline picture. The lead's "one to two weeks" for the first pass on Nautilus (previous entry) is optimistic on the evaluation side given that pool.
+
+**Found:** no result.
+
+**Test-set use:** none.
+
+**PR:** none. This entry and the `STANDARDS.md` line: direct (chore).
+
+**Next:** for the user: `/mcp`, sign in to alphaxiv; the literature session needs a fresh start to see the tools. For planning: unchanged, the stage 3 design on the user's choice among the four remaining ideas; and one PLAN line naming the "no LIBERO-Plus result" state when the 2026-11-18 amendment is next touched.
