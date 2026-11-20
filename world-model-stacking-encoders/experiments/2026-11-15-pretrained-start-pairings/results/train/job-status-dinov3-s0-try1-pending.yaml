@@ -1,0 +1,326 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    nrp.ai/username: http://cilogon.org/serverE/users/436081
+  creationTimestamp: "2026-11-19T18:51:08Z"
+  generation: 1
+  labels:
+    config: dinov3
+    experiment: stacking-pairings
+    kind: train
+    seed: "0"
+  name: stacking-encoders-pairings-train-dinov3-s0
+  namespace: aria-world
+  resourceVersion: "15581680648"
+  uid: 9afa05b0-954a-4907-aced-35279b7b1562
+spec:
+  activeDeadlineSeconds: 349200
+  backoffLimit: 3
+  completionMode: NonIndexed
+  completions: 1
+  manualSelector: false
+  parallelism: 1
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes:
+        containerName: main
+        operator: In
+        values:
+        - 2
+        - 10
+        - 13
+        - 14
+        - 15
+        - 18
+        - 19
+        - 20
+    - action: Ignore
+      onPodConditions:
+      - status: "True"
+        type: DisruptionTarget
+  podReplacementPolicy: Failed
+  selector:
+    matchLabels:
+      batch.kubernetes.io/controller-uid: 9afa05b0-954a-4907-aced-35279b7b1562
+  suspend: false
+  template:
+    metadata:
+      labels:
+        batch.kubernetes.io/controller-uid: 9afa05b0-954a-4907-aced-35279b7b1562
+        batch.kubernetes.io/job-name: stacking-encoders-pairings-train-dinov3-s0
+        config: dinov3
+        controller-uid: 9afa05b0-954a-4907-aced-35279b7b1562
+        experiment: stacking-pairings
+        job-name: stacking-encoders-pairings-train-dinov3-s0
+        kind: train
+        seed: "0"
+    spec:
+      activeDeadlineSeconds: 234000
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-L40
+                - NVIDIA-L40S
+              - key: nvidia.com/cuda.driver.major
+                operator: Gt
+                values:
+                - "569"
+              - key: topology.kubernetes.io/region
+                operator: In
+                values:
+                - us-west
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                - k8s-chase-ci-07.calit2.optiputer.net
+                - ry-gpu-08.sdsc.optiputer.net
+      containers:
+      - args:
+        - |
+          set -euo pipefail
+          SMI=""; OWN=0; DECLARED=0
+          fail() { DECLARED=1; exit $1; }
+          R=/mnt/proxy; TAG=pairings-$CFGK-s$SEED; D=$(date +%Y%m%d-%H%M%S)
+          OUT=$RUN_ROOT/$TAG
+          WSRC=$R/models/Wan-AI/Wan2.2-TI2V-5B; WAN=/work/wan/Wan2.2-TI2V-5B
+          LOG=$R/logs/$TAG-$D.log; GPUCSV=$R/logs/$TAG-gpu-$D.csv
+          SMALL="config.json load.json"
+          BIG="train.json history.jsonl"
+          mkdir -p $R/logs $RUN_ROOT
+          # pod stdout keeps steps 1-25 (first-minutes check) and every 100th step; the PVC log keeps every step
+          exec > >(tee -a $LOG | awk '{ if (match($0, /^\[train +[0-9]+s\] \{"step": [0-9]+,/)) { s = substr($0, RSTART, RLENGTH); sub(/^.*"step": /, "", s); n = s + 0; if (n > 25 && n % 100 != 0) next } print; fflush() }') 2>&1
+          TEE=$!
+          echo "=== STAGE 2 PAIRINGS TRAINING: config $CONFIG seed $SEED, 21,696 steps, out $OUT; full log on the PVC: $LOG"; date -u
+          echo "SRC_GIT_COMMIT=$SRC_GIT_COMMIT CONFIG=$CONFIG CFGK=$CFGK SEED=$SEED MICRO_BATCH=$MICRO_BATCH TRAIN_TIMEOUT_S=$TRAIN_TIMEOUT_S CKPT_L40S=$CKPT_L40S CKPT_L40=$CKPT_L40 RUN_ROOT=$RUN_ROOT"
+          [[ "$SEED" =~ ^[0-9]+$ && -n "$CONFIG" && "$CFGK" = "$(echo "$CONFIG" | tr '+' '-')" ]] || { echo "ABORT: CONFIG '$CONFIG' / CFGK '$CFGK' / SEED '$SEED' not rendered consistently"; fail 10; }
+          [[ "$SRC_GIT_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "ABORT: SRC_GIT_COMMIT is not a 40-hex commit (not filled at submit?)"; fail 10; }
+          echo "/src = ConfigMap stacking-encoders-pairings-train-src; checking its 7 keys against the hashes rendered into this manifest (RUN-stage2-train.md step 4):"
+          ( cd /src && sha256sum -c - <<'EOF'
+          d38112ee7faaf6cbd35a1e5ffc8ceab73b4b7db2a215a9b0431d12e73ed98daa  pretrained_train.py
+          c14ccec63e66075c561573c315ed11a0abf3ce5e0fabd3751dbb599f64a52bb7  pretrained_sizing.py
+          32e325315b766d601ac0fe60cb79e1c3cbf60caee96cd460682bf63c2431c3cf  action_expert_init.py
+          961945ecaf0be1aa94316a0afa3b7e2d250d33afff00d76dddebfbc6b93b6cfc  proxy_wam.py
+          7af1f7aa2d595d9e0b7f1fb462f7901c6fa9594d2da7895b0168f0ef3ea2d70d  diagnostics.py
+          61181a74af8825eff0e0b8cb3a220f8483d9f1982642cd90b753cb9e5a87d708  t5_cache.py
+          880c47cbe741b7fbcd98f44f85e7a1d14747d6c837e0493f4642e5ebbc18ace8  setup_env.sh
+          EOF
+          ) || { echo "ABORT: a /src key differs from the hash rendered at submit (the ConfigMap changed after the render, or the render did not run)"; fail 19; }
+          CARD=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -1) || { echo "ABORT: nvidia-smi failed (a faulty GPU node; retryable)"; exit 1; }
+          case "$CARD" in
+            *L40S*) CKPT_EVERY=$CKPT_L40S ;;
+            *L40*)  CKPT_EVERY=$CKPT_L40 ;;
+            *) echo "ABORT: card '$CARD' is not an L40 or L40S, no checkpoint interval is set for it"; fail 15 ;;
+          esac
+          echo "CARD $CARD -> --ckpt-every $CKPT_EVERY (stage 1 rule: nearest 100 steps to 45 min of step time; per-config values in RUN-stage2-train.md)"
+          MODE=fresh
+          if [ -f $OUT/model.pt ] && [ -f $OUT/train.json ]; then
+            MODE=complete
+          elif [ -f $OUT/ckpt.pt ]; then
+            MODE=resume
+          elif [ -d $OUT ] && [ -n "$(ls -A $OUT)" ]; then
+            STALE=$OUT.stale-$D
+            echo "STALE: $OUT exists with files but no ckpt.pt (a pod lost before its first checkpoint); moving it to $STALE (nothing deleted):"
+            ls -la $OUT || true
+            mv $OUT $STALE
+          fi
+          echo "MODE: $MODE"
+          if [ $MODE = resume ] || [ $MODE = complete ]; then ls -la --time-style=full-iso $OUT || true; fi
+          AV=$(df -BG --output=avail $RUN_ROOT | tail -1 | tr -dc 0-9)
+          case $MODE in fresh) NEED=70;; resume) NEED=40;; *) NEED=5;; esac
+          echo "PVC free: ${AV} GiB on the volume of $RUN_ROOT (need $NEED for mode $MODE; RUN-stage2-train.md also needs 40 GB per running job before submit)"
+          [ "$AV" -ge "$NEED" ] || { echo "ABORT: PVC has ${AV} GiB free, under the $NEED GiB this mode needs"; fail 14; }
+          mkdir -p $OUT /work/wan $WAN
+          OWN=1
+          : > $GPUCSV
+          phase() { echo "=== PHASE $1 $(date -u +%H:%M:%S)"; echo "#phase $1" >> $GPUCSV; }
+          finish() {
+            rc=$?; set +e
+            case $rc in 2|10|13|14|15|18|19|20) [ "$DECLARED" = 1 ] || { echo "[exit] code $rc came from a tool, not a decision of this script; reporting 1"; rc=1; } ;; esac
+            [ -n "$SMI" ] && { kill $SMI 2>/dev/null; wait $SMI 2>/dev/null; }
+            echo "#phase end" >> $GPUCSV
+            awk -F', ' 'BEGIN{p="start"} /^#phase/{p=$0; sub(/^#phase /,"",p); next} {v=$2; sub(/ %/,"",v); s[p]+=v; n[p]++; S+=v; N++} END{for(k in n) printf "[gpu-summary] %s: %d samples, mean %.1f%%\n", k, n[k], s[k]/n[k]; if(N) printf "[gpu-summary] all: %d samples, mean %.1f%%\n", N, S/N}' $GPUCSV
+            echo "[cgroup] memory.peak $(cat /sys/fs/cgroup/memory.peak 2>/dev/null || echo n/a) bytes, memory.current $(cat /sys/fs/cgroup/memory.current 2>/dev/null || echo n/a) bytes"
+            echo "[cgroup] $(grep -E '^anon ' /sys/fs/cgroup/memory.stat 2>/dev/null || echo 'anon n/a') (bytes, at exit); $(grep -E '^file ' /sys/fs/cgroup/memory.stat 2>/dev/null || echo 'file n/a') (page cache)"
+            if [ "$OWN" = 1 ]; then
+              for f in $SMALL $(cd $OUT && ls config-resume-step*.json 2>/dev/null); do
+                if [ -f $OUT/$f ]; then
+                  echo "=== FILE $f sha256 $(sha256sum < $OUT/$f | cut -d' ' -f1) bytes $(stat -c %s $OUT/$f)"
+                  cat $OUT/$f; echo
+                  echo "=== END $f"
+                fi
+              done
+              for f in $BIG; do
+                if [ -f $OUT/$f ]; then
+                  echo "=== BIGFILE $f sha256 $(sha256sum < $OUT/$f | cut -d' ' -f1) bytes $(stat -c %s $OUT/$f) (full file on the PVC: $OUT/$f; last 3 lines follow)"
+                  tail -n 3 $OUT/$f | cut -c1-400
+                  echo "=== END $f"
+                fi
+              done
+              ls -la $OUT
+              df -h $R $RUN_ROOT
+            fi
+            date -u; echo "=== exit $rc"
+            exec 1>&- 2>&-; wait $TEE 2>/dev/null
+            exit $rc
+          }
+          trap finish EXIT
+          nvidia-smi || { echo "ABORT: nvidia-smi failed (a faulty GPU node; retryable)"; exit 1; }
+          nproc; df -h $R /work
+          if [ $MODE = complete ]; then
+            echo "COMPLETE: model.pt and train.json already exist in $OUT; no training, only the model.pt sha256"
+            phase model-sha
+            ls -la $OUT/model.pt
+            MSHA=$(timeout --kill-after=60 900 sha256sum $OUT/model.pt) || { echo "ABORT: model.pt sha256 failed or timed out (900 s)"; exit 16; }
+            echo "=== MODEL $MSHA"
+            echo "=== done"
+            exit 0
+          fi
+          phase setup
+          nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv,noheader -l 30 > >(tee -a $GPUCSV | sed -u 's/^/[gpu] /') &
+          SMI=$!
+          rc=0; timeout --kill-after=60 1800 bash /src/setup_env.sh > /work/pip-env.log 2>&1 || rc=$?
+          [ $rc = 0 ] || { tail -50 /work/pip-env.log; [ $rc = 124 ] && echo "ABORT: pip setup timed out (1800 s)"; [ $rc = 124 ] && exit 16; exit 1; }
+          cp /work/pip-env.log $R/logs/pip-env-$TAG-$D.log
+          phase stage-wan
+          stage() {
+            local f=$1 n mib per i pids=""
+            n=$(stat -c %s "$WSRC/$f"); mib=$(( (n + 1048575) / 1048576 )); per=$(( (mib + 15) / 16 ))
+            : > "$WAN/$f"
+            for i in $(seq 0 15); do
+              timeout --kill-after=30 900 dd if="$WSRC/$f" of="$WAN/$f" bs=1M skip=$((i * per)) seek=$((i * per)) count=$per conv=notrunc status=none &
+              pids="$pids $!"
+            done
+            for i in $pids; do
+              wait $i || { rc=$?; echo "ABORT: a dd of $f failed (rc $rc; 124 = timed out after 900 s)"; [ $rc = 124 ] && exit 16; exit 12; }
+            done
+            [ "$(stat -c %s "$WAN/$f")" = "$n" ] || { echo "ABORT: staged $f is $(stat -c %s "$WAN/$f") bytes, source $n"; exit 12; }
+            echo "staged $f $n bytes"
+          }
+          T0=$(date +%s)
+          stage diffusion_pytorch_model-00001-of-00003.safetensors
+          stage diffusion_pytorch_model-00003-of-00003.safetensors
+          cp $WSRC/diffusion_pytorch_model.safetensors.index.json $WSRC/config.json $WAN/ || { echo "ABORT: copy of the Wan index/config failed"; exit 12; }
+          echo "staging took $(( $(date +%s) - T0 )) s"
+          ( cd $WAN && timeout 600 sha256sum -c - <<'EOF'
+          720b06c4ade5e87c1246bba8ac95b664c638749cd9b102cf84d823bb44c026a1  diffusion_pytorch_model-00001-of-00003.safetensors
+          6306f7894c345de9093ad588771c2abfaeb668a81f7a6d9a918bd26ba3568e49  diffusion_pytorch_model-00003-of-00003.safetensors
+          bfa2337f1163e195d24151a72298daf34a620543898109be47e414c8daa5b3fe  diffusion_pytorch_model.safetensors.index.json
+          d1fea36899d00c2501b836c13ad65af56e2f9529ba622e50886d3f5c3e6c02bc  config.json
+          EOF
+          ) || { rc=$?; [ $rc = 124 ] && { echo "ABORT: the Wan sha256 check timed out (600 s)"; exit 16; }; echo "ABORT: staged Wan files do not match the sha256 in the download log"; fail 13; }
+          echo "staging + sha256 took $(( $(date +%s) - T0 )) s"
+          COMMON="--feats $R/feats --suites libero_spatial,libero_object,libero_goal,libero_10 --t5 $R/feats/t5 --config $CONFIG --seed $SEED --wan-dir $WAN --micro-batch $MICRO_BATCH --first-batch-report"
+          phase train
+          echo "FLAGS: python /src/pretrained_train.py $COMMON --ckpt-every $CKPT_EVERY --out $OUT   (mode $MODE; look for 'resuming from' in the log)"
+          T1=$SECONDS; rc=0
+          timeout --kill-after=60 $TRAIN_TIMEOUT_S python /src/pretrained_train.py $COMMON --ckpt-every $CKPT_EVERY --out $OUT || rc=$?
+          case $rc in
+            0) ;;
+            2) fail 2 ;;
+            124) echo "ABORT: the training step hit its $TRAIN_TIMEOUT_S s timeout"; fail 18 ;;
+            137) if [ $(( SECONDS - T1 )) -ge $TRAIN_TIMEOUT_S ]; then echo "ABORT: the training step hit its $TRAIN_TIMEOUT_S s timeout (killed after the grace)"; fail 18; fi; exit 137 ;;
+            1) if tail -n 300 $LOG | grep -q -E 'CUDA out of memory|OutOfMemoryError'; then echo "ABORT: CUDA out of memory at micro-batch $MICRO_BATCH (PLAN micro-batch rule: re-render with 4, RUN-stage2-train.md; a retry would repeat it)"; fail 20; fi; exit 1 ;;
+            *) exit $rc ;;
+          esac
+          phase model-sha
+          ls -la $OUT/model.pt
+          MSHA=$(timeout --kill-after=60 900 sha256sum $OUT/model.pt) || { echo "ABORT: model.pt sha256 failed or timed out (900 s)"; exit 16; }
+          echo "=== MODEL $MSHA"
+          echo "=== done"
+        command:
+        - bash
+        - -c
+        env:
+        - name: SRC_GIT_COMMIT
+          value: 2a9c058312efc14a3d65d9563007627c1243a82b
+        - name: CONFIG
+          value: dinov3
+        - name: CFGK
+          value: dinov3
+        - name: SEED
+          value: "0"
+        - name: MICRO_BATCH
+          value: "8"
+        - name: CKPT_L40S
+          value: "700"
+        - name: CKPT_L40
+          value: "500"
+        - name: TRAIN_TIMEOUT_S
+          value: "226800"
+        - name: RUN_ROOT
+          value: /mnt/runs/runs
+        - name: HF_HOME
+          value: /work/hf
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: PYTHONPATH
+          value: /src
+        - name: OMP_NUM_THREADS
+          value: "3"
+        - name: MALLOC_ARENA_MAX
+          value: "2"
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        imagePullPolicy: IfNotPresent
+        name: main
+        resources:
+          limits:
+            cpu: 4800m
+            ephemeral-storage: 44Gi
+            memory: 38Gi
+            nvidia.com/gpu: "1"
+          requests:
+            cpu: "4"
+            ephemeral-storage: 38Gi
+            memory: 32Gi
+            nvidia.com/gpu: "1"
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /work
+          name: work
+        - mountPath: /src
+          name: src
+          readOnly: true
+        - mountPath: /mnt/proxy
+          name: proxy
+        - mountPath: /dev/shm
+          name: dshm
+        - mountPath: /mnt/runs
+          name: runs
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir:
+          sizeLimit: 24Gi
+        name: work
+      - configMap:
+          defaultMode: 420
+          name: stacking-encoders-pairings-train-src
+        name: src
+      - name: proxy
+        persistentVolumeClaim:
+          claimName: stacking-encoders-proxy
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 2Gi
+        name: dshm
+      - name: runs
+        persistentVolumeClaim:
+          claimName: stacking-encoders-runs
+  ttlSecondsAfterFinished: 86400
+status:
+  active: 1
+  ready: 0
+  startTime: "2026-11-19T18:51:08Z"
+  terminating: 0
+  uncountedTerminatedPods: {}
