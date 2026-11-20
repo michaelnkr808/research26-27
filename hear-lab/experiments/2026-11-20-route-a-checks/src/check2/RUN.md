@@ -33,7 +33,7 @@ df -h > df.txt; free -g > free.txt; nproc > nproc.txt; cat /etc/os-release > os.
 
 The driver must support CUDA 12.9 (about 575 or newer). If not, stop.
 
-From the Mac, record the instance (image tag, offer, price): `vastai show instance <id> --raw > /tmp/check2_instance.json`, then upload it with the files of step 3 (`rsync -av -e "ssh -p <port>" /tmp/check2_instance.json root@<host>:/workspace/check2/env/`).
+From the Mac, record the instance (image tag, offer, price) straight into the results folder, which is outside every git worktree: `mkdir -p ~/Desktop/hear-lab-route-a-results/check2-run1 && vastai show instance <id> --raw > ~/Desktop/hear-lab-route-a-results/check2-run1/instance.json`. It stays on the Mac: it is not uploaded to the machine and never goes into git, because it can hold connection details and access tokens of the instance (`recalled`). Copy the image tag, offer, price and host reliability from it into LOG.md.
 
 ## 2. Environment (WNM-3D docs/INSTALLATION.md section 1 at 7fe2d5f)
 
@@ -128,13 +128,14 @@ VGGT-Omega (gated). The user types the token, not an agent. In a separate Termin
 ssh -t -p <port> root@<host> bash /workspace/check2/src/check2/fetch_vggt.sh
 ~~~
 
-`fetch_vggt.sh` (uploaded and sha256-checked in step 3) asks for the token at a hidden prompt (`read -rsp`), passes it only in the environment of the one `hf download` (revision `1041e80f`), unsets it, and prints whether a token file exists under `${HF_HOME:-$HOME/.cache/huggingface}`. The user closes that window afterwards. Then, in the working session:
+`fetch_vggt.sh` (uploaded and sha256-checked in step 3) asks for the token at a hidden prompt (`read -rsp`), passes it only in the environment of the one `hf download` (revision `1041e80f`), unsets it, and prints, for each token file under `${HF_HOME:-$HOME/.cache/huggingface}`, either `no <path>` or `TOKEN FILE PRESENT: <path>`. That output, in the user's window, is the evidence: two `no <path>` lines are what should appear; a `TOKEN FILE PRESENT` line means delete that file before going on. The user closes that window afterwards. If the download fails (for example a wrong paste), the script stops before that report, so the working session checks the same paths in every case:
 
 ~~~bash
 HFH="${HF_HOME:-$HOME/.cache/huggingface}"
 ls "$HFH/token" "$HFH/stored_tokens" 2>&1   # both must be "No such file"
-env | grep -c HF_TOKEN                      # must print 0
 ~~~
+
+(The token only ever exists in the user's session, so there is nothing to look for in the working session's environment.)
 
 Checksums (Hub LFS sha256 values, read 2026-11-20) and sizes:
 
@@ -243,7 +244,9 @@ set -uo pipefail
 ID=$1; BS=$2; STEPS=$3; WARM=$4
 RUN=/workspace/check2/runs/$ID
 [ -e "$RUN" ] && { echo "output folder exists: $RUN"; exit 1; }
+set +u   # conda activation scripts may read unset variables
 source /workspace/miniforge3/etc/profile.d/conda.sh && conda activate wnm_3d   # survives an SSH reconnect
+set -u
 cd /workspace/WNM-3D && source /workspace/check2/launch_env.sh
 nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used,memory.total,power.draw --format=csv -l 1 > "$RUN.nvidia-smi.csv" &
 SMI=$!

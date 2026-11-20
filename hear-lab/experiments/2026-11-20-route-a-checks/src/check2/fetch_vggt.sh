@@ -4,8 +4,10 @@
 # at a hidden prompt; it never appears on a command line, in shell history, in a file or
 # in an agent transcript.
 set -euo pipefail
+set +u   # conda activation scripts may read unset variables
 source /workspace/miniforge3/etc/profile.d/conda.sh
 conda activate wnm_3d
+set -u
 read -rsp "Hugging Face token (input hidden): " HF_TOKEN
 echo
 HF_TOKEN="$HF_TOKEN" hf download facebook/VGGT-Omega vggt_omega_1b_512.pt \
