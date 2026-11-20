@@ -63,8 +63,8 @@ check2:
     script: scripts/train/wnm_3d_stage2.sh
     env:
       NUM_GPUS: 1
-      GLOBAL_BATCH_SIZE: 96
-      MAX_STEPS: 12
+      # GLOBAL_BATCH_SIZE not set: launcher computes 1 x PER_DEVICE_BS, no gradient accumulation (decided 2026-11-20)
+      MAX_STEPS: 60
       LOGGING_STEPS: 10   # released default, kept; per-step times come from the callback
       SAVE_STRATEGY: "no"
       SEED: 20261120
@@ -76,6 +76,15 @@ check2:
       OUTPUT_DIR: /workspace/check2/runs/<trial_id>
       PYTHONPATH: /workspace/check2/src/check2   # machine copy of src/check2, uploaded with a sha256 list
     hydra_extra: []
+  downloads:
+    mode: launcher-checked files plus tokenizer only (about 19 GB of Wan/UMT5; about 51 GB in total), decided 2026-11-20
+    missing_file_policy: stop and report
+  key_check:
+    script: src/check2/   # not written yet
+    device: cpu
+    load: strict=False per shard, as base.py does; record missing and unexpected keys
+    pass: {missing: 0, unexpected: 0}
+    on_fail: stop before timing, report to the lead
   callback:
     location: src/check2/   # sitecustomize.py plus a TrainerCallback; not written yet
     remote_copy: /workspace/check2/src/check2
@@ -90,19 +99,20 @@ check2:
     first: 12
     down_if_oom: [8, 6, 4, 3, 2, 1]
     up_if_fits: [16, 24]
-    up_trial_steps: {warmup: 2, timed: 3}
+    up_trial_steps: {warmup: 10, timed: 10}
     fallback_deepspeed_cfg: zero2_offload   # only if batch 1 does not fit with zero2; reported as a deviation
     fallback_config_error_is_not_oom: true   # an optimizer/offload error is reported as a config error and stops for the lead
   timing:
     cross_check: progress-bar updates in the timestamped launcher log (carriage returns split into lines)
-    warmup_steps: 2
-    timed_steps: 10
+    warmup_steps: 10
+    timed_steps: 50
     gpu_check_after_first_step_min: 3
     nvidia_smi_interval_s: 1
   stop_rules_min:
     setup_from_instance_start: 90
     downloads: 60
     conversion: 30
+    key_check: 30
     trial_to_first_step: 60
     hard_stop_from_instance_start: 300
   paths:
