@@ -20,6 +20,7 @@
   - liu2026what's composition numbers: one trained checkpoint per combo; the 3 seeds are evaluation seeds.
   - Encoder model cards: variants and resolutions are often unstated.
   - Anything recalled about related work (Cambrian-1, Theia, LogME, etc.) until it's read.
+  - alphaXiv's MCP server (connected by the user 2026-11-19, user scope; docs page https://www.alphaxiv.org/docs/mcp, read once through a helper agent on 2026-11-19, not tried): a search and reading aid, not a source. Its paper tool returns an AI-generated report by default: treat that as a lead. A paper fact, number or quote goes into the repo only after it is checked against the paper's own text (the tool's full-text output, or the arXiv PDF or HTML), and the claim is labelled by what was actually read. Its search results are leads like any other search. Agents use its read tools only; nothing in the user's alphaXiv account (follows, folders, saved papers) is changed unless the user asks. Its quota and data handling are not stated on the docs page.
 
 ## Methods and evaluation
 - Standard baselines (every comparison of predictors includes): (1) B's single-encoder score; (2) symmetric CKA(A, B); (3) the paper's objective-overlap reasoning, coded as a label before seeing results; (4) random ranking.
