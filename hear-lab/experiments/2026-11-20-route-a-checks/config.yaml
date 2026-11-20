@@ -74,10 +74,14 @@ check2:
       PRETRAINED_MODEL_PATH: checkpoints/wnm_3d_stage3_release
       VGGT_OMEGA_CKPT: checkpoints/vggt_omega_1b_512.pt
       OUTPUT_DIR: /workspace/check2/runs/<trial_id>
-      PYTHONPATH: <repo>/hear-lab/experiments/2026-11-20-route-a-checks/src/check2
+      PYTHONPATH: /workspace/check2/src/check2   # machine copy of src/check2, uploaded with a sha256 list
     hydra_extra: []
   callback:
     location: src/check2/   # sitecustomize.py plus a TrainerCallback; not written yet
+    remote_copy: /workspace/check2/src/check2
+    hook: lazy import hook on transformers.trainer, training process only (LOCAL_RANK set), no top-level torch/transformers import
+    record_points: [on_train_begin, on_step_end]
+    sync_cost: not measured, expected small
     output: <OUTPUT_DIR>/check2_steps.jsonl
     per_optimizer_step: [global_step, time, memory_allocated, max_memory_allocated, memory_reserved, max_memory_reserved]
     cuda_synchronize: true
@@ -90,6 +94,7 @@ check2:
     fallback_deepspeed_cfg: zero2_offload   # only if batch 1 does not fit with zero2; reported as a deviation
     fallback_config_error_is_not_oom: true   # an optimizer/offload error is reported as a config error and stops for the lead
   timing:
+    cross_check: progress-bar updates in the timestamped launcher log (carriage returns split into lines)
     warmup_steps: 2
     timed_steps: 10
     gpu_check_after_first_step_min: 3
