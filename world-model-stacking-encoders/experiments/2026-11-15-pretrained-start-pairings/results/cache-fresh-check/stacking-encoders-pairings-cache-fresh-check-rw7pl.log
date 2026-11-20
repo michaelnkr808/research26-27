@@ -1,0 +1,550 @@
+=== CACHE FRESHNESS CHECK (read-only): DINOv3, SigLIP 2, C-RADIOv4 against /mnt/proxy/feats
+Fri Nov 20 06:09:45 UTC 2026
+SRC_GIT_COMMIT=2a9c058312efc14a3d65d9563007627c1243a82b
+/src = ConfigMap stacking-encoders-pairings-freshcheck-src; checking its 6 keys against the hashes rendered into this manifest:
+check_cache_fresh.py: OK
+extract_features.py: OK
+extract_fastwam.py: OK
+fastwam_data.py: OK
+diagnostics.py: OK
+setup_env.sh: OK
+Fri Nov 20 06:09:45 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.09              KMD Version: 615.71.09     CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA L4                      On  |   00000000:29:00.0 Off |                    0 |
+| N/A   38C    P8             16W /   72W |       0MiB /  23034MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+3
+Filesystem                                                                                                                                                      Size  Used Avail Use% Mounted on
+/dev/mapper/ubuntu--vg-k8s                                                                                                                                      4.3T  3.4T  924G  79% /work
+csi-cephfs-node@90a5afad-c313-4e49-9b5f-317100c6930e.nautilusfs=/volumes/csi/csi-vol-9fc6b0fe-e947-4528-a5c5-c5e80fc7d70d/9f0765b7-9592-498f-ae6c-7f42cf4c5f62  1.0T  835G  190G  82% /mnt/proxy
+=== PHASE setup 06:09:45
+[gpu] 2026/11/20 06:09:45.438, 0 %, 0 MiB
+[gpu] 2026/11/20 06:10:00.446, 0 %, 0 MiB
+av==15.1.0
+huggingface_hub==0.36.2
+torch==2.7.1+cu128
+torchvision==0.22.1+cu128
+transformers==4.57.6
+=== PHASE check 06:10:11
+[gpu] 2026/11/20 06:10:15.447, 0 %, 0 MiB
+[load] dinov3: facebook/dinov3-vitl16-pretrain-lvd1689m revision ea8dc2863c51be0a264bab82070e3e8836b02d51 loaded ea8dc2863c51be0a264bab82070e3e8836b02d51 res 224 dtype fp32 device cuda (8s)
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+[gpu] 2026/11/20 06:10:30.448, 0 %, 1364 MiB
+[load] siglip2: google/siglip2-so400m-patch14-384 revision e8e487298228002f3d8a82e0cd5c8ea9c567f57f loaded e8e487298228002f3d8a82e0cd5c8ea9c567f57f res 384 dtype fp16 device cuda (22s)
+[gpu] 2026/11/20 06:10:45.449, 0 %, 2206 MiB
+[load] c-radiov4: nvidia/C-RADIOv4-SO400M revision c0457f5dc26ca145f954cd4fc5bb6114e5705ad8 loaded c0457f5dc26ca145f954cd4fc5bb6114e5705ad8 res 448 dtype fp16 device cuda (36s)
+[suite] libero_spatial: 434 episodes, 434 cached for every source, chosen [276, 368]
+[gpu] 2026/11/20 06:11:00.451, 100 %, 4518 MiB
+[ep] dinov3 libero_spatial ep000276 n=119: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 3.38) bit-equal 100.0% PASS (4.7s)
+[ep] siglip2 libero_spatial ep000276 n=119: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 26.3) bit-equal 100.0% PASS (4.8s)
+[gpu] 2026/11/20 06:11:15.452, 100 %, 5996 MiB
+[ep] c-radiov4 libero_spatial ep000276 n=119: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 245) bit-equal 100.0% PASS (5.7s)
+[gpu] 2026/11/20 06:11:30.453, 100 %, 6206 MiB
+[ep] dinov3 libero_spatial ep000368 n=133: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 3.13) bit-equal 100.0% PASS (5.1s)
+[gpu] 2026/11/20 06:11:45.455, 100 %, 6206 MiB
+[ep] siglip2 libero_spatial ep000368 n=133: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 25.3) bit-equal 100.0% PASS (5.3s)
+[ep] c-radiov4 libero_spatial ep000368 n=133: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 246) bit-equal 100.0% PASS (6.4s)
+[suite] libero_object: 457 episodes, 457 cached for every source, chosen [123, 140]
+[gpu] 2026/11/20 06:12:00.456, 0 %, 6206 MiB
+[ep] dinov3 libero_object ep000123 n=156: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 3.28) bit-equal 100.0% PASS (6.1s)
+[gpu] 2026/11/20 06:12:15.457, 0 %, 6206 MiB
+[ep] siglip2 libero_object ep000123 n=156: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 24.8) bit-equal 100.0% PASS (6.2s)
+[gpu] 2026/11/20 06:12:30.458, 0 %, 6206 MiB
+[ep] c-radiov4 libero_object ep000123 n=156: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 253) bit-equal 100.0% PASS (7.5s)
+[gpu] 2026/11/20 06:12:45.460, 100 %, 6206 MiB
+[ep] dinov3 libero_object ep000140 n=154: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 3.21) bit-equal 100.0% PASS (6.0s)
+[gpu] 2026/11/20 06:13:00.461, 0 %, 6206 MiB
+[ep] siglip2 libero_object ep000140 n=154: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 25.7) bit-equal 100.0% PASS (6.2s)
+[gpu] 2026/11/20 06:13:15.462, 0 %, 6206 MiB
+[ep] c-radiov4 libero_object ep000140 n=154: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 247) bit-equal 100.0% PASS (7.4s)
+[suite] libero_goal: 433 episodes, 433 cached for every source, chosen [7, 32]
+[gpu] 2026/11/20 06:13:30.464, 0 %, 6206 MiB
+[ep] dinov3 libero_goal ep000007 n=140: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 3.2) bit-equal 100.0% PASS (5.5s)
+[gpu] 2026/11/20 06:13:45.465, 94 %, 6206 MiB
+[ep] siglip2 libero_goal ep000007 n=140: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 23.8) bit-equal 100.0% PASS (5.6s)
+[ep] c-radiov4 libero_goal ep000007 n=140: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 250) bit-equal 100.0% PASS (6.8s)
+[gpu] 2026/11/20 06:14:00.466, 0 %, 6206 MiB
+[ep] dinov3 libero_goal ep000032 n=136: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 3.35) bit-equal 100.0% PASS (5.4s)
+[gpu] 2026/11/20 06:14:15.470, 0 %, 6206 MiB
+[ep] siglip2 libero_goal ep000032 n=136: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 22.9) bit-equal 100.0% PASS (5.5s)
+[gpu] 2026/11/20 06:14:30.471, 93 %, 6206 MiB
+[ep] c-radiov4 libero_goal ep000032 n=136: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 249) bit-equal 100.0% PASS (6.7s)
+[suite] libero_10: 388 episodes, 388 cached for every source, chosen [251, 314]
+[gpu] 2026/11/20 06:14:45.473, 0 %, 6206 MiB
+[gpu] 2026/11/20 06:15:00.475, 92 %, 6206 MiB
+[ep] dinov3 libero_10 ep000251 n=278: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 3.34) bit-equal 100.0% PASS (11.0s)
+[gpu] 2026/11/20 06:15:15.476, 0 %, 6206 MiB
+[ep] siglip2 libero_10 ep000251 n=278: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 25.3) bit-equal 100.0% PASS (11.2s)
+[gpu] 2026/11/20 06:15:30.477, 0 %, 6206 MiB
+[gpu] 2026/11/20 06:15:45.539, 100 %, 6206 MiB
+[ep] c-radiov4 libero_10 ep000251 n=278: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 249) bit-equal 100.0% PASS (13.8s)
+[gpu] 2026/11/20 06:16:00.540, 0 %, 6206 MiB
+[ep] dinov3 libero_10 ep000314 n=237: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 3.24) bit-equal 100.0% PASS (9.4s)
+[gpu] 2026/11/20 06:16:15.542, 0 %, 6206 MiB
+[gpu] 2026/11/20 06:16:30.543, 100 %, 6206 MiB
+[ep] siglip2 libero_10 ep000314 n=237: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 25.9) bit-equal 100.0% PASS (9.7s)
+[gpu] 2026/11/20 06:16:45.544, 100 %, 6206 MiB
+[ep] c-radiov4 libero_10 ep000314 n=237: cos_min 1.000000 cos_median 1.000000 rel_l2 0.00e+00 rel_max 0.00e+00 (max abs diff 0 of 264) bit-equal 100.0% PASS (11.7s)
+=== summary
+{
+ "ok": true,
+ "tolerance": {
+  "cos_min": 0.999,
+  "rel_max": 0.02,
+  "rel_l2_max": 0.02
+ },
+ "seed": 0,
+ "per_suite": 2,
+ "batch": 32,
+ "device": "cuda",
+ "torch": "2.7.1+cu128",
+ "encoders": {
+  "dinov3": {
+   "hf_id": "facebook/dinov3-vitl16-pretrain-lvd1689m",
+   "revision": "ea8dc2863c51be0a264bab82070e3e8836b02d51",
+   "loaded_commit": "ea8dc2863c51be0a264bab82070e3e8836b02d51",
+   "dtype": "fp32"
+  },
+  "siglip2": {
+   "hf_id": "google/siglip2-so400m-patch14-384",
+   "revision": "e8e487298228002f3d8a82e0cd5c8ea9c567f57f",
+   "loaded_commit": "e8e487298228002f3d8a82e0cd5c8ea9c567f57f",
+   "dtype": "fp16"
+  },
+  "c-radiov4": {
+   "hf_id": "nvidia/C-RADIOv4-SO400M",
+   "revision": "c0457f5dc26ca145f954cd4fc5bb6114e5705ad8",
+   "loaded_commit": "c0457f5dc26ca145f954cd4fc5bb6114e5705ad8",
+   "dtype": "fp16"
+  }
+ },
+ "per_source": {
+  "dinov3": {
+   "episodes": 8,
+   "failed": 0,
+   "worst_cos_min": 0.9999999999999999,
+   "worst_rel_max": 0.0,
+   "worst_rel_l2": 0.0
+  },
+  "siglip2": {
+   "episodes": 8,
+   "failed": 0,
+   "worst_cos_min": 0.9999999999999999,
+   "worst_rel_max": 0.0,
+   "worst_rel_l2": 0.0
+  },
+  "c-radiov4": {
+   "episodes": 8,
+   "failed": 0,
+   "worst_cos_min": 0.9999999999999998,
+   "worst_rel_max": 0.0,
+   "worst_rel_l2": 0.0
+  }
+ },
+ "problems": [],
+ "episodes": [
+  {
+   "source": "dinov3",
+   "suite": "libero_spatial",
+   "episode": 276,
+   "length": 119,
+   "seconds": 4.7,
+   "cos_min": 0.9999999999999999,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 3.380859375,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "siglip2",
+   "suite": "libero_spatial",
+   "episode": 276,
+   "length": 119,
+   "seconds": 4.8,
+   "cos_min": 0.9999999999999999,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 26.28125,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "c-radiov4",
+   "suite": "libero_spatial",
+   "episode": 276,
+   "length": 119,
+   "seconds": 5.7,
+   "cos_min": 0.9999999999999998,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 245.25,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "dinov3",
+   "suite": "libero_spatial",
+   "episode": 368,
+   "length": 133,
+   "seconds": 5.1,
+   "cos_min": 0.9999999999999999,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 3.1328125,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "siglip2",
+   "suite": "libero_spatial",
+   "episode": 368,
+   "length": 133,
+   "seconds": 5.3,
+   "cos_min": 0.9999999999999999,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 25.328125,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "c-radiov4",
+   "suite": "libero_spatial",
+   "episode": 368,
+   "length": 133,
+   "seconds": 6.4,
+   "cos_min": 0.9999999999999998,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 245.625,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "dinov3",
+   "suite": "libero_object",
+   "episode": 123,
+   "length": 156,
+   "seconds": 6.1,
+   "cos_min": 0.9999999999999999,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 3.28125,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "siglip2",
+   "suite": "libero_object",
+   "episode": 123,
+   "length": 156,
+   "seconds": 6.2,
+   "cos_min": 0.9999999999999999,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 24.8125,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "c-radiov4",
+   "suite": "libero_object",
+   "episode": 123,
+   "length": 156,
+   "seconds": 7.5,
+   "cos_min": 0.9999999999999998,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 252.625,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "dinov3",
+   "suite": "libero_object",
+   "episode": 140,
+   "length": 154,
+   "seconds": 6.0,
+   "cos_min": 0.9999999999999999,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 3.21484375,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "siglip2",
+   "suite": "libero_object",
+   "episode": 140,
+   "length": 154,
+   "seconds": 6.2,
+   "cos_min": 0.9999999999999999,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 25.6875,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "c-radiov4",
+   "suite": "libero_object",
+   "episode": 140,
+   "length": 154,
+   "seconds": 7.4,
+   "cos_min": 0.9999999999999998,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 246.875,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "dinov3",
+   "suite": "libero_goal",
+   "episode": 7,
+   "length": 140,
+   "seconds": 5.5,
+   "cos_min": 0.9999999999999999,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 3.197265625,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "siglip2",
+   "suite": "libero_goal",
+   "episode": 7,
+   "length": 140,
+   "seconds": 5.6,
+   "cos_min": 0.9999999999999999,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 23.796875,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "c-radiov4",
+   "suite": "libero_goal",
+   "episode": 7,
+   "length": 140,
+   "seconds": 6.8,
+   "cos_min": 0.9999999999999998,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 249.75,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "dinov3",
+   "suite": "libero_goal",
+   "episode": 32,
+   "length": 136,
+   "seconds": 5.4,
+   "cos_min": 0.9999999999999999,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 3.34765625,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "siglip2",
+   "suite": "libero_goal",
+   "episode": 32,
+   "length": 136,
+   "seconds": 5.5,
+   "cos_min": 0.9999999999999999,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 22.890625,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "c-radiov4",
+   "suite": "libero_goal",
+   "episode": 32,
+   "length": 136,
+   "seconds": 6.7,
+   "cos_min": 0.9999999999999998,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 248.875,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "dinov3",
+   "suite": "libero_10",
+   "episode": 251,
+   "length": 278,
+   "seconds": 11.0,
+   "cos_min": 0.9999999999999999,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 3.337890625,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "siglip2",
+   "suite": "libero_10",
+   "episode": 251,
+   "length": 278,
+   "seconds": 11.2,
+   "cos_min": 0.9999999999999999,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 25.296875,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "c-radiov4",
+   "suite": "libero_10",
+   "episode": 251,
+   "length": 278,
+   "seconds": 13.8,
+   "cos_min": 0.9999999999999998,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 248.75,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "dinov3",
+   "suite": "libero_10",
+   "episode": 314,
+   "length": 237,
+   "seconds": 9.4,
+   "cos_min": 0.9999999999999999,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 3.244140625,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "siglip2",
+   "suite": "libero_10",
+   "episode": 314,
+   "length": 237,
+   "seconds": 9.7,
+   "cos_min": 0.9999999999999999,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 25.9375,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  },
+  {
+   "source": "c-radiov4",
+   "suite": "libero_10",
+   "episode": 314,
+   "length": 237,
+   "seconds": 11.7,
+   "cos_min": 0.9999999999999998,
+   "cos_median": 1.0,
+   "rel_l2": 0.0,
+   "rel_l2_median": 0.0,
+   "rel_max": 0.0,
+   "max_abs_diff": 0.0,
+   "max_abs_cached": 264.25,
+   "frac_bit_equal": 1.0,
+   "pass": true
+  }
+ ],
+ "seconds": 398.4
+}
+=== OK: 0 episode(s) out of tolerance, 0 problem(s)
+Fri Nov 20 06:16:53 UTC 2026
+=== exit 0
