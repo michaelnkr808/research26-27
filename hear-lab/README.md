@@ -1,6 +1,6 @@
 # HEAR Lab: spatial audio for world action models
 
-**Status:** exploring. Nothing has been run yet. The research question, the base model and the setting are set (`decisions/001` and `002`, 2026-11-19). The open choice is where the audio-visual data comes from: WNM-3D's own simulator with an added sound engine, or Habitat with SoundSpaces 2.0 (`PLAN.md`). The PI's first task, RMS-AQA, is parked (`PLAN.md`, Parked). The literature survey and the novelty checks are in `literature/survey/` (PRs #49, #50, #51, #68 and #71; start with `literature/survey/2026-11-16-summary.md`). Current agenda: `PLAN.md`. History: `LOG.md`.
+**Status:** exploring. Nothing has been run yet. The research question, the base model and the setting are set by the lead (`decisions/001` and `002`, 2026-11-19; the PI has not confirmed the question). The open choice is where the audio-visual data comes from: WNM-3D's own simulator with an added sound engine, or Habitat with SoundSpaces 2.0 (`PLAN.md`). The PI's first task, RMS-AQA, is parked (`PLAN.md`, Parked). The literature survey and the novelty checks are in `literature/survey/` (PRs #49, #50, #51, #68 and #71; start with `literature/survey/2026-11-16-summary.md`). Current agenda: `PLAN.md`. History: `LOG.md`.
 
 **Question:** What benefits does a world action model gain from being given spatial audio? In the lead's own words (2026-11-15): "relating spatial audio to world action models and investigating what benefits can be gained from providing world action models with spatial audio".
 
@@ -15,9 +15,9 @@ These are starting points written from memory (`recalled`), not from a source. T
 
 ## Open scope questions
 Each open one becomes a decision record in `decisions/` once the lead and the PI settle it.
-- **Which world action model the work builds on.** Decided: WNM-3D, a navigation model built on Wan 2.2 (`decisions/002-base-model-and-setting.md`).
-- **Setting.** Decided: navigation in simulation, not robot-arm manipulation (`decisions/002`).
-- **Where the audio-visual data comes from.** Open. Either a sound engine added to WNM-3D's own simulator scenes (the PI's preference), or WNM-3D moved to Habitat with SoundSpaces 2.0. Two sizing memos come first (`PLAN.md`); the choice will be decision `003`.
+- **Which world action model the work builds on.** Decided by the lead: WNM-3D, a navigation model built on Wan 2.2 (`decisions/002-base-model-and-setting.md`).
+- **Setting.** Decided by the lead: navigation in simulation, not robot-arm manipulation (`decisions/002`).
+- **Where the audio-visual data comes from.** Open. Either a sound engine added to WNM-3D's own simulator scenes (what the PI asked for, if it can produce the data), or WNM-3D moved to Habitat with SoundSpaces 2.0. Two sizing memos come first (`PLAN.md`); the choice will be decision `003`.
 - **Which task set measures "benefit", and with which metrics.** Partly set: the task is walking to a sounding object, with success split by whether the target was visible at the start (`decisions/001`). The episodes, the metrics and the number of seeds are open and go in the experiment `PLAN.md`.
 - **Which audio encoder.** Open.
 - **What the paper has to show.** Open (see "What done looks like").
