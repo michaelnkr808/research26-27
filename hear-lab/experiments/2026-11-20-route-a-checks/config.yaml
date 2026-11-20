@@ -51,7 +51,7 @@ check2:
     script: scripts/data/convert_interiorgs_to_lerobot.py
     output_root: data/interiorgs_lerobot_check2
     num_workers: 8
-    defaults_kept: {frame_stride: 3, camera_height: 1.0, pose_source: auto, instruction_column: instruction, min_output_frames: 9, video_codec: libx264}
+    defaults_kept: {frame_stride: 3, camera_height: 1.0, pose_source: auto, instruction_column: instruction, resize_scale: 1.0, fallback_fps: 10.0, min_output_frames: 9, video_codec: libx264}
   hf_revisions:
     wnm_3d_stage3: {repo: TeleEmbodied/WNM-3D, revision: 5b8c08dd52028ef4a29e7b87966f27582032fb4f, include: "wnm_3d_stage3_release/**", bytes: 27113385590}
     vggt_omega: {repo: facebook/VGGT-Omega, revision: 1041e80fc0e911235d3426b0a3d9a81075111a53, file: vggt_omega_1b_512.pt, bytes: 4576706117, gated: true}
@@ -65,7 +65,7 @@ check2:
       NUM_GPUS: 1
       GLOBAL_BATCH_SIZE: 96
       MAX_STEPS: 12
-      LOGGING_STEPS: 1
+      LOGGING_STEPS: 10   # released default, kept; per-step times come from the callback
       SAVE_STRATEGY: "no"
       SEED: 20261120
       AUTO_DOWNLOAD_WEIGHTS: "false"
@@ -74,13 +74,21 @@ check2:
       PRETRAINED_MODEL_PATH: checkpoints/wnm_3d_stage3_release
       VGGT_OMEGA_CKPT: checkpoints/vggt_omega_1b_512.pt
       OUTPUT_DIR: /workspace/check2/runs/<trial_id>
-    hydra_extra: ["+training_args.skip_memory_metrics=false"]
+      PYTHONPATH: <repo>/hear-lab/experiments/2026-11-20-route-a-checks/src/check2
+    hydra_extra: []
+  callback:
+    location: src/check2/   # sitecustomize.py plus a TrainerCallback; not written yet
+    output: <OUTPUT_DIR>/check2_steps.jsonl
+    per_optimizer_step: [global_step, time, memory_allocated, max_memory_allocated, memory_reserved, max_memory_reserved]
+    cuda_synchronize: true
+    reset_peak_counters: false
   batch_search:
     first: 12
     down_if_oom: [8, 6, 4, 3, 2, 1]
     up_if_fits: [16, 24]
     up_trial_steps: {warmup: 2, timed: 3}
     fallback_deepspeed_cfg: zero2_offload   # only if batch 1 does not fit with zero2; reported as a deviation
+    fallback_config_error_is_not_oom: true   # an optimizer/offload error is reported as a config error and stops for the lead
   timing:
     warmup_steps: 2
     timed_steps: 10
