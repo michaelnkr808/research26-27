@@ -542,3 +542,23 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **Next:** the lead accepts the InteriorGS terms if not done; the experiment session writes the checks' experiment `PLAN.md` and asks the lead before each rental; its results come back by pull request. Then decision `003`.
 
 **Open questions:** as in the entry above.
+
+## 2026-11-20 [agent, lead, planning] (status check; InteriorGS access granted; RMS-AQA organizers' reply; read-first list)
+**Goal:** answer the lead's "whats the status", and record what arrived today.
+
+**Did:**
+- Rechecked InteriorGS access with the lead's saved Hugging Face login (HEAD request only, nothing downloaded): `spatialverse/InteriorGS`, file `.gitattributes`, returned HTTP 200 (`verified`, 2026-11-20; it was 403 on 2026-11-19). The experiment session reports the same from its side (a redirect on a scene file; its report, not rechecked here).
+- Asked the experiment session (`hear-lab-experiment`) where the three route A checks stand. Its reply (its own report, not checked by the planning lead): hand-off received; a plan presented to the lead in its window (two rentals: a cheap single-GPU machine for checks 1 and 3, then a large card for check 2); nothing started, no folder or branch. It is waiting on the lead for: the go on the checks' `PLAN.md` and the check 1 and 3 code; the GPU type for check 2 (it recommends one H200); whether to keep the launcher's VGGT-Omega file check (it recommends yes, download the real file); an SSH key on the Vast.ai account. It also reports that the only 8-GPU offers on Vast.ai are 8x H200 at about 38 dollars an hour, so the documented 8-GPU recipe does not fit the 200 dollar budget (`speculative` here: its reading of the offer list, no price checked by the planning lead).
+- The lead pasted the RMS-AQA organizers' answer to the lead's email of 2026-11-18 (a screenshot of the reply, received 2026-11-20, signed "RMS-AQA Organizing Committee"): "Due to licensing restrictions, the dataset is currently available only to registered challenge participants. Please submit the team registration form first to obtain access." So research-only access without a team registration is refused (`verified`, read from the screenshot).
+- On the literature session's request (the lead asked it what to read before it matters), sent it an ordered read-first list of the papers whose methods the plan uses, each marked decided or open, and gave the lead the same list in chat. Order: SoundSpaces 2.0 (the sound engine, both routes), GN0 / GN-Bench (WNM-3D's simulator and episodes), BAT (Spatial-AST, the leading encoder candidate in the planning lead's reading; the encoder is open), the two papers the PI linked (Hear You Are; Hear, Localize, and Reason), DreamZero (WNM-3D's video-action design), Audio-Visual World Models (overlap, not a method used). Can wait: SoundSpaces and SAVi (task and metrics), VGGT-Omega, the Wan paper, pi-AVAS, other encoder candidates. The list was written from the survey files, the decision records and the sizing comparison; no paper was opened today. Several are not in `references.bib`; the Wan citation was given from memory (`recalled`). The literature session checks citations before the reading list changes.
+- Updated the project brief (outside the repository) with the access change and the experiment session's state.
+
+**PR:** direct.
+
+**Found:** nothing measured. Access: InteriorGS and VGGT-Omega are both open on the lead's login, so no check is blocked on access.
+
+**Not verified:** the Vast.ai prices and offer list; anything in the experiment session's plan; the citations marked not in the bibliography.
+
+**Next:** the lead answers the experiment session's pending choices in its window. RMS-AQA stays parked; whether to register a challenge team is the lead's and the PI's call (a registration signals a challenge entry under the lab's name), and nothing in the current plan needs the dataset. Decision `003` after the checks.
+
+**Open questions:** if the 8-GPU recipe cannot be rented within the budget, training on fewer GPUs is a change from the documented recipe that needs the lead's approval and a recorded note; the timed step comes first. The PI questions listed in `PLAN.md`.
