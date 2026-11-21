@@ -580,3 +580,16 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **Next:** the lead decides the check 2 GPU and the VGGT-Omega file check; reviewer comment on PR #75; the lead's call on whether check 1's misses block route A, and on trying a measured HRTF.
 
 **Open questions:** does a level-only two-ear cue matter for the research question; InteriorGS terms (PDF) not yet read.
+
+## 2026-11-20 [agent, experiment] (raw outputs lost and regenerated, measured-HRTF follow-up, check 3 rerun, check 2 designed and coded; PRs #75 to #79)
+**Goal:** finish the route A checks the user approved on 2026-11-20.
+
+**Did:** merged PR #75 on the user's OK. Removing its worktree deleted the gitignored raw outputs of checks 1 and 3 (the machine was already gone); recovered the overlays and review images from the session, regenerated the rest on two short Vast.ai rentals, and keep raw outputs in `~/Desktop/hear-lab-route-a-results/` from now on. Rental 3 (GTX 1660 Super, CPU work, about 0.004 USD by the hourly rate): check 1 rerun, identical numbers, and the measured-HRTF follow-up (PR #76, merged). Rental 4 (RTX 3090, 1.26 h, about 0.60 USD with downloads): check 3 rerun, every recorded count identical (PR #79, open). Wrote and reviewed the check 2 design (PR #77, merged, with the user's four decisions) and its code: timing and memory callback, start-weights key check, RUN.md (PR #78, merged). Account credit 198.40 USD of 200.
+
+**Found** (exact numbers in the experiment `LOG.md`; `verified` this session):
+- With a measured head file (MIT KEMAR) the sound engine gives a time difference between the ears of about 0.7 ms at 90 degrees, left ear first for a source on the left, and check 1's left-ear test passes. Check 1's recorded result (library default head) stays a FAIL. SoundSpaces 2.0 most likely uses that default head.
+- The visible and not-visible counts of check 3 reproduce exactly on a second machine.
+
+**Decided by the user:** check 2 on one H200 with the real VGGT-Omega file, no gradient accumulation, only the needed downloads, stage 3 release start, a key-count check; the token is typed by the user at a hidden prompt.
+
+**Next:** the user's OK for the replacement H200 offer (Japan, about 3.94 USD/h, 2.5 to 4.5 h, hard stop 5 h); then run check 2 per `experiments/2026-11-20-route-a-checks/src/check2/RUN.md` (the user types the token about 20 to 40 minutes in). PR #79 waits for the user's merge OK. No instances exist.
