@@ -168,12 +168,26 @@ PY
     grep -rn "tokenizer_path\|skip_component_loading\|eval_bf16" "$WNM3D_ROOT/checkpoints/wnm_3d_stage3_release/experiment_cfg/conf.yaml" \
         | tee "$ENV_DIR/checkpoint_conf_keys.txt" || true
     if grep -q "tokenizer_path: *$TOKENIZER_REPO *$" "$ENV_DIR/checkpoint_conf_keys.txt"; then
-        # The server runs with HF_HUB_OFFLINE=1, so the tokenizer must be in the cache under refs/main;
-        # it is fetched once here and accepted only if main is the pinned revision.
-        hf download "$TOKENIZER_REPO" tokenizer_config.json tokenizer.json spiece.model special_tokens_map.json config.json \
-            | tee "$ENV_DIR/tokenizer_download.txt"
-        grep -q "$TOKENIZER_REVISION" "$ENV_DIR/tokenizer_download.txt" \
-            || die "the tokenizer's main is no longer the pinned $TOKENIZER_REVISION; ask the lead"
+        # The server runs with HF_HUB_OFFLINE=1 and loads the tokenizer by Hub id, which resolves through the
+        # cache's refs/main. So: check that main on the Hub is the pinned commit, fetch the files at main into
+        # the cache, and check that the cache's refs/main now names the pinned commit.
+        python - "$TOKENIZER_REPO" "$TOKENIZER_REVISION" <<'PY' | tee "$ENV_DIR/tokenizer_download.txt" \
+            || die "tokenizer not at the pinned $TOKENIZER_REVISION; ask the lead"
+import os, sys
+from huggingface_hub import HfApi, hf_hub_download
+from huggingface_hub.constants import HF_HUB_CACHE
+repo, pinned = sys.argv[1], sys.argv[2]
+main_sha = HfApi().model_info(repo, revision="main").sha
+print("hub main", main_sha)
+if main_sha != pinned:
+    sys.exit(f"hub main is {main_sha}, not the pinned {pinned}")
+for f in ["tokenizer_config.json", "tokenizer.json", "spiece.model", "special_tokens_map.json", "config.json"]:
+    print(hf_hub_download(repo, f, revision="main"))
+ref = open(os.path.join(HF_HUB_CACHE, "models--" + repo.replace("/", "--"), "refs", "main")).read().strip()
+print("cache refs/main", ref)
+if ref != pinned:
+    sys.exit(f"cache refs/main is {ref}, not the pinned {pinned}")
+PY
     else
         log "the checkpoint does not name $TOKENIZER_REPO as its tokenizer: read $ENV_DIR/checkpoint_conf_keys.txt; if it names any other Hub id or a missing path, stop and tell the lead"
     fi
