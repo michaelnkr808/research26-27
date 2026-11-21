@@ -2099,3 +2099,20 @@ On the user's go ("yep start it", then "ok, dispatch"), four workers wrote the s
 **PR:** none. This entry and the `STANDARDS.md` line: direct (chore).
 
 **Next:** for the user: `/mcp`, sign in to alphaxiv; the literature session needs a fresh start to see the tools. For planning: unchanged, the stage 3 design on the user's choice among the four remaining ideas; and one PLAN line naming the "no LIBERO-Plus result" state when the 2026-11-18 amendment is next touched.
+
+## 2026-11-21 [agent, lead, planning] (session close: stage 2 running as relayed; the measured upper bound for LIBERO-Plus evaluation; what planning owes)
+
+**Goal:** close the planning session with the status documents current.
+
+**Did:**
+- Recorded in `PLAN.md` (Now) and `README.md` (status) that stage 2's first pass is running. Source: the experiment session's messages of 2026-11-20 06:20 and 17:27 UTC (peer messages, not rechecked on the cluster by the lead) and the stage 2 `LOG.md`, whose latest entries on main are: "2026-11-21 [agent, lead, implementation] (status check at 18:38 UTC on the user's "status": `none` LIBERO-Plus 9 of 16 shards done with 0 errors, logs of shards 3 to 8 copied from the volume; measured 275 rollouts per L4 pod-hour, 109 pod-hours per checkpoi"; "2026-11-21 [agent, lead, implementation] (the user's go, in this window, for the evaluation Jobs of the three single-encoder checkpoints; the user wants the evaluations run side by side; the L4 pool is full, the 8-GPU gate question is with the user)".
+- As relayed 2026-11-20 17:27 UTC: seed 0 of `dinov3`, `c-radiov4` and `siglip2` training on L40s, about 38 h each (the experiment session's projection); both pair runs resubmitted after the first `dinov3+siglip2` pod was killed at its host-memory limit (PR #74, on the user's OK there); the `none` seed 0 LIBERO-Plus evaluation submitted (16 shards). The timing-only smoke gives an upper bound of 136.2 L4 pod-hours per checkpoint for LIBERO-Plus (30,090 rollouts at 220.9 timing-only episodes per pod-hour), 817 for six checkpoints (the experiment session's arithmetic, not rerun by the lead).
+- The project brief and two memory notes updated.
+
+**Found:** no result. The lead's 2026-11-18 scale guess for LIBERO-Plus (about 300 to 840 L4 pod-hours for six checkpoints, speculative) has its upper end close to the measured upper bound; the real figure is expected lower and is not measured yet.
+
+**Test-set use:** none by the lead. The experiment session has submitted the first stage 2 evaluation; its record is the stage 2 `LOG.md`.
+
+**PR:** none. This entry and the two status lines: direct (chore).
+
+**Next:** for planning: (1) when the measured LIBERO-Plus cost per checkpoint arrives from the `none` seed 0 evaluation, fill the stage 2 PLAN's blank ("Evaluation cost: blank until stage 1 measures it") by a dated amendment, with one line naming the "no LIBERO-Plus result" state of the one-seed report (PR #67); (2) the stage 3 design, on the user's choice among the four remaining ideas (shrinking, volume, how the encoders are joined, how much each encoder's future counts); (3) after the one-seed results, the user's choice: add seeds, start stage 3 on the one-seed pattern, or stop. For the user: sign in to alphaxiv through `/mcp`; how many local A6000s and whether shared; the compute ask.
