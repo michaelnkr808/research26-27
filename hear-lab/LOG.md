@@ -605,3 +605,33 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 - Deviations: two library versions repaired (huggingface_hub, pyarrow), the saved Hugging Face token copied over on the user's request instead of typed, 46 of 48 episodes (the user's OK), key check run with the GPU visible.
 
 **Next:** reviewer comment and the user's merge OK on PR #80. Planning decides how training should run given that one H200 cannot hold the released recipe (offload with more threads, a parameter-efficient set-up, or more GPUs); then decision `003`. No instances exist.
+
+## 2026-11-21 [agent, lead, planning] (all three route A checks back; diagnosis of the check 2 result from the raw files)
+**Goal:** take in the experiment session's check results (PRs #75 to #80, merged) and, on the lead's "lets diagnose what happend and why", explain why the released training recipe ran out of memory on one H200 and why the fallback was slow.
+
+**Did:**
+- Read the experiment `README.md` and `LOG.md` in `experiments/2026-11-20-route-a-checks/`, the PR #75 and PR #80 review comments, and the raw check 2 outputs in `~/Desktop/hear-lab-route-a-results/check2-run1/` (training logs, `check2_steps.jsonl`, `off_bs12.summary.json`, the one-second `nvidia-smi` log). Nothing was run and nothing rented by the planning lead; the machine is gone, so no hypothesis below was tested.
+- Updated the project brief. Sent the experiment session the planning reading of checks 1 and 3 (2026-11-20), including the measured-HRTF follow-up it then ran.
+
+**PR:** direct.
+
+**Found** (`verified` = read from the raw files this session; nothing reproduced):
+- The run trains every weight: "Trainable parameters in diffusion model: 5,606,692,832" (`off_bs12.log`, `bs12.log`). One 32-bit copy of that many values is 20.89 GiB. The failed request in all seven released-config trials is 20.97 GiB (`verified`), so each failure is the request for one more full-size copy of the weights.
+- Where it fails (`verified`, tracebacks): at batch 12 and 4 in `adam.py` `_init_group`, at the line `state["exp_avg_sq"] = torch.zeros_like(` with 98.8 GiB allocated (Adam's second running average; the first had been created). At batch 3 and 1 in `_multi_tensor_adam` with 119.7 GiB allocated, asking for 20.97 GiB more. 119.7 + 20.97 = 140.7 GiB against a card capacity of 139.84 GiB. So at batch 1 the recipe misses the card by about 1 GiB at the first weight update.
+- With the released config the process already holds 49.66 GB at the start of training, against 27.25 GB with offload (`check2_steps.jsonl`, `train_begin`). The difference, 22.4 GB (20.9 GiB), is one 32-bit copy of the weights (`verified` arithmetic).
+- Reading of those figures (`speculative`, from how DeepSpeed ZeRO-2 and PyTorch's Adam work, `recalled`, not checked in their code): on top of the loaded model (about 25 GiB) the released set-up keeps several full-size 32-bit copies on the GPU: master weights, gradients, Adam's two running averages, and a scratch copy during the update. On 8 GPUs ZeRO-2 splits most of these so each card holds one eighth; on one card nothing is split. Batch size barely matters because the peak is at the weight update, after the activations are freed. At batch 4 to 12 the second running average fails although free plus reserved memory exceeds the request, which fits fragmentation (the PR #80 reviewer's point).
+- Why the fallback is slow (`verified` pattern, `speculative` cause): over the last 1740 one-second samples of the offload trial the GPU alternates strictly, 62 busy stretches with a median of 12 s and 62 idle stretches with a median of 22 s (66.2 % of samples at 5 % or less). One step is 34.6 s. So each step is about 12 s of GPU work for 12 samples and about 22 s in which the GPU waits. The wait is most likely the weight update for 5.6 billion values running on the CPU on one thread (the launcher's thread cap), plus moving gradients and weights between GPU and CPU.
+- What follows (`speculative` arithmetic): removing the whole 22 s wait would give about 12 s per step, close to 3 times faster, and no more. The GPU work itself is about 1 s per training sample. At 3.80 dollars an hour that is roughly 15,000 steps of batch 12 for the remaining 190 dollars in the best case, against about 5,000 at the measured speed. The released Stage I launcher allows up to 200,000 steps on 8 GPUs.
+
+**Hypotheses, ranked, none tested** (each with what would show it wrong):
+1. The out-of-memory is the single-card cost of Adam's full-size copies, a near miss, not a batch-size or data problem. If so, the same trials with the scratch copy avoided (Adam with `foreach` off or `fused` on) and `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` fit at a small batch without offload. If they still fail by a wide margin, this is wrong.
+2. The 22 s wait is the single-thread CPU weight update. If so, raising the thread cap shrinks the idle stretch and leaves the 12 s busy stretch unchanged. If the idle stretch does not move, the wait is elsewhere (data loading, transfers).
+3. Fragmentation alone explains the batch 4 to 12 failures. If so, `expandable_segments` alone moves their failure point to where batch 1 to 3 fail.
+
+**Not verified:** every hypothesis above; that training only an added audio part fits on a smaller card (nothing timed); the Vast.ai price of any other card.
+
+**Planning lead's recommendations to the lead (not decisions):** commit to route A with a measured HRTF (decision `003`); do not plan on full fine-tuning within the 200 dollars, since even the best case leaves about 5,000 steps per version at one seed and nothing for inference-time runs; train only the added audio part on a frozen or lightly adapted backbone (the form decision `002` (c) names), where the no-audio version is the released checkpoint and needs no training; time that set-up next. Freezing removes the full-size optimizer copies and the CPU wait; it does not remove the roughly 1 s of GPU work per sample.
+
+**Next:** the lead's answers on the two recommendations; then decision `003` by pull request and direction to the experiment session. The timing goes to the PI on Thursday.
+
+**Open questions:** how many training steps an added audio part needs (unknown; it decides whether the budget is enough); whether the PI wants full fine-tuning and would fund it; the head-model choice wording for decision `001` (SoundSpaces 2.0 most likely uses the default head model, per the experiment LOG, `speculative`).
