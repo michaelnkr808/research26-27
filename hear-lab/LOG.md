@@ -593,3 +593,15 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **Decided by the user:** check 2 on one H200 with the real VGGT-Omega file, no gradient accumulation, only the needed downloads, stage 3 release start, a key-count check; the token is typed by the user at a hidden prompt.
 
 **Next:** the user's OK for the replacement H200 offer (Japan, about 3.94 USD/h, 2.5 to 4.5 h, hard stop 5 h); then run check 2 per `experiments/2026-11-20-route-a-checks/src/check2/RUN.md` (the user types the token about 20 to 40 minutes in). PR #79 waits for the user's merge OK. No instances exist.
+
+## 2026-11-21 [agent, experiment] (check 2 run on one H200; PR #79 merged; PR #80 open)
+**Goal:** run route A check 2 (one timed training step) and report.
+
+**Did:** merged PR #79 on the user's OK. Rented one H200 on Vast.ai with the user's OK in the experiment window (Japan, 3.8048 USD/h, 2.15 h, 8.20 USD by the hourly rate; credit 198.39 to 190.11 USD), ran check 2 per its RUN.md, copied and checked all outputs, destroyed the machine. Results in the experiment `LOG.md` (2026-11-21) and `README.md`, PR #80 (reviewer comment pending). Total spent on the 200 USD so far: about 9.89 USD.
+
+**Found** (`verified` this session; exact numbers in the experiment LOG):
+- The released full fine-tune with its DeepSpeed ZeRO-2 config does not fit on one H200 at any batch size from 12 down to 1: it runs out of memory when the optimizer state is set up at the first step.
+- With the PLAN's fallback (optimizer state offloaded to CPU, a deviation from the released config) batch 12 fits at about 35 s per step; the GPU is busy about a third of the time, most likely because the released launcher caps CPU threads at one (not profiled).
+- Deviations: two library versions repaired (huggingface_hub, pyarrow), the saved Hugging Face token copied over on the user's request instead of typed, 46 of 48 episodes (the user's OK), key check run with the GPU visible.
+
+**Next:** reviewer comment and the user's merge OK on PR #80. Planning decides how training should run given that one H200 cannot hold the released recipe (offload with more threads, a parameter-efficient set-up, or more GPUs); then decision `003`. No instances exist.
