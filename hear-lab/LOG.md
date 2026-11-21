@@ -635,3 +635,25 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **Next:** the lead's answers on the two recommendations; then decision `003` by pull request and direction to the experiment session. The timing goes to the PI on Thursday.
 
 **Open questions:** how many training steps an added audio part needs (unknown; it decides whether the budget is enough); whether the PI wants full fine-tuning and would fund it; the head-model choice wording for decision `001` (SoundSpaces 2.0 most likely uses the default head model, per the experiment LOG, `speculative`).
+
+## 2026-11-21 [agent, lead, planning] (the ladder; what the audio training is based on; rung 1 handed to the experiment session)
+**Goal:** answer the lead's "what are we basing our audio training off of or are just coming up with this on our own", and set the order of work after the checks.
+
+**Did:**
+- Answered from the survey files (no paper opened by the planning lead): borrowed are the way WNM-3D adds its own extra encoder (frozen VGGT-Omega plus a trainable adapter, with the backbone trained too) and the spatial audio branch of the two PI-linked papers and NaVLA2 (frozen Spatial-AST plus a trainable projector, LoRA on a language model); not borrowed are audio in a video-generation navigation model and freezing the backbone, which was the planning lead's budget-driven suggestion with no source.
+- Asked the literature session for published recipes. Its answer (PR #81, `literature/survey/2026-11-21-new-input-training-recipes.md`, fact-checked, open; its own report, not rechecked here): adapter-only on a frozen Wan model is published for audio and reported to work (MultiTalk, Face-to-Face); the one numeric ablation (OmniAvatar, Wan2.1-14B) has the frozen version clearly weaker at following the audio than LoRA plus new modules; TalkVerse on Wan2.2-5B uses LoRA plus trained audio cross-attention with about 6.3k hours of data; not found: a frozen against LoRA ablation on Wan2.2-5B, spatial or multichannel audio in any Wan model, a Wan-based world action model with an added input trained adapter-only and compared with full fine-tuning (DreamZero says LoRA was "suboptimal", no numbers). Spatial-AST takes 10 s binaural clips at 32 kHz and stretches shorter ones.
+- Proposed a four-rung ladder (reproduce the released result with no training; render and check the audio on a small set; the smallest training step by the published recipe; the three-version comparison). The lead, 2026-11-21: "I think we do need to go increamentally here", then on the rungs: "1. \"the paper\" is which paper? WNM-3D's? 2. okay sure sounds good 3. okay makes sense 4. okay right". Answer to 1: yes, the WNM-3D paper's own reported GN-Bench success rate. The planning lead reads the four answers as agreement to the ladder and to starting rung 1; stated to the lead in chat so it can be corrected.
+- Handed rung 1 to the experiment session as direction (decided, the task, not approved). Rewrote `PLAN.md` "Now" and "Next" around the ladder and updated the `README.md` status. Items removed from "Now" because they are done: the three checks (now under "Recently done") and the access item.
+- Gave the lead a reading order by rung and sent it to the literature session, which owns the reading list.
+
+**PR:** direct.
+
+**Found:** nothing measured.
+
+**Not approved:** any rental without the lead's OK in the experiment window; any training; audio encoder work; route B work. Decision `003` is not written: the lead has not answered "commit to route A" in so many words.
+
+**Not verified:** every literature statement above (the literature session's report); that rung 3's recipe fits the budget (nothing timed for LoRA).
+
+**Next:** the experiment session writes rung 1's experiment `PLAN.md` (what counts as reproduced, how many episodes against the cost) and asks the lead before renting. The lead's yes or no on decision `003`. The lead's merge OK on PR #81 in the literature window.
+
+**Open questions:** how many episodes rung 1 can afford; the audio window per step; whether the no-audio version needs the same LoRA training; the PI's view of the training-cost measurement.
