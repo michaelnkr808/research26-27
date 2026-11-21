@@ -1,0 +1,432 @@
+{
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": {
+        "annotations": {
+            "batch.kubernetes.io/job-completion-index": "2",
+            "batch.kubernetes.io/job-index-failure-count": "0",
+            "cni.projectcalico.org/containerID": "5aad5161e984372691c8daeb5ec108714e967cf124977d11ce18415c75377c51",
+            "cni.projectcalico.org/podIP": "",
+            "cni.projectcalico.org/podIPs": "",
+            "nrp.ai/username": "http://cilogon.org/serverE/users/436081"
+        },
+        "creationTimestamp": "2026-11-20T17:25:20Z",
+        "generateName": "stacking-encoders-pairings-lp-none-s0-2-",
+        "generation": 1,
+        "labels": {
+            "batch.kubernetes.io/controller-uid": "f3d9596a-7f34-4eff-93f2-0701725b4247",
+            "batch.kubernetes.io/job-completion-index": "2",
+            "batch.kubernetes.io/job-name": "stacking-encoders-pairings-lp-none-s0",
+            "config": "none",
+            "controller-uid": "f3d9596a-7f34-4eff-93f2-0701725b4247",
+            "experiment": "stacking-pairings",
+            "job-name": "stacking-encoders-pairings-lp-none-s0",
+            "kind": "lp-eval",
+            "seed": "0"
+        },
+        "name": "stacking-encoders-pairings-lp-none-s0-2-ddt52",
+        "namespace": "aria-world",
+        "ownerReferences": [
+            {
+                "apiVersion": "batch/v1",
+                "blockOwnerDeletion": true,
+                "controller": true,
+                "kind": "Job",
+                "name": "stacking-encoders-pairings-lp-none-s0",
+                "uid": "f3d9596a-7f34-4eff-93f2-0701725b4247"
+            }
+        ],
+        "resourceVersion": "15595519339",
+        "uid": "4515364b-4b3c-447f-b98e-57adb98e39b0"
+    },
+    "spec": {
+        "activeDeadlineSeconds": 84000,
+        "affinity": {
+            "nodeAffinity": {
+                "requiredDuringSchedulingIgnoredDuringExecution": {
+                    "nodeSelectorTerms": [
+                        {
+                            "matchExpressions": [
+                                {
+                                    "key": "nvidia.com/gpu.product",
+                                    "operator": "In",
+                                    "values": [
+                                        "NVIDIA-L4"
+                                    ]
+                                },
+                                {
+                                    "key": "nvidia.com/cuda.driver.major",
+                                    "operator": "Gt",
+                                    "values": [
+                                        "569"
+                                    ]
+                                },
+                                {
+                                    "key": "topology.kubernetes.io/region",
+                                    "operator": "In",
+                                    "values": [
+                                        "us-west"
+                                    ]
+                                },
+                                {
+                                    "key": "kubernetes.io/hostname",
+                                    "operator": "NotIn",
+                                    "values": [
+                                        "k8s-chase-ci-07.calit2.optiputer.net",
+                                        "ry-gpu-08.sdsc.optiputer.net"
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "containers": [
+            {
+                "args": [
+                    "set -euo pipefail\nSMI=\"\"; DECLARED=0\nfail() { DECLARED=1; exit $1; }\nR=/mnt/proxy; TAG=pairings-lp-$CFGK-s$SEED-shard${SHARD}of${NSHARDS}-try$EVAL_TRY; D=$(date +%Y%m%d-%H%M%S)\nRUN=$RUN_DIR\nROLL=$R/rollouts/pairings/$CFGK-s$SEED\nOUT=$ROLL/lp-shard${SHARD}of${NSHARDS}-try$EVAL_TRY.jsonl\nLOG=$R/logs/$TAG-$D.log; GPUCSV=$R/logs/$TAG-gpu-$D.csv\nmkdir -p $R/logs $ROLL\nexec \u003e \u003e(tee -a $LOG) 2\u003e\u00261\nTEE=$!\n: \u003e $GPUCSV\nphase() { echo \"=== PHASE $1 $(date -u +%H:%M:%S)\"; echo \"#phase $1\" \u003e\u003e $GPUCSV; }\nfinish() {\n  rc=$?; set +e\n  case $rc in 2|10|13|15|19|21) [ \"$DECLARED\" = 1 ] || { echo \"[exit] code $rc came from a tool, not a decision of this script; reporting 1\"; rc=1; } ;; esac\n  [ -n \"$SMI\" ] \u0026\u0026 { kill $SMI 2\u003e/dev/null; wait $SMI 2\u003e/dev/null; }\n  echo \"#phase end\" \u003e\u003e $GPUCSV\n  awk -F', ' 'BEGIN{p=\"start\"} /^#phase/{p=$0; sub(/^#phase /,\"\",p); next} {v=$2; sub(/ %/,\"\",v); s[p]+=v; n[p]++; S+=v; N++} END{for(k in n) printf \"[gpu-summary] %s: %d samples, mean %.1f%%\\n\", k, n[k], s[k]/n[k]; if(N) printf \"[gpu-summary] all: %d samples, mean %.1f%%\\n\", N, S/N}' $GPUCSV\n  echo \"[cgroup] memory.peak $(cat /sys/fs/cgroup/memory.peak 2\u003e/dev/null || echo n/a) bytes, memory.current $(cat /sys/fs/cgroup/memory.current 2\u003e/dev/null || echo n/a) bytes\"\n  echo \"[cgroup] $(grep -E '^anon ' /sys/fs/cgroup/memory.stat 2\u003e/dev/null || echo 'anon n/a') (bytes, at exit); $(grep -E '^file ' /sys/fs/cgroup/memory.stat 2\u003e/dev/null || echo 'file n/a') (page cache)\"\n  for f in $OUT $OUT.errors.jsonl; do\n    if [ -f $f ]; then\n      echo \"=== FILE $(basename $f) sha256 $(sha256sum \u003c $f | cut -d' ' -f1) bytes $(stat -c %s $f) lines $(wc -l \u003c $f)\"\n      # the records body (it holds test outcomes) is printed only on exit 0; a failed pod's log shows the header only (PR #48 review S1)\n      if [ \"$f\" = \"$OUT.errors.jsonl\" ] || [ $rc = 0 ]; then cat $f; else echo \"(records body not printed: pod exit $rc; the file is on the PVC at $f)\"; fi\n      echo \"=== END $(basename $f)\"\n    fi\n  done\n  if [ -f $OUT.errors.jsonl ]; then echo \"[errors] $(basename $OUT).errors.jsonl EXISTS: read it before any outcome\"; else echo \"[errors] no .errors.jsonl for this shard\"; fi\n  date -u; echo \"=== exit $rc\"\n  exec 1\u003e\u0026- 2\u003e\u0026-; wait $TEE 2\u003e/dev/null\n  exit $rc\n}\ntrap finish EXIT\necho \"=== STAGE 2 LIBERO-PLUS EVALUATION (test-set use): config $CONFIG seed $SEED, shard ${SHARD}/${NSHARDS} of the 30,090 rollouts (10,030 episodes x eval seeds 41, 42, 43), checkpoint $RUN/model.pt -\u003e $OUT\"; date -u\necho \"SRC_GIT_COMMIT=$SRC_GIT_COMMIT SHARD=$SHARD NSHARDS=$NSHARDS EVAL_TRY=$EVAL_TRY ENVS=$ENVS CUDA_GRAPH=$CUDA_GRAPH ROLLOUT_CAP_S=$ROLLOUT_CAP_S\"\n[[ \"$SRC_GIT_COMMIT\" =~ ^[0-9a-f]{40}$ ]] || { echo \"ABORT: SRC_GIT_COMMIT is not a 40-hex commit (not filled at submit?)\"; fail 10; }\n[[ \"$EXPECT_MODEL_SHA\" =~ ^[0-9a-f]{64}$ ]] || { echo \"ABORT: EXPECT_MODEL_SHA is not a sha256 (not rendered from the training log's === MODEL line?)\"; fail 13; }\n[[ \"$SHARD\" =~ ^[0-9]+$ \u0026\u0026 \"$NSHARDS\" =~ ^[0-9]+$ \u0026\u0026 \"$SHARD\" -lt \"$NSHARDS\" ]] || { echo \"ABORT: SHARD '$SHARD' is not an index of NSHARDS '$NSHARDS'\"; exit 1; }\n[[ \"$SEED\" =~ ^[0-9]+$ \u0026\u0026 -n \"$CONFIG\" \u0026\u0026 \"$CFGK\" = \"$(echo \"$CONFIG\" | tr '+' '-')\" ]] || { echo \"ABORT: CONFIG '$CONFIG' / CFGK '$CFGK' / SEED '$SEED' not rendered consistently\"; fail 10; }\necho \"/src = ConfigMap stacking-encoders-pairings-eval-src; checking its 11 keys against the hashes rendered into this manifest (RUN-stage2-eval.md step 4):\"\n( cd /src \u0026\u0026 sha256sum -c - \u003c\u003c'EOF'\na097769427138a53828055e888be936545a9feef67e4e488b2fbb4ffceaf7227  rollout.py\n6f7ed893bc826ad8d0465ea5f34992d1fb548a5114a00d0f233055795512db6d  lp_eval.py\n961945ecaf0be1aa94316a0afa3b7e2d250d33afff00d76dddebfbc6b93b6cfc  proxy_wam.py\n61181a74af8825eff0e0b8cb3a220f8483d9f1982642cd90b753cb9e5a87d708  t5_cache.py\n7af1f7aa2d595d9e0b7f1fb462f7901c6fa9594d2da7895b0168f0ef3ea2d70d  diagnostics.py\n1d7ea029550150e1ed987a9d0bf000bf26e22de022bc2bf6050ff1a68fc86b60  extract_fastwam.py\nf334c5604f319f779af6b70d06c0505f2c5df482c4531cb8b779b6894384683a  extract_features.py\n81993810937d2692597d1d161e438f7688dc7809d0017628d9603ef1d196e363  fastwam_data.py\n880c47cbe741b7fbcd98f44f85e7a1d14747d6c837e0493f4642e5ebbc18ace8  setup_env.sh\nbf9651099926914da0e4b32b04d317260a38be8d4b87dcba9813637d1ed91ae3  setup_sim.sh\nf3017146fd7e89b79709f5639c003d0688ccafce8257705c566290ccb99b4ef9  env_bundle.sh\nEOF\n) || { echo \"ABORT: a /src key differs from the hash rendered at submit (the ConfigMap changed after the render, or the render did not run)\"; fail 19; }\necho \"env bundle key: $(cat /src/setup_env.sh /src/setup_sim.sh /src/env_bundle.sh | sha256sum | cut -c1-12) (the prebuilt bundle is 9182f8131559)\"\n[ -f $RUN/model.pt ] || { echo \"ABORT: $RUN/model.pt is missing (did the training Job succeed? is RUN_DIR right?)\"; fail 15; }\nls -la $RUN/model.pt\nif [ -e $OUT ]; then echo \"MODE: resume (records file exists, $(wc -l \u003c $OUT) lines already)\"; else echo \"MODE: fresh\"; fi\nEXP=$(( (30090 - SHARD + NSHARDS - 1) / NSHARDS ))   # jobs[SHARD::NSHARDS] of the 30,090\n# unique job keys (rollout.py job_key: benchmark, suite, episode_id, eval_seed), so a duplicated line cannot count twice;\n# an unreadable line makes the count 0 and the shard runs normally (rollout.py then resumes or refuses the file)\nNKEYS=0\nif [ -f $OUT ]; then\n  NKEYS=$(python3 -c 'import json, sys; print(len({(r[\"benchmark\"], r[\"suite\"], int(r[\"episode_id\"]), int(r[\"eval_seed\"])) for r in (json.loads(x) for x in open(sys.argv[1]) if x.strip())}))' $OUT 2\u003e/dev/null || echo 0)\nfi\nif [ -f $OUT ] \u0026\u0026 [ ! -f $OUT.errors.jsonl ] \u0026\u0026 [ \"$NKEYS\" -ge \"$EXP\" ]; then\n  echo \"COMPLETE: $OUT already holds $NKEYS unique job keys of $EXP; nothing to run (a resubmit after another shard failed)\"; exit 0\nfi\nnvidia-smi || { echo \"ABORT: nvidia-smi failed (a faulty GPU node; retryable)\"; exit 1; }\nnproc; df -h $R /work\nphase model-sha\nMSHA=$(timeout --kill-after=60 900 sha256sum $RUN/model.pt) || { echo \"ABORT: model.pt sha256 failed or timed out (900 s)\"; exit 16; }\necho \"=== MODEL $MSHA\"\n[ \"${MSHA%% *}\" = \"$EXPECT_MODEL_SHA\" ] || { echo \"ABORT: model.pt sha256 ${MSHA%% *} differs from the pinned $EXPECT_MODEL_SHA (the training log's === MODEL line)\"; fail 13; }\necho \"model.pt sha256 equals the pinned value\"\nnvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv,noheader -l 30 \u003e \u003e(tee -a $GPUCSV | sed -u 's/^/[gpu] /') \u0026\nSMI=$!\ngunzip -c /subset/full-subset.json.gz \u003e /work/full-subset.json || { echo \"ABORT: gunzip of the subset ConfigMap failed\"; fail 21; }\necho \"9f4baa42a971bdfad148e19629c08ce74443aa4f2fe0b1512b512ec4649177b2  /work/full-subset.json\" | sha256sum -c - || { echo \"ABORT: full-subset.json differs from the committed episode list (subset_id 91072e5da8499c99)\"; fail 21; }\nphase restore\n. /src/env_bundle.sh restore    # as the smoke and the proxy's rollout Jobs; sourced, so it cannot be wrapped in `timeout`; a failure exits via set -e\nGRAPH=\"\"; [ \"$CUDA_GRAPH\" = 1 ] \u0026\u0026 GRAPH=\"--cuda-graph\"\nCOMMON=\"--run-dir $RUN --t5 $R/feats/t5 --vae-path $R/models/Wan2.2_VAE.safetensors --tasks $R/lp_tasks.json --subset /work/full-subset.json --eval-seeds 41,42,43 --clean 0 --order-seed 0 $GRAPH --monitor-s 600 --shard $SHARD/$NSHARDS\"\nphase rollout-envs$ENVS\necho \"FLAGS: python /src/rollout.py run $COMMON --envs $ENVS --out $OUT\"\nT1=$SECONDS; rc=0\ntimeout --kill-after=60 $ROLLOUT_CAP_S python /src/rollout.py run $COMMON --envs $ENVS --out $OUT 2\u003e\u00261 | sed \"/using task orders/d\" || rc=$?\ncase $rc in\n  0) ;;\n  2) echo \"ABORT: rollout.py exited 2 (argparse: a bad flag, deterministic)\"; fail 2 ;;\n  124) echo \"ABORT: the rollout pass hit its $ROLLOUT_CAP_S s cap (records so far are in the file; a retry resumes)\"; exit 16 ;;\n  137) if [ $(( SECONDS - T1 )) -ge $ROLLOUT_CAP_S ]; then echo \"ABORT: the rollout pass hit its $ROLLOUT_CAP_S s cap (killed after the grace; a retry resumes)\"; exit 16; fi; exit 137 ;;\n  *) exit $rc ;;\nesac\necho \"=== done\"\n"
+                ],
+                "command": [
+                    "bash",
+                    "-c"
+                ],
+                "env": [
+                    {
+                        "name": "SRC_GIT_COMMIT",
+                        "value": "2a9c058312efc14a3d65d9563007627c1243a82b"
+                    },
+                    {
+                        "name": "EXPECT_MODEL_SHA",
+                        "value": "b25e63e61d6297d523eb75f9e334f179e5faac58c06aaa81da92d4ca3fcdc732"
+                    },
+                    {
+                        "name": "CONFIG",
+                        "value": "none"
+                    },
+                    {
+                        "name": "CFGK",
+                        "value": "none"
+                    },
+                    {
+                        "name": "SEED",
+                        "value": "0"
+                    },
+                    {
+                        "name": "RUN_DIR",
+                        "value": "/mnt/proxy/runs/baseline-none-s0"
+                    },
+                    {
+                        "name": "SHARD",
+                        "valueFrom": {
+                            "fieldRef": {
+                                "apiVersion": "v1",
+                                "fieldPath": "metadata.annotations['batch.kubernetes.io/job-completion-index']"
+                            }
+                        }
+                    },
+                    {
+                        "name": "NSHARDS",
+                        "value": "16"
+                    },
+                    {
+                        "name": "EVAL_TRY",
+                        "value": "1"
+                    },
+                    {
+                        "name": "ENVS",
+                        "value": "4"
+                    },
+                    {
+                        "name": "CUDA_GRAPH",
+                        "value": "1"
+                    },
+                    {
+                        "name": "ROLLOUT_CAP_S",
+                        "value": "81600"
+                    },
+                    {
+                        "name": "HF_HOME",
+                        "value": "/work/hf"
+                    },
+                    {
+                        "name": "PYTHONUNBUFFERED",
+                        "value": "1"
+                    },
+                    {
+                        "name": "PYTHONPATH",
+                        "value": "/src"
+                    },
+                    {
+                        "name": "SIM_DIR",
+                        "value": "/work/sim"
+                    },
+                    {
+                        "name": "MUJOCO_GL",
+                        "value": "egl"
+                    },
+                    {
+                        "name": "PYOPENGL_PLATFORM",
+                        "value": "egl"
+                    },
+                    {
+                        "name": "NVIDIA_DRIVER_CAPABILITIES",
+                        "value": "compute,utility,graphics"
+                    },
+                    {
+                        "name": "JOB_COMPLETION_INDEX",
+                        "valueFrom": {
+                            "fieldRef": {
+                                "apiVersion": "v1",
+                                "fieldPath": "metadata.labels['batch.kubernetes.io/job-completion-index']"
+                            }
+                        }
+                    }
+                ],
+                "image": "pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime",
+                "imagePullPolicy": "IfNotPresent",
+                "name": "main",
+                "resources": {
+                    "limits": {
+                        "cpu": "4800m",
+                        "ephemeral-storage": "58Gi",
+                        "memory": "33Gi",
+                        "nvidia.com/gpu": "1"
+                    },
+                    "requests": {
+                        "cpu": "4",
+                        "ephemeral-storage": "50Gi",
+                        "memory": "28Gi",
+                        "nvidia.com/gpu": "1"
+                    }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "volumeMounts": [
+                    {
+                        "mountPath": "/work",
+                        "name": "work"
+                    },
+                    {
+                        "mountPath": "/src",
+                        "name": "src",
+                        "readOnly": true
+                    },
+                    {
+                        "mountPath": "/mnt/proxy",
+                        "name": "proxy"
+                    },
+                    {
+                        "mountPath": "/dev/shm",
+                        "name": "dshm"
+                    },
+                    {
+                        "mountPath": "/subset",
+                        "name": "subset",
+                        "readOnly": true
+                    }
+                ]
+            }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "enableServiceLinks": true,
+        "hostname": "stacking-encoders-pairings-lp-none-s0-2",
+        "nodeName": "nautilus-it-gpu06.fullerton.edu",
+        "preemptionPolicy": "PreemptLowerPriority",
+        "priority": 0,
+        "restartPolicy": "Never",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "serviceAccount": "default",
+        "serviceAccountName": "default",
+        "terminationGracePeriodSeconds": 30,
+        "tolerations": [
+            {
+                "effect": "NoExecute",
+                "key": "node.kubernetes.io/not-ready",
+                "operator": "Exists",
+                "tolerationSeconds": 300
+            },
+            {
+                "effect": "NoExecute",
+                "key": "node.kubernetes.io/unreachable",
+                "operator": "Exists",
+                "tolerationSeconds": 300
+            },
+            {
+                "effect": "PreferNoSchedule",
+                "key": "nvidia.com/gpu",
+                "operator": "Exists"
+            }
+        ],
+        "volumes": [
+            {
+                "emptyDir": {
+                    "sizeLimit": "58Gi"
+                },
+                "name": "work"
+            },
+            {
+                "configMap": {
+                    "defaultMode": 420,
+                    "name": "stacking-encoders-pairings-eval-src"
+                },
+                "name": "src"
+            },
+            {
+                "configMap": {
+                    "defaultMode": 420,
+                    "name": "stacking-encoders-pairings-lp-subset"
+                },
+                "name": "subset"
+            },
+            {
+                "name": "proxy",
+                "persistentVolumeClaim": {
+                    "claimName": "stacking-encoders-proxy"
+                }
+            },
+            {
+                "emptyDir": {
+                    "medium": "Memory",
+                    "sizeLimit": "4Gi"
+                },
+                "name": "dshm"
+            }
+        ]
+    },
+    "status": {
+        "conditions": [
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2026-11-20T23:58:40Z",
+                "observedGeneration": 1,
+                "status": "False",
+                "type": "PodReadyToStartContainers"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2026-11-20T17:25:21Z",
+                "observedGeneration": 1,
+                "reason": "PodCompleted",
+                "status": "True",
+                "type": "Initialized"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2026-11-20T23:58:39Z",
+                "observedGeneration": 1,
+                "reason": "PodCompleted",
+                "status": "False",
+                "type": "Ready"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2026-11-20T23:58:39Z",
+                "observedGeneration": 1,
+                "reason": "PodCompleted",
+                "status": "False",
+                "type": "ContainersReady"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2026-11-20T17:25:21Z",
+                "observedGeneration": 1,
+                "status": "True",
+                "type": "PodScheduled"
+            }
+        ],
+        "containerStatuses": [
+            {
+                "allocatedResources": {
+                    "cpu": "4",
+                    "ephemeral-storage": "50Gi",
+                    "memory": "28Gi",
+                    "nvidia.com/gpu": "1"
+                },
+                "containerID": "containerd://4c5438b5af26d5f7bc227c853a74923ce11fc52b73a4f939a51f29a937c17dbc",
+                "image": "docker.io/pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime",
+                "imageID": "docker.io/pytorch/pytorch@sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2",
+                "lastState": {},
+                "name": "main",
+                "ready": false,
+                "resources": {
+                    "limits": {
+                        "cpu": "4800m",
+                        "ephemeral-storage": "58Gi",
+                        "memory": "33Gi",
+                        "nvidia.com/gpu": "1"
+                    },
+                    "requests": {
+                        "cpu": "4",
+                        "ephemeral-storage": "50Gi",
+                        "memory": "28Gi",
+                        "nvidia.com/gpu": "1"
+                    }
+                },
+                "restartCount": 0,
+                "started": false,
+                "state": {
+                    "terminated": {
+                        "containerID": "containerd://4c5438b5af26d5f7bc227c853a74923ce11fc52b73a4f939a51f29a937c17dbc",
+                        "exitCode": 0,
+                        "finishedAt": "2026-11-20T23:58:37Z",
+                        "reason": "Completed",
+                        "startedAt": "2026-11-20T17:25:40Z"
+                    }
+                },
+                "user": {
+                    "linux": {
+                        "gid": 0,
+                        "supplementalGroups": [
+                            0
+                        ],
+                        "uid": 0
+                    }
+                },
+                "volumeMounts": [
+                    {
+                        "mountPath": "/work",
+                        "name": "work"
+                    },
+                    {
+                        "mountPath": "/src",
+                        "name": "src",
+                        "readOnly": true,
+                        "recursiveReadOnly": "Disabled"
+                    },
+                    {
+                        "mountPath": "/mnt/proxy",
+                        "name": "proxy"
+                    },
+                    {
+                        "mountPath": "/dev/shm",
+                        "name": "dshm"
+                    },
+                    {
+                        "mountPath": "/subset",
+                        "name": "subset",
+                        "readOnly": true,
+                        "recursiveReadOnly": "Disabled"
+                    }
+                ]
+            }
+        ],
+        "hostIP": "209.129.60.136",
+        "hostIPs": [
+            {
+                "ip": "209.129.60.136"
+            }
+        ],
+        "observedGeneration": 1,
+        "phase": "Succeeded",
+        "podIP": "10.244.183.51",
+        "podIPs": [
+            {
+                "ip": "10.244.183.51"
+            }
+        ],
+        "qosClass": "Burstable",
+        "startTime": "2026-11-20T17:25:21Z"
+    }
+}
