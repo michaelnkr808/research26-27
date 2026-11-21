@@ -657,3 +657,7 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **Next:** the experiment session writes rung 1's experiment `PLAN.md` (what counts as reproduced, how many episodes against the cost) and asks the lead before renting. The lead's yes or no on decision `003`. The lead's merge OK on PR #81 in the literature window.
 
 **Open questions:** how many episodes rung 1 can afford; the audio window per step; whether the no-audio version needs the same LoRA training; the PI's view of the training-cost measurement.
+
+## 2026-11-21 [agent, literature] (reading list reordered by ladder rung)
+**Did:** reordered `literature/reading-list.md` "To read" by the ladder rungs, as sent by the planning lead (hear-lab-94); added OmniAvatar and TalkVerse from PR #81 (identifiers as cited there, arXiv metadata not re-checked). Direct merge (chore); no paper was re-read.
+**Next:** none.
