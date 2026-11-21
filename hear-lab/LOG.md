@@ -661,3 +661,26 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 ## 2026-11-21 [agent, literature] (reading list reordered by ladder rung)
 **Did:** reordered `literature/reading-list.md` "To read" by the ladder rungs, as sent by the planning lead (hear-lab-94); added OmniAvatar and TalkVerse from PR #81 (identifiers as cited there, arXiv metadata not re-checked). Direct merge (chore); no paper was re-read.
 **Next:** none.
+
+## 2026-11-21 [agent, experiment] (rung 1 plan: reproduce the released WNM-3D result at inference time; plan approved, nothing rented)
+**Goal:** take the planning lead's rung 1 hand-off (run the released stage 3 checkpoint closed-loop in GN-Bench, compare its success rate with the WNM-3D paper, split by the check 3 visible flag, time and cost per episode) and plan it.
+
+**Did:** read the hand-off, the brief, PLAN and LOG; read the WNM-3D paper (arXiv 2608.07267, v3 HTML copy in the literature session's scratchpad) Table 1, Table 4 and Appendix B.1; read the released evaluation code (WNM-3D `scripts/inference/wnm_3d_server.sh`, README "Inference", `docs/INSTALLATION.md` "Reference Hardware"; GN0 `scripts/evaluation/eval_remote.sh`, `configs/gn_bench/interiorgs/test_unseen.yaml`, `gn0/agents/remote.py`) from local copies at the pinned commits (WNM-3D 7fe2d5f, GN0 c927781). Checked `vastai show user` (username HEAR Lab, credit 189.98 USD) and searched single-GPU offers. Presented the plan to the user. Nothing rented, no worker spawned, no instances exist.
+
+**PR:** none (LOG and PLAN only).
+
+**Found** (`verified`, read this session):
+- Paper target: WNM-3D (full three-stage curriculum, the released stage 3 checkpoint) Unseen SR 53.5, SPL 46.6, OS 62.2, NE 4.1, TL 10.2; Seen SR 88.7, SPL 80.9 (Table 1, same row in Table 4). Seen and Unseen contain 1,000 and 5,000 episodes; each checkpoint evaluated once per episode with inference seed 1140; point estimates only, no seeds or intervals (Appendix B.1). Seed 1140 is hard-coded in `gammanav/vln/model/wnm_3d/action_head/wan_flow_matching_action_tf.py` line 289.
+- Mismatch between the paper and the released command: Appendix B.1 says the evaluator emits STOP when the cumulative translation of a returned block is below 0.15 m. GN0's `RemoteNavAgent` defaults `chunk_stop_translation` to 0.15 (`gn0/agents/remote.py` line 128), but `eval_remote.sh` sets `REMOTE_MIN_CHUNK_TRANSLATION="0"` (disabled, line 46) and passes it explicitly, and the WNM-3D README command does not override it. The README command also passes `--enable-stall-recovery`, which the paper does not mention.
+- Released inference defaults (server script): 16 inference steps with a fixed DiT step mask, DiT cache on, CFG on with scale 5.0, torch compile off; client: at most 8 actions per query, stall patience 16, MAX_EPISODE_STEPS 500, success within 3.0 m. The single-replica server was validated on an H100 80 GB and used about 27 GiB after loading; each stage checkpoint is about 26 GiB.
+- Single-GPU offers seen (reliability above 0.98, 200 GB disk or more): H100 SXM from 2.268 USD/h (Germany, reliability 0.9976, 288 GB disk), H200 from 3.557 USD/h, L40S 48 GB from 0.416 USD/h, RTX 6000 Ada from 0.601 USD/h (search price excludes disk).
+
+**Plan presented (approved by the user, 2026-11-21: "yes sounds good"):**
+- Split: GN-Bench Unseen (test_unseen) only, where later rungs are read and where check 3's visible flag exists.
+- Pass bar, fixed before any run: a random sample of Unseen episodes, drawn and frozen before the run; "reproduced" if the paper's 53.5 % lies inside the 95 % interval of our measured success rate. Also report success split by visible / not visible, with and without the 39 possibly mirrored scenes, and time and cost per episode.
+- Stop rule: follow the paper (block-translation STOP at 0.15 m), recorded as a deviation from the released command. The user's "yes sounds good" is read as accepting this recommendation (the lead stated that reading in chat; not yet confirmed in so many words).
+- Steps: (1) one worker (Opus, medium effort) writes the experiment folder: PLAN with the pass bar, setup script pinned to the install guide, the frozen random sample, a summary script joining episodes to the check 3 flags; done check = tests on synthetic results plus the lead's check of every setting against the paper. (2) Timing rental, needs its own OK: one H100 SXM, about 2.27 USD/h, setup plus a few dozen real episodes, estimated 2 to 3 h (from earlier rentals' setup times, not measured for this job), about 5 to 7 USD, hard stop 4 h. (3) The user picks the episode count from the measured cost per episode (speculative: the full 5,000 would use most of the remaining budget; about 1,000 is the likely choice). (4) PR review, LOG and README.
+
+**Not approved:** the timing rental (the user asked to /close and /clear first; ask again in the new session). No training, audio, rung 2 or route B work.
+
+**Next:** after the clear, confirm the stop-rule reading with the user, spawn the folder worker, then quote a live H100 offer and get the rental OK. Offers vanish within minutes, so re-search at that time.
