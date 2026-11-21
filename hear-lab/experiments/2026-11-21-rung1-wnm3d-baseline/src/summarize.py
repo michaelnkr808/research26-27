@@ -6,7 +6,8 @@ Inputs (all outside git):
   --run-dir      the run folder copied off the machine (gn0/log/*.json from GN0, rung1_episodes.jsonl
                  from the rung1 hook, episode_ids.txt)
   --order-file   results/episode_order.txt (frozen order; its sha256 must match config.yaml)
-  --n            how many episodes of the frozen order the run was asked for
+  --run-kind     timing or main; N is read from config.yaml (episodes.timing_k or episodes.n_main),
+                 never from the command line, and the summary refuses while that key is pending
   --check3-csv   route-a check 3 check3_InteriorGS_test_unseen.csv (visible flag)
   --scenes-jsonl route-a check 3 scenes.jsonl (frame diagnostic for the mirrored scenes)
   --usd-per-hour the rented machine's hourly price (dph_total), for cost per episode
@@ -28,6 +29,8 @@ from collections import Counter
 from pathlib import Path
 
 import yaml
+
+from build_commands import PendingDecision, resolve_count
 
 HERE = Path(__file__).resolve().parent
 CONFIG = HERE.parent / "config.yaml"
@@ -178,7 +181,7 @@ def timing(rows: list[dict], events: dict[str, dict], usd_per_hour: float | None
 
 
 def summarize(cfg: dict, run_dir: Path, order: list[str], n: int, check3: dict[str, dict],
-              mirrored: set[str], usd_per_hour: float | None) -> dict:
+              mirrored: set[str], usd_per_hour: float | None, run_kind: str = "main") -> dict:
     if not 1 <= n <= len(order):
         raise SummaryError(f"n {n} outside 1..{len(order)}")
     wanted = order[:n]
@@ -218,13 +221,16 @@ def summarize(cfg: dict, run_dir: Path, order: list[str], n: int, check3: dict[s
     target = cfg["target"]
     complete = len(rows) == n
     overall = groups["all"]
-    if not complete:
+    if run_kind != "main":
+        verdict = "not applicable (timing run; the pass bar is on the main run)"
+    elif not complete:
         verdict = "incomplete"
     else:
         lo, hi = overall["sr_ci95"]
         verdict = "reproduced" if lo <= float(target["sr"]) <= hi else "not reproduced"
 
     return {
+        "run_kind": run_kind,
         "n_requested": n,
         "n_finished": len(rows),
         "complete": complete,
@@ -243,13 +249,17 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--config", type=Path, default=CONFIG)
     ap.add_argument("--run-dir", type=Path, required=True)
     ap.add_argument("--order-file", type=Path, required=True)
-    ap.add_argument("--n", type=int, required=True)
+    ap.add_argument("--run-kind", choices=["timing", "main"], required=True)
     ap.add_argument("--check3-csv", type=Path, required=True)
     ap.add_argument("--scenes-jsonl", type=Path, required=True)
     ap.add_argument("--usd-per-hour", type=float)
     ap.add_argument("--out", type=Path, required=True)
     a = ap.parse_args(argv)
     cfg = yaml.safe_load(a.config.read_text(encoding="utf-8"))
+    try:
+        n = resolve_count(cfg, a.run_kind)
+    except PendingDecision as exc:
+        raise SummaryError(str(exc)) from exc
 
     for path, key in ((a.order_file, cfg["episodes"]["order_sha256"]),
                       (a.check3_csv, cfg["episodes"]["source_sha256"]),
@@ -268,7 +278,7 @@ def main(argv: list[str] | None = None) -> int:
         raise SummaryError(f"{n_mirr_eps} test_unseen episodes in mirrored scenes, config expects "
                            f"{mcfg['n_test_unseen_episodes_expected']}")
 
-    out = summarize(cfg, a.run_dir, order, a.n, check3, mirrored, a.usd_per_hour)
+    out = summarize(cfg, a.run_dir, order, n, check3, mirrored, a.usd_per_hour, a.run_kind)
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text(json.dumps(out, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     g = out["groups"]["all"]

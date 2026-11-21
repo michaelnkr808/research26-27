@@ -50,7 +50,7 @@ env:
     torchaudio: 2.8.0
     torch_index: https://download.pytorch.org/whl/cu129
     cuda_toolkit: "12.9"
-    flash_attn: unpinned            # docs give no version; record what pip installs
+    flash_attn: 2.8.3.post2         # docs give no version; the version route-a check 2 installed (prebuilt wheel)
     huggingface_hub: 0.36.2         # route-a check 2 repair: 2.x breaks transformers 4.51.3
     pyarrow: 23.0.1                 # route-a check 2 repair: newer pyarrow needs numpy 2, WNM-3D pins 1.26.4
   bae:      # WNM-3D docs/INSTALLATION.md section 2 and GN0 docs/INSTALLATION.md

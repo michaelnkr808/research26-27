@@ -40,6 +40,7 @@ ssh -p <port> root@<host> 'umask 077 && cat > /dev/shm/hft' < ~/.cache/huggingfa
 ~~~bash
 tmux new -s rung1
 cd /workspace/rung1/exp/src
+mkdir -p /workspace/rung1/env
 bash setup.sh 2>&1 | tee -a /workspace/rung1/env/setup_console.log
 ~~~
 
@@ -96,9 +97,9 @@ Then `bash setup.sh token-check` on the machine once more, read the credit, dest
 cd <REPO>/hear-lab/experiments/2026-11-21-rung1-wnm3d-baseline
 C3=~/Desktop/hear-lab-route-a-results/2026-11-20-check3-rerun/check3_full
 /opt/homebrew/bin/python3.11 src/summarize.py --run-dir ~/Desktop/hear-lab-rung1-results/runs/<RUN> \
-  --order-file results/episode_order.txt --n <K or N> \
+  --order-file results/episode_order.txt --run-kind <timing or main> \
   --check3-csv $C3/check3_InteriorGS_test_unseen.csv --scenes-jsonl $C3/scenes.jsonl \
   --usd-per-hour <dph_total of the instance> --out ~/Desktop/hear-lab-rung1-results/runs/<RUN>/summary.json
 ~~~
 
-The verdict is only meaningful for the main run (the pass bar is on the first N). For the timing run, read `timing` in the summary: seconds and USD per episode, with and without the first episode of each launch.
+N comes from `config.yaml` (`episodes.timing_k` for `timing`, `episodes.n_main` for `main`), not from the command line; `run_eval.sh --n` must equal one of those committed values too. The verdict is given only for the main run (the timing summary says "not applicable"). For the timing run, read `timing` in the summary: seconds and USD per episode, with and without the first episode of each launch.

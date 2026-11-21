@@ -4,6 +4,7 @@
 #
 # Usage (on the rented machine, after setup.sh):
 #   bash run_eval.sh --run-name NAME --n N --repo-commit SHA
+# N must equal episodes.timing_k or episodes.n_main as committed in config.yaml (refused while pending).
 # Rerunning the same command resumes: GN0 skips episodes already in <run>/gn0/log/, and a resumed
 # launch must have the same settings as the earlier ones (build_commands.py --previous).
 #
@@ -119,11 +120,15 @@ if [[ "$PRINT" -eq 1 ]]; then
 fi
 
 # ---------------------------------------------------------------- run mode
+[[ "$N" =~ ^[1-9][0-9]*$ ]] || die "--n must be a positive integer"
+(( N <= N_TOTAL )) || die "--n $N exceeds n_total $N_TOTAL"
+# --n must equal a count the lead committed to config.yaml (episodes.timing_k or episodes.n_main).
+COUNT_KEY="$("$PY" "$SRC_DIR/build_commands.py" --config "$CONFIG" --emit check-n --n "$N")" \
+    || die "--n $N is not a committed episode count; commit episodes.timing_k or episodes.n_main first"
+echo "[rung1] --n $N matches $COUNT_KEY"
 [[ "$(uname -s)" == "Linux" ]] || die "run mode needs the rented Linux machine"
 command -v nvidia-smi >/dev/null || die "nvidia-smi not found"
 [[ -n "$REPO_COMMIT" ]] || die "--repo-commit is required (git rev-parse HEAD on the Mac; the machine has no repo)"
-[[ "$N" =~ ^[1-9][0-9]*$ ]] || die "--n must be a positive integer"
-(( N <= N_TOTAL )) || die "--n $N exceeds n_total $N_TOTAL"
 [[ -f "$ORDER_FILE" ]] || die "episode order file missing: $ORDER_FILE (make_episode_order.py)"
 
 # Every setting, the pinned sources and the order file, checked before anything starts.

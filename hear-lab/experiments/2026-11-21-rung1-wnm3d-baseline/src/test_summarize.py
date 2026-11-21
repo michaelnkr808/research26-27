@@ -204,18 +204,38 @@ def test_main_end_to_end(tmp_path):
     cfg["breakdowns"]["mirrored_scenes"]["source_sha256"] = hashlib.sha256(sj.read_bytes()).hexdigest()
     cfg["breakdowns"]["mirrored_scenes"]["n_scenes_expected"] = 1
     cfg["breakdowns"]["mirrored_scenes"]["n_test_unseen_episodes_expected"] = 2
+    cfg["episodes"]["n_main"] = 4
+    cfg["episodes"]["timing_k"] = 3
     cfg_path = tmp_path / "config.yaml"
     cfg_path.write_text(yaml.safe_dump(cfg))
     run = _make_run(tmp_path, ROWS, ids_file=ORDER[:4], events=EVENTS)
     out = tmp_path / "summary.json"
-    rc = S.main(["--config", str(cfg_path), "--run-dir", str(run), "--order-file", str(order), "--n", "4",
-                 "--check3-csv", str(c3), "--scenes-jsonl", str(sj), "--usd-per-hour", "2.0", "--out", str(out)])
-    assert rc == 0
+    args = ["--config", str(cfg_path), "--run-dir", str(run), "--order-file", str(order),
+            "--check3-csv", str(c3), "--scenes-jsonl", str(sj), "--usd-per-hour", "2.0", "--out", str(out)]
+    assert S.main(args + ["--run-kind", "main"]) == 0
     d = json.loads(out.read_text())
+    assert d["n_requested"] == 4 and d["run_kind"] == "main"      # N from config.yaml episodes.n_main
     assert d["groups"]["all_excl_mirrored"]["n"] == 3 and d["n_mirrored_scenes"] == 1
+    assert d["verdict"] in ("reproduced", "not reproduced")
+    # --n is no longer accepted: N only comes from config.yaml
+    with pytest.raises(SystemExit):
+        S.main(args + ["--run-kind", "main", "--n", "4"])
+    # timing run: N = episodes.timing_k (3); the first 4 logs hold one id beyond it, so it must fail
+    with pytest.raises(S.SummaryError, match="not in the first 3"):
+        S.main(args + ["--run-kind", "timing"])
+    run3 = _make_run(tmp_path / "t", ROWS[:3], events=EVENTS[:3])
+    targs = [a if a != str(run) else str(run3) for a in args]
+    assert S.main(targs + ["--run-kind", "timing"]) == 0
+    d = json.loads(out.read_text())
+    assert d["n_requested"] == 3 and d["verdict"].startswith("not applicable")
+    # pending count: refused
+    cfg["episodes"]["n_main"] = "pending"
+    cfg_path.write_text(yaml.safe_dump(cfg))
+    with pytest.raises(S.SummaryError, match="not committed"):
+        S.main(args + ["--run-kind", "main"])
+    cfg["episodes"]["n_main"] = 4
     # a wrong sha256 in the config stops the summary
     cfg["episodes"]["order_sha256"] = "0" * 64
     cfg_path.write_text(yaml.safe_dump(cfg))
     with pytest.raises(S.SummaryError, match="sha256"):
-        S.main(["--config", str(cfg_path), "--run-dir", str(run), "--order-file", str(order), "--n", "4",
-                "--check3-csv", str(c3), "--scenes-jsonl", str(sj), "--out", str(out)])
+        S.main(args + ["--run-kind", "main"])

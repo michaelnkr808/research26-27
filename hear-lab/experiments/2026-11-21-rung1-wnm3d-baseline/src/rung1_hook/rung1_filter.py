@@ -4,7 +4,9 @@ Two functions of gn0/evaluation/common.py (GN0 c927781) are wrapped, nothing els
 
 - select_eval_episodes: called once by gn0.evaluation.remote.run_exp (line 354) after the dataset is
   loaded and sorted. The wrapper calls the original (which drops episodes already finished in log/),
-  then keeps only the requested ids, in the frozen order. It fails if a requested id is not in the
+  then keeps only the requested ids, listed in the frozen order. GN-Bench then reshuffles the chosen
+  episodes (test_unseen.yaml ITERATOR_OPTIONS SHUFFLE true), so they run in a random order; the set
+  is what is fixed (PLAN.md, "Other choices"). It fails if a requested id is not in the
   dataset, if the start/end range is not the full dataset, or if log/ holds a finished episode that
   is not requested (results of another run).
 - atomic_write_json: called by save_episode_metrics (remote.py line 607) once per finished episode.

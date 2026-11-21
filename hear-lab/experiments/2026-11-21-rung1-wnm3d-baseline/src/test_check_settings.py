@@ -163,9 +163,55 @@ def test_fmt_num():
         B.fmt_num(True)
 
 
+def test_committed_count_rules():
+    with pytest.raises(B.PendingDecision):          # both pending
+        B.committed_count_keys(CFG, 40)
+    cfg = copy.deepcopy(CFG)
+    cfg["episodes"]["timing_k"] = 40
+    assert B.committed_count_keys(cfg, 40) == ["episodes.timing_k"]
+    with pytest.raises(B.PendingDecision):          # not a committed number
+        B.committed_count_keys(cfg, 41)
+    cfg["episodes"]["n_main"] = 1000
+    assert B.committed_count_keys(cfg, 1000) == ["episodes.n_main"]
+    assert B.resolve_count(cfg, "timing") == 40 and B.resolve_count(cfg, "main") == 1000
+    with pytest.raises(B.PendingDecision):
+        B.resolve_count(CFG, "main")
+    assert B.main(["--emit", "check-n", "--n", "40"]) == 2          # real config: pending
+
+
+def test_run_eval_refuses_uncommitted_n():
+    """Run mode stops before anything starts when --n is not a committed count (both are pending now).
+
+    The stall-recovery decision is set in a copy of the folder so that the count gate is what refuses.
+    """
+    import shutil
+    import tempfile
+    with tempfile.TemporaryDirectory() as d:
+        exp = Path(d) / "exp"
+        shutil.copytree(HERE.parent, exp, ignore=shutil.ignore_patterns("__pycache__", ".pytest_cache", "results"))
+        cfg = copy.deepcopy(CFG)
+        cfg["client"]["enable_stall_recovery"] = False
+        (exp / "config.yaml").write_text(yaml.safe_dump(cfg))
+        env = dict(os.environ, RUNG1_PYTHON=sys.executable, RUNG1_ROOT=str(Path(d) / "root"))
+        cmd = ["bash", str(exp / "src" / "run_eval.sh"), "--run-name", "x", "--n", "40", "--repo-commit", "abc"]
+        res = subprocess.run(cmd, capture_output=True, env=env)
+        assert res.returncode != 0 and b"not a committed episode count" in res.stderr
+        cfg["episodes"]["timing_k"] = 40
+        (exp / "config.yaml").write_text(yaml.safe_dump(cfg))
+        if sys.platform != "linux":   # off Linux the next gate (platform) stops it; on the machine it would really start
+            res = subprocess.run(cmd, capture_output=True, env=env)
+            assert b"--n 40 matches episodes.timing_k" in res.stdout      # passes the count gate
+            assert b"needs the rented Linux machine" in res.stderr
+            assert not (Path(d) / "root").exists()                      # nothing was started or written
+        res = subprocess.run(cmd[:5] + ["41"] + cmd[6:], capture_output=True, env=env)
+        assert res.returncode != 0 and b"not a committed episode count" in res.stderr
+
+
 def test_meta_refuses_changed_settings(tmp_path):
     cfg = copy.deepcopy(CFG)
     cfg["client"]["enable_stall_recovery"] = True
+    cfg["episodes"]["timing_k"] = 10
+    cfg["episodes"]["n_main"] = 20
     m1 = B.build_meta(cfg, b"a", "/r/gn0", "run", 10, "abc", "L1", True)
     prev = tmp_path / "run_meta.jsonl"
     prev.write_text(__import__("json").dumps(m1) + "\n")

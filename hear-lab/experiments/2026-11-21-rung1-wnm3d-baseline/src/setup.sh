@@ -40,6 +40,7 @@ WNM_TORCHVISION="0.23.0"
 WNM_TORCHAUDIO="2.8.0"
 WNM_TORCH_INDEX="https://download.pytorch.org/whl/cu129"
 WNM_CUDA_TOOLKIT="12.9"
+WNM_FLASH_ATTN="2.8.3.post2"
 WNM_HF_HUB="0.36.2"
 WNM_PYARROW="23.0.1"
 BAE_TORCH="2.4.0"
@@ -100,7 +101,8 @@ stage_env_wnm() {
     git -C "$WNM3D_ROOT" checkout "$WNM3D_COMMIT"
     [[ "$(git -C "$WNM3D_ROOT" rev-parse HEAD)" == "$WNM3D_COMMIT" ]] || die "WNM-3D HEAD is not $WNM3D_COMMIT"
     (cd "$WNM3D_ROOT" && python -m pip install -e .)
-    MAX_JOBS=8 python -m pip install flash-attn --no-build-isolation
+    # INSTALLATION.md 1.5 gives no version; pinned to the one route-a check 2 installed.
+    MAX_JOBS=8 python -m pip install "flash-attn==$WNM_FLASH_ATTN" --no-build-isolation
     # DOWNLOADS.md asks for "pip install --upgrade huggingface_hub hf_xet"; the upgrade to 2.x breaks
     # transformers 4.51.3 (route-a check 2), so the version pip install -e . resolved is kept.
     python -m pip install "huggingface_hub==$WNM_HF_HUB" hf_xet
@@ -116,6 +118,7 @@ print(f"WNM-3D package: {gammanav.__path__[0]}")
 print(f"flash_attn {flash_attn.__version__} huggingface_hub {huggingface_hub.__version__} pyarrow {pyarrow.__version__}")
 print(f"GPU {torch.cuda.get_device_name(0)}")
 assert torch.cuda.is_available(), "CUDA not available"
+assert flash_attn.__version__ == "2.8.3.post2", f"flash_attn {flash_attn.__version__}, expected 2.8.3.post2"
 PY
     python -m pip freeze > "$ENV_DIR/pip_freeze_wnm_3d.txt"
     conda list > "$ENV_DIR/conda_list_wnm_3d.txt"
@@ -140,7 +143,7 @@ stage_env_bae() {
     python -m pip install -e .
     python -m pip install gsplat --index-url "$GSPLAT_INDEX"
     python -m pip install pyyaml   # for the rung 1 scripts (build_commands.py, check_settings.py)
-    python -m pip check | tee "$ENV_DIR/pip_check_bae.txt" || true
+    python -m pip check | tee "$ENV_DIR/pip_check_bae.txt"   # fails on any conflict, as in the wnm_3d stage
     python -c "import torch, gsplat, yaml, GN_Bench.sims.GN_Bench_simulator.GN_Bench_simulator as g, gn0.evaluation.remote; print(torch.__version__, torch.version.cuda, torch.cuda.get_device_name(0), gsplat.__version__)" \
         | tee "$ENV_DIR/verify_bae.txt"
     python -m pip freeze > "$ENV_DIR/pip_freeze_bae.txt"
@@ -189,7 +192,7 @@ if ref != pinned:
     sys.exit(f"cache refs/main is {ref}, not the pinned {pinned}")
 PY
     else
-        log "the checkpoint does not name $TOKENIZER_REPO as its tokenizer: read $ENV_DIR/checkpoint_conf_keys.txt; if it names any other Hub id or a missing path, stop and tell the lead"
+        die "the checkpoint does not name $TOKENIZER_REPO as its tokenizer (see $ENV_DIR/checkpoint_conf_keys.txt); tell the lead"
     fi
 
     log "GN-Matrix $GN_MATRIX_FILE at $GN_MATRIX_REVISION"

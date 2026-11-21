@@ -8,6 +8,7 @@ commands by asking run_eval.sh to print them (--print-commands).
   python build_commands.py --emit client --result-dir DIR
   python build_commands.py --emit server-banner | client-banner
   python build_commands.py --emit meta --result-dir DIR --run-name NAME --n N --repo-commit SHA --launch-id ID [--previous FILE]
+  python build_commands.py --emit check-n --n N    # exit 2 unless N equals a committed timing_k or n_main
 
 Command arrays and banner lines are printed NUL-separated. While client.enable_stall_recovery is
 "pending", every emit that depends on it fails, unless --stall-override is given together with
@@ -63,6 +64,34 @@ def resolve_stall_recovery(cfg: dict, override: bool | None = None) -> bool:
             )
         return bool(override)
     raise ValueError(f"client.enable_stall_recovery must be true, false or 'pending', got {value!r}")
+
+
+COUNT_KEYS = ("timing_k", "n_main")
+
+
+def committed_count_keys(cfg: dict, n: int) -> list[str]:
+    """The committed episode-count keys (episodes.timing_k, episodes.n_main) that n equals.
+
+    Raises PendingDecision if n matches none: a run may only ask for a count the lead has committed
+    to config.yaml, never for a pending one or an ad-hoc number.
+    """
+    ep = cfg["episodes"]
+    committed = {k: ep[k] for k in COUNT_KEYS
+                 if isinstance(ep.get(k), int) and not isinstance(ep.get(k), bool)}
+    matches = [f"episodes.{k}" for k, v in committed.items() if v == n]
+    if not matches:
+        shown = ", ".join(f"episodes.{k} = {ep.get(k)!r}" for k in COUNT_KEYS)
+        raise PendingDecision(f"--n {n} is not a committed episode count ({shown})")
+    return matches
+
+
+def resolve_count(cfg: dict, run_kind: str) -> int:
+    """N for a run kind (timing -> episodes.timing_k, main -> episodes.n_main); fails while pending."""
+    key = {"timing": "timing_k", "main": "n_main"}[run_kind]
+    v = cfg["episodes"][key]
+    if not isinstance(v, int) or isinstance(v, bool):
+        raise PendingDecision(f"episodes.{key} is {v!r}; the lead has not committed it")
+    return v
 
 
 def server_argv(cfg: dict) -> list[str]:
@@ -142,7 +171,7 @@ def client_banner(cfg: dict, stall_recovery: bool) -> list[str]:
 
 
 META_COMPARE_KEYS = ("config_sha256", "n", "order_sha256", "stall_recovery", "server_argv",
-                     "server_env", "client_argv", "repo_commit")
+                     "server_env", "client_argv", "repo_commit", "count_keys")
 
 
 def build_meta(cfg: dict, config_bytes: bytes, result_dir: str, run_name: str, n: int,
@@ -157,6 +186,7 @@ def build_meta(cfg: dict, config_bytes: bytes, result_dir: str, run_name: str, n
         "order_sha256": cfg["episodes"]["order_sha256"],
         "order_seed": cfg["episodes"]["order_seed"],
         "n": int(n),
+        "count_keys": committed_count_keys(cfg, int(n)),
         "stall_recovery": stall_recovery,
         "server_argv": server_argv(cfg),
         "server_env": server_env(cfg),
@@ -197,7 +227,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", type=Path, default=CONFIG)
     ap.add_argument("--emit", required=True,
-                    choices=["server", "server-env", "client", "server-banner", "client-banner", "meta"])
+                    choices=["server", "server-env", "client", "server-banner", "client-banner", "meta", "check-n"])
     ap.add_argument("--result-dir")
     ap.add_argument("--run-name")
     ap.add_argument("--n", type=int)
@@ -221,6 +251,10 @@ def main(argv: list[str] | None = None) -> int:
             emit_nul(server_env(cfg))
         elif a.emit == "server-banner":
             emit_nul(server_banner(cfg))
+        elif a.emit == "check-n":
+            if a.n is None:
+                ap.error("--n is required")
+            print(" ".join(committed_count_keys(cfg, a.n)))
         else:
             stall = resolve_stall_recovery(cfg, override)
             if a.emit == "client":
