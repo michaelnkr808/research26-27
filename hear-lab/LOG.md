@@ -645,6 +645,6 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 
 **Not verified:** Q1 and Q2 entries were read through a summarizing fetch tool, not raw text; Hear You Are's and NaVLA2's supplementary or appendix details; NaVLA2's per-step window length; Hugging Face model card (HTTP 401).
 
-**PR:** to be filled in on opening.
+**PR:** #81.
 
 **Next:** the lead's OK in chat, then merge.
