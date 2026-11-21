@@ -635,3 +635,16 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **Next:** the lead's answers on the two recommendations; then decision `003` by pull request and direction to the experiment session. The timing goes to the PI on Thursday.
 
 **Open questions:** how many training steps an added audio part needs (unknown; it decides whether the budget is enough); whether the PI wants full fine-tuning and would fund it; the head-model choice wording for decision `001` (SoundSpaces 2.0 most likely uses the default head model, per the experiment LOG, `speculative`).
+
+## 2026-11-21 [agent, literature] (training recipes for adding a new input: PR opened)
+**Goal:** answer the planning lead's request of 2026-11-21: what published recipes exist for adding a new input encoder (audio first) to a pretrained video diffusion model or world action model, what was trained and for how long; and Spatial-AST's input format and use at short windows.
+
+**Did:** three workers (one per question) wrote notes; the literature lead re-checked Hear You Are, HLR-LLM, NaVLA2, SAVi and WNM-3D against locally saved full texts, and one reviewer worker re-checked 12 load-bearing Q1 and Q2 claims on the arXiv pages (11 confirmed, 1 reworded). Landed as `literature/survey/2026-11-21-new-input-training-recipes.md` by pull request.
+
+**Found:** see the file. In short: adapter-only on a frozen Wan is published for audio (MultiTalk, Face-to-Face) and the one numeric ablation (OmniAvatar) has frozen weaker than LoRA; nothing found on Wan2.2-5B at a small budget or with spatial audio; no world action model with a frozen-backbone added-input comparison; Spatial-AST facts and window uses listed.
+
+**Not verified:** Q1 and Q2 entries were read through a summarizing fetch tool, not raw text; Hear You Are's and NaVLA2's supplementary or appendix details; NaVLA2's per-step window length; Hugging Face model card (HTTP 401).
+
+**PR:** to be filled in on opening.
+
+**Next:** the lead's OK in chat, then merge.
