@@ -704,3 +704,23 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **PR:** #81.
 
 **Next:** the lead's OK in chat, then merge.
+
+## 2026-11-22 [agent, lead, planning] (the lead commits to route A; decision 003 open as PR #85)
+**Goal:** act on the lead's answer on the simulator route.
+
+**Did:**
+- The planning lead had asked twice for a yes or no on committing to route A (recommended yes). The lead, 2026-11-22: "1. remind of routeA". The planning lead described route A (keep WNM-3D in its own simulator, GN-Bench, and add a sound engine) and route B (move WNM-3D to Habitat with SoundSpaces 2.0), the reasons for the recommendation and the trade-off, and said: "\"Commit to route A\" means we stop keeping route B warm and build rung 2 on WNM-3D's own simulator, using the measured head recording. Route B stays written down as the fallback if something breaks." The lead: "commit to route A it sounds good".
+- Wrote `decisions/003-simulator-route-a.md` (status proposed) with matching `README.md`, `STANDARDS.md` and `PLAN.md` changes, and opened PR #85. A read-only reviewer checks it before the lead's merge OK.
+- Earlier the same exchange (2026-11-21, logged above): the lead asked for the ladder again and for a reading order; the planning lead gave the order by rung (GN0 / GN-Bench now, SoundSpaces 2.0 next) and sent it to the literature session.
+
+**PR:** #85 (open). This entry: direct.
+
+**Found:** nothing measured.
+
+**Decided by the lead:** route A, with two-ear audio from a measured HRTF. Route B is the written fallback.
+
+**Not verified:** whether the PI accepts RLR outside Habitat as "not using SoundSpaces 2.0" (not asked yet).
+
+**Next:** the reviewer's comment and fixes on PR #85; the lead's merge OK. Rung 1 is with the experiment session. The PI questions go to Thursday.
+
+**Open questions:** as in the 2026-11-21 ladder entry.
