@@ -6,7 +6,7 @@ Entries marked **open** are not decided yet. An open entry is filled by a pull r
 
 ## Scope
 - **Research question:** What benefits does a world action model gain from being given spatial audio? (Full wording in `README.md`.) The specific question is in `decisions/001-research-question.md`.
-- **In scope / out of scope:** partly set by `decisions/001` and `decisions/002`: simulated navigation with WNM-3D is in scope; the encoder comparison and long-form audio are deferred, and predicting future sound is set aside. The rest is **open**, to be set with the PI together with "what done looks like".
+- **In scope / out of scope:** partly set by `decisions/001`, `decisions/002` and `decisions/003`: simulated navigation with WNM-3D is in scope, in WNM-3D's own simulator with an added sound engine; the encoder comparison and long-form audio are deferred, and predicting future sound is set aside. The rest is **open**, to be set with the PI together with "what done looks like".
 
 ## Domain sources
 - Key venues, journals, or conferences: **open**, filled from the literature survey.

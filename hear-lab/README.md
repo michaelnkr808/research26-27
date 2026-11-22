@@ -1,6 +1,6 @@
 # HEAR Lab: spatial audio for world action models
 
-**Status:** exploring. Three bring-up checks have run (`experiments/2026-11-20-route-a-checks/`); no experiment that feeds the paper has run. The research question, the base model and the setting are set by the lead (`decisions/001` and `002`, 2026-11-19; the PI has not confirmed the question). Work now goes rung by rung (`PLAN.md`, the ladder): first a reproduction of the released WNM-3D result with no training. Where the audio-visual data comes from is not yet a decision record: WNM-3D's own simulator with an added sound engine is checked and recommended, Habitat with SoundSpaces 2.0 is the fallback (`PLAN.md`). The PI's first task, RMS-AQA, is parked (`PLAN.md`, Parked). The literature survey and the novelty checks are in `literature/survey/` (PRs #49, #50, #51, #68 and #71; start with `literature/survey/2026-11-16-summary.md`). Current agenda: `PLAN.md`. History: `LOG.md`.
+**Status:** exploring. Three bring-up checks have run (`experiments/2026-11-20-route-a-checks/`); no experiment that feeds the paper has run. The research question, the base model and the setting are set by the lead (`decisions/001` and `002`, 2026-11-19; the PI has not confirmed the question). Work now goes rung by rung (`PLAN.md`, the ladder): first a reproduction of the released WNM-3D result with no training. The audio-visual data comes from WNM-3D's own simulator with an added sound engine; Habitat with SoundSpaces 2.0 is the fallback (`decisions/003`). The PI's first task, RMS-AQA, is parked (`PLAN.md`, Parked). The literature survey and the novelty checks are in `literature/survey/` (PRs #49, #50, #51, #68 and #71; start with `literature/survey/2026-11-16-summary.md`). Current agenda: `PLAN.md`. History: `LOG.md`.
 
 **Question:** What benefits does a world action model gain from being given spatial audio? In the lead's own words (2026-11-15): "relating spatial audio to world action models and investigating what benefits can be gained from providing world action models with spatial audio".
 
@@ -17,7 +17,7 @@ These are starting points written from memory (`recalled`), not from a source. T
 Each open one becomes a decision record in `decisions/` once the lead and the PI settle it.
 - **Which world action model the work builds on.** Decided by the lead: WNM-3D, a navigation model built on Wan 2.2 (`decisions/002-base-model-and-setting.md`).
 - **Setting.** Decided by the lead: navigation in simulation, not robot-arm manipulation (`decisions/002`).
-- **Where the audio-visual data comes from.** Open. Either a sound engine added to WNM-3D's own simulator scenes (what the PI asked for, if it can produce the data), or WNM-3D moved to Habitat with SoundSpaces 2.0. Two sizing memos come first (`PLAN.md`); the choice will be decision `003`.
+- **Where the audio-visual data comes from.** Decided by the lead: WNM-3D's own simulator (GN-Bench on InteriorGS scenes) with an added sound engine (RLR-Audio-Propagation) and a measured HRTF; Habitat with SoundSpaces 2.0 is the written fallback (`decisions/003-simulator-route-a.md`). Whether this meets the PI's condition on SoundSpaces 2.0 is still a question for the PI.
 - **Which task set measures "benefit", and with which metrics.** Partly set: the task is walking to a sounding object, with success split by whether the target was visible at the start (`decisions/001`). The episodes, the metrics and the number of seeds are open and go in the experiment `PLAN.md`.
 - **Which audio encoder.** Open.
 - **What the paper has to show.** Open (see "What done looks like").
@@ -40,5 +40,5 @@ Get the RMS-AQA benchmark running (`chen2026rmsaqa` in `literature/references.bi
 - `PLAN.md`: living agenda (now, next, parked, recently done)
 - `LOG.md`: research log for the direction (short session summaries; detail is in each experiment's `LOG.md`)
 - `experiments/`: one folder per experiment, each with `config.*`, `PLAN.md`, `LOG.md`, `README.md` (copy `experiments/_new-experiment/`)
-- `decisions/`: decision records (`001` research question, `002` base model and setting)
+- `decisions/`: decision records (`001` research question, `002` base model and setting, `003` simulator route)
 - `literature/`: `reading-list.md` (what has been read), `references.bib`, and paper notes; `literature/survey/` holds the reviewed survey files
