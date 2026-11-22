@@ -236,7 +236,7 @@ PY
                 > "$ENV_DIR/interiorgs_attempt_$attempt.log" 2>&1
             rc=$?
             set -e
-            n429="$(grep -c "429" "$ENV_DIR/interiorgs_attempt_$attempt.log" || true)"
+            n429="$(grep -c -E "429 Client Error|Too Many Requests" "$ENV_DIR/interiorgs_attempt_$attempt.log" || true)"
             echo "InteriorGS download attempt $attempt: exit $rc, 429 lines $n429"
             if [[ "$rc" == 0 && "$n429" == 0 ]]; then ok=1; break; fi
             sleep 330
