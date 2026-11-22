@@ -58,11 +58,25 @@ def test_missing_key_fails():
     assert any("server.enable_cfg missing" in e for e in C.check_config(cfg))
 
 
-@pytest.mark.parametrize("value,ok", [("pending", True), (True, True), (False, True), ("yes", False), (1, False)])
-def test_stall_recovery_open_values(value, ok):
+def test_decided_values_recorded():
+    """2026-11-21 PLAN amendment: stall recovery on, K = 30; N still open."""
+    assert CFG["client"]["enable_stall_recovery"] is True
+    assert CFG["episodes"]["timing_k"] == 30
+    assert CFG["episodes"]["n_main"] == "pending"
+
+
+@pytest.mark.parametrize("key,value", [
+    ("client.enable_stall_recovery", False),
+    ("client.enable_stall_recovery", "pending"),
+    ("client.enable_stall_recovery", 1),
+    ("episodes.timing_k", 40),
+    ("episodes.timing_k", "pending"),
+])
+def test_decided_values_cannot_change(key, value):
     cfg = copy.deepcopy(CFG)
-    cfg["client"]["enable_stall_recovery"] = value
-    assert (C.check_config(cfg) == []) is ok
+    sec, k = key.split(".")
+    cfg[sec][k] = value
+    assert any(key in e for e in C.check_config(cfg))
 
 
 @pytest.mark.parametrize("value,ok", [("pending", True), (1000, True), (5000, True), (0, False), (5001, False), (True, False)])
@@ -143,10 +157,13 @@ def test_run_eval_refuses_override_outside_print_mode():
     assert res.returncode != 0 and b"only allowed with --print-commands" in res.stderr
 
 
-def test_build_commands_pending_and_override_rules():
+def test_build_commands_pending_and_override_rules(tmp_path):
+    pend = copy.deepcopy(CFG)
+    pend["client"]["enable_stall_recovery"] = "pending"
     with pytest.raises(B.PendingDecision):
-        B.resolve_stall_recovery(CFG)
-    assert B.resolve_stall_recovery(CFG, True) is True
+        B.resolve_stall_recovery(pend)
+    assert B.resolve_stall_recovery(pend, True) is True
+    assert B.resolve_stall_recovery(CFG) is True                       # decided: on
     cfg = copy.deepcopy(CFG)
     cfg["client"]["enable_stall_recovery"] = False
     assert B.resolve_stall_recovery(cfg) is False
@@ -154,7 +171,10 @@ def test_build_commands_pending_and_override_rules():
         B.resolve_stall_recovery(cfg, True)
     with pytest.raises(SystemExit):
         B.main(["--emit", "client", "--result-dir", "/x/gn0", "--stall-override", "true"])  # no --for-check
-    assert B.main(["--emit", "client", "--result-dir", "/x/gn0"]) == 2                      # pending
+    p = tmp_path / "pending.yaml"
+    p.write_text(yaml.safe_dump(pend))
+    assert B.main(["--config", str(p), "--emit", "client", "--result-dir", "/x/gn0"]) == 2   # pending
+    assert B.main(["--emit", "client", "--result-dir", "/x/gn0"]) == 0                       # decided
 
 
 def test_fmt_num():
@@ -164,8 +184,13 @@ def test_fmt_num():
 
 
 def test_committed_count_rules():
-    with pytest.raises(B.PendingDecision):          # both pending
+    assert B.committed_count_keys(CFG, 30) == ["episodes.timing_k"]   # K = 30 committed
+    with pytest.raises(B.PendingDecision):          # n_main pending, 40 committed nowhere
         B.committed_count_keys(CFG, 40)
+    pend = copy.deepcopy(CFG)
+    pend["episodes"]["timing_k"] = "pending"
+    with pytest.raises(B.PendingDecision):          # both pending
+        B.committed_count_keys(pend, 30)
     cfg = copy.deepcopy(CFG)
     cfg["episodes"]["timing_k"] = 40
     assert B.committed_count_keys(cfg, 40) == ["episodes.timing_k"]
@@ -176,11 +201,12 @@ def test_committed_count_rules():
     assert B.resolve_count(cfg, "timing") == 40 and B.resolve_count(cfg, "main") == 1000
     with pytest.raises(B.PendingDecision):
         B.resolve_count(CFG, "main")
-    assert B.main(["--emit", "check-n", "--n", "40"]) == 2          # real config: pending
+    assert B.main(["--emit", "check-n", "--n", "40"]) == 2          # real config: 40 not committed
+    assert B.main(["--emit", "check-n", "--n", "30"]) == 0          # real config: K = 30
 
 
 def test_run_eval_refuses_uncommitted_n():
-    """Run mode stops before anything starts when --n is not a committed count (both are pending now).
+    """Run mode stops before anything starts when --n is not a committed count (both pending in the copy).
 
     The stall-recovery decision is set in a copy of the folder so that the count gate is what refuses.
     """
@@ -190,7 +216,7 @@ def test_run_eval_refuses_uncommitted_n():
         exp = Path(d) / "exp"
         shutil.copytree(HERE.parent, exp, ignore=shutil.ignore_patterns("__pycache__", ".pytest_cache", "results"))
         cfg = copy.deepcopy(CFG)
-        cfg["client"]["enable_stall_recovery"] = False
+        cfg["episodes"]["timing_k"] = "pending"
         (exp / "config.yaml").write_text(yaml.safe_dump(cfg))
         env = dict(os.environ, RUNG1_PYTHON=sys.executable, RUNG1_ROOT=str(Path(d) / "root"))
         cmd = ["bash", str(exp / "src" / "run_eval.sh"), "--run-name", "x", "--n", "40", "--repo-commit", "abc"]

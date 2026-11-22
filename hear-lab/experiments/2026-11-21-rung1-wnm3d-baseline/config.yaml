@@ -93,7 +93,7 @@ client:   # GN0 scripts/evaluation/eval_remote.sh, WNM-3D README client command
   server_port: 8000          # script default, not passed
   max_actions_per_query: 8
   stall_patience: 16
-  enable_stall_recovery: pending   # OPEN: the released README command passes it, the paper does not mention it. Pending the lead's answer.
+  enable_stall_recovery: true      # decided 2026-11-21 (user's answer, PLAN amendment): on, as in the released README command; the paper does not mention it
   remote_min_chunk_translation: 0.15   # DEVIATION from eval_remote.sh (sets 0): the paper's block-translation STOP rule (Appendix B.1)
   remote_stop_eps: "1e-3"          # script default, not passed (kept as the script's own string)
   remote_translation_frame: chunk_start   # script default, not passed
@@ -126,7 +126,7 @@ episodes:
   order_file: results/episode_order.txt   # gitignored; regenerate with src/make_episode_order.py
   order_sha256: 25366209f38a242dbcec94bfed26092a9937dbf5adabbcd149f4558caed72728
   n_main: pending     # the lead picks it after the timing rental
-  timing_k: pending   # the lead picks it before the timing rental
+  timing_k: 30        # decided 2026-11-21 (user's answer, PLAN amendment): the first 30 of the frozen order
 
 target:   # WNM-3D paper (arXiv 2608.07267 v3) Table 1, Unseen, WNM-3D row (same row in Table 4)
   split: Unseen

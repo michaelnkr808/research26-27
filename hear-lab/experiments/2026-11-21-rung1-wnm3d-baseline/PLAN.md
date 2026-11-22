@@ -79,7 +79,15 @@ Results are copied off the machine and checked before it is destroyed; they live
 - `src/check_settings.py`: asserts every setting (config, commands, setup pins, pinned sources, episode order).
 - `src/summarize.py`: metrics, intervals, verdict, breakdowns, time and cost.
 
-**Status:** planned. Waiting on the lead for: stall recovery on or off, K, then the timing rental OK.
+**Status:** planned. Stall recovery and K decided (amendment 2026-11-21 below). Waiting on: the timing rental OK, then N after it.
 
 ## Amendments
 <!-- ### YYYY-MM-DD: what changed, why, and whether any results had been seen yet -->
+
+### 2026-11-21: stall recovery on, K = 30 (the user's answers, before any run)
+The lead put two recommendations to the user, who answered in the lead's window on 2026-11-21 ("yes go for it"):
+- **Stall recovery stays on**, as in the released WNM-3D README client command (README line 155): `client.enable_stall_recovery: true`, so the client passes `--enable-stall-recovery`. The paper does not mention it, so this follows the released command, not the paper; it is not counted as a deviation from the released command.
+- **Timing batch K = 30**: `episodes.timing_k: 30`, the first 30 ids of the frozen order. `run_eval.sh` accepts `--n 30` for the timing run.
+- **N for the main run stays open** (`episodes.n_main: pending`), picked by the lead after the timing rental.
+
+No run had started and no results existed when this was decided. `check_settings.py` now asserts both decided values.

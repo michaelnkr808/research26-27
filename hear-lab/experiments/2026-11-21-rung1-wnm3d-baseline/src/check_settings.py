@@ -86,6 +86,8 @@ EXPECTED = {
     "client.remote_send_state": False,
     "client.dagger": False,
     "client.wam_trace_mode": "none",
+    "client.enable_stall_recovery": True,   # decided 2026-11-21, PLAN amendment
+    "episodes.timing_k": 30,                # decided 2026-11-21, PLAN amendment
     "benchmark.max_episode_steps": 500,
     "benchmark.early_stop_steps": 500,
     "benchmark.stall_patience": 16,
@@ -120,9 +122,7 @@ EXPECTED = {
 
 # Keys the lead has not decided yet: allowed values.
 OPEN_KEYS = {
-    "client.enable_stall_recovery": "pending, true or false",
     "episodes.n_main": "pending or an integer from 1 to 5000",
-    "episodes.timing_k": "pending or an integer from 1 to 5000",
 }
 
 EXPECTED_SERVER_ARGV = [
@@ -219,10 +219,7 @@ def check_config(cfg: dict) -> list[str]:
             errs.append(f"config: {key} missing (expected {want!r})")
         elif not same(got, want):
             errs.append(f"config: {key} = {got!r}, expected {want!r}")
-    stall = get_path(cfg, "client.enable_stall_recovery")
-    if not (stall == PENDING or isinstance(stall, bool)):
-        errs.append(f"config: client.enable_stall_recovery = {stall!r}, allowed: {OPEN_KEYS['client.enable_stall_recovery']}")
-    for key in ("episodes.n_main", "episodes.timing_k"):
+    for key in OPEN_KEYS:
         v = get_path(cfg, key)
         ok = v == PENDING or (isinstance(v, int) and not isinstance(v, bool) and 1 <= v <= 5000)
         if not ok:
@@ -496,7 +493,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     print(f"OK: {n_checked} config values, " + ", ".join(parts) + " match PLAN.md")
     if pending:
-        print("still pending the lead's answer (no run can start): " + ", ".join(pending))
+        print("still pending the lead's answer (a run that needs it cannot start): " + ", ".join(pending))
     return 0
 
 
