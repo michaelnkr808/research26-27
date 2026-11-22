@@ -79,7 +79,7 @@ Results are copied off the machine and checked before it is destroyed; they live
 - `src/check_settings.py`: asserts every setting (config, commands, setup pins, pinned sources, episode order).
 - `src/summarize.py`: metrics, intervals, verdict, breakdowns, time and cost.
 
-**Status:** timing batch done (2026-11-22, `LOG.md`). Waiting on: N for the main run (the user's call), then its rental OK.
+**Status:** timing batch done (2026-11-22, `LOG.md`); N = 1000 (amendment 2026-11-22). Waiting on: the main-run rental OK.
 
 ## Amendments
 <!-- ### YYYY-MM-DD: what changed, why, and whether any results had been seen yet -->
@@ -94,3 +94,6 @@ No run had started and no results existed when this was decided. `check_settings
 
 ### 2026-11-22: three setup and bookkeeping fixes found on the timing rental (no design change)
 Seen before writing this: the timing batch's outcomes (`LOG.md` 2026-11-22). None of the fixes changes a model, evaluation or episode setting: the tokenizer goes to the local path the released checkpoint names (WNM-3D `docs/DOWNLOADS.md` 106-107); the InteriorGS download retries on Hugging Face rate limits; the episode hook writes numpy scalars in its own timing line. The timing batch was rerun in full under the run name `timing-r2` after the hook fix, because a resume across code versions is refused by design; `timing-r2` is the timing record.
+
+### 2026-11-22: N = 1000 for the main run (the user's answer, before the main run)
+The user, 2026-11-22, after the timing batch and the cost projection: "lets just go with the 1k episodes", and asked that matching within the margin count as reproduced, which is the pass bar written above (the paper's 53.5 inside the 95% Wilson interval of our success rate on the first 1000 episodes of the frozen order); the bar is unchanged. Seen before this choice: the timing batch (30 episodes). The main run reruns those 30 as part of its 1000 under the run name `main`.
