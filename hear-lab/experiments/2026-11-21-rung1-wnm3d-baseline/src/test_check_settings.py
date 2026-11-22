@@ -59,10 +59,10 @@ def test_missing_key_fails():
 
 
 def test_decided_values_recorded():
-    """2026-11-21 PLAN amendment: stall recovery on, K = 30; N still open."""
+    """PLAN amendments: stall recovery on, K = 30 (2026-11-21); N = 1000 (2026-11-22)."""
     assert CFG["client"]["enable_stall_recovery"] is True
     assert CFG["episodes"]["timing_k"] == 30
-    assert CFG["episodes"]["n_main"] == "pending"
+    assert CFG["episodes"]["n_main"] == 1000
 
 
 @pytest.mark.parametrize("key,value", [
@@ -199,8 +199,12 @@ def test_committed_count_rules():
     cfg["episodes"]["n_main"] = 1000
     assert B.committed_count_keys(cfg, 1000) == ["episodes.n_main"]
     assert B.resolve_count(cfg, "timing") == 40 and B.resolve_count(cfg, "main") == 1000
+    assert B.resolve_count(CFG, "main") == 1000                      # real config: N = 1000
+    pend_main = copy.deepcopy(CFG)
+    pend_main["episodes"]["n_main"] = "pending"
     with pytest.raises(B.PendingDecision):
-        B.resolve_count(CFG, "main")
+        B.resolve_count(pend_main, "main")
+    assert B.main(["--emit", "check-n", "--n", "1000"]) == 0        # real config: N = 1000
     assert B.main(["--emit", "check-n", "--n", "40"]) == 2          # real config: 40 not committed
     assert B.main(["--emit", "check-n", "--n", "30"]) == 0          # real config: K = 30
 

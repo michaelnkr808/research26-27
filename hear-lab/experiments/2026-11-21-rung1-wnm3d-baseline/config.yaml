@@ -125,7 +125,7 @@ episodes:
   order_method: numpy.random.default_rng(order_seed).permutation(n_total), applied to the ids in CSV row order
   order_file: results/episode_order.txt   # gitignored; regenerate with src/make_episode_order.py
   order_sha256: 25366209f38a242dbcec94bfed26092a9937dbf5adabbcd149f4558caed72728
-  n_main: pending     # the lead picks it after the timing rental
+  n_main: 1000        # decided 2026-11-22 (user's answer after the timing batch, PLAN amendment): the first 1000 of the frozen order
   timing_k: 30        # decided 2026-11-21 (user's answer, PLAN amendment): the first 30 of the frozen order
 
 target:   # WNM-3D paper (arXiv 2608.07267 v3) Table 1, Unseen, WNM-3D row (same row in Table 4)
