@@ -783,3 +783,7 @@ Times are UTC; the work started on 2026-11-18 (previous entry) and ended after m
 - **GPUs held (20:15 UTC):** 0 Running + 10 L4 Pending (clean shards) = 10 of 16.
 - **Ledger:** one row (shard 15).
 - **Next step:** the watcher (10 clean pods Pending). The user's answers: the pair checkpoints' evaluations; reading `none`'s LIBERO-Plus number now or later.
+
+## 2026-11-22 [agent, lead, implementation] (correction: the measured LIBERO-Plus cost did NOT reach the planning lead)
+
+**Correction:** the previous entry says the measured cost was "sent to the planning lead". The cross-session message (to the session in the tmux window `vis-lab-planning`, sent 20:16 UTC) was held by that session and expired without being approved, so its Claude never saw it; it was not resent. The figures are in the previous entry (109.21 L4 pod-hours for the `none` checkpoint, 275.5 rollouts per pod-hour; the three smokes' upper bounds; all five training runs done). The user was told in chat; the planning lead gets them when the user relays them or asks for a resend.
