@@ -20,25 +20,29 @@ Reported as read by the lead on 2026-11-15, corrected by the lead on 2026-11-19 
 ## To read
 Read-first list for the lead, from the planning lead (hear-lab-94, 2026-11-20): papers whose methods the current plan uses, in reading order. Decided or open is as in the decision records; "leading candidate" is the planning lead's reading, not a decision. Identifiers marked "metadata checked" were confirmed against the arXiv API on 2026-11-20 (title, authors, comment field); no paper was re-read for this list. Why each paper matters beyond this table is in `survey/2026-11-16-summary.md` and `survey/2026-11-19-pi-followups-simulator-audio-papers-gaps.md`.
 
-### Read now (in this order)
-| # | Paper | Identifier | Part of the plan that uses it | Status |
+### Read in this order, by ladder rung (planning lead, 2026-11-21; replaces the 2026-11-20 order)
+The ladder is in `PLAN.md` "Now". The lead has not read any of the earlier list yet. 
+| Rung | Paper | Identifier | Part of the plan that uses it | Status |
 |---|---|---|---|---|
-| 1 | SoundSpaces 2.0 (`chen2022soundspaces2`) | arXiv 2206.08312 (metadata checked) | Data engine: its sound engine (RLR-Audio-Propagation) makes the audio in both simulator routes | Engine decided for both routes, pending check 1 (does it run on a rented Linux machine) |
-| 2 | GN0: Toward a Unified Paradigm for Generation, Evaluation, and Policy Learning in Visual-Language Navigation (key not yet in bib; used as `li2026gn0` in the 2026-11-18 survey file) | arXiv 2606.03682 (metadata checked) | WNM-3D's own simulator and episodes (GN-Bench, GN-Matrix): the data and the closed-loop test under route A | Route A chosen first, not committed (decision 003 pending) |
-| 3 | BAT (`zheng2024bat`) | arXiv 2402.01591, ICML 2024 (metadata checked) | Audio encoder: source of Spatial-AST, the spatial encoder NaVLA2 and both PI-linked papers use | OPEN; Spatial-AST is the leading candidate |
-| 4 | Hear You Are: Teaching LLMs Spatial Reasoning with Vision and Spatial Sound (Ryu, Chung, Harwath; key not yet in bib) | CVPR 2026, open-access PDF on openaccess.thecvf.com (authors and title as read in the PR #71 survey file) | How to attach a spatial audio encoder to a big pretrained model (frozen Spatial-AST plus a small projector); nearest evidence for the visible / not-visible split. The PI linked it | Template only, OPEN; built for a language model, not a video model |
-| 5 | Hear, Localize, and Reason: Spatially Aware Scene Understanding for Audio-Visual LLMs (key not yet in bib) | arXiv 2610.21588, NeurIPS 2026 per the comment field (metadata checked) | Same as 4; also its control that feeds left and right channels through the existing mono path, worth copying as a mono baseline. The PI linked it | OPEN |
-| 6 | World Action Models are Zero-shot Policies, DreamZero (`ye2026world`) | arXiv 2602.15922 (metadata checked) | Base model design: WNM-3D builds on DreamZero's joint video-action flow backbone | Decided, comes with WNM-3D (decision 002) |
-| 7 | Audio-Visual World Models (`wang2025audio`) | arXiv 2512.00883 (metadata checked) | Not a method we use; closest prior work, read for overlap | Reading only |
+| 1 (reproduce the released WNM-3D result, in flight) | WNM-3D evaluation section, read again (already read once; `huang2026wnm`) | arXiv 2608.07267 | What the released result measures | Decided, comes with WNM-3D |
+| 1 | GN0 / GN-Bench: Toward a Unified Paradigm for Generation, Evaluation, and Policy Learning in Visual-Language Navigation (key not yet in bib; used as `li2026gn0` in the 2026-11-18 survey file) | arXiv 2606.03682 (metadata checked) | WNM-3D's own simulator and episodes | Route A chosen first, not committed |
+| 2 (make and check the sound) | SoundSpaces 2.0 (`chen2022soundspaces2`) | arXiv 2206.08312 (metadata checked) | Its sound engine (RLR-Audio-Propagation) makes the audio in both simulator routes | Engine decided for both routes, pending check 1 |
+| 3 (smallest training step) | BAT (`zheng2024bat`) | arXiv 2402.01591, ICML 2024 (metadata checked) | Source of Spatial-AST; input format and training data in `survey/2026-11-21-new-input-training-recipes.md` (PR #81) | OPEN; Spatial-AST is the leading candidate |
+| 3 | Hear You Are: Teaching LLMs Spatial Reasoning with Vision and Spatial Sound (Ryu, Chung, Harwath; key not yet in bib) | CVPR 2026, open-access PDF on openaccess.thecvf.com | Frozen Spatial-AST plus a small projector; the PI linked it | Template only; built for a language model |
+| 3 | Hear, Localize, and Reason (key not yet in bib) | arXiv 2610.21588 (metadata checked) | Same as above; its channel-averaged mono path is worth copying as a mono baseline; the PI linked it | OPEN |
+| 3 | OmniAvatar | arXiv 2506.18866 (as cited in PR #81; arXiv metadata not re-checked) | The frozen against LoRA ablation on a Wan model (its Table 3) | Reading only |
+| 3 | TalkVerse | arXiv 2512.14938 (as cited in PR #81; arXiv metadata not re-checked) | Wan2.2-5B with LoRA plus audio cross-attention, the nearest match to our base | Reading only |
+| 3 | World Action Models are Zero-shot Policies, DreamZero (`ye2026world`) | arXiv 2602.15922 (metadata checked) | WNM-3D builds on its joint video-action backbone; its footnote on LoRA | Decided, comes with WNM-3D |
+| 4 (the comparison) | Audio-Visual World Models (`wang2025audio`) | arXiv 2512.00883 (metadata checked) | Closest prior work, read for overlap | Reading only |
+| 4 | SoundSpaces (`chen2020soundspaces`) and Semantic Audio-Visual Navigation, SAVi (`chen2021semantic`) | arXiv 1912.11474 and 2012.11583 | The task and its success measures | Metrics OPEN |
 
 ### Can wait
-| # | Paper | Identifier | Part of the plan | Status |
-|---|---|---|---|---|
-| 8 | SoundSpaces (`chen2020soundspaces`) and Semantic Audio-Visual Navigation, SAVi (`chen2021semantic`) | arXiv 1912.11474 and 2012.11583 | Evaluation: define walking to a sounding object and its success measures; SAVi's episodes are what route B would use | Metrics OPEN (experiment PLAN not written) |
-| 9 | VGGT-Omega | Citation NOT CHECKED: the paper behind the frozen 3D encoder in WNM-3D was not found by an arXiv title search on 2026-11-20. Take the reference from WNM-3D's reference list | The existing example of the pattern the audio encoder would follow (frozen encoder, trainable adapter, prefix tokens) | Decided, comes with WNM-3D |
-| 10 | Wan: Open and Advanced Large-Scale Video Generative Models | arXiv 2503.20314 (title and authors checked on the arXiv API, 2026-11-20; no separate Wan 2.2 paper was looked for beyond the planning lead's recollection) | The video generator under WNM-3D; background | Background |
-| 11 | pi-AVAS (ICCV 2025) | Citation NOT CHECKED: named in the PR #71 fact-check review, not opened by a worker, and an arXiv search on 2026-11-20 found nothing | Precedent for route A's pipeline (mesh from a Gaussian-splat scene, then ray-traced sound) | Read only if route A is committed |
-| 12 | Other encoder candidates: OmniEcho (`liu2026omniecho`), SPUR (`sakshi2025spur`), JAEGER (`liu2026jaeger`) | in `references.bib` | Audio encoder, only if Spatial-AST is not chosen | OPEN |
+| Paper | Identifier | Part of the plan | Status |
+|---|---|---|---|
+| VGGT-Omega | Citation NOT CHECKED: the paper behind WNM-3D's frozen 3D encoder was not found by an arXiv title search on 2026-11-20; take the reference from WNM-3D's reference list | The pattern the audio encoder would follow (frozen encoder, trainable adapter, prefix tokens) | Decided, comes with WNM-3D |
+| Wan: Open and Advanced Large-Scale Video Generative Models | arXiv 2503.20314 (title and authors checked on the arXiv API, 2026-11-20) | The video generator under WNM-3D | Background |
+| pi-AVAS (ICCV 2025) | Citation NOT CHECKED | Precedent for route A's pipeline | Read only if route A is committed |
+| Other encoder candidates: OmniEcho (`liu2026omniecho`), SPUR (`sakshi2025spur`), JAEGER (`liu2026jaeger`) | in `references.bib` | Audio encoder, only if Spatial-AST is not chosen | OPEN |
 
 Already read by the lead and still in use: WNM-3D (base model, decided), NaVLA2 (the uncontrolled spatial-versus-mono table we position against). DeepASA and RMS-AQA are not used by the current plan (RMS-AQA parked; its baseline's spatial branch is one more encoder candidate).
 

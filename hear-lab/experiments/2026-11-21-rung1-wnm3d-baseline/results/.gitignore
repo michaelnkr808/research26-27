@@ -1,0 +1,4 @@
+# Run outputs are derived from InteriorGS (terms not yet read). Keep them out of git.
+*
+!.gitignore
+!.gitkeep
