@@ -1,0 +1,167 @@
+# Parameters for rung 1: the released WNM-3D stage 3 checkpoint at inference time in GN-Bench test_unseen.
+# Design and pass bar: PLAN.md. Every value the scripts use is read from here, and src/check_settings.py
+# asserts each one against the values fixed in PLAN.md (it fails loudly on any difference).
+# Values marked "pending" are open decisions for the lead; run_eval.sh refuses to start a run while one is pending.
+
+pins:
+  wnm_3d: 7fe2d5f93a8dc4e2a5a2ec6fe174746928ecdcbb
+  gn0: c927781            # prefix, as checked in route-a check 3
+  gn_bench_tools: 0ce8367 # prefix, GN0 submodule at c927781
+
+checkpoint:
+  repo: TeleEmbodied/WNM-3D
+  revision: 5b8c08dd52028ef4a29e7b87966f27582032fb4f
+  include: "wnm_3d_stage3_release/**"
+  path: checkpoints/wnm_3d_stage3_release   # relative to the WNM-3D root
+  shard_sha256:   # Hub LFS sha256, as read 2026-11-20 for route-a check 2
+    model-00001-of-00006.safetensors: e0e0ff763ed8bb6b855782e10f1577d676bc7abce2df0e46cea5d340a05963a5
+    model-00002-of-00006.safetensors: 3dd6a6ed2735b920badc8b58864ac567f921b5e1ab537f9c755e35e6c65ebd8c
+    model-00003-of-00006.safetensors: 9d82ec1b43fcb2a8ce39fe692993c8d5944a7620f086b61257b2d79dbf69b156
+    model-00004-of-00006.safetensors: 936913a457e1d5bce09acc2b5044db1d34524698cc5a838282d1d196875a326c
+    model-00005-of-00006.safetensors: d7dffc1c6e31c343e991d82062bfd7c27b120bed9139c832354621042933d508
+    model-00006-of-00006.safetensors: 4b3ca202db5df95e571095844f5073a47e761cb94ad7f5be8c237d67c32b3944
+
+tokenizer:   # only used if the checkpoint's experiment_cfg/conf.yaml names a Hub id (setup.sh records which)
+  repo: google/umt5-xxl
+  revision: 66cb9e7e85526fe440a945569e42c72fb6cbc0ad
+  files: [tokenizer_config.json, tokenizer.json, spiece.model, special_tokens_map.json, config.json]
+
+data:
+  gn_matrix:
+    repo: TeleEmbodied/GN-Matrix
+    revision: 50a68253b5436f0595779cd3f91baf65228a0238
+    file: InteriorGS/InteriorGS_test_unseen.parquet
+    local_dir: data/datasets/GN_Matrix              # relative to the GN0 root (test_unseen.yaml DATA_PATH)
+    sha256: de4fd64a4e27ef552017eebf43aeb02992618b49c8800aa9bbc09dd30a0e1347   # same file check 3 used
+    n_rows: 5000
+  interiorgs:
+    repo: spatialverse/InteriorGS   # gated; token read from /dev/shm only
+    revision: 334dfeea4e0241033b4e5de97c01bc7c9c080530
+    local_dir: data/scene_datasets/InteriorGS       # relative to the GN0 root (test_unseen.yaml SCENES_DIR)
+    scenes: every scene named in the test_unseen parquet, whole scene folders
+    n_scenes_expected: 839
+
+env:
+  wnm_3d:   # WNM-3D docs/INSTALLATION.md section 1
+    conda_env: wnm_3d
+    python: "3.11"
+    torch: 2.8.0
+    torchvision: 0.23.0
+    torchaudio: 2.8.0
+    torch_index: https://download.pytorch.org/whl/cu129
+    cuda_toolkit: "12.9"
+    flash_attn: 2.8.3.post2         # docs give no version; the version route-a check 2 installed (prebuilt wheel)
+    huggingface_hub: 0.36.2         # route-a check 2 repair: 2.x breaks transformers 4.51.3
+    pyarrow: 23.0.1                 # route-a check 2 repair: newer pyarrow needs numpy 2, WNM-3D pins 1.26.4
+  bae:      # WNM-3D docs/INSTALLATION.md section 2 and GN0 docs/INSTALLATION.md
+    conda_env: bae
+    python: "3.10"
+    torch: 2.4.0
+    torchvision: 0.19.0
+    torchaudio: 2.4.0
+    torch_index: https://download.pytorch.org/whl/cu124
+    cuda_toolkit: "12.4"
+    gsplat_index: https://docs.gsplat.studio/whl/pt24cu124
+  apt: [libgl1, libglib2.0-0]       # needed for cv2 in route-a check 3
+
+server:   # WNM-3D scripts/inference/wnm_3d_server.sh, README single-GPU command
+  script: scripts/inference/wnm_3d_server.sh
+  cuda_devices: "0"
+  num_replicas: 1
+  gpus_per_replica: 1        # script default, not passed
+  host: 127.0.0.1            # script default, not passed
+  base_port: 8000
+  num_inference_steps: 16
+  dit_step_mask: [1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1]   # fixed in the script, not a flag
+  enable_dit_cache: true
+  enable_cfg: true
+  cfg_scale: 5.0
+  disable_torch_compile: true
+  inference_seed: 1140       # hard-coded in the action head, not a flag
+  history_sampling: uniform  # script default, not passed
+  env:
+    HF_HUB_OFFLINE: "1"      # not a model setting: anything not already downloaded and pinned fails loudly instead of being fetched
+  health_url: http://127.0.0.1:8000/healthz
+  ready_timeout_s: 1800
+
+client:   # GN0 scripts/evaluation/eval_remote.sh, WNM-3D README client command
+  script: scripts/evaluation/eval_remote.sh
+  exp_config: configs/gn_bench/interiorgs/test_unseen.yaml
+  num_gpus: 1
+  procs_per_gpu: 1           # script default, not passed
+  server_host: 127.0.0.1     # script default, not passed
+  server_port: 8000          # script default, not passed
+  max_actions_per_query: 8
+  stall_patience: 16
+  enable_stall_recovery: true      # decided 2026-11-21 (user's answer, PLAN amendment): on, as in the released README command; the paper does not mention it
+  remote_min_chunk_translation: 0.15   # DEVIATION from eval_remote.sh (sets 0): the paper's block-translation STOP rule (Appendix B.1)
+  remote_stop_eps: "1e-3"          # script default, not passed (kept as the script's own string)
+  remote_translation_frame: chunk_start   # script default, not passed
+  remote_max_translation: 0.0      # script default, not passed
+  remote_max_yaw: 0.0              # script default, not passed
+  action_format: auto              # script default, not passed
+  save_media: none                 # script default, not passed
+  remote_send_state: false         # script default (flag absent)
+  dagger: false                    # script default (flag absent)
+  wam_trace_mode: none             # script default, not passed
+  hook_wait_s: 900
+
+benchmark:   # GN0 configs/gn_bench/interiorgs/test_unseen.yaml, checked in the source by check_settings.py
+  max_episode_steps: 500
+  early_stop_steps: 500
+  stall_patience: 16
+  success_distance_m: 3.0
+  forward_step_size_m: 0.25
+  turn_angle_deg: 15
+  rgb: {width: 480, height: 360, hfov_deg: 70}
+
+episodes:
+  split: InteriorGS_test_unseen
+  source: route-a check 3 per-episode CSV (check3_InteriorGS_test_unseen.csv, 2026-11-20 rerun), rows in GN-Matrix parquet row order
+  source_sha256: 270297ecd2f9a3f87a7a2f4dc974c0ccea4e5219ad6709a6e2888333015510e7
+  id_format: "{scene}_{trajectory_id}"   # GN0 gn0/evaluation/common.py get_episode_id
+  n_total: 5000
+  order_seed: 20261121
+  order_method: numpy.random.default_rng(order_seed).permutation(n_total), applied to the ids in CSV row order
+  order_file: results/episode_order.txt   # gitignored; regenerate with src/make_episode_order.py
+  order_sha256: 25366209f38a242dbcec94bfed26092a9937dbf5adabbcd149f4558caed72728
+  n_main: pending     # the lead picks it after the timing rental
+  timing_k: 30        # decided 2026-11-21 (user's answer, PLAN amendment): the first 30 of the frozen order
+
+target:   # WNM-3D paper (arXiv 2608.07267 v3) Table 1, Unseen, WNM-3D row (same row in Table 4)
+  split: Unseen
+  sr: 53.5
+  spl: 46.6
+  os: 62.2
+  ne: 4.1
+  tl: 10.2
+
+pass_rule:
+  statement: reproduced if the paper's Unseen SR (53.5) lies inside the 95% Wilson score interval of our measured success rate on the first n_main episodes of the frozen order
+  ci_level: 0.95
+  wilson_z: 1.959963984540054
+
+breakdowns:
+  visible:
+    csv_column: visible_primary
+    tolerance_column: depth_tol_primary_m
+    tolerance_m: 0.15
+  mirrored_scenes:
+    source: route-a check 3 scenes.jsonl (frame_diag; a scene counts as possibly mirrored when a mirrored frame has the largest splat-inside total, ties going to identity, as summarize_check3.py)
+    source_sha256: f7931ea18109e7f45f5eaff10ed6ca681dfbd5b149fbe1212ec40717920ce0a3
+    n_scenes_expected: 39
+    n_test_unseen_episodes_expected: 233
+
+compute:
+  provider: vast.ai
+  gpu: {type: H100 SXM, count: 1, on_demand: true}
+  steps: [timing rental (its own OK), main run (its own OK)]
+
+paths:   # on the rented machine
+  workspace: /workspace
+  wnm3d_root: /workspace/WNM-3D
+  gn0_root: /workspace/GN0
+  conda_sh: /workspace/miniforge3/etc/profile.d/conda.sh
+  rung1_root: /workspace/rung1
+  hf_token_file: /dev/shm/hft
+  results_local: ~/Desktop/hear-lab-rung1-results   # on the lead's Mac, outside every git worktree
