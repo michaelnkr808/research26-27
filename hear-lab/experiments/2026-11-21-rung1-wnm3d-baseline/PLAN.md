@@ -79,7 +79,7 @@ Results are copied off the machine and checked before it is destroyed; they live
 - `src/check_settings.py`: asserts every setting (config, commands, setup pins, pinned sources, episode order).
 - `src/summarize.py`: metrics, intervals, verdict, breakdowns, time and cost.
 
-**Status:** planned. Stall recovery and K decided (amendment 2026-11-21 below). Waiting on: the timing rental OK, then N after it.
+**Status:** timing batch done (2026-11-22, `LOG.md`). Waiting on: N for the main run (the user's call), then its rental OK.
 
 ## Amendments
 <!-- ### YYYY-MM-DD: what changed, why, and whether any results had been seen yet -->
@@ -91,3 +91,6 @@ The lead put two recommendations to the user, who answered in the lead's window 
 - **N for the main run stays open** (`episodes.n_main: pending`), picked by the lead after the timing rental.
 
 No run had started and no results existed when this was decided. `check_settings.py` now asserts both decided values.
+
+### 2026-11-22: three setup and bookkeeping fixes found on the timing rental (no design change)
+Seen before writing this: the timing batch's outcomes (`LOG.md` 2026-11-22). None of the fixes changes a model, evaluation or episode setting: the tokenizer goes to the local path the released checkpoint names (WNM-3D `docs/DOWNLOADS.md` 106-107); the InteriorGS download retries on Hugging Face rate limits; the episode hook writes numpy scalars in its own timing line. The timing batch was rerun in full under the run name `timing-r2` after the hook fix, because a resume across code versions is refused by design; `timing-r2` is the timing record.
