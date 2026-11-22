@@ -191,8 +191,19 @@ print("cache refs/main", ref)
 if ref != pinned:
     sys.exit(f"cache refs/main is {ref}, not the pinned {pinned}")
 PY
+    elif grep -q "tokenizer_path: *\./checkpoints/umt5-xxl *$" "$ENV_DIR/checkpoint_conf_keys.txt" \
+        && ! grep -v "tokenizer_path: *\./checkpoints/umt5-xxl *$" "$ENV_DIR/checkpoint_conf_keys.txt" | grep -q "tokenizer_path"; then
+        # The released stage 3 checkpoint names the local path ./checkpoints/umt5-xxl (relative to the WNM-3D root,
+        # where the server runs). WNM-3D docs/DOWNLOADS.md lines 106-107 at 7fe2d5f put google/umt5-xxl there with
+        # "hf download google/umt5-xxl --local-dir checkpoints/umt5-xxl"; route-a check 2 did the same at the pinned
+        # revision. Same files and revision as the Hub-id branch above.
+        hf download "$TOKENIZER_REPO" tokenizer_config.json tokenizer.json spiece.model special_tokens_map.json config.json \
+            --revision "$TOKENIZER_REVISION" --local-dir "$WNM3D_ROOT/checkpoints/umt5-xxl" \
+            | tee "$ENV_DIR/tokenizer_download.txt" || die "tokenizer download failed"
+        (cd "$WNM3D_ROOT/checkpoints/umt5-xxl" && sha256sum tokenizer_config.json tokenizer.json spiece.model special_tokens_map.json config.json) \
+            | tee "$ENV_DIR/tokenizer.sha256"
     else
-        die "the checkpoint does not name $TOKENIZER_REPO as its tokenizer (see $ENV_DIR/checkpoint_conf_keys.txt); tell the lead"
+        die "the checkpoint names neither $TOKENIZER_REPO nor ./checkpoints/umt5-xxl as its tokenizer (see $ENV_DIR/checkpoint_conf_keys.txt); tell the lead"
     fi
 
     log "GN-Matrix $GN_MATRIX_FILE at $GN_MATRIX_REVISION"
