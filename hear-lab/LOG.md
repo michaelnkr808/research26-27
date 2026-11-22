@@ -691,3 +691,16 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **Found** (`verified`, timing batch only, not the pass-bar test): 18 of 30 succeeded (SR 60.0, Wilson 95% 42.3 to 75.4; paper Unseen 53.5); about 45 s and 0.03 USD per episode; a repeat of 18 episodes gave identical outcomes. A first attempt ran about twice as slow for no cause found. Detail: the experiment `LOG.md` 2026-11-22.
 **PR:** #82 (folder, merged); the fixes and this record by a second PR.
 **Next:** the user picks N for the main run (projection: 1,000 episodes about 30 to 60 USD; all 5,000 about 151 USD at the faster speed, inside the remaining credit with little left, and about 271 USD at the slower one, above it), then a rental OK.
+
+## 2026-11-21 [agent, literature] (training recipes for adding a new input: PR opened)
+**Goal:** answer the planning lead's request of 2026-11-21: what published recipes exist for adding a new input encoder (audio first) to a pretrained video diffusion model or world action model, what was trained and for how long; and Spatial-AST's input format and use at short windows.
+
+**Did:** three workers (one per question) wrote notes; the literature lead re-checked Hear You Are, HLR-LLM, NaVLA2, SAVi and WNM-3D against locally saved full texts, and one reviewer worker re-checked 12 load-bearing Q1 and Q2 claims on the arXiv pages (11 confirmed, 1 reworded). Landed as `literature/survey/2026-11-21-new-input-training-recipes.md` by pull request.
+
+**Found:** see the file. In short: adapter-only on a frozen Wan is published for audio (MultiTalk, Face-to-Face) and the one numeric ablation (OmniAvatar) has frozen weaker than LoRA; nothing found on Wan2.2-5B at a small budget or with spatial audio; no world action model with a frozen-backbone added-input comparison; Spatial-AST facts and window uses listed.
+
+**Not verified:** Q1 and Q2 entries were read through a summarizing fetch tool, not raw text; Hear You Are's and NaVLA2's supplementary or appendix details; NaVLA2's per-step window length; Hugging Face model card (HTTP 401).
+
+**PR:** #81.
+
+**Next:** the lead's OK in chat, then merge.
