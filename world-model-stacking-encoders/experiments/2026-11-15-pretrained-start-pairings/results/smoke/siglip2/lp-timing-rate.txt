@@ -1,0 +1,31 @@
+libero_10/Background Textures            n   289  wall_s    103.5
+libero_10/Camera Viewpoints              n   419  wall_s     93.0
+libero_10/Language Instructions          n   383  wall_s    101.0
+libero_10/Light Conditions               n   274  wall_s     79.5
+libero_10/Objects Layout                 n   312  wall_s     99.9
+libero_10/Robot Initial States           n   393  wall_s     98.5
+libero_10/Sensor Noise                   n   449  wall_s    107.3
+libero_goal/Background Textures          n   281  wall_s     69.1
+libero_goal/Camera Viewpoints            n   408  wall_s     59.3
+libero_goal/Language Instructions        n   410  wall_s     59.3
+libero_goal/Light Conditions             n   279  wall_s     68.1
+libero_goal/Objects Layout               n   425  wall_s     60.0
+libero_goal/Robot Initial States         n   409  wall_s     56.2
+libero_goal/Sensor Noise                 n   379  wall_s     71.0
+libero_object/Background Textures        n   248  wall_s     63.8
+libero_object/Camera Viewpoints          n   396  wall_s     56.9
+libero_object/Language Instructions      n   354  wall_s     54.7
+libero_object/Light Conditions           n   297  wall_s     69.1
+libero_object/Objects Layout             n   403  wall_s     54.8
+libero_object/Robot Initial States       n   398  wall_s     53.1
+libero_object/Sensor Noise               n   422  wall_s     82.8
+libero_spatial/Background Textures       n   258  wall_s     63.9
+libero_spatial/Camera Viewpoints         n   376  wall_s     56.4
+libero_spatial/Language Instructions     n   390  wall_s     59.2
+libero_spatial/Light Conditions          n   292  wall_s     69.2
+libero_spatial/Objects Layout            n   385  wall_s     60.9
+libero_spatial/Robot Initial States      n   350  wall_s     59.7
+libero_spatial/Sensor Noise              n   351  wall_s     82.2
+weighted mean wall_s 71.8 at 4 envs -> R_weighted 200.5 episodes per pod-hour; 30090 rollouts per checkpoint = 150.1 pod-hours (upper bound)
+raw pass rate 142.6 episodes per pod-hour (28 records in 707 s)
+--lp-rate 142
