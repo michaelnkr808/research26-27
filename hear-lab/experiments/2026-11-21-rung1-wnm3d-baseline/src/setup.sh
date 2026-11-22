@@ -223,10 +223,26 @@ PY
     (
         HF_TOKEN="$(cat "$TOKEN_FILE")"
         export HF_TOKEN
-        xargs -a "$ENV_DIR/interiorgs_include.txt" -n 200 \
-            hf download "$INTERIORGS_REPO" --repo-type dataset --revision "$INTERIORGS_REVISION" \
-            --local-dir "$GN0_ROOT/data/scene_datasets/InteriorGS" --include
-    )
+        # The Hub rate-limits at 1000 API requests per 5 minutes (HTTP 429, seen on the timing rental
+        # 2026-11-22). On a 429, hf download can also return early without an error, so an attempt counts as
+        # done only if it exits 0 and printed no 429. Files already complete at this commit are skipped by
+        # hf download without a request, so a retry resumes. Up to 12 attempts, 330 s apart.
+        ok=0
+        for attempt in $(seq 1 12); do
+            set +e
+            xargs -a "$ENV_DIR/interiorgs_include.txt" -n 200 \
+                hf download "$INTERIORGS_REPO" --repo-type dataset --revision "$INTERIORGS_REVISION" \
+                --local-dir "$GN0_ROOT/data/scene_datasets/InteriorGS" --include \
+                > "$ENV_DIR/interiorgs_attempt_$attempt.log" 2>&1
+            rc=$?
+            set -e
+            n429="$(grep -c "429" "$ENV_DIR/interiorgs_attempt_$attempt.log" || true)"
+            echo "InteriorGS download attempt $attempt: exit $rc, 429 lines $n429"
+            if [[ "$rc" == 0 && "$n429" == 0 ]]; then ok=1; break; fi
+            sleep 330
+        done
+        [[ "$ok" == 1 ]] || exit 1
+    ) || die "InteriorGS download did not finish without a 429 in 12 attempts"
     rm -f "$TOKEN_FILE"
     trap - EXIT
     n_dirs="$(find "$GN0_ROOT/data/scene_datasets/InteriorGS" -mindepth 1 -maxdepth 1 -type d ! -name '.*' | wc -l | tr -d ' ')"
