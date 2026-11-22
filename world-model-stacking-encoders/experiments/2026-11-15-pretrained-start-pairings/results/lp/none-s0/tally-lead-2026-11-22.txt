@@ -1,0 +1,24 @@
+# none seed 0 LIBERO-Plus, tally by the lead on 2026-11-22 23:15 UTC over the record bodies of the 16 saved pod logs in this folder
+# (each body checked against the sha256 its pod printed; inline script, stdlib only; statistic of PLAN "Comparison statistic": rate per eval seed, Y = mean of the three rates).
+# Columns: successes, rollouts, percent. To be reproduced by src/pairings_analysis.py --one-seed at the one-seed report.
+shards [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+rows 30090
+keys ['benchmark', 'category', 'checkpoint', 'config', 'episode_id', 'eval_seed', 'final_state', 'instruction', 'steps', 'subset_id', 'success', 'suite', 'train_seed', 'wall_s', 'worker_peak_rss_mb']
+benchmark {'libero_plus': 30090}
+config/train_seed/checkpoint {('none', 0, '/mnt/proxy/runs/baseline-none-s0')}
+unique (suite, episode, eval_seed) 30090
+eval_seed 41 5038 10030 50.229
+eval_seed 42 4828 10030 48.136
+eval_seed 43 5429 10030 54.128
+Y 50.831 sd over eval seeds 3.041
+suite libero_10 2895 7557 38.31
+suite libero_goal 3767 7773 48.46
+suite libero_object 4364 7554 57.77
+suite libero_spatial 4269 7206 59.24
+category Background Textures 664 3228 20.57
+category Camera Viewpoints 1255 4797 26.16
+category Language Instructions 3212 4611 69.66
+category Light Conditions 2363 3426 68.97
+category Objects Layout 3301 4575 72.15
+category Robot Initial States 2658 4650 57.16
+category Sensor Noise 1842 4803 38.35
