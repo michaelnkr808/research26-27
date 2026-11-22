@@ -386,3 +386,14 @@ def test_sitecustomize_exits_when_filter_fails(tmp_path):
     env.pop("RUNG1_EPISODE_IDS")
     res = subprocess.run([sys.executable, "-c", "print('ran')"], capture_output=True, env=env)
     assert res.returncode == 0 and b"ran" in res.stdout
+
+
+def test_append_line_numpy_scalars(tmp_path):
+    import importlib, json as _json, sys as _sys
+    import numpy as np
+    from pathlib import Path as _P
+    _sys.path.insert(0, str(_P(__file__).parent / "rung1_hook"))
+    rung1_filter = importlib.import_module("rung1_filter")
+    p = tmp_path / "ev.jsonl"
+    rung1_filter.append_line(p, {"spl": np.float32(0.5), "success": np.float64(1.0), "n": np.int64(3)})
+    assert _json.loads(p.read_text()) == {"spl": 0.5, "success": 1.0, "n": 3}

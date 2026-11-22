@@ -684,3 +684,10 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **Not approved:** the timing rental (the user asked to /close and /clear first; ask again in the new session). No training, audio, rung 2 or route B work.
 
 **Next:** after the clear, confirm the stop-rule reading with the user, spawn the folder worker, then quote a live H100 offer and get the rental OK. Offers vanish within minutes, so re-search at that time.
+
+## 2026-11-22 [agent, experiment] (rung 1 timing rental done; the folder merged; main-run N open)
+**Goal:** build the rung 1 folder and time the released WNM-3D model on real episodes.
+**Did:** worker (Opus) wrote `experiments/2026-11-21-rung1-wnm3d-baseline/` (PR #82, reviewed, merged on the user's OK); the user's answers: stall recovery on (as released), timing batch K = 30. Timing rental on Vast.ai (the user's OK in this window): 1x H100 SXM, Japan, 2.3704 USD/h, 1.82 h, 4.32 USD; instance destroyed, no instances remain. Three fixes found on the machine (tokenizer path the checkpoint names, Hugging Face rate-limit retry, a crash in our episode hook), made by the experiment lead and committed on the PR branch; no setting changed.
+**Found** (`verified`, timing batch only, not the pass-bar test): 18 of 30 succeeded (SR 60.0, Wilson 95% 42.3 to 75.4; paper Unseen 53.5); about 45 s and 0.03 USD per episode; a repeat of 18 episodes gave identical outcomes. A first attempt ran about twice as slow for no cause found. Detail: the experiment `LOG.md` 2026-11-22.
+**PR:** #82 (folder, merged); the fixes and this record by a second PR.
+**Next:** the user picks N for the main run (projection: 1,000 episodes about 30 to 60 USD; all 5,000 about 151 USD at the faster speed, inside the remaining credit with little left, and about 271 USD at the slower one, above it), then a rental OK.

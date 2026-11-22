@@ -79,9 +79,17 @@ def event_line(payload: dict, now: float, t_prev: float, first: bool, launch_id:
     return line
 
 
+def _json_default(o):
+    # GN0's episode metrics can hold numpy scalars (a numpy float32 crashed the client on the timing rental,
+    # 2026-11-22, in an episode ended by the stall early stop). Convert them exactly; refuse anything else.
+    if hasattr(o, "item") and hasattr(o, "dtype"):
+        return o.item()
+    raise TypeError(f"Object of type {o.__class__.__name__} is not JSON serializable")
+
+
 def append_line(path: str | Path, obj: dict) -> None:
     with open(path, "a", encoding="utf-8") as f:
-        f.write(json.dumps(obj, sort_keys=True) + "\n")
+        f.write(json.dumps(obj, sort_keys=True, default=_json_default) + "\n")
         f.flush()
         os.fsync(f.fileno())
 

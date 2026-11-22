@@ -21,7 +21,7 @@ checkpoint:
     model-00005-of-00006.safetensors: d7dffc1c6e31c343e991d82062bfd7c27b120bed9139c832354621042933d508
     model-00006-of-00006.safetensors: 4b3ca202db5df95e571095844f5073a47e761cb94ad7f5be8c237d67c32b3944
 
-tokenizer:   # only used if the checkpoint's experiment_cfg/conf.yaml names a Hub id (setup.sh records which)
+tokenizer:   # the released checkpoint names ./checkpoints/umt5-xxl; setup.sh downloads these files there (WNM-3D docs/DOWNLOADS.md:106-107)
   repo: google/umt5-xxl
   revision: 66cb9e7e85526fe440a945569e42c72fb6cbc0ad
   files: [tokenizer_config.json, tokenizer.json, spiece.model, special_tokens_map.json, config.json]

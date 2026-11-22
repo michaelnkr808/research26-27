@@ -191,8 +191,19 @@ print("cache refs/main", ref)
 if ref != pinned:
     sys.exit(f"cache refs/main is {ref}, not the pinned {pinned}")
 PY
+    elif grep -q "tokenizer_path: *\./checkpoints/umt5-xxl *$" "$ENV_DIR/checkpoint_conf_keys.txt" \
+        && ! grep -v "tokenizer_path: *\./checkpoints/umt5-xxl *$" "$ENV_DIR/checkpoint_conf_keys.txt" | grep -q "tokenizer_path"; then
+        # The released stage 3 checkpoint names the local path ./checkpoints/umt5-xxl (relative to the WNM-3D root,
+        # where the server runs). WNM-3D docs/DOWNLOADS.md lines 106-107 at 7fe2d5f put google/umt5-xxl there with
+        # "hf download google/umt5-xxl --local-dir checkpoints/umt5-xxl"; route-a check 2 did the same at the pinned
+        # revision. Same files and revision as the Hub-id branch above.
+        hf download "$TOKENIZER_REPO" tokenizer_config.json tokenizer.json spiece.model special_tokens_map.json config.json \
+            --revision "$TOKENIZER_REVISION" --local-dir "$WNM3D_ROOT/checkpoints/umt5-xxl" \
+            | tee "$ENV_DIR/tokenizer_download.txt" || die "tokenizer download failed"
+        (cd "$WNM3D_ROOT/checkpoints/umt5-xxl" && sha256sum tokenizer_config.json tokenizer.json spiece.model special_tokens_map.json config.json) \
+            | tee "$ENV_DIR/tokenizer.sha256"
     else
-        die "the checkpoint does not name $TOKENIZER_REPO as its tokenizer (see $ENV_DIR/checkpoint_conf_keys.txt); tell the lead"
+        die "the checkpoint names neither $TOKENIZER_REPO nor ./checkpoints/umt5-xxl as its tokenizer (see $ENV_DIR/checkpoint_conf_keys.txt); tell the lead"
     fi
 
     log "GN-Matrix $GN_MATRIX_FILE at $GN_MATRIX_REVISION"
@@ -212,10 +223,26 @@ PY
     (
         HF_TOKEN="$(cat "$TOKEN_FILE")"
         export HF_TOKEN
-        xargs -a "$ENV_DIR/interiorgs_include.txt" -n 200 \
-            hf download "$INTERIORGS_REPO" --repo-type dataset --revision "$INTERIORGS_REVISION" \
-            --local-dir "$GN0_ROOT/data/scene_datasets/InteriorGS" --include
-    )
+        # The Hub rate-limits at 1000 API requests per 5 minutes (HTTP 429, seen on the timing rental
+        # 2026-11-22). On a 429, hf download can also return early without an error, so an attempt counts as
+        # done only if it exits 0 and printed no 429. Files already complete at this commit are skipped by
+        # hf download without a request, so a retry resumes. Up to 12 attempts, 330 s apart.
+        ok=0
+        for attempt in $(seq 1 12); do
+            set +e
+            xargs -a "$ENV_DIR/interiorgs_include.txt" -n 200 \
+                hf download "$INTERIORGS_REPO" --repo-type dataset --revision "$INTERIORGS_REVISION" \
+                --local-dir "$GN0_ROOT/data/scene_datasets/InteriorGS" --include \
+                > "$ENV_DIR/interiorgs_attempt_$attempt.log" 2>&1
+            rc=$?
+            set -e
+            n429="$(grep -c -E "429 Client Error|Too Many Requests" "$ENV_DIR/interiorgs_attempt_$attempt.log" || true)"
+            echo "InteriorGS download attempt $attempt: exit $rc, 429 lines $n429"
+            if [[ "$rc" == 0 && "$n429" == 0 ]]; then ok=1; break; fi
+            sleep 330
+        done
+        [[ "$ok" == 1 ]] || exit 1
+    ) || die "InteriorGS download did not finish without a 429 in 12 attempts"
     rm -f "$TOKEN_FILE"
     trap - EXIT
     n_dirs="$(find "$GN0_ROOT/data/scene_datasets/InteriorGS" -mindepth 1 -maxdepth 1 -type d ! -name '.*' | wc -l | tr -d ' ')"
