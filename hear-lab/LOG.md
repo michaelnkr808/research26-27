@@ -724,3 +724,16 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **Next:** the reviewer's comment and fixes on PR #85; the lead's merge OK. Rung 1 is with the experiment session. The PI questions go to Thursday.
 
 **Open questions:** as in the 2026-11-21 ladder entry.
+
+## 2026-11-23 [agent, lead, experiment] (rung 1 main run: reproduced)
+**Goal:** rung 1, reproduce the released WNM-3D Unseen result at inference time, split by whether the target is visible at the start.
+
+**Did:** ran the released checkpoint on the first 1000 episodes of the frozen GN-Bench test_unseen order on one rented H100 (Vast.ai, 16.94 h at 2.3704 USD/h, 40.15 USD; instance destroyed after a verified copy). The host extended its listing overnight, so no resume was needed.
+
+**Found** (`verified`): SR 55.0 (Wilson 95% 51.9 to 58.1) against the paper's 53.5: reproduced by the pre-set bar. Visible at start 65.0 (n 220), not visible 52.2 (n 780). Detail and the other metrics in `experiments/2026-11-21-rung1-wnm3d-baseline/LOG.md` 2026-11-23.
+
+**Spent:** about 54 of the 200 USD on Vast.ai so far (credit 145.47 USD after this run).
+
+**PR:** this entry lands with the result PR.
+
+**Next:** review and the user's merge OK; rung 2 is the planning lead's hand-over.
