@@ -1,0 +1,45 @@
+{
+  "note": "subset_id clean1 (src/rollout.py line 135, f\"clean{clean_per_task}\", --clean 1): one trial per base task (init state 0), 10 per suite, 40 per checkpoint, eval seed 41. Not comparable with a full 50-per-task clean-LIBERO number. One rollout = 2.5 points of four-suite average; the s0/s1 gap is one rollout. Checkpoints: the path is all we know (proxy-calibration LOG.md lines 429, 501-505 show Wave-1 training outputs; full-length not verified). Duplicates are counted, not removed.",
+  "n_clean_records": 2000,
+  "n_all_records": 2000,
+  "n_non_clean_ignored": 0,
+  "checkpoints": [
+    {
+      "config": "c-radiov4",
+      "train_seed": 0,
+      "checkpoint": "/mnt/runs/runs/pairings-c-radiov4-s0",
+      "eval_seeds": [
+        {
+          "eval_seed": 41,
+          "per_suite": {
+            "libero_10": {
+              "n": 500,
+              "succ": 336,
+              "rate": 0.672
+            },
+            "libero_goal": {
+              "n": 500,
+              "succ": 339,
+              "rate": 0.678
+            },
+            "libero_object": {
+              "n": 500,
+              "succ": 468,
+              "rate": 0.936
+            },
+            "libero_spatial": {
+              "n": 500,
+              "succ": 390,
+              "rate": 0.78
+            }
+          },
+          "four_suite_avg": 0.7665,
+          "n_total": 2000,
+          "duplicates": [],
+          "uneven_counts": false,
+          "missing_suites": []
+        }
+      ]
+    }
+  ]
+}
