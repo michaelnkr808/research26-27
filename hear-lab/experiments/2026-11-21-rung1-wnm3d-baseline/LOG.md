@@ -46,11 +46,11 @@ The user's answers relayed by the lead ("yes go for it"): stall recovery on (as 
 
 **Listing end:** the host's listing end was 2026-11-23T11:00Z at create time, before the projected finish; the host extended it to 2026-11-24T00:00Z during the night (seen 13:31Z), so the run finished on one instance with no resume.
 
-**Copy-off:** the first copier (30 rounds of 30 min) ran out at 13:01Z with 920 episodes copied and the run still going (943 done at 13:31Z). Restarted by the lead as `main_copier2.sh` (same logic, 16 rounds of 15 min). When MAIN_EXIT appeared it built the sha256 manifest on the instance, copied, verified on the Mac (1056 OK, 0 bad; re-checked by the lead: 0 bad), ran the token check (no token files left), and destroyed the instance. Some rounds left the count unchanged (791, 791; 854, 854; 920 twice); most likely tar exits non-zero when a file changes during the read and the round's unpack is skipped (`speculative`). The final copy ran after the run ended, so the verified copy is not affected. Outputs: `~/Desktop/hear-lab-rung1-results/main-sync/` (env/, runs/main, `copy_manifest_main.sha256`, `runs/main/summary.json`; not in git).
+**Copy-off:** the first copier (30 rounds of 30 min) ran out at 13:01Z with 920 episodes copied and the run still going (943 done at 13:31Z). Restarted by the lead as `main_copier2.sh` (same logic, 16 rounds of 15 min). When MAIN_EXIT appeared it built the sha256 manifest on the instance, copied, verified on the Mac (1056 OK, 0 bad; re-checked by the lead: 0 bad), ran the token check (no token files left), and destroyed the instance. Across both copiers 15 of the 35 rounds left the copied count unchanged (counts in order: 11 37 37 37 37 37 190 190 250 283 308 308 308 387 387 387 497 522 547 572 572 638 669 704 745 791 791 854 854 920 920 920 920 992 1000; reviewer, PR #86); most likely tar exits non-zero when a file changes during the read and the round's unpack is skipped (`speculative`). The final copy ran after the run ended, so the verified copy is not affected. Outputs: `~/Desktop/hear-lab-rung1-results/main-sync/` (env/, runs/main, `copy_manifest_main.sha256`, `runs/main/summary.json`; not in git).
 
 **GPU:** spot checks with nvidia-smi at 23:00Z, 04:01Z and 13:31Z read 47, 46 and 45 % (one client alternates rendering and inference, as in the timing run).
 
-**Results** (`verified`, `summarize.py --run-kind main`, first 1000 of the frozen order):
+**Results** (`verified`, `summarize.py --run-kind main`, first 1000 of the frozen order; the visible / not-visible labels come from the route-a check 3 file, as fixed in `PLAN.md`, and were not re-derived for this run):
 
 | | n | SR (95% Wilson) | SPL | OS | NE | TL |
 |---|---|---|---|---|---|---|
@@ -60,11 +60,11 @@ The user's answers relayed by the lead ("yes go for it"): stall recovery on (as 
 | Target not visible at start | 780 | 52.2 (48.7 to 55.7) | 48.3 | 59.1 | 4.25 | 9.71 |
 | All, excluding the 39 possibly mirrored scenes | 958 | 55.1 (52.0 to 58.2) | 51.4 | 61.4 | 4.05 | 8.99 |
 
-**Verdict: reproduced** (the pass bar in `PLAN.md`: the paper's 53.5 lies inside our 95% Wilson interval, 51.9 to 58.1). SPL, OS, NE and TL have no pass bar; SPL is higher than the paper's and TL shorter (no explanation tested; the 0.15 m stop rule ends some episodes earlier than the released command would, `speculative`).
+**Verdict: reproduced**, under the paper's 0.15 m block stop rule (the one deviation from the released command; see `PLAN.md`) (the pass bar in `PLAN.md`: the paper's 53.5 lies inside our 95% Wilson interval, 51.9 to 58.1). SPL, OS, NE and TL have no pass bar; SPL is higher than the paper's and TL shorter (no explanation tested; the 0.15 m stop rule ends some episodes earlier than the released command would, `speculative`).
 
 Stop reasons: chunk_low_translation 641, distance_to_goal_unchanged 305, action_near_zero 38, environment_done 16.
 
-**Metric note** (`verified`): one episode (0968_841900_242) has an infinite distance to goal and an undefined SPL (path length 0); `summarize.py`, like GN0's own results script, counts both as 0, which lowers the mean NE slightly. The paper's NE 4.1 is compared with this.
+**Metric note** (`verified`): one episode (0968_841900_242) has an infinite distance to goal and an undefined SPL (path length 0); `summarize.py`, like GN0's own results script, counts both as 0, which lowers the mean NE by about 0.005 (reviewer, PR #86). The paper's NE 4.1 is compared with this.
 
 **Repeatability** (`verified`): the 30 timing-r2 episodes are the first 30 of the main run; all 30 have identical success, SPL, oracle success, distance to goal, path length and stop reason in both runs.
 
