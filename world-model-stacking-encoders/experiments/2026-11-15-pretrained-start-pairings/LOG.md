@@ -847,3 +847,14 @@ Times are UTC; the work started on 2026-11-18 (previous entry) and ended after m
 - **Test-set use (logged at submit, before any outcome is read), 2026-11-23:** LIBERO-Plus, 30,090 rollouts (10,030 episodes x eval seeds 41, 42, 43), `dinov3` seed 0, `/mnt/runs/runs/pairings-dinov3-s0/model.pt`, sha256 `81356eb8c77e99cd5fb8bfe6264e3df57c849a5b28f0627a58e66d988d4d59fa`. Planned, inside the user's go of 2026-11-21.
 - **Ledger:** one row.
 - **Next step:** create the Job right after this merge. Then the watcher; the `siglip2` clean shards 1 and 2, then its gate and LIBERO-Plus Job (`--lp-rate 142`) when the GPU count allows (2 left under 16 after this Job; `kubectl patch` the parallelism of the running LIBERO-Plus Jobs as clean pods free up, never above 16 in total).
+
+## 2026-11-23 [agent, lead, implementation] (status 12:07 UTC: four LIBERO-Plus shard pods running, all healthy; `dinov3` LIBERO-Plus Job created 08:04 UTC; 10 pods Pending)
+
+- **`dinov3` LIBERO-Plus Job (previous entry):** created 2026-11-23 08:04:09 UTC, uid `6dfaa791-f490-427c-b983-c948e02f24ba`, after merge `e45a00b` (rendered file sha256 equal to the merged one). Job deadline 568,800 s from creation.
+- **Woken by the watcher** at 08:24, 09:35, 10:31 and 11:46 UTC, each a LIBERO-Plus shard pod Running; each checked about 20 min after start (`MODE: fresh`, "model.pt sha256 equals the pinned value", rollouts started, no error, last 10 `[gpu]` samples mostly 100%):
+  - `c-radiov4` shard 1 `...-1-mzl9t` (`nautilus-it-gpu06`, started 08:20:46 UTC, queue 0.38 h).
+  - `dinov3` shard 3 `...-3-p48rh` (`gpu06`, 09:34:03, queue 1.50 h), shard 0 `...-0-rbfbx` (`gpu06`, 10:29:54, queue 2.43 h), shard 1 `...-1-5bnws` (`gpu05`, 11:43:21, queue 3.65 h).
+- **Pending (12:07 UTC):** `c-radiov4` LIBERO-Plus shards 0, 2, 3, 4, 5; `dinov3` shards 2, 4, 5; `siglip2` clean shards 1 and 2 (since 2026-11-22 14:01:51 UTC). GPUs held: 4 Running + 10 Pending = 14 of 16.
+- **Watcher:** `results/watch/watch_stage2.sh` updated to the running version (finished pods and Complete Jobs leaving by TTL are not wakes).
+- **Test-set use:** none new; no outcome read.
+- **Next step:** the watcher. First LIBERO-Plus shard ends about 15:20 UTC (speculative): copy its log (the pod object of a finished Indexed shard can vanish within minutes; the logs are also on the volume). When both `siglip2` clean shards finish: its gate, then its LIBERO-Plus Job inside the 16-GPU count.
