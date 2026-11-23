@@ -22,7 +22,7 @@ while :; do
   if [ $ok = 1 ]; then kc get pods -n aria-world -l experiment=stacking-pairings --request-timeout=20s -o "$PJ" && cp "$T/out" "$T/p" || ok=0; fi
   if [ $ok = 1 ] && [ -s "$T/j" ]; then
     fails=0
-    cat "$T/j" "$T/p" | sort > "$T/cur"
+    grep -v " Succeeded$" "$T/p" > "$T/p2"; grep -v "cond=SuccessCriteriaMet Complete$" "$T/j" > "$T/j2"; cat "$T/j2" "$T/p2" | sort > "$T/cur"   # finished pods and Complete Jobs leave on their own (TTL): not an event   # finished pods leave the list on their own: not an event
     [ -s "$BASE" ] || cp "$T/cur" "$BASE"
     if ! cmp -s "$T/cur" "$BASE"; then
       echo "CHANGE at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
