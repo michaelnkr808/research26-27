@@ -1,6 +1,6 @@
 # 003 — Simulator route A: WNM-3D's own simulator plus a sound engine, with a measured HRTF
 - **Date:** 2026-11-22
-- **Status:** proposed 2026-11-22 on the lead's "commit to route A it sounds good" in the planning window; accepted when the lead gives the merge OK for this pull request. The PI has not been told of the commitment and has not answered whether this route meets the PI's condition (see Consequences).
+- **Status:** accepted 2026-11-23 (proposed 2026-11-22 on the lead's "commit to route A it sounds good" in the planning window; accepted on the lead's merge OK for PR #85, "1. merge"). The PI has not been told of the commitment and has not answered whether this route meets the PI's condition (see Consequences).
 - **Context:** WNM-3D's simulator (GN-Bench on InteriorGS scenes) has no audio, so the audio-visual training data and the closed-loop test have to come from somewhere (decision `002`, Consequences). Two routes were sized without running anything (`writing/2026-11-19-sizing-comparison-simulator-routes.md` and the two route memos, PR #73). What followed:
   - The PI, in writing after the 2026-11-19 meeting: "if you can use WNM-3D's own simulator for simulating audio-visual training data, then we will not use SoundSpaces 2.0" (`LOG.md` 2026-11-19, PI feedback).
   - The lead, 2026-11-19, on the planning lead's recommendation to start with route A and commit only after real checks: "yeah thats fine" (`LOG.md` 2026-11-19).
