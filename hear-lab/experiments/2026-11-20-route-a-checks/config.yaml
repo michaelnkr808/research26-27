@@ -118,4 +118,4 @@ check2:
     hard_stop_from_instance_start: 300
   paths:
     remote_root: /workspace/check2
-    results_local: ~/Desktop/hear-lab-route-a-results/check2-run1
+    results_local: hear-lab/experiments/2026-11-20-route-a-checks/results/check2-run1   # gitignored; moved from ~/Desktop/hear-lab-route-a-results 2026-11-24

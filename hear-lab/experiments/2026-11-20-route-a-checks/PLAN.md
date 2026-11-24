@@ -178,7 +178,7 @@ Batch-size search (each trial is a fresh launch with a fresh output folder):
 
 ### 6. Outputs
 
-- Copied off the machine with `rsync` to `~/Desktop/hear-lab-route-a-results/check2-run1/` on the lead's Mac, outside every git worktree (LOG.md, "Raw outputs lost"). Copied: the environment records (step 1, including the pre-existing `sitecustomize` check and the sha256 list of the uploaded `src/check2/`), the converter log and checks (step 2), the download hashes (step 3), the dry-run command, every trial's log, `nvidia-smi` CSV, TensorBoard events, `trainer_state.json`, `loss_log.jsonl`, `experiment_cfg/`, and the converted dataset's `meta/` folder. Not copied: model weights, the converted videos and the final model saves.
+- Copied off the machine with `rsync` to `~/Desktop/hear-lab-route-a-results/check2-run1/` on the lead's Mac, outside every git worktree (now the gitignored `results/check2-run1/` of this folder in the main checkout, moved 2026-11-24 at the user's request) (LOG.md, "Raw outputs lost"). Copied: the environment records (step 1, including the pre-existing `sitecustomize` check and the sha256 list of the uploaded `src/check2/`), the converter log and checks (step 2), the download hashes (step 3), the dry-run command, every trial's log, `nvidia-smi` CSV, TensorBoard events, `trainer_state.json`, `loss_log.jsonl`, `experiment_cfg/`, and the converted dataset's `meta/` folder. Not copied: model weights, the converted videos and the final model saves.
 - Before destroy: a sha256 manifest of everything copied is made on the machine and checked on the Mac (same file count, same hashes). The token check of step 3 is repeated. Then the instance is destroyed and the credit read before and after goes in LOG.md.
 
 ### 7. Cost and stop rules

@@ -1,4 +1,12 @@
-# Run outputs are derived from InteriorGS (terms not yet read). Keep them out of git.
+# Run outputs derived from InteriorGS stay out of git (policy and the user's answer, 2026-11-24: hear-lab/data/README.md).
+# Everything is ignored except the files listed below. Folders are un-ignored so git can reach the listed files.
 *
+!*/
 !.gitignore
 !.gitkeep
+# sha256 manifest of the check 2 copy
+!check2-run1/copy_manifest.sha256
+# check 1 test results and the check 2 offload step summary (no scene content)
+!2026-11-20-hrtf-rental/out/check1-run2/tests.json
+!check2-run1/runs/off_bs12.summary.json
+# The check 3 per-episode CSVs are NOT listed: they hold InteriorGS object labels, instance ids and scene coordinates, so they stay local.

@@ -13,10 +13,10 @@ cd <REPO>
 git rev-parse HEAD                                   # record in LOG.md: the commit src/check2 comes from
 ls <RENDERS>/*/*.mp4 | wc -l                         # must be 48; if not, stop (re-rendering is a new run)
 # the renders sit in a session scratchpad, which a cleanup can clear: copy them somewhere durable first
-mkdir -p ~/Desktop/hear-lab-route-a-results/check2-renders && rsync -a <RENDERS>/ ~/Desktop/hear-lab-route-a-results/check2-renders/
+mkdir -p <REPO>/hear-lab/experiments/2026-11-20-route-a-checks/results/check2-renders && rsync -a <RENDERS>/ <REPO>/hear-lab/experiments/2026-11-20-route-a-checks/results/check2-renders/
 (cd <RENDERS> && find . -name '*.mp4' | sort | xargs md5 -r) > /tmp/check2_renders.md5
 cd hear-lab/experiments/2026-11-20-route-a-checks/src/check2
-USE_TF=0 /opt/homebrew/bin/python3.11 -m unittest -v test_check2   # all pass (the real-Trainer test is skipped on the Mac)
+USE_TF=0 python3.11 -m unittest -v test_check2   # all pass (the real-Trainer test is skipped on the Mac)
 rm -rf __pycache__
 shasum -a 256 check2_steplog.py check2_keycheck.py sitecustomize.py test_check2.py fetch_vggt.sh RUN.md > /tmp/check2_src.sha256
 ~~~
@@ -33,7 +33,7 @@ df -h > df.txt; free -g > free.txt; nproc > nproc.txt; cat /etc/os-release > os.
 
 The driver must support CUDA 12.9 (about 575 or newer). If not, stop.
 
-From the Mac, record the instance (image tag, offer, price) straight into the results folder, which is outside every git worktree: `mkdir -p ~/Desktop/hear-lab-route-a-results/check2-run1 && vastai show instance <id> --raw > ~/Desktop/hear-lab-route-a-results/check2-run1/instance.json`. It stays on the Mac: it is not uploaded to the machine and never goes into git, because it can hold connection details and access tokens of the instance (`recalled`). Copy the image tag, offer, price and host reliability from it into LOG.md.
+From the Mac, record the instance (image tag, offer, price) straight into this experiment's gitignored `results/` folder in the main checkout (not in a worktree, which `git worktree remove` would wipe): `mkdir -p <REPO>/hear-lab/experiments/2026-11-20-route-a-checks/results/check2-run1 && vastai show instance <id> --raw > <REPO>/hear-lab/experiments/2026-11-20-route-a-checks/results/check2-run1/instance.json`. It stays on the Mac: it is not uploaded to the machine and never goes into git, because it can hold connection details and access tokens of the instance (`recalled`). Copy the image tag, offer, price and host reliability from it into LOG.md.
 
 ## 2. Environment (WNM-3D docs/INSTALLATION.md section 1 at 7fe2d5f)
 
@@ -316,10 +316,10 @@ wc -l copy_list.txt
 On the Mac:
 
 ~~~bash
-mkdir -p ~/Desktop/hear-lab-route-a-results/check2-run1
-rsync -av -e "ssh -p <port>" --files-from=:/workspace/check2/copy_list.txt root@<host>:/workspace/check2/ ~/Desktop/hear-lab-route-a-results/check2-run1/
-rsync -av -e "ssh -p <port>" root@<host>:/workspace/check2/copy_manifest.sha256 ~/Desktop/hear-lab-route-a-results/check2-run1/
-cd ~/Desktop/hear-lab-route-a-results/check2-run1 && shasum -a 256 -c copy_manifest.sha256 | grep -vc ': OK$'   # must print 0
+mkdir -p <REPO>/hear-lab/experiments/2026-11-20-route-a-checks/results/check2-run1
+rsync -av -e "ssh -p <port>" --files-from=:/workspace/check2/copy_list.txt root@<host>:/workspace/check2/ <REPO>/hear-lab/experiments/2026-11-20-route-a-checks/results/check2-run1/
+rsync -av -e "ssh -p <port>" root@<host>:/workspace/check2/copy_manifest.sha256 <REPO>/hear-lab/experiments/2026-11-20-route-a-checks/results/check2-run1/
+cd <REPO>/hear-lab/experiments/2026-11-20-route-a-checks/results/check2-run1 && shasum -a 256 -c copy_manifest.sha256 | grep -vc ': OK$'   # must print 0
 ~~~
 
 Then on the machine repeat the token check of step 4 (`HFH="${HF_HOME:-$HOME/.cache/huggingface}"; ls "$HFH/token" "$HFH/stored_tokens"`, both missing). Read the credit, destroy the instance (`vastai destroy instance <id>`), read the credit again, and write machine, price, hours, cost and every result into LOG.md (the lead's session).

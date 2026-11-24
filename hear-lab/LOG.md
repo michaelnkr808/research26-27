@@ -738,6 +738,8 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 
 **Next:** review and the user's merge OK; rung 2 is the planning lead's hand-over.
 
+**Open questions:** none
+
 ## 2026-11-23 [agent, lead, planning] (rung 1 result taken in; organization audit of the experiment folders)
 **Goal:** the lead's request: "ensure the experiment agent correctly follows the directory and file organization guidelines of my research".
 

@@ -2,7 +2,7 @@
 
 What this does, in one breath: it builds a rough "acoustic shell" of one real InteriorGS apartment (walls with the door and window gaps left open, floor, ceiling, furniture as boxes), puts a sound at the goal object of one real GN-Matrix episode and a listener at that episode's start pose, and asks the archived RLR-Audio-Propagation library for the impulse response (the echo pattern a click would make) twice, once with the library's own defaults and once with SoundSpaces' settings. It then checks that the sound arrives when physics says it should and that a sound on the left reaches the left ear first, and separately draws the floor-plan walls on GN-Bench's occupancy map to show whether the geometry sits where the simulator thinks it does.
 
-Design: `../../PLAN.md` (check 1). Parameters: `../../config.yaml` (`seed`, `check1`). This file says how to run it. Do not commit anything this run writes: the InteriorGS terms have not been read yet, and `results/` does not ignore `.wav`, `.png`, `.json` or `.obj` files (only `.npy`/`.npz`).
+Design: `../../PLAN.md` (check 1). Parameters: `../../config.yaml` (`seed`, `check1`). This file says how to run it. Outputs go to this experiment's `results/` (`--out ../../results/<run-name>` below resolves to `results/<run-name>/` of the experiment folder). `results/.gitignore` ignores everything except a short allow list (sha256 manifests, `tests.json` of the check 1 rerun, the check 2 step summary); images, audio, meshes, floor plans and the check 3 per-episode CSVs (they hold InteriorGS labels and coordinates) stay out of git (policy and the user's answer of 2026-11-24 in `hear-lab/data/README.md`). Do not force-add anything.
 
 ## Files
 

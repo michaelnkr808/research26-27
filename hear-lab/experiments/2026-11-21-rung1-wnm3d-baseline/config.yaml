@@ -164,4 +164,4 @@ paths:   # on the rented machine
   conda_sh: /workspace/miniforge3/etc/profile.d/conda.sh
   rung1_root: /workspace/rung1
   hf_token_file: /dev/shm/hft
-  results_local: ~/Desktop/hear-lab-rung1-results   # on the lead's Mac, outside every git worktree
+  results_local: hear-lab/experiments/2026-11-21-rung1-wnm3d-baseline/results/<timing|main>   # gitignored, lead's Mac; moved from ~/Desktop/hear-lab-rung1-results 2026-11-24

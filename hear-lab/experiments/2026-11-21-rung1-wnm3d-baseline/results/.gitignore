@@ -1,4 +1,14 @@
-# Run outputs are derived from InteriorGS (terms not yet read). Keep them out of git.
+# Run outputs derived from InteriorGS stay out of git (policy and the user's answer, 2026-11-24: hear-lab/data/README.md).
+# Everything is ignored except the files listed below. Folders are un-ignored so git can reach the listed files.
 *
+!*/
 !.gitignore
 !.gitkeep
+# sha256 manifests of the two copies
+!timing/copy_manifest.sha256
+!main/copy_manifest_main.sha256
+# summaries and per-episode results (scores, distances, episode ids)
+!main/runs/main/summary.json
+!main/runs/main/rung1_episodes.jsonl
+!timing/runs/timing-r2/summary.json
+!timing/runs/timing-r2/rung1_episodes.jsonl
