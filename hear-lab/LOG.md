@@ -737,3 +737,28 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **PR:** this entry lands with the result PR.
 
 **Next:** review and the user's merge OK; rung 2 is the planning lead's hand-over.
+
+## 2026-11-23 [agent, lead, planning] (rung 1 result taken in; organization audit of the experiment folders)
+**Goal:** the lead's request: "ensure the experiment agent correctly follows the directory and file organization guidelines of my research".
+
+**Did:**
+- Took in the experiment session's rung 1 result (entry above, PR #86): reproduced by the pre-set bar; rung 2 is not handed over yet.
+- Audited `experiments/2026-11-20-route-a-checks/` and `experiments/2026-11-21-rung1-wnm3d-baseline/` on main at 0abd0e5, and the main checkout on disk, against the repository `README.md` layout, `_standards/03`, `04` and `07`, and `STANDARDS.md`. Read-only; no experiment file was changed by the planning lead.
+- Sent ten findings to the experiment session. It agreed and proposed: one pull request for the record-keeping items (carrying its local commit 23130d0, branch `hear-lab-org-fixes`, not pushed), a separate one for shared code at the rung 2 hand-over, and the run-name scheme from now on. That pull request waits for the lead's OK on its plan in the experiment window.
+- Decision `003` (PR #85): fact-check review applied on 2026-11-22 (2 blocking, 5 non-blocking findings, all handled; the Status line changes on the lead's merge OK). Still open.
+- Updated the project brief.
+
+**PR:** direct. PR #85 open.
+
+**Found** (`verified`, read this session on main at 0abd0e5 unless marked):
+- In order: folder names; `config.yaml`, `PLAN.md`, `LOG.md`, `README.md` and `results/` in both folders; PLANs committed before the runs, with dated amendments below the original (only a Status line edited in place); pins and checksums in `config.yaml`; cost per rental in the experiment LOG; no token, email or absolute home path in committed files.
+- Not in order: (1) `data/README.md` does not exist, so no dataset or model has the provenance and licence entry `03` and `07` ask for; (2) the InteriorGS terms are still unread after six rentals that used the data; (3) the files on main name `~/Desktop/...` for the raw outputs, which are no longer there: the experiment session moved them into each experiment's `results/` folder on the lead's request ("can you not put the results on my Desktop? ... put them in the hear-lab folder and organize it there", its report) and fixed most of the paths in commit 23130d0, not yet on main; it reports the three existing manifests check out after the move (its report, not rechecked here); (4) `results/` is ignored whole, so no manifest or summary is committed, and the outputs exist in one copy on one machine; (5) the route A README names one run commit although the LOG shows runs at four commits.
+- Smaller: run names follow no one scheme; full environment lists exist only inside the raw outputs for check 2, check 3 and rung 1; code that rung 2 will reuse sits inside one experiment's `src/` while the direction's `src/` is empty; one machine-specific interpreter path in a README; Python files and one import folder are snake_case against the kebab-case rule in `04` (to be handled by a stated exception, not by renaming).
+- Cause on the planning side: the `STANDARDS.md` entries for results and checkpoint storage, the experiment tracker and the environment file are still **open**, so the experiment session had no rule for where outputs go.
+- Process note: the experiment session's commit 23130d0 sat unpushed on main in the shared checkout and blocked this entry's merge; at the planning lead's request it moved the commit to its own branch and put main back to origin/main.
+
+**Proposed to the lead, not decided:** fill the open `STANDARDS.md` entries by pull request: results in each experiment's `results/` with raw files ignored and manifests and small summaries committed; a second copy of the raw outputs in a place the lead picks; a Vast.ai rentals ledger as the tracker; committed environment lists; Python files and import folders may be snake_case.
+
+**Next:** the lead's OK on the experiment session's plan (its window); the lead's answers on the `STANDARDS.md` entries and the backup place; the lead's merge OK on PR #85. Then the rung 2 hand-over.
+
+**Open questions:** where a second copy of the raw outputs is kept; what the InteriorGS terms allow in git.
