@@ -805,3 +805,19 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **PR:** direct.
 
 **Next:** the presentations session shows the lead its planned changes in its own window. The next PI meeting is Thursday 2026-11-26.
+
+## 2026-11-24 [agent, lead, planning] (organization pull request #89 merged; rung 2 handed to the experiment session)
+**Did:**
+- The experiment session reported PR #89 merged on the lead's "merge" in its window (main at 316099e, checked here with `git log`): `data/README.md` with licences and the InteriorGS rule, manifests, the rung 1 summaries and per-episode records, environment lists. Its report: two check 3 CSVs holding InteriorGS labels, instance ids and scene coordinates were removed from the branch history before the merge, with the lead's OK to force-push; the MIT KEMAR licence is still not verified and no SoundSpaces access date was recorded. Its follow-up under PR #88 (logs, config as run, full manifests, the rentals ledger) comes next.
+- Handed rung 2 to the experiment session as direction (decided, the task, not approved): render two-ear and one-channel audio for a small set of episodes and check that the direction cue points at the target, with bars written before the run, samples and pictures for the lead's own review, and time and cost per episode. The hand-over lists what the experiment `PLAN.md` has to settle with the lead first: the episodes and split (the planning lead recommends training-split or seen-scene episodes, and a logged test-set use otherwise), the source position and the sound it emits, the working one-channel definition, the direction check and its pass bars, the 39 possibly mirrored scenes, the transmission and ray settings and the wall-share misses, and a render general enough to leave the audio window per step open for rung 3. Shared code moves to `src/` in this rung.
+- The presentations session asked two things the files do not answer; both are with the lead: whether the PI was told RMS-AQA is parked (no record), and the date of the next PI meeting (the lead's deck says 11/25; "Thursday 2026-11-26" in the entry above was the planning lead's inference from "weekly, Thursdays", not the lead's statement).
+
+**PR:** direct.
+
+**Not approved:** any rental; training; audio encoder work; route B work.
+
+**Not verified:** the contents of PR #89 beyond its merge (the experiment session's report); the KEMAR licence.
+
+**Next:** the experiment session's rung 2 `PLAN.md` and the lead's answers in its window. The lead's answers on the meeting date and RMS-AQA.
+
+**Open questions:** the KEMAR licence before any audio leaves the lab; where trained checkpoints are kept (before rung 3).
