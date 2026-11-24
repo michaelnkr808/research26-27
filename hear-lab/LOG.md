@@ -838,3 +838,14 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **Next:** rung 2 PLAN (seven questions from the planning lead's hand-over, each with a recommendation for the user); the storage follow-up PR under STANDARDS PR #88 (logs, config as run, full manifests, rentals ledger), as a plan for the user first. The literature session was asked what goal sounds the compared papers used.
 
 **Open questions:** none
+
+## 2026-11-24 [agent, lead, planning] (slides updated by the presentations session; meeting date and RMS-AQA answered)
+**Did:** took in the presentations session's report (not checked against the deck by the planning lead). On the lead's OK in its window it changed the Google Slides deck "HEAR Lab Slides": the title slide date from 11/25 to 11/26, and four new slides after it (what changed since last week: decision `003` and the three checks; rung 1 on GN-Bench, unseen test split, first 1000 episodes, with "lower" and no "significantly" for the not-visible group; what is next: rungs 2 to 4, full fine-tuning does not fit, about 54 of 200 dollars; questions for the PI). Its pictures are in `writing/figures/2026-11-24-pi-update/` (uncommitted, its files) with a copy on the lead's Desktop; the lead inserts them by hand.
+
+**Found** (the lead's answers, as the presentations session reports them): the next PI meeting is 2026-11-26, so the date in the entries above stands. RMS-AQA: the lead said to leave it parked for now; it is not on the slides and the PI has still not been told. `PLAN.md` "For the PI" updated to match.
+
+**Not verified:** the deck itself; the lead's words (the presentations session's report). The presentations session could not find what a "5,000-step figure" in the log refers to and left it out (most likely the planning entry of 2026-11-21: "even the best case leaves about 5,000 steps per version at one seed", a budget estimate for full fine-tuning, `speculative` there).
+
+**PR:** direct.
+
+**Next:** the experiment session's rung 2 `PLAN.md`. After the 2026-11-26 meeting: the PI's answers into `PLAN.md` and the decision records.
