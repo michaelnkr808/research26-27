@@ -796,3 +796,10 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **PR:** #88 merged. This entry and the `PLAN.md` status: direct.
 
 **Next:** the experiment session's PR #89 and follow-up (the lead's merge OK in its window); then the rung 2 hand-over.
+
+## 2026-11-24 [agent, lead, planning] (slides handed to the presentations session)
+**Did:** the lead, 2026-11-24: "can we also work on the slides, pass to the presentations agent so we can keep the slides updated. They are called HEAR Lab slides in google slides". Sent the presentations session a hand-over as direction: the deck's name, the story since the 2026-11-19 PI meeting (decision `003`, the three checks, rung 1, the training cost, the ladder, the budget, the questions for the PI), the files to take every number from, and the lead's slide preferences. No slide was read or changed by the planning lead. Added the item to `PLAN.md` "Now" and to the brief.
+
+**PR:** direct.
+
+**Next:** the presentations session shows the lead its planned changes in its own window. The next PI meeting is Thursday 2026-11-26.
