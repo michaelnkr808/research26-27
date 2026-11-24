@@ -849,3 +849,16 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **PR:** direct.
 
 **Next:** the experiment session's rung 2 `PLAN.md`. After the 2026-11-26 meeting: the PI's answers into `PLAN.md` and the decision records.
+
+## 2026-11-24 [agent, lead, planning] (the plan's "rungs" renamed Step 1 to Step 4)
+**Did:** the lead, 2026-11-24: "okay what are the "rungs" and can we use a more intutitive name?", and on the planning lead's proposal: "yeah sure can we do step 1 to 4 insteaad and also tell the presentations agent to fix the pictures it gave me then". Renamed "the ladder" and its "rungs" in `PLAN.md`, the `README.md` status line, the reading-order heading in `literature/reading-list.md` and the brief: Step 1, reproduce the baseline (done); Step 2, make the sound and check it; Step 3, smallest training run (was "smallest training step", reworded so "step" is not used twice); Step 4, the three-version comparison. Wording only: no item changed state and no fact changed.
+- Left as they are: earlier `LOG.md` entries; decision `003`; the folder `experiments/2026-11-21-rung1-wnm3d-baseline/` and its code names (merged pull requests point at them); `data/README.md` (the experiment session's file, its call in its storage follow-up); `STANDARDS.md` (one mention, "before rung 3"; an edit there goes by pull request, so it rides with the next one).
+- Told the presentations session to redo the pictures that say "rung" or "ladder" (the planning lead's reading of "fix the pictures": `21_rung1_bars.png`, `22_ladder.png` and `README.txt` in `writing/figures/week-2026-11-26/`, the Desktop copy, and any deck text), with the lead's OK in its window before the deck changes. Told the experiment session to use "Step N" from here on, Step 2 folder name included.
+
+**PR:** direct (wording only).
+
+**Not verified:** the pictures and the deck (the presentations session's files; the planning lead read only the text in `writing/figures/week-2026-11-26/src/make_update_figures.py`).
+
+**Next:** the presentations session's redone pictures, shown to the lead in its window. The experiment session's Step 2 `PLAN.md` and the lead's answers in its window.
+
+**Open questions:** none new.
