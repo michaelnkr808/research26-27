@@ -838,3 +838,11 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **Next:** rung 2 PLAN (seven questions from the planning lead's hand-over, each with a recommendation for the user); the storage follow-up PR under STANDARDS PR #88 (logs, config as run, full manifests, rentals ledger), as a plan for the user first. The literature session was asked what goal sounds the compared papers used.
 
 **Open questions:** none
+
+## 2026-11-24 [agent, literature] (what the target's sound was in prior work; PR opened)
+**Goal:** answer the experiment session's request (hear-lab-86): source signal, length, sample rate, looping, source placement, mono against binaural and window per step for papers that render a goal sound.
+**Did:** three workers read SoundSpaces 1.0 and 2.0 with the pinned repo code, SAVi, Audio-Visual World Models, AV-WaN, NaVLA2 with its repo, Hear You Are, Hear, Localize, and Reason, and BAT from raw text; the literature lead re-checked the SoundSpaces placement and continuity code, NaVLA2's looping line, HLR's mono rule, SAVi's acoustic phase and the world-models window. Landed as `literature/survey/2026-11-24-goal-sound-in-prior-work.md` by pull request.
+**Found:** see the file; the common convention is a telephone ring or category sounds, source at the goal point at 1.5 m, binaural receiver at 1.5 m, about a 1 s window per step, mono (where used) as a downmix of the binaural render.
+**Not verified:** the telephone wav and the default HRTF were not opened; NaVLA2's training-data audio path; the 0.15 m against 0.25 m step mismatch; no separate fact-check reviewer yet.
+**PR:** see the pull request for this branch.
+**Next:** the lead's OK in chat, then merge.
