@@ -2149,3 +2149,14 @@ On the user's go ("yep start it", then "ok, dispatch"), four workers wrote the s
 **Next:** the user's yes or no on merging PR #87, then pull main and remove the lead's worktree. In the experiment window: the user's go for the pair evaluations, and a status read (nobody is watching the cluster). When the single-encoder LIBERO-Plus results are in: the one-seed picture to the user, then the stage 3 choice (shrinking, scaling, how joined, prediction weight) or whatever the PI and mentor direct.
 
 **Open questions:** what the PI and mentor say about staying on the 8-layer model; whether and which seeds are added after the first pass; the compute ask (the PI's question of 2026-11-18).
+
+## 2026-11-23 [agent, lead, planning] (later: PR #87 merged on the user's word)
+
+- The lead asked "merge PR #87?" (recommended yes; told the user what is in it, the review's one must-fix and seven wording points, and that no second review round was run on the fixes). **The user, verbatim: "yes merge it".**
+- **PR #87 merged** with `gh pr merge --merge --delete-branch` (merge commit `86e0435`); main pulled. The lead's worktree and local branch were already gone when the lead went to remove them (not removed by a command of the lead's; everything on the branch had been pushed and is in the merge). The stage 2 PLAN on main now carries the amendment of 2026-11-23 (the last two blanks filled).
+- The message to `vis-lab-experiment` about the user's "go for it" was held by that session and then released (delivery notices, 2026-11-24 UTC). Main has since moved with that session's merge `9187236` (pair smokes rendered, by its commit title; not read by the planning lead).
+- Project brief (Arbor) updated.
+
+**Test-set use:** none. **PR:** #87 (merged, `86e0435`). This entry: direct (chore).
+
+**Next:** unchanged from the entry above: the one-seed picture to the user when the single-encoder LIBERO-Plus results are in, then the stage 3 choice or whatever the PI and mentor direct.
