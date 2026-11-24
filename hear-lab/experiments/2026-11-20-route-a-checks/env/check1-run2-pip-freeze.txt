@@ -1,0 +1,9 @@
+numpy==1.26.4
+pandas==2.3.3
+pillow==12.0.0
+pyarrow==23.0.1
+python-dateutil==3.0.0
+pytz==2026.6
+PyYAML==6.0.3
+six==1.17.0
+tzdata==2026.6

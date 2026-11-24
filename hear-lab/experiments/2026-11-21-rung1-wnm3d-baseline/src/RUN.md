@@ -9,13 +9,13 @@ Before anything: `client.enable_stall_recovery` in `config.yaml` must be `true` 
 ## 0. On the Mac
 
 ~~~bash
-cd <REPO>/hear-lab/experiments/2026-11-21-rung1-wnm3d-baseline
+cd <REPO>/hear-lab/experiments/2026-11-21-rung1-wnm3d-baseline        # all paths below are relative to this folder
 git rev-parse HEAD                                    # record in LOG.md; passed to run_eval.sh as --repo-commit
-/opt/homebrew/bin/python3.11 -m pytest -q src
-/opt/homebrew/bin/python3.11 src/make_episode_order.py \
-  --csv ~/Desktop/hear-lab-route-a-results/2026-11-20-check3-rerun/check3_full/check3_InteriorGS_test_unseen.csv \
+python3.11 -m pytest -q src
+python3.11 src/make_episode_order.py \
+  --csv ../2026-11-20-route-a-checks/results/2026-11-20-check3-rerun/check3_full/check3_InteriorGS_test_unseen.csv \
   --out results/episode_order.txt                     # must print sha256 25366209...2728 and no MISMATCH
-/opt/homebrew/bin/python3.11 src/check_settings.py --order-file results/episode_order.txt
+python3.11 src/check_settings.py --order-file results/episode_order.txt
 rm -rf src/__pycache__ src/rung1_hook/__pycache__ .pytest_cache
 ~~~
 
@@ -72,6 +72,8 @@ Look at GPU use 15 minutes in; if the GPU idles, say so in LOG.md.
 
 ## 4. Copy back and destroy
 
+`<REPO>` is the research26-27 checkout on the Mac (the main checkout, not a worktree: `git worktree remove` deletes gitignored files). `<COPY>` is one folder per rental: `timing`, `main`, or a new name for a new rental.
+
 On the machine:
 
 ~~~bash
@@ -80,13 +82,13 @@ find env runs -type f | sort > copy_list.txt
 xargs sha256sum < copy_list.txt > copy_manifest.sha256
 ~~~
 
-On the Mac (outside every git worktree):
+On the Mac, from this experiment folder in the main checkout (`cd <REPO>/hear-lab/experiments/2026-11-21-rung1-wnm3d-baseline`):
 
 ~~~bash
-mkdir -p ~/Desktop/hear-lab-rung1-results
-rsync -av -e "ssh -p <port>" --files-from=:/workspace/rung1/copy_list.txt root@<host>:/workspace/rung1/ ~/Desktop/hear-lab-rung1-results/
-rsync -av -e "ssh -p <port>" root@<host>:/workspace/rung1/copy_manifest.sha256 ~/Desktop/hear-lab-rung1-results/
-cd ~/Desktop/hear-lab-rung1-results && shasum -a 256 -c copy_manifest.sha256 | grep -vc ': OK$'   # must print 0
+mkdir -p results/<COPY>
+rsync -av -e "ssh -p <port>" --files-from=:/workspace/rung1/copy_list.txt root@<host>:/workspace/rung1/ results/<COPY>/
+rsync -av -e "ssh -p <port>" root@<host>:/workspace/rung1/copy_manifest.sha256 results/<COPY>/
+(cd results/<COPY> && shasum -a 256 -c copy_manifest.sha256 | grep -vc ': OK$')   # must print 0
 ~~~
 
 Then `bash setup.sh token-check` on the machine once more, read the credit, destroy the instance, read the credit again, and write machine, price, hours, cost into LOG.md.
@@ -95,11 +97,11 @@ Then `bash setup.sh token-check` on the machine once more, read the credit, dest
 
 ~~~bash
 cd <REPO>/hear-lab/experiments/2026-11-21-rung1-wnm3d-baseline
-C3=~/Desktop/hear-lab-route-a-results/2026-11-20-check3-rerun/check3_full
-/opt/homebrew/bin/python3.11 src/summarize.py --run-dir ~/Desktop/hear-lab-rung1-results/runs/<RUN> \
+C3=../2026-11-20-route-a-checks/results/2026-11-20-check3-rerun/check3_full
+python3.11 src/summarize.py --run-dir results/<COPY>/runs/<RUN> \
   --order-file results/episode_order.txt --run-kind <timing or main> \
   --check3-csv $C3/check3_InteriorGS_test_unseen.csv --scenes-jsonl $C3/scenes.jsonl \
-  --usd-per-hour <dph_total of the instance> --out ~/Desktop/hear-lab-rung1-results/runs/<RUN>/summary.json
+  --usd-per-hour <dph_total of the instance> --out results/<COPY>/runs/<RUN>/summary.json
 ~~~
 
 N comes from `config.yaml` (`episodes.timing_k` for `timing`, `episodes.n_main` for `main`), not from the command line; `run_eval.sh --n` must equal one of those committed values too. The verdict is given only for the main run (the timing summary says "not applicable"). For the timing run, read `timing` in the summary: seconds and USD per episode, with and without the first episode of each launch.

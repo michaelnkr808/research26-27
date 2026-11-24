@@ -738,6 +738,8 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 
 **Next:** review and the user's merge OK; rung 2 is the planning lead's hand-over.
 
+**Open questions:** none
+
 ## 2026-11-23 [agent, lead, planning] (rung 1 result taken in; organization audit of the experiment folders)
 **Goal:** the lead's request: "ensure the experiment agent correctly follows the directory and file organization guidelines of my research".
 
@@ -789,10 +791,3 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **Next:** the lead's merge OK on PR #88; the experiment session's organization pull request and its follow-up; then the rung 2 hand-over. The close branch `hear-lab-planning-close-2026-11-23` is not merged: its `PLAN.md` change is carried by this entry's commit, and its `.claude/timeline.md` entry would collide with the uncommitted timeline changes that several sessions have left in the main checkout (a merge touching that file blocks every later pull there until they are committed).
 
 **Open questions:** where trained checkpoints are kept (before rung 3); whether the larger renders need a second copy once rung 2 produces audio at scale; the uncommitted `.claude/timeline.md` in the main checkout (whose job it is to commit it).
-
-## 2026-11-24 [agent, lead, planning] (STANDARDS storage rules merged: PR #88)
-**Did:** the lead, 2026-11-24: "merge the pr but whats the plan for the folder structure then". Merged PR #88 (`gh pr merge --merge --delete-branch`, merge commit 9f2d312) and pulled main. Told the experiment session, whose organization pull request #89 is open and whose follow-up (logs, config as run, full manifests, the rentals ledger) was waiting for this merge. Explained the folder layout to the lead in chat (the layout is the one in `STANDARDS.md` "Results storage" and the repository `README.md`; nothing new decided).
-
-**PR:** #88 merged. This entry and the `PLAN.md` status: direct.
-
-**Next:** the experiment session's PR #89 and follow-up (the lead's merge OK in its window); then the rung 2 hand-over.

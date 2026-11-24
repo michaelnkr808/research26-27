@@ -467,3 +467,11 @@
 - RMS-AQA dataset is still pending: access is tied to a challenge team registration form that the first read missed; the user emailed the organizers for research-only access. WNM-3D's released code runs in its own simulator, not Habitat where the spatial audio is rendered, so audio-visual data and a test link would have to be built.
 - Open loops: after the 2026-11-19 PI meeting, write the chosen research question into hear-lab/README.md and decision records (base model, setting, encoder, data) by PR, and fill the open STANDARDS.md entries; watch for the organizers' reply on dataset access; no experiment is planned or approved.
 - See: hear-lab/LOG.md (entries 2026-11-16 to 2026-11-18), hear-lab/PLAN.md, hear-lab/literature/survey/2026-11-16-summary.md
+
+## 2026-11-23: hear-lab rung 1 main run finished, reproduced, PR #86 merged
+
+- The rung 1 main run (released WNM-3D, 1000 GN-Bench test_unseen episodes, one Vast.ai H100) finished overnight; success rate came out inside the pre-set interval around the paper's value, so the baseline counts as reproduced. Out-of-sight starts are clearly harder than visible ones, which is the no-audio reference for the research question.
+- The host extended its listing past the projected finish; the first copier ran out of rounds before the run ended and was restarted with 15 minute rounds; the final copy verified and the instance was destroyed automatically (about 40 USD, about 145 USD of credit left).
+- Result written to the experiment LOG and README plus a direction LOG entry; reviewer checked every number (wording fixes only); merged as PR #86 with the user's OK. Result sent to the planning lead.
+- Open loops: rung 2 (render and check the audio on a small set) waits for the planning lead's hand-over; no instances or Jobs running.
+- See: hear-lab/experiments/2026-11-21-rung1-wnm3d-baseline/LOG.md (2026-11-23 entry), hear-lab/experiments/2026-11-21-rung1-wnm3d-baseline/results/main/runs/main/summary.json (gitignored; raw outputs moved off the Desktop into the experiment results/ folders on 2026-11-24)

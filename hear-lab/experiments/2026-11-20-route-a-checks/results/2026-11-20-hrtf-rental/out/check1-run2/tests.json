@@ -1,0 +1,322 @@
+[
+  {
+    "test": "ir_mono_basic",
+    "run": "library_defaults",
+    "pass": true,
+    "line": "PASS ir_mono_basic [library_defaults]: channels 1 (expected 1), samples 59414, finite True, non-zero True, peak |x| 0.0422497",
+    "channels": 1,
+    "samples": 59414,
+    "finite": true,
+    "nonzero": true
+  },
+  {
+    "test": "ir_binaural_basic",
+    "run": "library_defaults",
+    "pass": true,
+    "line": "PASS ir_binaural_basic [library_defaults]: channels 2 (expected 2), samples 59414, finite True, non-zero True, peak |x| 0.180988",
+    "channels": 2,
+    "samples": 59414,
+    "finite": true,
+    "nonzero": true
+  },
+  {
+    "test": "first_arrival_vs_distance",
+    "run": "library_defaults",
+    "pass": true,
+    "line": "PASS first_arrival_vs_distance [library_defaults]: measured 13.741 ms (sample 606, threshold 0.1 x peak), expected 14.071 ms (4.826 m / 343 m/s), diff -0.329 ms, tolerance 1 ms",
+    "measured_ms": 13.741496598639456,
+    "expected_ms": 14.070825499946753,
+    "diff_ms": -0.32932890130729753,
+    "distance_m": 4.826293146481737,
+    "onsets_ms": {
+      "rel_0.01": 13.741496598639456,
+      "rel_0.1": 13.741496598639456,
+      "rel_0.5": 13.741496598639456
+    },
+    "listener_from": "episode path raster point 5"
+  },
+  {
+    "test": "left_ear_before_right_ear",
+    "run": "library_defaults",
+    "pass": false,
+    "line": "FAIL left_ear_before_right_ear [library_defaults]: left (ch 0) 6.531 ms, right (ch 1) 6.304 ms, left leads by -0.227 ms (-10 samples); peak ratio left/right 5.461",
+    "left_ms": 6.530612244897959,
+    "right_ms": 6.303854875283447,
+    "onsets_left_ms": {
+      "rel_0.01": 6.394557823129252,
+      "rel_0.1": 6.530612244897959,
+      "rel_0.5": 6.553287981859411
+    },
+    "onsets_right_ms": {
+      "rel_0.01": 5.736961451247166,
+      "rel_0.1": 6.303854875283447,
+      "rel_0.5": 6.507936507936508
+    }
+  },
+  {
+    "test": "ir_mono_basic",
+    "run": "soundspaces_continuous",
+    "pass": true,
+    "line": "PASS ir_mono_basic [soundspaces_continuous]: channels 1 (expected 1), samples 51277, finite True, non-zero True, peak |x| 0.0445489",
+    "channels": 1,
+    "samples": 51277,
+    "finite": true,
+    "nonzero": true
+  },
+  {
+    "test": "ir_binaural_basic",
+    "run": "soundspaces_continuous",
+    "pass": true,
+    "line": "PASS ir_binaural_basic [soundspaces_continuous]: channels 2 (expected 2), samples 51277, finite True, non-zero True, peak |x| 0.206332",
+    "channels": 2,
+    "samples": 51277,
+    "finite": true,
+    "nonzero": true
+  },
+  {
+    "test": "first_arrival_vs_distance",
+    "run": "soundspaces_continuous",
+    "pass": true,
+    "line": "PASS first_arrival_vs_distance [soundspaces_continuous]: measured 13.741 ms (sample 606, threshold 0.1 x peak), expected 14.071 ms (4.826 m / 343 m/s), diff -0.329 ms, tolerance 1 ms",
+    "measured_ms": 13.741496598639456,
+    "expected_ms": 14.070825499946753,
+    "diff_ms": -0.32932890130729753,
+    "distance_m": 4.826293146481737,
+    "onsets_ms": {
+      "rel_0.01": 13.741496598639456,
+      "rel_0.1": 13.741496598639456,
+      "rel_0.5": 13.741496598639456
+    },
+    "listener_from": "episode path raster point 5"
+  },
+  {
+    "test": "left_ear_before_right_ear",
+    "run": "soundspaces_continuous",
+    "pass": false,
+    "line": "FAIL left_ear_before_right_ear [soundspaces_continuous]: left (ch 0) 6.531 ms, right (ch 1) 6.304 ms, left leads by -0.227 ms (-10 samples); peak ratio left/right 5.993",
+    "left_ms": 6.530612244897959,
+    "right_ms": 6.303854875283447,
+    "onsets_left_ms": {
+      "rel_0.01": 6.394557823129252,
+      "rel_0.1": 6.530612244897959,
+      "rel_0.5": 6.553287981859411
+    },
+    "onsets_right_ms": {
+      "rel_0.01": 5.714285714285714,
+      "rel_0.1": 6.303854875283447,
+      "rel_0.5": 6.507936507936508
+    }
+  },
+  {
+    "test": "wall_share",
+    "run": "0001_839920",
+    "pass": false,
+    "summary": {
+      "scene": "0001_839920",
+      "image_wh": [
+        252,
+        201
+      ],
+      "meta": {
+        "width": 252,
+        "height": 201,
+        "scale": 0.05,
+        "left": -2.700670003890991,
+        "right": 9.89932999610901,
+        "top": 2.6523399353027344,
+        "bottom": -7.397660064697266,
+        "lower_z": 0.1,
+        "upper_z": 1.0,
+        "lower": [
+          -2.700670003890991,
+          -7.424459934234619,
+          0.1
+        ],
+        "upper": [
+          9.98367977142334,
+          2.6523399353027344,
+          1.0
+        ]
+      },
+      "affine": [
+        -0.9933500994198479,
+        -0.04295922219003249,
+        -0.997340434881293,
+        0.03205405415622504
+      ],
+      "affine_from_trajectory_id": 465,
+      "affine_spread_m": 7.152557373046875e-07,
+      "n_wall_points": 1100,
+      "wall_hit_tolerance_px": 2.0,
+      "wall_share_occupied": 0.87,
+      "wall_share_not_passable": 0.9663636363636363,
+      "wall_share_pass_bar": 0.9,
+      "wall_share_pass": false,
+      "n_episodes": 38,
+      "label_ins_id_misses": 0,
+      "label_found_without_box": 0,
+      "label_text_mismatch": 0,
+      "goal_to_box_centre_m_median": 5.3085,
+      "goal_to_box_centre_m_max": 9.01
+    }
+  },
+  {
+    "test": "wall_share",
+    "run": "0470_840871",
+    "pass": true,
+    "summary": {
+      "scene": "0470_840871",
+      "image_wh": [
+        217,
+        287
+      ],
+      "meta": {
+        "width": 217,
+        "height": 287,
+        "scale": 0.05,
+        "left": -5.445499897003174,
+        "right": 5.404500102996828,
+        "top": 7.175000190734863,
+        "bottom": -7.174999809265138,
+        "lower_z": 0.1,
+        "upper_z": 1.0,
+        "lower": [
+          -5.445499897003174,
+          -7.176718352222446,
+          0.1
+        ],
+        "upper": [
+          5.45362511795553,
+          7.175000190734863,
+          1.0
+        ]
+      },
+      "affine": [
+        -0.9954927536085761,
+        -0.04954420834195507,
+        -0.9998802632949075,
+        0.02585917617178674
+      ],
+      "affine_from_trajectory_id": 235,
+      "affine_spread_m": 2.79769859463412e-06,
+      "n_wall_points": 1856,
+      "wall_hit_tolerance_px": 2.0,
+      "wall_share_occupied": 0.927801724137931,
+      "wall_share_not_passable": 0.9493534482758621,
+      "wall_share_pass_bar": 0.9,
+      "wall_share_pass": true,
+      "n_episodes": 6,
+      "label_ins_id_misses": 0,
+      "label_found_without_box": 0,
+      "label_text_mismatch": 0,
+      "goal_to_box_centre_m_median": 0.9105,
+      "goal_to_box_centre_m_max": 1.463
+    }
+  },
+  {
+    "test": "wall_share",
+    "run": "0748_841603",
+    "pass": true,
+    "summary": {
+      "scene": "0748_841603",
+      "image_wh": [
+        237,
+        252
+      ],
+      "meta": {
+        "width": 237,
+        "height": 252,
+        "scale": 0.05,
+        "left": -6.385049819946289,
+        "right": 5.464950180053712,
+        "top": 4.675159931182861,
+        "bottom": -7.92484006881714,
+        "lower_z": 0.1,
+        "upper_z": 1.0,
+        "lower": [
+          -6.385049819946289,
+          -8.007399559020996,
+          0.1
+        ],
+        "upper": [
+          5.509389877319336,
+          4.675159931182861,
+          1.0
+        ]
+      },
+      "affine": [
+        -0.9962638223052729,
+        -0.048855662045249645,
+        -0.9934903130563172,
+        0.055433823264379095
+      ],
+      "affine_from_trajectory_id": 177,
+      "affine_spread_m": 0.0,
+      "n_wall_points": 2045,
+      "wall_hit_tolerance_px": 2.0,
+      "wall_share_occupied": 0.9271393643031784,
+      "wall_share_not_passable": 0.9271393643031784,
+      "wall_share_pass_bar": 0.9,
+      "wall_share_pass": true,
+      "n_episodes": 5,
+      "label_ins_id_misses": 0,
+      "label_found_without_box": 0,
+      "label_text_mismatch": 0,
+      "goal_to_box_centre_m_median": 3.409,
+      "goal_to_box_centre_m_max": 5.016
+    }
+  },
+  {
+    "test": "wall_share",
+    "run": "0756_840012",
+    "pass": false,
+    "summary": {
+      "scene": "0756_840012",
+      "image_wh": [
+        159,
+        286
+      ],
+      "meta": {
+        "width": 159,
+        "height": 286,
+        "scale": 0.05,
+        "left": -2.6568100452423096,
+        "right": 5.293189954757691,
+        "top": 11.056779861450195,
+        "bottom": -3.2432201385498054,
+        "lower_z": 0.1,
+        "upper_z": 1.0,
+        "lower": [
+          -2.6568100452423096,
+          -3.2632200717926025,
+          0.1
+        ],
+        "upper": [
+          5.323190212249756,
+          11.056779861450195,
+          1.0
+        ]
+      },
+      "affine": [
+        -0.9962405621018492,
+        -0.03498808532994875,
+        -0.9986033695187101,
+        0.04044233066092154
+      ],
+      "affine_from_trajectory_id": 53,
+      "affine_spread_m": 0.0,
+      "n_wall_points": 970,
+      "wall_hit_tolerance_px": 2.0,
+      "wall_share_occupied": 0.856701030927835,
+      "wall_share_not_passable": 0.9690721649484536,
+      "wall_share_pass_bar": 0.9,
+      "wall_share_pass": false,
+      "n_episodes": 5,
+      "label_ins_id_misses": 0,
+      "label_found_without_box": 0,
+      "label_text_mismatch": 0,
+      "goal_to_box_centre_m_median": 5.364,
+      "goal_to_box_centre_m_max": 8.052
+    }
+  }
+]

@@ -69,7 +69,7 @@ What results would mean: inside the interval, our set-up is good enough to read 
 Vast.ai, one H100 SXM, single GPU, on-demand (the server was validated on an H100 80 GB at about 27 GiB, WNM-3D `docs/INSTALLATION.md` line 39; GN-Bench renders on the same GPU).
 1. **Timing rental** (needs its own OK): setup plus the first K episodes, to measure setup time and seconds per episode.
 2. **Main run** (needs its own OK): the first N episodes, N picked by the lead from step 1.
-Results are copied off the machine and checked before it is destroyed; they live outside every git worktree (`~/Desktop/hear-lab-rung1-results/`). Procedure: `src/RUN.md`.
+Results are copied off the machine and checked before it is destroyed; they live in this folder's gitignored `results/` (one subfolder per rental, `timing/` and `main/`; moved there from `~/Desktop/hear-lab-rung1-results/` on 2026-11-24 at the user's request, a location change only). Procedure: `src/RUN.md`.
 
 ## Scripts
 - `src/make_episode_order.py`: writes the frozen order (done once on the Mac; sha256 above).
