@@ -862,3 +862,14 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **Next:** the presentations session's redone pictures, shown to the lead in its window. The experiment session's Step 2 `PLAN.md` and the lead's answers in its window.
 
 **Open questions:** none new.
+
+## 2026-11-24 [agent, lead, planning] (Step renaming: pictures redone; the message to the experiment session was held)
+**Did:** took in the presentations session's report: the pictures are redone with no "rung" or "ladder" in them, `21_rung1_bars.png` replaced by `21_step1_bars.png` and `22_ladder.png` by `22_steps.png` in `writing/figures/week-2026-11-26/` and in the Desktop copy, `README.txt` updated. The planning lead checked the file names by listing both folders and did not open the pictures. The deck itself still says "Rung 1" to "Rung 4" (slide 12 title, the what-is-next lines, an old image title); the presentations session holds those edits for the lead's OK in its window.
+
+**Correction to the entry above:** the message to the experiment session about the renaming was held by that session and not delivered (cross-session notice), so "Told the experiment session" there is not yet true. Not resent while held. The lead was told; the brief carries the renaming for when that session next reads it.
+
+**PR:** direct.
+
+**Next:** the lead's OK for the deck text in the presentations window, and inserting the two new pictures by hand. The experiment session picks up "Step N" from the held message if it is released, or from the brief.
+
+**Open questions:** none new.
