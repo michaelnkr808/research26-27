@@ -762,3 +762,30 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **Next:** the lead's OK on the experiment session's plan (its window); the lead's answers on the `STANDARDS.md` entries and the backup place; the lead's merge OK on PR #85. Then the rung 2 hand-over.
 
 **Open questions:** where a second copy of the raw outputs is kept; what the InteriorGS terms allow in git.
+
+## 2026-11-23 [agent, lead, planning] (decision 003 merged; results organized as in stacking-encoders, STANDARDS pull request #88 open)
+**Goal:** act on the lead's three answers to the planning lead's open items (the merge OK for PR #85, the OK on the experiment session's organization plan, a place for a second copy of the raw outputs).
+
+**Did:**
+- The lead, 2026-11-23, in the planning window: "1. merge 2. okay ill go check 3. can we just organize it the same we do for the vis-lab".
+- Item 1: changed the Status line of `decisions/003-simulator-route-a.md` to accepted (commit 9b5b2b5) and merged PR #85 (`gh pr merge --merge --delete-branch`, merge commit 7fa6c00). Removed the worktree and the local branch.
+- Item 3: read how the stacking-encoders direction is organized (its `STANDARDS.md` "Tools and environment", the files it tracks under `experiments/*/results/`, `data/README.md`, `compute/`, `src/`), sized the two hear-lab results folders, and wrote the storage, tracker, environment, provenance and naming rules into `STANDARDS.md` as pull request #88. One fact-check reviewer (Sonnet, read-only): no blocking finding, 6 non-blocking, 4 fixed (the quote placed, a LOG pointer named by title, copied rules told apart from hear-lab's own additions, the naming wording). Review and resolution are comments on the pull request.
+- Sent the lead's answer and the reading to the experiment session as direction. Its reply (its report): the lead OK'd its organization plan in its window and answered its InteriorGS recommendation (commit scores and per-episode tables; keep scene images, rendered audio and anything copied from the dataset out, released only as paper figures with a citation) with "yes sure thats fine". Its pull request commits manifests, summaries, per-episode tables and environment lists now; logs, config as run, full manifests and the rentals ledger follow after #88 merges. Its three corrections went into #88: instance records are not committed, the InteriorGS answer, and the run-name scheme `<what>-v<N>`.
+- Updated `PLAN.md` (rung 1 done, the organization item, "Recently done"), the `README.md` status line and the project brief.
+
+**PR:** #85 merged. #88 open (reviewed, waits for the lead's merge OK). This entry, the `PLAN.md` moves and the `README.md` status line: direct.
+
+**Found** (`verified`, read this session):
+- Stacking-encoders tracks 486 files under `experiments/*/results/`, about 100 MB on disk; the ten most common types: 176 `.log`, 118 `.json`, 49 `.yaml`, 41 `.jsonl`, 38 `.txt`, 33 `.png`, 11 `.npz`, 11 `.csv`, 3 `.py`, 2 `.sha256`. Its tracker is local logs; its checkpoints and features are on Nautilus volumes in one copy; it has a `data/README.md`, a `compute/` ledger and shared code in `src/`.
+- Hear-lab results on the lead's machine, all ignored by git: 165 MB (`2026-11-20-route-a-checks`) and 17 MB (`2026-11-21-rung1-wnm3d-baseline`). By type: `.mp4` 104.3 MB (48 files), `.npz` 50.2 MB (60), `.log` 12.0 MB (54), `.npy` 6.0 MB (64), `.png` 4.5 MB (24), `.wav` 2.7 MB (8), `.csv` 2.2 MB (27), `.json` 0.9 MB (1120), `.jsonl` 0.7 MB (27), `.txt` 0.5 MB (126). So the text records are about 17 MB and the renders and arrays about 165 MB.
+- The repository is public (`gh repo view --json visibility`).
+- The three Vast.ai instance records (`check2-run1/instance.json`, `timing/timing-instance.json`, `main/main-instance.json`) have the keys `jupyter_token`, `ssh_host`, `ssh_port`, `public_ipaddr` and `extra_env` (key names read, values not printed). `check2-run1/downloads.sh` reads the Hugging Face token from a file on the rented machine and holds no literal token. `results/main/HANDOFF.md` contains a `/Users/` path.
+- A mistake caught: the planning lead's first scan for tokens used the shell's `grep`, which in this environment is a wrapper that skips git-ignored files, so it read nothing in `results/` and reported no match. The scan was repeated with `/usr/bin/grep`, the experiment session was told, and it ran its own (same five files, its report). Scans of ignored folders use `/usr/bin/grep`.
+
+**Not approved:** unchanged. Any rental without the lead's OK in the experiment window; training; audio encoder work; route B work. Rung 2 is not handed over.
+
+**Not verified:** the lead's words in the experiment window (the experiment session's report); what the InteriorGS terms say (not read by the planning lead); that the pattern scan finds every secret (it matches known token forms only).
+
+**Next:** the lead's merge OK on PR #88; the experiment session's organization pull request and its follow-up; then the rung 2 hand-over. The close branch `hear-lab-planning-close-2026-11-23` is not merged: its `PLAN.md` change is carried by this entry's commit, and its `.claude/timeline.md` entry would collide with the uncommitted timeline changes that several sessions have left in the main checkout (a merge touching that file blocks every later pull there until they are committed).
+
+**Open questions:** where trained checkpoints are kept (before rung 3); whether the larger renders need a second copy once rung 2 produces audio at scale; the uncommitted `.claude/timeline.md` in the main checkout (whose job it is to commit it).
