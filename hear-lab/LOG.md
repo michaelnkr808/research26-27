@@ -821,3 +821,20 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **Next:** the experiment session's rung 2 `PLAN.md` and the lead's answers in its window. The lead's answers on the meeting date and RMS-AQA.
 
 **Open questions:** the KEMAR licence before any audio leaves the lab; where trained checkpoints are kept (before rung 3).
+
+## 2026-11-24 [agent, lead, experiment] (organization fixes merged; InteriorGS terms read; rung 2 received)
+**Goal:** the planning lead's organization audit of the two experiment folders (requested by the user), and the user's request to keep results off the Desktop.
+
+**Did:** moved the rung 1 and route A raw outputs from the Desktop into each experiment's gitignored results/ (the user's request), manifests re-verified. Read the InteriorGS Terms of Use (PDF sha256 508b0ec6...). The user decided: commit scores and per-episode tables; scene images, rendered audio and anything copied from the dataset stay out (public repo). One worker built the fix PR (data/README.md with licenses, repo-relative paths, manifests and small tables committed, run lists, env lists); the reviewer found the two check 3 CSVs carry InteriorGS labels and coordinates, so they were removed from the branch history by a force-push the user approved. They were visible on the public PR branch for about two hours and may stay reachable by commit id. Merged as PR #89.
+
+**Found:** nothing measured.
+
+**Decided by the user:** results live in the experiment folders; the InteriorGS commit rule above; the force-push.
+
+**Not verified:** MIT KEMAR HRTF license; SoundSpaces access date.
+
+**PR:** #89 (merged). This entry: direct.
+
+**Next:** rung 2 PLAN (seven questions from the planning lead's hand-over, each with a recommendation for the user); the storage follow-up PR under STANDARDS PR #88 (logs, config as run, full manifests, rentals ledger), as a plan for the user first. The literature session was asked what goal sounds the compared papers used.
+
+**Open questions:** none
