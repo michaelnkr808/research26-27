@@ -791,3 +791,17 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **Next:** the lead's merge OK on PR #88; the experiment session's organization pull request and its follow-up; then the rung 2 hand-over. The close branch `hear-lab-planning-close-2026-11-23` is not merged: its `PLAN.md` change is carried by this entry's commit, and its `.claude/timeline.md` entry would collide with the uncommitted timeline changes that several sessions have left in the main checkout (a merge touching that file blocks every later pull there until they are committed).
 
 **Open questions:** where trained checkpoints are kept (before rung 3); whether the larger renders need a second copy once rung 2 produces audio at scale; the uncommitted `.claude/timeline.md` in the main checkout (whose job it is to commit it).
+
+## 2026-11-24 [agent, lead, planning] (STANDARDS storage rules merged: PR #88)
+**Did:** the lead, 2026-11-24: "merge the pr but whats the plan for the folder structure then". Merged PR #88 (`gh pr merge --merge --delete-branch`, merge commit 9f2d312) and pulled main. Told the experiment session, whose organization pull request #89 is open and whose follow-up (logs, config as run, full manifests, the rentals ledger) was waiting for this merge. Explained the folder layout to the lead in chat (the layout is the one in `STANDARDS.md` "Results storage" and the repository `README.md`; nothing new decided).
+
+**PR:** #88 merged. This entry and the `PLAN.md` status: direct.
+
+**Next:** the experiment session's PR #89 and follow-up (the lead's merge OK in its window); then the rung 2 hand-over.
+
+## 2026-11-24 [agent, lead, planning] (slides handed to the presentations session)
+**Did:** the lead, 2026-11-24: "can we also work on the slides, pass to the presentations agent so we can keep the slides updated. They are called HEAR Lab slides in google slides". Sent the presentations session a hand-over as direction: the deck's name, the story since the 2026-11-19 PI meeting (decision `003`, the three checks, rung 1, the training cost, the ladder, the budget, the questions for the PI), the files to take every number from, and the lead's slide preferences. No slide was read or changed by the planning lead. Added the item to `PLAN.md` "Now" and to the brief.
+
+**PR:** direct.
+
+**Next:** the presentations session shows the lead its planned changes in its own window. The next PI meeting is Thursday 2026-11-26.
