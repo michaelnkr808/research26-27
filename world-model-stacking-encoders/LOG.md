@@ -2262,3 +2262,17 @@ On the user's go ("yep start it", then "ok, dispatch"), four workers wrote the s
 **Found:** no result. **Test-set use:** none. **PR:** none; this entry: direct (chore).
 
 **Next:** the user's yes or no on a design for the inference-mode test on training clips (imagined future against true future, encoder checkpoints against `none`), which separates candidate 2 from the rest and needs no simulator and no test data. The range comparison (the mentor's question) still waits on the user's answer.
+
+## 2026-11-25 [agent, lead, planning] (later: the mentor's range question, a first read from the committed training logs; no new run)
+
+**Goal:** the user: "can we potentially check the normalization thing now? Or is that a large check that requires retraining".
+
+**Did (reading and arithmetic only; no cluster, no run):**
+- **Is normalization done:** yes on both sides (verified in code earlier today: Wan's latent scale on the VAE channels, `src/extract_fastwam.py:99` and `src/rollout.py:229`; per-channel z-score on encoder channels with the checkpoint's training statistics, diagnosis note items 17 to 19).
+- **Are the ranges very different:** each stage 2 training log prints, on the first batch (128 samples, before any update), the loss of a model that outputs zero, per source, on the same noise and timestep draws (`[first batch] loss at start ... 'predict_zero'`, line 72 or 71 of each pod log under `experiments/2026-11-15-pretrained-start-pairings/results/train/`; `src/pretrained_train.py`, `predict_zero_loss`). Verified values: `dinov3` run: vae 1.4653, dinov3 1.6090; `c-radiov4` run: vae 1.6918, c-radiov4 1.9166; `siglip2` run: vae 1.6918, siglip2 1.7492. Ratios encoder to VAE (arithmetic): 1.10, 1.13, 1.03.
+- **The lead's reading (inference, not a measurement of the ranges):** a predict-zero loss is the timestep-weighted mean square of the flow-matching target, which for unit noise is about 1 plus the mean square of the source's values (that the target is noise minus sample is recalled from Fast-WAM's scheduler, not re-read). With the same draws for both sources in a run, ratios this close to 1 mean the VAE channels and the z-scored encoder channels have about the same overall mean square (if the encoder channels' is 1, the VAE channels' is about 0.8 to 0.9). A VAE range several times larger or smaller than the encoders' would put the ratio far from 1. So "features in very different ranges" is not supported at the level of overall scale.
+- **What this does not show:** one batch per run; overall scale only, not channel by channel (Wan's scale was fitted on Wan's data, so single VAE channels may be off on LIBERO frames while the average is not); nothing about inference-time values. A channel-by-channel comparison needs the cached latents on the cluster (a small CPU Job) and is not run.
+
+**Found:** no result in the sense of a finding; a reading from committed logs, as above. **Test-set use:** none. **PR:** none; this entry: direct (chore).
+
+**Next:** the user's answers on (a) adding the channel-by-channel range numbers to the first-frame check as a descriptive item, by dated amendment, and (b) a design for the inference-mode test on training clips.
