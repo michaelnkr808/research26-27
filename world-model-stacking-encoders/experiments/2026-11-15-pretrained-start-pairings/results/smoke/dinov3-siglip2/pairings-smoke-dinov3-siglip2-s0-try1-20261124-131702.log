@@ -1,0 +1,374 @@
+=== STAGE 2 TIMING-ONLY SMOKE on L4: config dinov3+siglip2 seed 0; clean pass (40 clean tasks x trial 0) 1, LIBERO-Plus timing shard (one episode per suite x category cell, 28) 1; checkpoint /mnt/runs/runs/pairings-dinov3-siglip2-s0/model.pt -> /mnt/proxy/rollouts/pairings-smoke/dinov3-siglip2-s0
+Tue Nov 24 13:17:02 UTC 2026
+SRC_GIT_COMMIT=2a9c058312efc14a3d65d9563007627c1243a82b SMOKE_TRY=1 ENVS=4 CUDA_GRAPH=1 PASS_CAP_S=5400
+/src = ConfigMap stacking-encoders-pairings-eval-src; checking its 11 keys against the hashes rendered into this manifest (RUN-stage2-eval.md step 4):
+rollout.py: OK
+lp_eval.py: OK
+proxy_wam.py: OK
+t5_cache.py: OK
+diagnostics.py: OK
+extract_fastwam.py: OK
+extract_features.py: OK
+fastwam_data.py: OK
+setup_env.sh: OK
+setup_sim.sh: OK
+env_bundle.sh: OK
+env bundle key: 9182f8131559 (the prebuilt bundle is 9182f8131559)
+-rw-r--r-- 1 root root 6938551854 Nov 22 19:59 /mnt/runs/runs/pairings-dinov3-siglip2-s0/model.pt
+Tue Nov 24 13:17:02 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.09              KMD Version: 615.71.09     CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA L4                      On  |   00000000:A6:00.0 Off |                    0 |
+| N/A   29C    P8             16W /   72W |       0MiB /  23034MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+49
+Filesystem                                                                                                                                                      Size  Used Avail Use% Mounted on
+csi-cephfs-node@90a5afad-c313-4e49-9b5f-317100c6930e.nautilusfs=/volumes/csi/csi-vol-9fc6b0fe-e947-4528-a5c5-c5e80fc7d70d/9f0765b7-9592-498f-ae6c-7f42cf4c5f62  1.0T  835G  190G  82% /mnt/proxy
+/dev/mapper/ubuntu--vg-k8s                                                                                                                                      4.3T 1009G  3.3T  24% /work
+=== PHASE model-sha 13:17:03
+=== MODEL 7b04361bddf6df816f4086fb95520708b6ec00f9d300b0a73d03af6960de3176  /mnt/runs/runs/pairings-dinov3-siglip2-s0/model.pt
+model.pt sha256 equals the pinned value
+=== PHASE restore 13:22:05
+[gpu] 2026/11/24 13:22:05.935, 0 %, 0 MiB
+debconf: delaying package configuration, since apt-utils is not installed
+[gpu] 2026/11/24 13:22:35.945, 0 %, 0 MiB
+[gpu] 2026/11/24 13:23:05.947, 0 %, 0 MiB
+[gpu] 2026/11/24 13:23:35.948, 0 %, 0 MiB
+[gpu] 2026/11/24 13:24:05.950, 0 %, 0 MiB
+articulated_objects
+new_objects
+scenes
+serving_region.xml
+stable_hope_objects
+stable_scanned_objects
+textures
+turbosquid_objects
+wall.xml
+wall_frames.stl
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+sim ok: numpy 1.26.4 mujoco 3.3.2 robosuite 1.4.0
+TIMING restore: untar 9 s, debs + assets unzip + checks 120 s (/mnt/proxy/env/env-9182f8131559.tar)
+fastwam ok, torch 2.7.1+cu128 cuda True
+=== PHASE rollout-clean-envs4 13:24:17
+FLAGS: python /src/rollout.py run --run-dir /mnt/runs/runs/pairings-dinov3-siglip2-s0 --t5 /mnt/proxy/feats/t5 --vae-path /mnt/proxy/models/Wan2.2_VAE.safetensors --tasks /mnt/proxy/lp_tasks.json --timing-only --cuda-graph --monitor-s 600 --shard 0/1 --clean 1 --envs 4 --out /mnt/proxy/rollouts/pairings-smoke/dinov3-siglip2-s0/smoke-clean-try1.jsonl
+[gpu] 2026/11/24 13:24:35.950, 81 %, 6818 MiB
+[gpu] 2026/11/24 13:25:05.952, 0 %, 10182 MiB
+[gpu] 2026/11/24 13:25:35.954, 100 %, 16274 MiB
+[gpu] 2026/11/24 13:26:05.958, 99 %, 16274 MiB
+[gpu] 2026/11/24 13:26:35.959, 100 %, 17006 MiB
+[gpu] 2026/11/24 13:27:05.960, 100 %, 17006 MiB
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+[rollout      40s] checkpoint /mnt/runs/runs/pairings-dinov3-siglip2-s0: config dinov3+siglip2 seed 0 commit c2a2e1644573b126b0a083bbdccaabd02474525a; 40 jobs in shard 0/1, order seed 0; torch threads 4, cuda graph True, timing only True
+[rollout      40s] 40 jobs, 0 already in /mnt/proxy/rollouts/pairings-smoke/dinov3-siglip2-s0/smoke-clean-try1.jsonl, 40 to run on 4 envs
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[rollout     100s] progress: 0 done, 0 errors, 36 queued, 4 running; 0 episodes/h; mean batch 2.0; policy busy 69%; cgroup memory now/peak GB (35.41, 35.43)
+[rollout     122s] episode ('libero', 'libero_object', 7000, 41): 430 steps, wall 78.7s
+[rollout     124s] episode ('libero', 'libero_object', 1000, 41): 430 steps, wall 79.6s
+[rollout     124s] episode ('libero', 'libero_goal', 2000, 41): 430 steps, wall 79.6s
+[rollout     161s] progress: 3 done, 0 errors, 33 queued, 4 running; 89 episodes/h; mean batch 1.9; policy busy 81%; cgroup memory now/peak GB (35.29, 35.43)
+[rollout     169s] episode ('libero', 'libero_10', 0, 41): 730 steps, wall 125.7s
+[rollout     192s] episode ('libero', 'libero_object', 9000, 41): 430 steps, wall 68.3s
+[rollout     194s] episode ('libero', 'libero_goal', 5000, 41): 430 steps, wall 6[gpu] 2026/11/24 13:27:35.961, 99 %, 16163 MiB
+[gpu] 2026/11/24 13:28:05.963, 73 %, 17384 MiB
+[gpu] 2026/11/24 13:28:35.964, 100 %, 17368 MiB
+[gpu] 2026/11/24 13:29:05.966, 48 %, 17358 MiB
+[gpu] 2026/11/24 13:29:35.966, 100 %, 17216 MiB
+[gpu] 2026/11/24 13:30:05.968, 100 %, 17308 MiB
+[gpu] 2026/11/24 13:30:35.969, 98 %, 16729 MiB
+[gpu] 2026/11/24 13:31:05.971, 100 %, 17268 MiB
+[gpu] 2026/11/24 13:31:35.973, 100 %, 17342 MiB
+[gpu] 2026/11/24 13:32:05.976, 52 %, 17155 MiB
+[gpu] 2026/11/24 13:32:35.978, 98 %, 17155 MiB
+[gpu] 2026/11/24 13:33:05.979, 98 %, 16437 MiB
+[gpu] 2026/11/24 13:33:35.981, 50 %, 16949 MiB
+[gpu] 2026/11/24 13:34:05.981, 100 %, 17262 MiB
+[gpu] 2026/11/24 13:34:35.983, 100 %, 17192 MiB
+[gpu] 2026/11/24 13:35:05.984, 97 %, 17238 MiB
+[gpu] 2026/11/24 13:35:35.984, 100 %, 17308 MiB
+[gpu] 2026/11/24 13:36:05.985, 100 %, 16729 MiB
+[gpu] 2026/11/24 13:36:35.987, 63 %, 16729 MiB
+9.6s
+[rollout     194s] episode ('libero', 'libero_spatial', 8000, 41): 430 steps, wall 70.5s
+[rollout     221s] progress: 7 done, 0 errors, 29 queued, 4 running; 139 episodes/h; mean batch 1.9; policy busy 85%; cgroup memory now/peak GB (35.19, 35.43)
+[rollout     233s] episode ('libero', 'libero_spatial', 4000, 41): 430 steps, wall 63.9s
+[rollout     259s] episode ('libero', 'libero_object', 0, 41): 430 steps, wall 65.5s
+[rollout     281s] progress: 9 done, 0 errors, 27 queued, 4 running; 134 episodes/h; mean batch 1.9; policy busy 87%; cgroup memory now/peak GB (35.03, 35.43)
+[rollout     308s] episode ('libero', 'libero_10', 1000, 41): 730 steps, wall 114.8s
+[rollout     312s] episode ('libero', 'libero_10', 7000, 41): 730 steps, wall 117.8s
+[rollout     326s] episode ('libero', 'libero_goal', 0, 41): 430 steps, wall 66.3s
+[rollout     341s] progress: 12 done, 0 errors, 24 queued, 4 running; 143 episodes/h; mean batch 1.9; policy busy 88%; cgroup memory now/peak GB (34.91, 35.43)
+[rollout     351s] episode ('libero', 'libero_10', 5000, 41): 730 steps, wall 116.8s
+[rollout     376s] episode ('libero', 'libero_goal', 3000, 41): 430 steps, wall 66.5s
+[rollout     378s] episode ('libero', 'libero_goal', 4000, 41): 430 steps, wall 65.4s
+[rollout     391s] episode ('libero', 'libero_spatial', 7000, 41): 430 steps, wall 65.3s
+[rollout     402s] progress: 16 done, 0 errors, 20 queued, 4 running; 159 episodes/h; mean batch 1.9; policy busy 89%; cgroup memory now/peak GB (35.14, 35.43)
+[rollout     417s] episode ('libero', 'libero_object', 2000, 41): 430 steps, wall 65.5s
+[rollout     444s] episode ('libero', 'libero_spatial', 9000, 41): 430 steps, wall 67.7s
+[rollout     446s] episode ('libero', 'libero_object', 3000, 41): 430 steps, wall 67.8s
+[rollout     456s] episode ('libero', 'libero_goal', 7000, 41): 430 steps, wall 64.6s
+[rollout     462s] progress: 20 done, 0 errors, 16 queued, 4 running; 170 episodes/h; mean batch 1.9; policy busy 89%; cgroup memory now/peak GB (35.07, 35.43)
+[rollout     514s] episode ('libero', 'libero_spatial', 5000, 41): 430 steps, wall 70.7s
+[rollout     523s] progress: 21 done, 0 errors, 15 queued, 4 running; 157 episodes/h; mean batch 1.9; policy busy 90%; cgroup memory now/peak GB (34.98, 35.43)
+[rollout     525s] episode ('libero', 'libero_spatial', 3000, 41): 430 steps, wall 68.3s
+[rollout     530s] episode ('libero', 'libero_10', 8000, 41): 730 steps, wall 112.6s
+[rollout     561s] episode ('libero', 'libero_10', 3000, 41): 730 steps, wall 113.8s
+[rollout     583s] progress: 24 done, 0 errors, 12 queued, 4 running; 159 episodes/h; mean batch 1.9; policy busy 90%; cgroup memory now/peak GB (35.21, 35.43)
+[rollout     598s] episode ('libero', 'libero_spatial', 6000, 41): 430 steps, wall 67.6s
+[rollout     630s] episode ('libero', 'libero_10', 9000, 41): 730 steps, wall 114.2s
+[rollout     637s] episode ('libero', 'libero_10', 4000, 41): 730 steps, wall 112.3s
+[rollout     642s] resources: gpu0 util mean 90% max 100%, mem max 17596/23034 MiB (119 samples); pod cpu 1.56 cores of 4; main rss 3741 MB, cgroup memory now/peak GB (35.16, 35.43)
+[rollout     643s] progress: 27 done, 0 errors, 9 queued, 4 running; 161 episodes/h; mean batch 1.9; policy busy 90%; cgroup memory now/peak GB (35.16, 35.43)
+[rollout     666s] episode ('libero', 'libero_object', 8000, 41): 430 steps, wall 68.4s
+[rollout     678s] episode ('libero', 'libero_10', 6000, 41): 730 steps, wall 116.0s
+[rollout     698s] episode ('libero', 'libero_goal', 8000, 41): 430 steps, wall 67.3s
+[rollout     703s] episode ('libero', 'libero_goal', 1000, 41): 430 steps, wall 65.2s
+[rollout     703s] progress: 31 done, 0 errors, 5 queued, 4 running; 168 episodes/h; mean batch 1.9; policy busy 91%; cgroup memory now/peak GB (34.83, 35.43)
+[rollout     734s] episode ('libero', 'libero_spatial', 0, 41): 430 steps, wall 66.3s
+[rollout     743s] episode ('libero', 'libero_goal', 9000, 41): 430 steps, wall 65.5s
+[rollout     764s] progress: 33 done, 0 errors, 3 queued, 4 running; 164 episodes/h; mean batch 1.9; policy busy 91%; cgroup memory now/[gpu] 2026/11/24 13:37:05.987, 100 %, 16795 MiB
+[gpu] 2026/11/24 13:37:35.989, 100 %, 17232 MiB
+[gpu] 2026/11/24 13:38:05.990, 100 %, 16632 MiB
+[gpu] 2026/11/24 13:38:35.992, 0 %, 15051 MiB
+peak GB (34.58, 35.43)
+[rollout     765s] episode ('libero', 'libero_object', 5000, 41): 430 steps, wall 66.1s
+[rollout     770s] episode ('libero', 'libero_spatial', 1000, 41): 430 steps, wall 66.4s
+[rollout     800s] episode ('libero', 'libero_spatial', 2000, 41): 430 steps, wall 66.5s
+[rollout     809s] episode ('libero', 'libero_goal', 6000, 41): 430 steps, wall 65.6s
+[rollout     824s] progress: 37 done, 0 errors, 0 queued, 3 running; 170 episodes/h; mean batch 1.9; policy busy 91%; cgroup memory now/peak GB (32.26, 35.43)
+[rollout     832s] episode ('libero', 'libero_object', 6000, 41): 430 steps, wall 61.9s
+[rollout     850s] episode ('libero', 'libero_object', 4000, 41): 430 steps, wall 49.8s
+[rollout     854s] episode ('libero', 'libero_10', 2000, 41): 730 steps, wall 88.1s
+[rollout     855s] finished: 40 records, 0 errors in 816s (177 episodes/h); 1006 policy calls, mean batch 1.9, policy busy 91%; cgroup memory now/peak GB (24.66, 35.43)
+[pass] clean: rc 0, 860 s wall, 40 records
+/work/sim/LIBERO-plus/libero/libero/benchmark/task_classification.json: OK
+=== PHASE rollout-lp-timing-envs4 13:38:37
+FLAGS: python /src/rollout.py run --run-dir /mnt/runs/runs/pairings-dinov3-siglip2-s0 --t5 /mnt/proxy/feats/t5 --vae-path /mnt/proxy/models/Wan2.2_VAE.safetensors --tasks /mnt/proxy/lp_tasks.json --timing-only --cuda-graph --monitor-s 600 --shard 0/1 --lp-timing-shard /work/sim/LIBERO-plus/libero/libero/benchmark/task_classification.json --clean-seed 41 --envs 4 --out /mnt/proxy/rollouts/pairings-smoke/dinov3-siglip2-s0/smoke-lp-timing-try1.jsonl
+[gpu] 2026/11/24 13:39:05.995, 0 %, 3 MiB
+[gpu] 2026/11/24 13:39:35.997, 0 %, 3 MiB
+[gpu] 2026/11/24 13:40:05.998, 0 %, 3 MiB
+[gpu] 2026/11/24 13:40:35.999, 0 %, 6818 MiB
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+[rollout     122s] checkpoint /mnt/runs/runs/pairings-dinov3-siglip2-s0: config dinov3+siglip2 seed 0 commit c2a2e1644573b126b0a083bbdccaabd02474525a; 28 jobs in shard 0/1, order seed 0; torch threads 4, cuda graph True, timing only True
+[rollout     122s] 28 jobs, 0 already in /mnt/proxy/rollouts/pairings-smoke/dinov3-siglip2-s0/smoke-lp-timing-try1.jsonl, 28 to run on 4 envs
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /work/venv/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  [gpu] 2026/11/24 13:41:06.000, 64 %, 17060 MiB
+[gpu] 2026/11/24 13:41:36.001, 100 %, 17060 MiB
+init_states = torch.load(init_states_path)
+/work/sim/LIBERO-plus/libero/libero/benchmark/__init__.py:242: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  init_states = torch.load(init_states_path)
+[rollout     182s] progress: 0 done, 0 errors, 24 queued, 4 running; 0 episodes/h; mean batch 2.0; policy busy 79%; cgroup memory now/peak GB (31.37, 35.43)
+[rollout     197s] episode ('libero_plus', 'libero_goal', 1, 41): 430 steps, wall 72.4s
+[rollout     198s] episode ('libero_plus', 'libero_goal', 2313, 41): 430 steps, wall 72.3s
+[rollout     198s] episode ('libero_plus', 'libero_object', 2222, 41): 430 steps, wall 73.2s
+[rollout     198s] episode ('libero_plus', 'libero_spatial', 2111, 41): 430 steps, wall 73.2s
+1546, 1547, 1548, 1549, 1550, 1551, 1552, 1553, 1554, 1555, 1556, 1557, 1558, 1559, 1560, 1561, 1562, 1563, 1564, 1565, 1566, 1567, 1568, 1569, 1570, 1571, 1572, 1573, 1574, 1575, 1576, 1577, 1578, 1579, 1580, 1581, 1582, 1583, 1584, 1585, 1586, 1587, 1588, 1589, 1590, 1591, 1592, 1593, 1594, 1595, 1596, 1597, 1598, 1599, 1600, 1601, 1602, 1603, 1604, 1605, 1606, 1607, 1608, 1609, 1610, 1611, 1612, 1613, 1614, 1615, 1616, 1617, 1618, 1619, 1620, 1621, 1622, 1623, 1624, 1625, 1626, 1627, 1628, 1629, 1630, 1631, 1632, 1633, 1634, 1635, 1636, 1637, 1638, 1639, 1640, 1641, 1642, 1643, 1644, 1645, 1646, 1647, 1648, 1649, 1650, 1651, 1652, 1653, 1654, 1655, 1656, 1657, 1658, 1659, 1660, 1661, 1662, 1663, 1664, 1665, 1666, 1667, 1668, 1669, 1670, 1671, 1672, 1673, 1674, 1675, 1676, 1677, 1678, 1679, 1680, 1681, 1682, 1683, 1684, 1685, 1686, 1687, 1688, 1689, 1690, 1691, 1692, 1693, 1694, 1695, 1696, 1697, 1698, 1699, 1700, 1701, 1702, 1703, 1704, 1705, 1706, 1707, 1708, 1709, 1710, 1711, 1712, 1713, 1714, 1715, 1716, 1717, 1718, 1719, 1720, 1721, 1722, 1723, 1724, 1725, 1726, 1727, 1728, 1729, 1730, 1731, 1732, 1733, 1734, 1735, 1736, 1737, 1738, 1739, 1740, 1741, 1742, 1743, 1744, 1745, 1746, 1747, 1748, 1749, 1750, 1751, 1752, 1753, 1754, 1755, 1756, 1757, 1758, 1759, 1760, 1761, 1762, 1763, 1764, 1765, 1766, 1767, 1768, 1769, 1770, 1771, 1772, 1773, 1774, 1775, 1776, 1777, 1778, 1779, 1780, 1781, 1782, 1783, 1784, 1785, 1786, 1787, 1788, 1789, 1790, 1791, 1792, 1793, 1794, 1795, 1796, 1797, 1798, 1799, 1800, 1801, 1802, 1803, 1804, 1805, 1806, 1807, 1808, 1809, 1810, 1811, 1812, 1813, 1814, 1815, 1816, 1817, 1818, 1819, 1820, 1821, 1822, 1823, 1824, 1825, 1826, 1827, 1828, 1829, 1830, 1831, 1832, 1833, 1834, 1835, 1836, 1837, 1838, 1839, 1840, 1841, 1842, 1843, 1844, 1845, 1846, 1847, 1848, 1849, 1850, 1851, 1852, 1853, 1854, 1855, 1856, 1857, 1858, 1859, 1860, 1861, 1862, 1863, 1864, 1865, 1866, 1867, 1868, 1869, 1870, 1871, 1872, 1873, 1874, 1875, 1876, 1877, 1878, 1879, 1880, 1881, 1882, 1883, 1884, 1885, 1886, 1887, 1888, 1889, 1890, 1891, 1892, 1893, 1894, 1895, 1896, 1897, 1898, 1899, 1900, 1901, 1902, 1903, 1904, 1905, 1906, 1907, 1908, 1909, 1910, 1911, 1912, 1913, 1914, 1915, 1916, 1917, 1918, 1919, 1920, 1921, 1922, 1923, 1924, 1925, 1926, 1927, 1928, 1929, 1930, 1931, 1932, 1933, 1934, 1935, 1936, 1937, 1938, 1939, 1940, 1941, 1942, 1943, 1944, 1945, 1946, 1947, 1948, 1949, 1950, 1951, 1952, 1953, 1954, 1955, 1956, 1957, 1958, 1959, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 1967, 1968, 1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040, 2041, 2042, 2043, 2044, 2045, 2046, 2047, 2048, 2049, 2050, 2051, 2052, 2053, 2054, 2055, 2056, 2057, 2058, 2059, 2060, 2061, 2062, 2063, 2064, 2065, 2066, 2067, 2068, 2069, 2070, 2071, 2072, 2073, 2074, 2075, 2076, 2077, 2078, 2079, 2080, 2081, 2082, 2083, 2084, 2085, 2[gpu] 2026/11/24 13:42:06.003, 56 %, 19997 MiB
+[gpu] 2026/11/24 13:42:36.004, 100 %, 17597 MiB
+[gpu] 2026/11/24 13:43:06.004, 100 %, 17597 MiB
+086, 2087, 2088, 2089, 2090, 2091, 2092, 2093, 2094, 2095, 2096, 2097, 2098, 2099, 2100, 2101, 2102, 2103, 2104, 2105, 2106, 2107, 2108, 2109, 2110, 2111, 2112, 2113, 2114, 2115, 2116, 2117, 2118, 2119, 2120, 2121, 2122, 2123, 2124, 2125, 2126, 2127, 2128, 2129, 2130, 2131, 2132, 2133, 2134, 2135, 2136, 2137, 2138, 2139, 2140, 2141, 2142, 2143, 2144, 2145, 2146, 2147, 2148, 2149, 2150, 2151, 2152, 2153, 2154, 2155, 2156, 2157, 2158, 2159, 2160, 2161, 2162, 2163, 2164, 2165, 2166, 2167, 2168, 2169, 2170, 2171, 2172, 2173, 2174, 2175, 2176, 2177, 2178, 2179, 2180, 2181, 2182, 2183, 2184, 2185, 2186, 2187, 2188, 2189, 2190, 2191, 2192, 2193, 2194, 2195, 2196, 2197, 2198, 2199, 2200, 2201, 2202, 2203, 2204, 2205, 2206, 2207, 2208, 2209, 2210, 2211, 2212, 2213, 2214, 2215, 2216, 2217, 2218, 2219, 2220, 2221, 2222, 2223, 2224, 2225, 2226, 2227, 2228, 2229, 2230, 2231, 2232, 2233, 2234, 2235, 2236, 2237, 2238, 2239, 2240, 2241, 2242, 2243, 2244, 2245, 2246, 2247, 2248, 2249, 2250, 2251, 2252, 2253, 2254, 2255, 2256, 2257, 2258, 2259, 2260, 2261, 2262, 2263, 2264, 2265, 2266, 2267, 2268, 2269, 2270, 2271, 2272, 2273, 2274, 2275, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283, 2284, 2285, 2286, 2287, 2288, 2289, 2290, 2291, 2292, 2293, 2294, 2295, 2296, 2297, 2298, 2299, 2300, 2301, 2302, 2303, 2304, 2305, 2306, 2307, 2308, 2309, 2310, 2311, 2312, 2313, 2314, 2315, 2316, 2317, 2318, 2319, 2320, 2321, 2322, 2323, 2324, 2325, 2326, 2327, 2328, 2329, 2330, 2331, 2332, 2333, 2334, 2335, 2336, 2337, 2338, 2339, 2340, 2341, 2342, 2343, 2344, 2345, 2346, 2347, 2348, 2349, 2350, 2351, 2352, 2353, 2354, 2355, 2356, 2357, 2358, 2359, 2360, 2361, 2362, 2363, 2364, 2365, 2366, 2367, 2368, 2369, 2370, 2371, 2372, 2373, 2374, 2375, 2376, 2377, 2378, 2379, 2380, 2381, 2382, 2383, 2384, 2385, 2386, 2387, 2388, 2389, 2390, 2391, 2392, 2393, 2394, 2395, 2396, 2397, 2398, 2399, 2400, 2401, 2402, 2403, 2404, 2405, 2406, 2407, 2408, 2409, 2410, 2411, 2412, 2413, 2414, 2415, 2416, 2417, 2418, 2419, 2420, 2421, 2422, 2423, 2424, 2425, 2426, 2427, 2428, 2429, 2430, 2431, 2432, 2433, 2434, 2435, 2436, 2437, 2438, 2439, 2440, 2441, 2442, 2443, 2444, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, 2462, 2463, 2464, 2465, 2466, 2467, 2468, 2469, 2470, 2471, 2472, 2473, 2474, 2475, 2476, 2477, 2478, 2479, 2480, 2481, 2482, 2483, 2484, 2485, 2486, 2487, 2488, 2489, 2490, 2491, 2492, 2493, 2494, 2495, 2496, 2497, 2498, 2499, 2500, 2501, 2502, 2503, 2504, 2505, 2506, 2507, 2508, 2509, 2510, 2511, 2512, 2513, 2514, 2515, 2516, 2517]
+[rollout     242s] progress: 4 done, 0 errors, 20 queued, 4 running; 120 episodes/h; mean batch 2.0; policy busy 84%; cgroup memory now/peak GB (32.06, 35.43)
+[rollout     269s] episode ('libero_plus', 'libero_object', 1, 41): 430 steps, wall 70.7s
+[rollout     270s] episode ('libero_plus', 'libero_spatial', 259, 41): 430 steps, wall 72.3s
+[rollout     270s] episode ('libero_plus', 'libero_spatial', 1, 41): 430 steps, wall 72.3s
+1546, 1547, 1548, 1549, 1550, 1551, 1552, 1553, 1554, 1555, 1556, 1557, 1558, 1559, 1560, 1561, 1562, 1563, 1564, 1565, 1566, 1567, 1568, 1569, 1570, 1571, 1572, 1573, 1574, 1575, 1576, 1577, 1578, 1579, 1580, 1581, 1582, 1583, 1584, 1585, 1586, 1587, 1588, 1589, 1590, 1591, 1592, 1593, 1594, 1595, 1596, 1597, 1598, 1599, 1600, 1601, 1602, 1603, 1604, 1605, 1606, 1607, 1608, 1609, 1610, 1611, 1612, 1613, 1614, 1615, 1616, 1617, 1618, 1619, 1620, 1621, 1622, 1623, 1624, 1625, 1626, 1627, 1628, 1629, 1630, 1631, 1632, 1633, 1634, 1635, 1636, 1637, 1638, 1639, 1640, 1641, 1642, 1643, 1644, 1645, 1646, 1647, 1648, 1649, 1650, 1651, 1652, 1653, 1654, 1655, 1656, 1657, 1658, 1659, 1660, 1661, 1662, 1663, 1664, 1665, 1666, 1667, 1668, 1669, 1670, 1671, 1672, 1673, 1674, 1675, 1676, 1677, 1678, 1679, 1680, 1681, 1682, 1683, 1684, 1685, 1686, 1687, 1688, 1689, 1690, 1691, 1692, 1693, 1694, 1695, 1696, 1697, 1698, 1699, 1700, 1701, 1702, 1703, 1704, 1705, 1706, 1707, 1708, 1709, 1710, 1711, 1712, 1713, 1714, 1715, 1716, 1717, 1718, 1719, 1720, 1721, 1722, 1723, 1724, 1725, 1726, 1727, 1728, 1729, 1730, 1731, 1732, 1733, 1734, 1735, 1736, 1737, 1738, 1739, 1740, 1741, 1742, 1743, 1744, 1745, 1746, 1747, 1748, 1749, 1750, 1751, 1752, 1753, 1754, 1755, 1756, 1757, 1758, 1759, 1760, 1761, 1762, 1763, 1764, 1765, 1766, 1767, 1768, 1769, 1770, 1771, 1772, 1773, 1774, 1775, 1776, 1777, 1778, 1779, 1780, 1781, 1782, 1783, 1784, 1785, 1786, 1787, 1788, 1789, 1790, 1791, 1792, 1793, 1794, 1795, 1796, 1797, 1798, 1799, 1800, 1801, 1802, 1803, 1804, 1805, 1806, 1807, 1808, 1809, 1810, 1811, 1812, 1813, 1814, 1815, 1816, 1817, 1818, 1819, 1820, 1821, 1822, 1823, 1824, 1825, 1826, 1827, 1828, 1829, 1830, 1831, 1832, 1833, 1834, 1835, 1836, 1837, 1838, 1839, 1840, 1841, 1842, 1843, 1844, 1845, 1846, 1847, 1848, 1849, 1850, 1851, 1852, 1853, 1854, 1855, 1856, 1857, 1858, 1859, 1860, 1861, 1862, 1863, 1864, 1865, 1866, 1867, 1868, 1869, 1870, 1871, 1872, 1873, 1874, 1875, 1876, 1877, 1878, 1879, 1880, 1881, 1882, 1883, 1884, 1885, 1886, 1887, 1888, 1889, 1890, 1891, 1892, 1893, 1894, 1895, 1896, 1897, 1898, 1899, 1900, 1901, 1902, 1903, 1904, 1905, 1906, 1907, 1908, 1909, 1910, 1911, 1912, 1913, 1914, 1915, 1916, 1917, 1918, 1919, 1920, 1921, 1922, 1923, 1924, 1925, 1926, 1927, 1928, 1929, 1930, 1931, 1932, 1933, 1934, 1935, 1936, 1937, 1938, 1939, 1940, 1941, 1942, 1943, 1944, 1945, 1946, 1947, 1948, 1949, 1950, 1951, 1952, 1953, 1954, 1955, 1956, 1957, 1958, 1959, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 1967, 1968, 1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040, 2041, 2042, 2043, 2044, 2045, 2046, 2047, 2048, 2049, 2050, 2051, 2052, 2053, 2054, 2055, 2056, 2057, 2058, 2059, 2060, 2061, 2062, 2063, 2064, 2065, 2066, 2067, 2068, 2069, 2070, 2071, 2072, 2073, 2074, 2075, 2076, 2077, 2078, 2079, 2080, 2081, 2082, 2083, 2084, 2085, 2086, 2087, 2088, 2089, 2090, 2091, 2092, 2093, 2094, 2095, 2096, 2097, 2098, 2099, 2100, 2101, 2102, 2103, 2104, 2105, 2106, 2107, 2108, 2109, 2110, 2111, 2112, 2113, 2114, 2115, 2116, 2117, 2118, 2119, 2120, 2121, 2122, 2123, 2124, 2125, 2126, 2127, 2128, 2129, 2130, 2131, 2132, 2133, 2134, 2135, 2136, 2137, 2138, 2139, 2140, 2141, 2142, 2143, 2144, 2145, 2146, 2147, 2148, 2149, 2150, 2151, 2152, 2153, 2154, 2155, 2156, 2157, 2158, 2159, 2160, 2161, 2162, 2163, 2164, 2165, 2166, 2167, 2168, 2169, 2170, 2171, 2172, 2173, 2174, 2175, 2176, 2177, 2178, 2179, 2180, 2181, 2182, 2183, 2184, 2185, 2186, 2187, 2188, 2189, 2190, 2191, 2192, 2193, 2194, 2195, 2196, 2197, 2198, 2199, 2200, 2201, 2202, 2203, 2204, 2205, 2206, 2207, 2208, 2209, 2210, 2211, 2212, 2213, 2214, 2215, 2216, 2217, 2218, 2219, 2220, 2221, 2222, 2223, 2224, 2225, 2226, 2227, 2228, 2229, 2230, 2231, 2232, 2233, 2234, 2235, 2236, 2237, 2238, 2239, 2240, 2241, 2242, 2243, 2244, 2245, 2246, 2247, 2248, 2249, 2250, 2251, 2252, 2253, 2254, 2255, 2256, 2257, 2258, 2259, 2260, 2261, 2262, 2263, 2264, 2265, 2266, 2267, 2268, 2269, 2270, 2271, 2272, 2273, 2274, 2275, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283, 2284, 2285, 2286, 2287, 2288, 2289, 2290, 2291, 2292, 2293, 2294, 2295, 2296, 2297, 2298, 2299, 2300, 2301, 2302, 2303, 2304, 2305, 2306, 2307, 2308, 2309, 2310, 2311, 2312, 2313, 2314, 2315, 2316, 2317, 2318, 2319, 2320, 2321, 2322, 2323, 2324, 2325, 2326, 2327, 2328, 2329, 2330, 2331, 2332, 2333, 2334, 2335, 2336, 2337, 2338, 2339, 2340, 2341, 2342, 2343, 2344, 2345, 2346, 2347, 2348, 2349, 2350, 2351, 2352, 2353, 2354, 2355, 2356, 2357, 2358, 2359, 2360, 2361, 2362, 2363, 2364, 2365, 2366, 2367, 2368, 2369, 2370, 2371, 2372, 2373, 2374, 2375, 2376, 2377, 2378, 2379, 2380, 2381, 2382, 2383, 2384, 2385, 2386, 2387, 2388, 2389, 2390, 2391, 2392, 2393, 2394, 2395, 2396, 2397, 2398, 2399, 2400, 2401, 2402, 2403, 2404, 2405, 2406, 24[gpu] 2026/11/24 13:43:36.005, 99 %, 17506 MiB
+[gpu] 2026/11/24 13:44:06.006, 100 %, 17008 MiB
+[gpu] 2026/11/24 13:44:36.007, 100 %, 17162 MiB
+[gpu] 2026/11/24 13:45:06.008, 100 %, 17162 MiB
+[gpu] 2026/11/24 13:45:36.009, 100 %, 17100 MiB
+[gpu] 2026/11/24 13:46:06.010, 86 %, 17336 MiB
+[gpu] 2026/11/24 13:46:36.011, 100 %, 16780 MiB
+[gpu] 2026/11/24 13:47:06.011, 52 %, 17244 MiB
+[gpu] 2026/11/24 13:47:36.012, 100 %, 16704 MiB
+[gpu] 2026/11/24 13:48:06.013, 100 %, 16714 MiB
+[gpu] 2026/11/24 13:48:36.014, 99 %, 17330 MiB
+[gpu] 2026/11/24 13:49:06.015, 100 %, 17574 MiB
+[gpu] 2026/11/24 13:49:36.018, 100 %, 17018 MiB
+[gpu] 2026/11/24 13:50:06.019, 100 %, 16478 MiB
+07, 2408, 2409, 2410, 2411, 2412, 2413, 2414, 2415, 2416, 2417, 2418, 2419, 2420, 2421, 2422, 2423, 2424, 2425, 2426, 2427, 2428, 2429, 2430, 2431, 2432, 2433, 2434, 2435, 2436, 2437, 2438, 2439, 2440, 2441, 2442, 2443, 2444, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, 2462, 2463, 2464, 2465, 2466, 2467, 2468, 2469, 2470, 2471, 2472, 2473, 2474, 2475, 2476, 2477, 2478, 2479, 2480, 2481, 2482, 2483, 2484, 2485, 2486, 2487, 2488, 2489, 2490, 2491, 2492, 2493, 2494, 2495, 2496, 2497, 2498, 2499, 2500, 2501, 2502, 2503, 2504, 2505, 2506, 2507, 2508, 2509, 2510, 2511, 2512, 2513, 2514, 2515, 2516, 2517, 2518]
+[rollout     303s] progress: 7 done, 0 errors, 17 queued, 4 running; 139 episodes/h; mean batch 2.0; policy busy 87%; cgroup memory now/peak GB (32.58, 35.43)
+[rollout     313s] episode ('libero_plus', 'libero_10', 1, 41): 730 steps, wall 114.3s
+[rollout     336s] episode ('libero_plus', 'libero_goal', 282, 41): 430 steps, wall 66.5s
+[rollout     339s] episode ('libero_plus', 'libero_goal', 1888, 41): 430 steps, wall 68.5s
+[rollout     363s] progress: 10 done, 0 errors, 14 queued, 4 running; 149 episodes/h; mean batch 1.9; policy busy 88%; cgroup memory now/peak GB (33.2, 35.43)
+[rollout     386s] episode ('libero_plus', 'libero_10', 1102, 41): 730 steps, wall 115.3s
+[rollout     407s] episode ('libero_plus', 'libero_spatial', 985, 41): 430 steps, wall 67.8s
+[rollout     407s] episode ('libero_plus', 'libero_spatial', 1726, 41): 430 steps, wall 69.7s
+/work/sim/LIBERO-plus/libero/libero/envs/env_wrapper.py:52: DeprecationWarning: The binary mode of fromstring is deprecated, as it behaves surprisingly on unicode inputs. Use frombuffer instead
+  x = cv2.imdecode(np.fromstring(x.make_blob(), np.uint8),
+[rollout     423s] progress: 13 done, 0 errors, 11 queued, 4 running; 155 episodes/h; mean batch 1.9; policy busy 89%; cgroup memory now/peak GB (33.35, 35.43)
+[rollout     424s] episode ('libero_plus', 'libero_10', 1934, 41): 730 steps, wall 111.3s
+/work/sim/LIBERO-plus/libero/libero/envs/env_wrapper.py:52: DeprecationWarning: The binary mode of fromstring is deprecated, as it behaves surprisingly on unicode inputs. Use frombuffer instead
+  x = cv2.imdecode(np.fromstring(x.make_blob(), np.uint8),
+[rollout     472s] episode ('libero_plus', 'libero_object', 1819, 41): 430 steps, wall 64.4s
+[rollout     484s] progress: 15 done, 0 errors, 9 queued, 4 running; 149 episodes/h; mean batch 1.9; policy busy 89%; cgroup memory now/peak GB (33.54, 35.43)
+[rollout     493s] episode ('libero_plus', 'libero_10', 683, 41): 730 steps, wall 106.1s
+[rollout     497s] episode ('libero_plus', 'libero_goal', 1509, 41): 430 steps, wall 72.8s
+[rollout     501s] episode ('libero_plus', 'libero_spatial', 1375, 41): 430 steps, wall 93.2s
+[rollout     534s] episode ('libero_plus', 'libero_object', 1043, 41): 430 steps, wall 61.5s
+[rollout     545s] progress: 19 done, 0 errors, 5 queued, 4 running; 162 episodes/h; mean batch 1.9; policy busy 90%; cgroup memory now/peak GB (33.38, 35.43)
+[rollout     565s] episode ('libero_plus', 'libero_goal', 691, 41): 430 steps, wall 67.3s
+[rollout     568s] episode ('libero_plus', 'libero_goal', 1099, 41): 430 steps, wall 67.2s
+[rollout     600s] episode ('libero_plus', 'libero_object', 647, 41): 430 steps, wall 64.9s
+[rollout     605s] episode ('libero_plus', 'libero_10', 290, 41): 730 steps, wall 111.4s
+[rollout     605s] progress: 23 done, 0 errors, 2 queued, 4 running; 171 episodes/h; mean batch 1.9; policy busy 90%; cgroup memory now/peak GB (33.62, 35.43)
+[rollout     628s] episode ('libero_plus', 'libero_spatial', 609, 41): 430 steps, wall 62.7s
+[rollout     654s] episode ('libero_plus', 'libero_object', 1397, 41): 430 steps, wall 84.6s
+[rollout     666s] progress: 25 done, 0 errors, 0 queued, 3 running; 165 episodes/h; mean batch 1.9; policy busy 90%; cgroup memory now/peak GB (31.28, 35.43)
+[rollout     666s] episode ('libero_plus', 'libero_object', 249, 41): 430 steps, wall 60.3s
+[rollout     687s] episode ('libero_plus', 'libero_10', 2246, 41): 730 [gpu] 2026/11/24 13:50:36.021, 0 %, 15643 MiB
+steps, wall 86.5s
+[rollout     723s] resources: gpu0 util mean 88% max 100%, mem max 17597/23034 MiB (119 samples); pod cpu 1.67 cores of 4; main rss 3319 MB, cgroup memory now/peak GB (26.69, 35.43)
+[rollout     726s] progress: 27 done, 0 errors, 0 queued, 1 running; 161 episodes/h; mean batch 1.8; policy busy 86%; cgroup memory now/peak GB (26.69, 35.43)
+[rollout     734s] episode ('libero_plus', 'libero_10', 1485, 41): 730 steps, wall 106.3s
+[rollout     735s] finished: 28 records, 0 errors in 614s (164 episodes/h); 737 policy calls, mean batch 1.8, policy busy 85%; cgroup memory now/peak GB (24.08, 35.43)
+[pass] lp-timing: rc 0, 741 s wall, 28 records
+=== done
+[gpu-summary] rollout-lp-timing-envs4: 24 samples, mean 73.2%
+[gpu-summary] restore: 5 samples, mean 0.0%
+[gpu-summary] rollout-clean-envs4: 29 samples, mean 84.7%
+[gpu-summary] all: 58 samples, mean 72.6%
+[cgroup] memory.peak 35433422848 bytes, memory.current 21168308224 bytes
+[cgroup] anon 1716224 (bytes, at exit); file 20410798080 (page cache)
+=== FILE smoke-clean-try1.jsonl sha256 c847e9b1d2defd0578f8199682755ca38f29095170050f343ee84f78b7dbd3cd bytes 15247 lines 40
+{"benchmark": "libero", "suite": "libero_object", "episode_id": 7000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "pick up the orange juice and place it in the basket", "wall_s": 78.73, "worker_peak_rss_mb": 2542}
+{"benchmark": "libero", "suite": "libero_object", "episode_id": 1000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "pick up the bbq sauce and place it in the basket", "wall_s": 79.58, "worker_peak_rss_mb": 2533}
+{"benchmark": "libero", "suite": "libero_goal", "episode_id": 2000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "push the plate to the front of the stove", "wall_s": 79.62, "worker_peak_rss_mb": 2155}
+{"benchmark": "libero", "suite": "libero_10", "episode_id": 0, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 730, "instruction": "turn on the stove and put the moka pot on it", "wall_s": 125.74, "worker_peak_rss_mb": 2056}
+{"benchmark": "libero", "suite": "libero_object", "episode_id": 9000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "pick up the tomato sauce and place it in the basket", "wall_s": 68.35, "worker_peak_rss_mb": 2765}
+{"benchmark": "libero", "suite": "libero_goal", "episode_id": 5000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "put the bowl on top of the cabinet", "wall_s": 69.61, "worker_peak_rss_mb": 2708}
+{"benchmark": "libero", "suite": "libero_spatial", "episode_id": 8000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl on the stove and place it on the plate", "wall_s": 70.47, "worker_peak_rss_mb": 2536}
+{"benchmark": "libero", "suite": "libero_spatial", "episode_id": 4000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl next to the plate and place it on the plate", "wall_s": 63.93, "worker_peak_rss_mb": 2716}
+{"benchmark": "libero", "suite": "libero_object", "episode_id": 0, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "pick up the alphabet soup and place it in the basket", "wall_s": 65.48, "worker_peak_rss_mb": 2909}
+{"benchmark": "libero", "suite": "libero_10", "episode_id": 1000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 730, "instruction": "put the black bowl in the bottom drawer of the cabinet and close it", "wall_s": 114.85, "worker_peak_rss_mb": 2918}
+{"benchmark": "libero", "suite": "libero_10", "episode_id": 7000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 730, "instruction": "put the white mug on the left plate and put the yellow and white mug on the right plate", "wall_s": 117.76, "worker_peak_rss_mb": 3113}
+{"benchmark": "libero", "suite": "libero_goal", "episode_id": 0, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "open the middle drawer of the cabinet", "wall_s": 66.32, "worker_peak_rss_mb": 2909}
+{"benchmark": "libero", "suite": "libero_10", "episode_id": 5000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 730, "instruction": "put both the alphabet soup and the tomato sauce in the basket", "wall_s": 116.83, "worker_peak_rss_mb": 3089}
+{"benchmark": "libero", "suite": "libero_goal", "episode_id": 3000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "put the bowl on the plate", "wall_s": 66.51, "worker_peak_rss_mb": 3006}
+{"benchmark": "libero", "suite": "libero_goal", "episode_id": 4000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "put the bowl on the stove", "wall_s": 65.43, "worker_peak_rss_mb": 3113}
+{"benchmark": "libero", "suite": "libero_spatial", "episode_id": 7000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl on the ramekin and place it on the plate", "wall_s": 65.27, "worker_peak_rss_mb": 2984}
+{"benchmark": "libero", "suite": "libero_object", "episode_id": 2000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "pick up the butter and place it in the basket", "wall_s": 65.5, "worker_peak_rss_mb": 3089}
+{"benchmark": "libero", "suite": "libero_spatial", "episode_id": 9000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl on the wooden cabinet and place it on the plate", "wall_s": 67.69, "worker_peak_rss_mb": 3153}
+{"benchmark": "libero", "suite": "libero_object", "episode_id": 3000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "pick up the chocolate pudding and place it in the basket", "wall_s": 67.8, "worker_peak_rss_mb": 3113}
+{"benchmark": "libero", "suite": "libero_goal", "episode_id": 7000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "put the wine bottle on the rack", "wall_s": 64.61, "worker_peak_rss_mb": 2984}
+{"benchmark": "libero", "suite": "libero_spatial", "episode_id": 5000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl next to the ramekin and place it on the plate", "wall_s": 70.71, "worker_peak_rss_mb": 3161}
+{"benchmark": "libero", "suite": "libero_spatial", "episode_id": 3000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl next to the cookie box and place it on the plate", "wall_s": 68.3, "worker_peak_rss_mb": 3003}
+{"benchmark": "libero", "suite": "libero_10", "episode_id": 8000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 730, "instruction": "put the white mug on the plate and put the chocolate pudding to the right of the plate", "wall_s": 112.61, "worker_peak_rss_mb": 3089}
+{"benchmark": "libero", "suite": "libero_10", "episode_id": 3000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 730, "instruction": "put both moka pots on the stove", "wall_s": 113.77, "worker_peak_rss_mb": 3113}
+{"benchmark": "libero", "suite": "libero_spatial", "episode_id": 6000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl on the cookie box and place it on the plate", "wall_s": 67.59, "worker_peak_rss_mb": 3099}
+{"benchmark": "libero", "suite": "libero_10", "episode_id": 9000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 730, "instruction": "pick up the book and place it in the back compartment of the caddy", "wall_s": 114.17, "worker_peak_rss_mb": 3161}
+{"benchmark": "libero", "suite": "libero_10", "episode_id": 4000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 730, "instruction": "put both the alphabet soup and the cream cheese box in the basket", "wall_s": 112.33, "worker_peak_rss_mb": 3003}
+{"benchmark": "libero", "suite": "libero_object", "episode_id": 8000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "pick up the salad dressing and place it in the basket", "wall_s": 68.44, "worker_peak_rss_mb": 3099}
+{"benchmark": "libero", "suite": "libero_10", "episode_id": 6000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 730, "instruction": "put both the cream cheese box and the butter in the basket", "wall_s": 116.02, "worker_peak_rss_mb": 3136}
+{"benchmark": "libero", "suite": "libero_goal", "episode_id": 8000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "put the wine bottle on top of the cabinet", "wall_s": 67.33, "worker_peak_rss_mb": 3161}
+{"benchmark": "libero", "suite": "libero_goal", "episode_id": 1000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "open the top drawer and put the bowl inside", "wall_s": 65.23, "worker_peak_rss_mb": 3003}
+{"benchmark": "libero", "suite": "libero_spatial", "episode_id": 0, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl between the plate and the ramekin and place it on the plate", "wall_s": 66.34, "worker_peak_rss_mb": 3122}
+{"benchmark": "libero", "suite": "libero_goal", "episode_id": 9000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "turn on the stove", "wall_s": 65.49, "worker_peak_rss_mb": 3136}
+{"benchmark": "libero", "suite": "libero_object", "episode_id": 5000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "pick up the ketchup and place it in the basket", "wall_s": 66.1, "worker_peak_rss_mb": 3161}
+{"benchmark": "libero", "suite": "libero_spatial", "episode_id": 1000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl from table center and place it on the plate", "wall_s": 66.43, "worker_peak_rss_mb": 3036}
+{"benchmark": "libero", "suite": "libero_spatial", "episode_id": 2000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate", "wall_s": 66.5, "worker_peak_rss_mb": 3122}
+{"benchmark": "libero", "suite": "libero_goal", "episode_id": 6000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "put the cream cheese in the bowl", "wall_s": 65.62, "worker_peak_rss_mb": 3136}
+{"benchmark": "libero", "suite": "libero_object", "episode_id": 6000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "pick up the milk and place it in the basket", "wall_s": 61.85, "worker_peak_rss_mb": 3036}
+{"benchmark": "libero", "suite": "libero_object", "episode_id": 4000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 430, "instruction": "pick up the cream cheese and place it in the basket", "wall_s": 49.79, "worker_peak_rss_mb": 3122}
+{"benchmark": "libero", "suite": "libero_10", "episode_id": 2000, "category": "", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "clean1", "timing_only": true, "steps": 730, "instruction": "put the yellow and white mug in the microwave and close it", "wall_s": 88.14, "worker_peak_rss_mb": 3161}
+=== END smoke-clean-try1.jsonl
+=== FILE smoke-lp-timing-try1.jsonl sha256 2804ffebaef8837862f4c7006ca6e0c61a7359a838eee729540db20df2c558ec bytes 11500 lines 28
+{"benchmark": "libero_plus", "suite": "libero_goal", "episode_id": 1, "category": "Background Textures", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "open the middle drawer of the cabinet", "wall_s": 72.36, "worker_peak_rss_mb": 2187}
+{"benchmark": "libero_plus", "suite": "libero_goal", "episode_id": 2313, "category": "Light Conditions", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "open the middle drawer of the cabinet", "wall_s": 72.31, "worker_peak_rss_mb": 2188}
+{"benchmark": "libero_plus", "suite": "libero_object", "episode_id": 2222, "category": "Light Conditions", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the alphabet soup and place it in the basket", "wall_s": 73.15, "worker_peak_rss_mb": 2587}
+{"benchmark": "libero_plus", "suite": "libero_spatial", "episode_id": 2111, "category": "Light Conditions", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl between the plate and the ramekin and place it on the plate", "wall_s": 73.2, "worker_peak_rss_mb": 2444}
+{"benchmark": "libero_plus", "suite": "libero_object", "episode_id": 1, "category": "Background Textures", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the alphabet soup and place it in the basket", "wall_s": 70.72, "worker_peak_rss_mb": 2655}
+{"benchmark": "libero_plus", "suite": "libero_spatial", "episode_id": 259, "category": "Robot Initial States", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl between the plate and the ramekin and place it on the plate", "wall_s": 72.27, "worker_peak_rss_mb": 2460}
+{"benchmark": "libero_plus", "suite": "libero_spatial", "episode_id": 1, "category": "Background Textures", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl between the plate and the ramekin and place it on the plate", "wall_s": 72.26, "worker_peak_rss_mb": 2459}
+{"benchmark": "libero_plus", "suite": "libero_10", "episode_id": 1, "category": "Background Textures", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 730, "instruction": "turn on the stove and put the moka pot on it", "wall_s": 114.32, "worker_peak_rss_mb": 2619}
+{"benchmark": "libero_plus", "suite": "libero_goal", "episode_id": 282, "category": "Robot Initial States", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "open the middle drawer of the cabinet", "wall_s": 66.47, "worker_peak_rss_mb": 2667}
+{"benchmark": "libero_plus", "suite": "libero_goal", "episode_id": 1888, "category": "Objects Layout", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "open the middle drawer of the cabinet", "wall_s": 68.48, "worker_peak_rss_mb": 2460}
+{"benchmark": "libero_plus", "suite": "libero_10", "episode_id": 1102, "category": "Language Instructions", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 730, "instruction": "please make sure the basket contains both the alphabet soup and the tomato sauce", "wall_s": 115.3, "worker_peak_rss_mb": 2959}
+{"benchmark": "libero_plus", "suite": "libero_spatial", "episode_id": 985, "category": "Language Instructions", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "grasp the darkhued rounded container situated between the flat dish used for serving food and the small glazed ceramic dish and set it down onto the flat dish used for serving food", "wall_s": 67.79, "worker_peak_rss_mb": 2573}
+{"benchmark": "libero_plus", "suite": "libero_spatial", "episode_id": 1726, "category": "Objects Layout", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl between the plate and the ramekin and place it on the plate", "wall_s": 69.72, "worker_peak_rss_mb": 2902}
+{"benchmark": "libero_plus", "suite": "libero_10", "episode_id": 1934, "category": "Objects Layout", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 730, "instruction": "turn on the stove and put the moka pot on it", "wall_s": 111.28, "worker_peak_rss_mb": 2653}
+{"benchmark": "libero_plus", "suite": "libero_object", "episode_id": 1819, "category": "Objects Layout", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the alphabet soup and place it in the basket", "wall_s": 64.43, "worker_peak_rss_mb": 2952}
+{"benchmark": "libero_plus", "suite": "libero_10", "episode_id": 683, "category": "Camera Viewpoints", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 730, "instruction": "put both the alphabet soup and the tomato sauce in the basket", "wall_s": 106.06, "worker_peak_rss_mb": 2986}
+{"benchmark": "libero_plus", "suite": "libero_goal", "episode_id": 1509, "category": "Sensor Noise", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "open the middle drawer of the cabinet", "wall_s": 72.85, "worker_peak_rss_mb": 2899}
+{"benchmark": "libero_plus", "suite": "libero_spatial", "episode_id": 1375, "category": "Sensor Noise", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl between the plate and the ramekin and place it on the plate", "wall_s": 93.18, "worker_peak_rss_mb": 2588}
+{"benchmark": "libero_plus", "suite": "libero_object", "episode_id": 1043, "category": "Language Instructions", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "as part of our grocery organization please pick up the alphabet soup and place it in the basket", "wall_s": 61.47, "worker_peak_rss_mb": 2952}
+{"benchmark": "libero_plus", "suite": "libero_goal", "episode_id": 691, "category": "Camera Viewpoints", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "open the middle drawer of the cabinet", "wall_s": 67.28, "worker_peak_rss_mb": 2911}
+{"benchmark": "libero_plus", "suite": "libero_goal", "episode_id": 1099, "category": "Language Instructions", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "please make sure the middle drawer of the cabinet is open", "wall_s": 67.24, "worker_peak_rss_mb": 2588}
+{"benchmark": "libero_plus", "suite": "libero_object", "episode_id": 647, "category": "Camera Viewpoints", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the alphabet soup and place it in the basket", "wall_s": 64.86, "worker_peak_rss_mb": 2952}
+{"benchmark": "libero_plus", "suite": "libero_10", "episode_id": 290, "category": "Robot Initial States", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 730, "instruction": "put both the alphabet soup and the tomato sauce in the basket", "wall_s": 111.38, "worker_peak_rss_mb": 2987}
+{"benchmark": "libero_plus", "suite": "libero_spatial", "episode_id": 609, "category": "Camera Viewpoints", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the black bowl between the plate and the ramekin and place it on the plate", "wall_s": 62.68, "worker_peak_rss_mb": 3033}
+{"benchmark": "libero_plus", "suite": "libero_object", "episode_id": 1397, "category": "Sensor Noise", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the alphabet soup and place it in the basket", "wall_s": 84.59, "worker_peak_rss_mb": 2881}
+{"benchmark": "libero_plus", "suite": "libero_object", "episode_id": 249, "category": "Robot Initial States", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 430, "instruction": "pick up the alphabet soup and place it in the basket", "wall_s": 60.33, "worker_peak_rss_mb": 2987}
+{"benchmark": "libero_plus", "suite": "libero_10", "episode_id": 2246, "category": "Light Conditions", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 730, "instruction": "turn on the stove and put the moka pot on it", "wall_s": 86.5, "worker_peak_rss_mb": 2969}
+{"benchmark": "libero_plus", "suite": "libero_10", "episode_id": 1485, "category": "Sensor Noise", "config": "dinov3+siglip2", "train_seed": 0, "eval_seed": 41, "checkpoint": "/mnt/runs/runs/pairings-dinov3-siglip2-s0", "subset_id": "smoke", "timing_only": true, "steps": 730, "instruction": "put both the alphabet soup and the tomato sauce in the basket", "wall_s": 106.28, "worker_peak_rss_mb": 3071}
+=== END smoke-lp-timing-try1.jsonl
+Tue Nov 24 13:50:59 UTC 2026
+=== exit 0
