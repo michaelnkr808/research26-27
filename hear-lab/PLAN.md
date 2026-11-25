@@ -24,6 +24,7 @@ Living agenda. Only work that is running, next, or parked lives here. No results
 - **RMS-AQA benchmark (the PI's first task).** Parked by the lead on 2026-11-18 ("maybe just drop this for now"). The PI assigned it and has not been told yet; the lead raises it on 2026-11-19, and it comes back to "Now" if the PI wants it. State when parked: nothing run; dataset access still pending (the Hugging Face request of 2026-11-15, and the lead's email of 2026-11-18 to the organizers asking for research-only access; the challenge's team registration form was not submitted; the organizers answered on 2026-11-20 that the dataset is available only to registered challenge participants, `LOG.md` 2026-11-20); the proposed bring-up check (train the Audio Flamingo 3 baseline with the paper's recipe, about 317 GB of data) was never approved. What was read: `LOG.md` 2026-11-15 to 2026-11-18. Why parked: `LOG.md` 2026-11-18 addendum 2.
 
 ## Recently done
+- What the target's sound was in prior work, for the Step 2 plan (PR #90). `LOG.md` 2026-11-24 [agent, lead, planning], PR #90 entry.
 - Step 1: the released WNM-3D result reproduced with no training (PR #86). `LOG.md` 2026-11-23 [agent, lead, experiment].
 - Decision `003`: route A committed, measured HRTF; accepted and merged (PR #85). `LOG.md` 2026-11-22 and 2026-11-23.
 - The three route A checks (sound engine, timed training step, visible starts), run and reviewed (PRs #75 to #80). `LOG.md` 2026-11-20 and 2026-11-21.
