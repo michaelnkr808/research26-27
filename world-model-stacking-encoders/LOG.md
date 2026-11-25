@@ -2294,3 +2294,25 @@ On the user's go ("yep start it", then "ok, dispatch"), four workers wrote the s
 **Found:** no result of the lead's own. **Test-set use:** none by the lead (reads of outcomes already logged by the experiment session). **PR:** #93 merged; #94 open, waits on the user's merge OK; this entry: direct (chore).
 
 **Next:** the user's merge OK on PR #94, then hand the test to the experiment session and tell the presentations session. The user's go in the experiment window for the first-frame check. Open for the user: whether to rerun clean LIBERO under evaluation seeds 42 and 43 (simulator time on the L4s; not proposed by the lead before the two diagnostics are in).
+
+## 2026-11-25 [agent, lead, planning] (later: the literature session's DreamWorld read, the design liu2026what says it follows; three stated choices differ from ours)
+
+**Goal:** the user asked which fusion choices are unsure given that channel-wise concatenation is stated ("which fusion choices are we unsure about"), said "yeah sure go for it" to asking the literature session to read DreamWorld, and asked whether DINOv3 could be used with the VAE taken out.
+
+**Did:**
+- Answered the first from the stage 2 PLAN's fusion table (`experiments/2026-11-15-pretrained-start-pairings/PLAN.md` lines 86-103, the "not stated" rows 1, 2, 3, 5, 6, 7, 9, 10; verified by reading the table this session).
+- Sent the literature session nine questions on DreamWorld (Tan et al., 2026, arXiv 2603.00466). Its reply (2026-11-25, in a message to the lead; read by it in the arXiv HTML full text, its label "verified" unless marked; **not re-read by the lead**, and not yet a reading-list note, so nothing cites it until that note lands by the literature session's PR with a fact-check reviewer):
+  - Setting: text-to-video on Wan2.1-T2V-1.3B with LoRA, no robot actions; three sources (RAFT flow, DINOv2, VGGT).
+  - **Not stated in DreamWorld:** encoder checkpoints (row 1); encoder input resolution (row 2); the resize method ("spatially interpolated and temporally pooled", Sec 3.2; rows 3 and 5).
+  - **Stated, same as ours:** new projection weights initialized to zero (Sec 3.3 Eq 7, App. B; row 7); VAE first in the concatenation (Eq 6, 7; row 10).
+  - **Stated, different from ours:** (i) normalization is global, one scalar mean and standard deviation per source over all dimensions (Sec 3.2 Eq 5), where ours is a per-channel z-score (row 6); (ii) each source is then **reduced by PCA to 8 channels** (16 for the flow stream) before concatenation, total input 48 channels, with an ablation in which more PCA dimensions degrade the result (Sec 4.4, App. B), where ours concatenates 1,024 or 1,152 channels per encoder; (iii) the feature loss weights start at 0.2 and are annealed to zero over training (Eq 9, 10), and in its Table E.1 a fixed weight scored below no feature loss at all (78.19 against 78.71, VBench overall), where ours is a constant weight of 1 (row 9, from liu2026what's "weight 1.0 unless stated").
+  - liu2026what mentions none of PCA, global normalization or annealed weights; whether it used them is not stated. DreamWorld's inference also adds a guidance scheme liu2026what does not describe.
+  - **VAE-free variant:** none found in either paper (a text search; figures and tables are images).
+  - **Code:** DreamWorld links a public repository (github.com/ABU121111/DreamWorld, header check only). The literature session has not read it; reading or cloning needs the user's yes in its window.
+- Answered the VAE question in chat: possible to build, but it gives up most of the pretrained Wan start (input and output layers trained on VAE latents only), leaves the paper's method and the decision 006 question, and is a new training run; not proposed now.
+
+**The lead's reading (speculative):** (ii) and (iii) are the design-side versions of the user's candidates 1 and 2 ("too many things to predict"): the design our paper says it follows asks the model to predict 8 channels per source at a small, fading weight, and ours asks for about a thousand at full weight throughout. This sits in the mentor's "insufficient replication" category. It does not show liu2026what did the same (its App. D.3 speaks of 1,024-dimensional DINOv3 features in an analysis, PLAN row 1), and DreamWorld is a different task and base model. PCA width and feature-loss weight are natural stage 3 variants; stage 3 stays on hold on the user's word, and nothing is proposed before the two diagnostics report.
+
+**Found:** no result. **Test-set use:** none. **PR:** none; this entry: direct (chore).
+
+**Next:** the user's merge OK on PR #94; the user's yes or no, in the literature window, on reading DreamWorld's code; whether the DreamWorld points go to the presentations session before the advisor meeting.
