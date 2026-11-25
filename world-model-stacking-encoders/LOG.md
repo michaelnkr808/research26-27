@@ -2316,3 +2316,23 @@ On the user's go ("yep start it", then "ok, dispatch"), four workers wrote the s
 **Found:** no result. **Test-set use:** none. **PR:** none; this entry: direct (chore).
 
 **Next:** the user's merge OK on PR #94; the user's yes or no, in the literature window, on reading DreamWorld's code; whether the DreamWorld points go to the presentations session before the advisor meeting.
+
+## 2026-11-25 [agent, lead, planning] (later: the literature session read DreamWorld's released code; the advisor meeting has happened)
+
+**Goal:** the lead's question to the user, "Read DreamWorld's public code?"; the user said yes in the literature session's window (that session's report). The user also told the lead: "i already had the meeting so we are onto the next week of work" (what the advisor said has not been told to the lead).
+
+**Did:** received the literature session's code read (shallow clone of github.com/ABU121111/DreamWorld into its scratchpad, read only, nothing run; its label "verified in the files"; **not re-read by the lead**; not yet a reading-list note, so nothing cites it until that note lands by the literature session's PR). Against the stage 2 PLAN's fusion table rows:
+- Row 1 (variants): DINOv2 ViT-B/14 with registers, patch tokens; VGGT last aggregated tokens; RAFT for flow.
+- Rows 2, 3 (input size, resize): the DINOv2 input size is chosen so its patch grid equals the VAE latent grid, no feature resize (as our DINOv3); VGGT features are resized bilinearly, `align_corners=False`, no antialias (the same call as our `grid_to_vae`).
+- Row 5 (time): frame 0 kept, the remaining frames averaged in groups of 4 (the same scheme as ours).
+- Row 6 (normalization): the code differs from the paper's Eq 5. DINOv2 path: per-channel z-score from saved statistics, then a pre-fitted PCA to rank 8, then a second standardisation per video and per channel. VGGT: per-video per-channel standardisation; where its PCA happens was not located (unchecked).
+- Row 7 (init): new input and output weights and biases zero, old weights copied (as ours).
+- Row 9 (loss): each source's term is one mean over all its elements with the timestep weighting; total = VAE term + w x (each feature term), the same w for all, w = 0.2 x 0.5 x (1 + cos(pi x step / total steps)). Ours: one term per source at constant weight 1.
+- Row 10 (order): VAE, DINO, VGGT, flow in the code; the paper's Eq 6 lists flow first among the added sources. Paper and code differ.
+- Its caveat: the released repository is not shown to be the version behind the paper's numbers.
+
+**The lead's reading (speculative):** the code confirms the two differences that matter for the user's candidates 1 and 2: 8 channels per encoder where ours has 1,024 or 1,152, and a feature weight of 0.2 falling to zero where ours is 1 throughout. On resize, time matching, zero init and VAE-first order our choices agree with DreamWorld's code. Paper text and code disagree in two places within DreamWorld itself, which supports the mentor's point that a fair comparison needs code. Whether liu2026what kept the PCA and the annealing is still not stated anywhere we have read.
+
+**Found:** no result. **Test-set use:** none. **PR:** none; this entry: direct (chore).
+
+**Next:** the user's account of the advisor meeting; the merge OK on PR #94; the user's go-aheads in the experiment window (first-frame check; `dinov3+c-radiov4` LIBERO-Plus). After the two diagnostics report: the user's pick of the next training experiment (candidates named so far: PCA-reduced features, a small annealed feature weight, a deeper model, more seeds).
