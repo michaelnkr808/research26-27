@@ -2240,3 +2240,25 @@ On the user's go ("yep start it", then "ok, dispatch"), four workers wrote the s
 **Found:** no result. **Test-set use:** none. **PR:** none; this entry: direct (chore).
 
 **Next:** the user's answer on adding the range comparison to the check. Otherwise unchanged: the experiment session's script and Job by PR on the user's go there; the remaining LIBERO-Plus results; what the advisor says at the meeting of 2026-11-25.
+
+## 2026-11-25 [agent, lead, planning] (later: hypotheses for why performance fell, on the mentor's instruction; the user's own pick)
+
+**Goal:** the user: "lets hypothesize--as my advisor instructed--about why perfomance might have fallen".
+
+**The lead's hypotheses, as told to the user (all speculative; ours, from no paper), under the mentor's three categories:**
+- **Drop 1, `none` far below the paper on LIBERO-Plus while near it on clean LIBERO.** Insufficient replication, depth: 8 of 30 layers. The recipe otherwise matches the paper's Tables 6 and 7 (verified, stage 1 PLAN, "Training recipe: the paper's settings and every departure"; Fast-WAM uses no image augmentation and no validation split, same PLAN's amendment). The lowest LIBERO-Plus categories for `none` are visual ones (Background Textures, Camera Viewpoints, Sensor Noise; stage 2 `LOG.md` line 811).
+- **Drop 2, each single encoder below `none`.** In the lead's order:
+  1. **Crowding out (conceptual).** Each source is one loss term at weight 1 (verified, stage 2 PLAN fusion table, row 9), and the feature term is the largest part of the training loss (DINOv3: 0.585 of 0.805; diagnosis note, section 1). An 8-layer backbone may spend itself predicting 1,024 or 1,152 feature channels; the VAE-channel video loss is higher in every encoder run (same note).
+  2. **Acting leans on an imagined future (conceptual).** Verified in code this session: `FastWAMJoint` lets the action tokens attend to all video tokens (`experiments/2026-11-12-pretrained-start-sizing/step2-reading.md` line 76; proxy PLAN line 129), and at inference video and actions start from noise and are denoised jointly (`src/proxy_wam.py`, `infer_actions`), while in training the future tokens are the true future at an independently drawn noise level (`training_loss`, separate `tv` and `ta`). So equal training action loss does not show how actions fare on the model's own imagined features. Whether the imagined encoder features are poor in rollouts is not measured.
+  3. **Our choices where the paper is silent (replication).** DINOv3 needed the fewest (native 224 input, no grid resize, ViT-L as the paper's p21 implies) and is the least below `none`; SigLIP 2 and C-RADIOv4 needed the most (variant not stated, 224 frames upsampled to 384 and 448, grids resized to 14 x 14; fusion table rows 1 to 3) and are the furthest below.
+  4. **Pixel source (bug-like).** The first-frame check (PR #92).
+  - Training-seed variance behind all of them.
+- **Two tests the lead named that need no training:** watching failed rollouts of the collapsed tasks (for example `siglip2` on "open the middle drawer of the cabinet", 0 of 50 against 49 of 50 for `none`; diagnosis note, per-task table); and running each checkpoint in inference mode on training clips and comparing its actions with the demonstration's.
+
+**The user's pick, verbatim:** "i think i actually agree with 1 and 2 and that those are the 2o main candidates but single run luck also can't explain this large of a drop i'd argue".
+
+**The lead's answer on luck:** agreed as a reading, not as a finding. Three separately trained encoder runs all fell, in the same direction, on clean LIBERO (and the one read so far on LIBERO-Plus); seed variance large enough to do that is not plausible (speculative: training-seed variance is unmeasured for this model). Seed variance can still move the sizes and which tasks collapse, and the locked rule still needs three seeds for any claim.
+
+**Found:** no result. **Test-set use:** none. **PR:** none; this entry: direct (chore).
+
+**Next:** the user's yes or no on a design for the inference-mode test on training clips (imagined future against true future, encoder checkpoints against `none`), which separates candidate 2 from the rest and needs no simulator and no test data. The range comparison (the mentor's question) still waits on the user's answer.
