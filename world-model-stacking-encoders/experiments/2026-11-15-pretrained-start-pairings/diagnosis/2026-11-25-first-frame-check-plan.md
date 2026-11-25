@@ -84,4 +84,20 @@ The user, in the planning window, 2026-11-25, to the lead's question "Run the me
 
 ## Amendments
 
-(none)
+### 2026-11-25: per-channel value ranges added as a descriptive item (the mentor's question; no number of this check exists yet; no change to the statistic, the reading rule or the outcome list)
+
+Written by the planning lead, branch base `5ad2879`, before any script or Job for this check exists. The design above is unchanged.
+
+**Why.** The mentor's reply on the stage 2 results (direction `LOG.md`, 2026-11-25, "the mentor's Slack reply") asks, among her theories: "Is the normalization being done? Or are the features in very different ranges". Normalization is done on both sides (verified in code: Wan's latent scale on the VAE channels, `src/extract_fastwam.py:99`, `src/rollout.py:229`; the per-channel z-score on encoder channels, the diagnosis note's items 17 to 19). A first read from the committed training logs (direction `LOG.md`, 2026-11-25, "the mentor's range question") puts the overall scale of the VAE channels and the z-scored encoder channels about level (predict-zero loss ratios of 1.03 to 1.13 on the first batch; an inference from logged losses, not a measurement of the values). Nobody has looked channel by channel. This check already loads both kinds of values, so the numbers are added here. The user, planning window, 2026-11-25, to "Add the channel-by-channel range numbers to the first-frame check?": **"1. yes sure we can do this"**.
+
+**What is computed** (values exactly as the model receives them: VAE channels after Wan's scale, encoder channels after the z-score; four groups as in the Design).
+- Two sets of frames: (T) the training frame 0s of step 2 (the VAE encoded alone, as there); (L) the 200 live first frames of step 1.
+- For each group and each set: per channel, the mean and the standard deviation over all frames and all 14 x 28 positions. Also the group's overall mean square.
+- Reported per group and set: the median, smallest and largest per-channel standard deviation; the median and largest absolute per-channel mean; the overall mean square; and the full per-channel table in the result file.
+- **Flag, fixed now (the lead's own choice, no paper behind it):** a channel is flagged if, on set T, its standard deviation is below 0.25 or above 4, or its absolute mean is above 2. A channel is also flagged if its standard deviation on set L is below a quarter or above four times its value on set T. Flagged channels are listed by group and index. DINOv3 channel 757 is expected to be flagged on the second test or not at all (its training spread is near zero before the z-score; the diagnosis note's item 19).
+
+**Reading.** Descriptive only. No zone, no next step and no change to R(e) follows from these numbers. If any channel is flagged, the list goes to the user and what follows is a separate decision. No flag means "very different ranges" is not supported for the current-frame inputs at the channel level; it says nothing about how the model weighs the groups.
+
+**Limits.** Frame 0 and first frames only; the future-step targets (means over several frames) are not loaded by this check and are not covered. Set T's VAE values are single-frame encodings, as the rollout makes them, not the cached clip-encoded training inputs; the item 15 comparison in the design says how far those two are apart.
+
+**Cost.** None beyond the check: the same arrays, a few more summary statistics.
