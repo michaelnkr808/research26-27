@@ -2209,3 +2209,14 @@ On the user's go ("yep start it", then "ok, dispatch"), four workers wrote the s
 **Next:** the experiment session answers the matched-scene question, writes the check's script and Job by PR, and runs on the user's go in its window. The remaining LIBERO-Plus results (`dinov3`, `siglip2`, then the pairs). Then the one-seed picture to the user and the choice among the settling run, fusion variants, a deeper model, added seeds, or what the PI and mentor direct.
 
 **Open questions:** whether the gap is the pixel source, the fusion choices and depth, or seed variance; whether the matched-scene version is feasible; what the PI and mentor say; the compute ask.
+
+## 2026-11-25 [agent, lead, planning] (later: the first-frame check runs as written; the matched-scene version is not feasible at similar cost, per the experiment session)
+
+- The lead's hand-off message for PR #92 expired undelivered once (held by the experiment window) and was resent on the user's word ("send it again"); delivered.
+- **Reply from `vis-lab-experiment`** (peer message, 2026-11-25; its sources named, not rechecked by the planning lead): (1) **the matched-scene version is not feasible at similar cost.** Stage 2 trained on Fast-WAM's LeRobot `no_noops` data, which has images, an 8-d state and actions and no simulator state (`data/README.md` section 3); the perturbed-frames re-render used the original LIBERO HDF5 for libero_goal only. A matched version would need the original HDF5 for all four suites, a map from each `no_noops` episode to its source demo, the fixture-placement copy for three more suites and a check against Fast-WAM's 512 re-render; its estimate (speculative): several times the size of this check. Its recommendation: run the design as written. (2) The live features run on an **L4**, as the design says; its earlier "CPU only" was wrong. (3) Script and Job by PR with the pins and the dry run, understood; it is asking the user in its window for the go to prepare them. It also reports PR #91 merged on the user's word there (merge `3fafc43`).
+- **The lead's call:** agreed. No amendment is written; the plan's matched-scene question is answered "no" and the design stands as merged, with the limit it already states (the check cannot separate the pixel path from scene differences).
+- Project brief (Arbor) updated.
+
+**Test-set use:** none. **PR:** none; this entry: direct (chore).
+
+**Next:** unchanged: the experiment session's script and Job by PR and the user's go there; the remaining LIBERO-Plus results; then the one-seed picture to the user.
