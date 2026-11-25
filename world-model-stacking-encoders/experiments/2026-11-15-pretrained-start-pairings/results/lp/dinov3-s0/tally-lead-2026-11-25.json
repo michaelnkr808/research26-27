@@ -1,0 +1,317 @@
+{
+ "cfgk": "dinov3",
+ "shards": {
+  "0": {
+   "log": "pairings-lp-dinov3-s0-shard0of16-try1-20261123-102954.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard0of16-try1.jsonl",
+   "lines": 1881,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "1": {
+   "log": "pairings-lp-dinov3-s0-shard1of16-try1-20261123-114321.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard1of16-try1.jsonl",
+   "lines": 1881,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "2": {
+   "log": "pairings-lp-dinov3-s0-shard2of16-try1-20261123-122136.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard2of16-try1.jsonl",
+   "lines": 1881,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "3": {
+   "log": "pairings-lp-dinov3-s0-shard3of16-try1-20261123-093403.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard3of16-try1.jsonl",
+   "lines": 1881,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "4": {
+   "log": "pairings-lp-dinov3-s0-shard4of16-try1-20261123-154817.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard4of16-try1.jsonl",
+   "lines": 1881,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "5": {
+   "log": "pairings-lp-dinov3-s0-shard5of16-try1-20261123-160724.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard5of16-try1.jsonl",
+   "lines": 1881,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "6": {
+   "log": "pairings-lp-dinov3-s0-shard6of16-try1-20261123-232916.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard6of16-try1.jsonl",
+   "lines": 1881,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "7": {
+   "log": "pairings-lp-dinov3-s0-shard7of16-try1-20261123-203001.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard7of16-try1.jsonl",
+   "lines": 1881,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "8": {
+   "log": "pairings-lp-dinov3-s0-shard8of16-try1-20261124-121810.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard8of16-try1.jsonl",
+   "lines": 1881,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "9": {
+   "log": "pairings-lp-dinov3-s0-shard9of16-try1-20261124-131654.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard9of16-try1.jsonl",
+   "lines": 1881,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "10": {
+   "log": "pairings-lp-dinov3-s0-shard10of16-try1-20261124-075032.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard10of16-try1.jsonl",
+   "lines": 1880,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "11": {
+   "log": "pairings-lp-dinov3-s0-shard11of16-try1-20261124-150548.log",
+   "attempts": 2,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: resume (records file exists, 245 lines already)",
+   "no_errors_file": true,
+   "file": "lp-shard11of16-try1.jsonl",
+   "lines": 1880,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "12": {
+   "log": "pairings-lp-dinov3-s0-shard12of16-try1-20261124-151708.log",
+   "attempts": 2,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: resume (records file exists, 1560 lines already)",
+   "no_errors_file": true,
+   "file": "lp-shard12of16-try1.jsonl",
+   "lines": 1880,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "13": {
+   "log": "pairings-lp-dinov3-s0-shard13of16-try1-20261125-083740.log",
+   "attempts": 2,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: resume (records file exists, 915 lines already)",
+   "no_errors_file": true,
+   "file": "lp-shard13of16-try1.jsonl",
+   "lines": 1880,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "14": {
+   "log": "pairings-lp-dinov3-s0-shard14of16-try1-20261124-220517.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard14of16-try1.jsonl",
+   "lines": 1880,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "15": {
+   "log": "pairings-lp-dinov3-s0-shard15of16-try1-20261125-005549.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard15of16-try1.jsonl",
+   "lines": 1880,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  }
+ },
+ "n_shards_with_records": 16,
+ "all_ok": true,
+ "tally": {
+  "rows": 30090,
+  "unique_keys": 30090,
+  "dup_keys": 0,
+  "meta": {
+   "('libero_plus', 'dinov3', 0, '/mnt/runs/runs/pairings-dinov3-s0')": 30090
+  },
+  "by_eval_seed": {
+   "41": [
+    5012,
+    10030,
+    49.97
+   ],
+   "42": [
+    3464,
+    10030,
+    34.536
+   ],
+   "43": [
+    4084,
+    10030,
+    40.718
+   ]
+  },
+  "Y": 41.741,
+  "sd_eval_seed": 7.768,
+  "by_suite": {
+   "libero_10": [
+    2207,
+    7557,
+    29.205
+   ],
+   "libero_goal": [
+    3199,
+    7773,
+    41.155
+   ],
+   "libero_object": [
+    3644,
+    7554,
+    48.239
+   ],
+   "libero_spatial": [
+    3510,
+    7206,
+    48.709
+   ]
+  },
+  "by_category": {
+   "Background Textures": [
+    1031,
+    3228,
+    31.939
+   ],
+   "Camera Viewpoints": [
+    1038,
+    4797,
+    21.639
+   ],
+   "Language Instructions": [
+    2197,
+    4611,
+    47.647
+   ],
+   "Light Conditions": [
+    2151,
+    3426,
+    62.785
+   ],
+   "Objects Layout": [
+    2495,
+    4575,
+    54.536
+   ],
+   "Robot Initial States": [
+    1794,
+    4650,
+    38.581
+   ],
+   "Sensor Noise": [
+    1854,
+    4803,
+    38.601
+   ]
+  }
+ }
+}
