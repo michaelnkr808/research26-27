@@ -84,4 +84,35 @@ The user, in the planning window, 2026-11-25, to the lead's question "Run the me
 
 ## Amendments
 
-(none)
+### 2026-11-25: per-channel value ranges added as a descriptive item (the mentor's question; no number of this check exists yet; no change to the statistic, the reading rule or the outcome list)
+
+Written by the planning lead, branch base `5ad2879`, before any script or Job for this check exists. The design above is unchanged.
+
+**Why.** The mentor's reply on the stage 2 results (direction `LOG.md`, 2026-11-25, "the mentor's Slack reply") asks, among her theories: "Is the normalization being done? Or are the features in very different ranges". Normalization is done on both sides (verified in code: Wan's latent scale on the VAE channels, `src/extract_fastwam.py:99`, `src/rollout.py:229`; the per-channel z-score on encoder channels, the diagnosis note's items 17 to 19). A first read from the committed training logs (direction `LOG.md`, 2026-11-25, "the mentor's range question") puts the overall scale of the VAE channels and the z-scored encoder channels about level (predict-zero loss ratios of 1.03 to 1.13 on the first batch; an inference from logged losses, not a measurement of the values). Nobody has looked channel by channel. This check already loads both kinds of values, so the numbers are added here. The user, planning window, 2026-11-25, to "Add the channel-by-channel range numbers to the first-frame check?": **"1. yes sure we can do this"**.
+
+**What is computed.** Four groups as in the Design. Values: VAE channels after Wan's scale, encoder channels after the z-score, each rounded through float16 as the cache and the rollout do, on both sets.
+- **Two sets of frames.** (T) the training frame 0s of step 2, every one counted once (about 1,700). The encoder values are the cached training inputs. The VAE values are the single-frame encodings of step 2, the way a rollout encodes, not the cached clip-encoded training inputs. (L) the live first frames of step 1, every one counted once (200). A task left out under step 4 is left out of both sets.
+- **Per channel.** For a group, a set and a channel, pool every value of that channel over all frames of the set and all 14 x 28 positions (both cameras together, as the model receives the grid). From that pool: the arithmetic mean, the population standard deviation (divide by N), and the largest absolute value.
+- **Per group.** The overall mean square: the mean of the squared values over all channels, frames and positions of the group in that set.
+- **Reported per group and set:** the median, smallest and largest per-channel standard deviation; the median and largest absolute per-channel mean; the largest absolute value; the overall mean square; and, per encoder group, the ratio of its overall mean square to the VAE group's on the same set. The full per-channel table goes in the result file.
+- **Flags, fixed now (the lead's own choices, no paper behind them).** A channel is flagged, with the test named, if:
+  - (a) on set T its standard deviation is below 0.25 or above 4, or its absolute mean is above 2;
+  - (b) its standard deviation on set L is below a quarter of, or above four times, its standard deviation on set T. If the standard deviation on set T is below 1e-6, test (b) is not applied and the channel is flagged as constant on set T;
+  - (c) its mean on set L differs from its mean on set T by more than 2 standard deviations of set T (same exception as in (b)).
+  The report lists flagged channels by group and index, with the count and the share of the group's channels per test.
+- **One wording, fixed now.** A group pair is called "in very different ranges" if an encoder group's overall mean square on set T is more than 4 times, or less than a quarter of, the VAE group's (a factor of 2 in root mean square). Otherwise the report says the overall ranges are comparable and gives the ratio.
+- The lead's expectation (speculative): DINOv3 channel 757, whose raw training spread is near zero (the diagnosis note's item 19), is the likeliest channel to be flagged under (b) or (c).
+
+**Reading.** Descriptive only. No zone, no next step and no change to R(e) follows from these numbers, whatever the count of flags. The flag list, the counts and the group ratios go to the user as they are; what follows, if anything, is a separate decision.
+
+**Limits.**
+- Means, standard deviations and the largest absolute value only; the shape of each channel's distribution is not described.
+- "As the model receives them" holds for set L and for the encoders on set T. The VAE values on set T are rollout-style single-frame encodings; the comparison with the cached clip-encoded latents (under "Also reported, descriptive only" in the design; the note's item 15, a recalled claim) says how far those are from the real training inputs.
+- Current-frame inputs only. The noised future-step inputs and the future targets (means over several frames) are not loaded by this check.
+- Equal ranges at the input do not mean equal influence: the model's learned input projection can rescale any channel. This item answers the mentor's question about ranges, not how the model weighs the groups.
+- The VAE channels have no unit-variance target, so tests (a) to (c) are looser for a VAE-against-encoder difference than the group ratio; the ratio is the direct answer to that question.
+- Set T has about 1,700 frames and set L 200; each frame counts once within its own set.
+
+**Sign-off.** The flag thresholds, the mean-shift test and the "very different ranges" wording were not spelled out in chat; they are the lead's and stand only with the user's merge OK on this PR.
+
+**Cost.** None beyond the check: the same arrays, a few more summary statistics.
