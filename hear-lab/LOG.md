@@ -905,3 +905,12 @@ The lead then: "1. go tell the experiment window that 2. tell literature window 
 **Next:** the experiment session's Step 2 questions and time estimate in its window; the lead's yes in the presentations window. The PI meeting is Thursday 2026-11-26.
 
 **Open questions:** whether a Step 2 first look fits before the meeting.
+
+## 2026-11-24 [agent, lead, planning] (deck text now uses the Step names)
+**Did:** took in the presentations session's report (not checked against the deck by the planning lead): on the lead's yes in its window, the Google Slides deck "HEAR Lab Slides" no longer says "rung" or "ladder". The Step 1 slide title and the three what-is-next lines use the Step names; the old bars picture is replaced by `21_step1_bars.png`; `22_steps.png` is a new picture slide between "What is next" and the training budget slide. A helper upload "steps-pictures-helper" is left in the lead's Drive root (the lead can delete it). Nothing else in the deck changed, its report.
+
+**PR:** direct.
+
+**Next:** the experiment session's Step 2 questions and time estimate in its window. The PI meeting is Thursday 2026-11-26.
+
+**Open questions:** whether a Step 2 first look fits before the meeting.
