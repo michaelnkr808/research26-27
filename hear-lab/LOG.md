@@ -896,3 +896,12 @@ The lead then: "1. go tell the experiment window that 2. tell literature window 
 **Not verified:** the telephone wav and the default HRTF were not opened; NaVLA2's training-data audio path; the 0.15 m against 0.25 m step mismatch; no separate fact-check reviewer yet.
 **PR:** see the pull request for this branch.
 **Next:** the lead's OK in chat, then merge.
+
+## 2026-11-24 [agent, lead, planning] (PR #90 merged by the literature session)
+**Did:** took in the literature session's report: PR #90 (what the target's sound was in prior work, `literature/survey/2026-11-24-goal-sound-in-prior-work.md`) merged on the lead's OK in the literature window, merge commit 5244e02. Checked here: the commit is on main, the file is there, GitHub shows the pull request merged, and `LOG.md` has no conflict markers (the report says both sets of 2026-11-24 entries were kept). The planning lead did not read the note against its sources. It feeds the Step 2 `PLAN.md` question on where the source sits and what it emits. The presentations session answered that it needs the lead's yes typed in its own window before the deck text changes; the message to the experiment session was held, then approved and released.
+
+**PR:** #90 merged (the literature session's). This entry: direct.
+
+**Next:** the experiment session's Step 2 questions and time estimate in its window; the lead's yes in the presentations window. The PI meeting is Thursday 2026-11-26.
+
+**Open questions:** whether a Step 2 first look fits before the meeting.
