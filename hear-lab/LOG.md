@@ -873,3 +873,18 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 **Next:** the lead's OK for the deck text in the presentations window, and inserting the two new pictures by hand. The experiment session picks up "Step N" from the held message if it is released, or from the brief.
 
 **Open questions:** none new.
+
+## 2026-11-24 [agent, lead, planning] (status for the PI meeting; the lead's three OKs relayed)
+**Did:** the lead, late on 2026-11-24: "whats the status of this right now i have a meeting with my PI in two days and I want to bring him some results". Answered from the files (nothing run): Step 1 is done, Step 2 has not started (no experiment folder, no `PLAN.md`, no rental), no experiment with audio has run. What exists to bring, checked against the two experiment `README.md` files before saying it: the Step 1 reproduction (SR 55.0 against the paper's 53.5 on the first 1000 test_unseen episodes; target visible at start 65.0, n 220; not visible 52.2, n 780), check 1 with the measured HRTF, the check 2 training cost. The planning lead suggested trying for a small first look at Step 2 by the meeting (a few episodes with clips and a direction picture), as a bonus (`speculative` that it fits; the experiment session gives the estimate).
+
+The lead then: "1. go tell the experiment window that 2. tell literature window i give the okay to merge 3. and go tell presentations i give the ok on that too". Sent three messages with the lead's words quoted: to the experiment session (the Step naming, put the Step 2 `PLAN.md` questions to the lead now, aim for a small first look by 2026-11-26, give an honest time estimate; no rental approved by the message); to the literature session (the lead's OK to merge PR #90); to the presentations session (the lead's OK for the "Rung" to "Step" deck text and the two new pictures, nothing else).
+
+**PR:** direct.
+
+**Not verified:** that the three messages were read (they reached the sessions' inboxes; the earlier message to the experiment session was held and expired). Whether each session accepts a relayed OK or asks the lead in its own window.
+
+**Not approved:** any rental; training; audio encoder work; route B work.
+
+**Next:** the experiment session's Step 2 questions and time estimate in its window; PR #90 merged; the deck text fixed. The PI meeting is Thursday 2026-11-26.
+
+**Open questions:** whether a Step 2 first look fits before the meeting.
