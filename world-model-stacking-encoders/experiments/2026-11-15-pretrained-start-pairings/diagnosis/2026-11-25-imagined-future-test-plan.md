@@ -15,6 +15,7 @@ The test is our own; no paper is followed. The inference procedure it copies is 
 - Verified in code: the action tokens attend to all video tokens in `FastWAMJoint` (`experiments/2026-11-12-pretrained-start-sizing/step2-reading.md` line 76); at inference video and actions start from noise and are denoised jointly, with latent step 0 reset to the observation before the first step and after every step (`src/proxy_wam.py`, `infer_actions`); in training the video and action noise levels are drawn separately and the future latent steps are the true future at the drawn level (`training_loss`). A rollout executes the first 10 actions of each 32-step chunk (`src/rollout.py` line 74, `REPLAN = 10`) and runs inference under bf16 autocast (`Policy.act`, `src/rollout.py` lines 332-334).
 - The training sampler for the video noise level is sigma = 5u / (1 + 4u) with u uniform (`experiments/2026-11-15-pretrained-start-baseline/fastwam-reading.md` line 51, verified there), so the share of training draws at or below a level s is s / (5 - 4s) (arithmetic): about 0.64 at s = 0.9, about 0.10 at s = 0.36.
 - Stage 2 results seen by the planning lead: clean LIBERO `none` 92.55, `dinov3` 85.7, `c-radiov4` 76.65, `siglip2` 72.9; LIBERO-Plus `none` 50.83, `c-radiov4` 44.61; the diagnosis note `2026-11-25-feature-path.md` (final training action loss about the same across runs; VAE-channel video loss higher in every encoder run; the per-task clean table). No measurement of this test exists.
+- Added 2026-11-25 after the design's review, before merge (the experiment session's report of 17:40 UTC; stage 2 `LOG.md`, last entry at main `44741f4`, read by the planning lead): `dinov3` LIBERO-Plus is Y = 41.741, with the three evaluation seeds far apart (41 / 42 / 43: 49.970 / 34.536 / 40.718, SD 7.768) where `none` has SD 3.041 and `c-radiov4` 1.245, and the same order in every shard and category. Verified in code by the planning lead: `request_noise(eval_seed, channels)` (`src/rollout.py` lines 112-118) seeds one video and one action generator with the evaluation seed, and `Policy.start_noise` (lines 306-311) caches the result, so a rollout uses the same starting-noise tensor at every policy call of every episode under that evaluation seed. The evaluation seed also seeds the environment (line 368, the experiment session's reading, not re-read here). Clean LIBERO is run under evaluation seed 41 only. `dinov3+c-radiov4` clean LIBERO: 83.5.
 
 ## Design
 
@@ -76,6 +77,7 @@ In every case the stage 2 decision rule, the one-seed reporting rule (`../PLAN.m
 - **Imagination error**, per checkpoint and source group, after arm I: the mean squared difference between the imagined latent steps 1 and 2 and the true cached ones over the valid future steps, beside the mean square of the true values (the error of imagining zero). For the VAE channels also the ratio of each encoder checkpoint's error to `none`'s. This bears on candidate 1 (does the model imagine the picture worse once it must also imagine encoder features), descriptively.
 - Q(e) by task, and per encoder the Spearman rank correlation over the 40 tasks between the per-task Q(e) and the per-task clean success drop (`none` minus the encoder, from the committed clean records).
 - Q(e) by window position (0, one third, two thirds).
+- **Rollout noise draws** (added 2026-11-25 before merge, see "What is known"): arm I run three more times per checkpoint with the rollout's own starting noise, `rollout.request_noise(s, channels)` for s = 41, 42, 43, used as `Policy.act` uses it and the same tensor for every clip. Reported per checkpoint: E(c, I) under each of the three, the largest over the smallest, and the same per task; beside it the same ratio between noise seeds A and B (per-clip noise). It asks whether one fixed noise tensor moves a model's actions on familiar clips, and whether it moves `dinov3` more than `none`. No bar and no case depends on it.
 
 ## Limits (stated before the run)
 
@@ -83,6 +85,7 @@ In every case the stage 2 decision rule, the one-seed reporting rule (`../PLAN.m
 - **One training seed.** A Q(e) above 1 can come from training-seed variance alone, which is unmeasured for every stage 2 configuration (the diagnosis note already shows two encoder runs ending with a slightly higher training action loss). Nothing in this test separates that from imagination; it is why case 1 is a lead and not a finding.
 - **What a closed gap shows.** G(e) near 1 says the deficit is tied to the imagined content. It does not say whether the encoder model imagines worse or uses an imperfect future worse; the imagination-error item speaks to the first, descriptively. A shared error floor (the demonstration's action is one valid action among several, and squared error charges a model for other valid choices) pulls ratios toward 1, which is why step 2 uses a share of the gap and not a ratio.
 - Arm M's noise levels are the inference schedule's own, all inside the range training draws from; arm N holds the video at the schedule's highest level, a common training regime (see the sampler above). How the inference schedule's levels are spaced is not readable in this repo (Fast-WAM's scheduler source is not in it); the done checks print them.
+- The rollout-noise item holds the environment fixed (there is none) and uses familiar clips. A flat result there does not show the evaluation-seed spread on LIBERO-Plus is not a noise effect: the spread could need unfamiliar states, or come from the environment seeding. A spread there is a lead only.
 - The inputs are cached training inputs, not live rollout inputs; the pixel-source question is the first-frame check's, not this test's.
 - The 1.2 and 1.5 edges and the 1/3 and 2/3 edges are our own choices. They are not calibrated for power: nothing says how large a Q matters for closed-loop success, and the 8-clip dry run cannot tell.
 
@@ -92,7 +95,7 @@ None. Training clips only; no simulator, no evaluation init state. The per-task 
 
 ## Compute
 
-One GPU Job, no simulator (speculative: several GPU-hours at most on one 24 GB card, from 50 model passes per clip and checkpoint; not sized). The experiment session sizes it from a dry run on 8 clips and checks the utilization rules of `_standards/08`. Caches are on PVC `stacking-encoders-proxy`, the stage 2 checkpoints on `stacking-encoders-runs`.
+One GPU Job, no simulator (speculative: several GPU-hours at most on one 24 GB card, from 90 model passes per clip and checkpoint: 3 arms x 2 noise seeds x 10 steps, plus 3 x 10 for the rollout-noise item; not sized. An earlier version of this line said 50, an arithmetic slip). The experiment session sizes it from a dry run on 8 clips and checks the utilization rules of `_standards/08`. Caches are on PVC `stacking-encoders-proxy`, the stage 2 checkpoints on `stacking-encoders-runs`.
 
 ## Hand-off
 
@@ -107,7 +110,7 @@ Its PR and LOG entry pin the source commit, the image, the six checkpoint paths 
 
 ## Sign-off
 
-The user, planning window, 2026-11-25: to the lead's description of the test ("run each model the way a rollout runs it [on training clips], and compare its actions to the demo's. Then do it again while handing the model the real future") and "Want me to write that design now?": **"2. yes sure write that"**. Not spelled out in chat, and standing only with the user's merge OK on this PR: the 1.2 and 1.5 edges, the gap-share edges, the firmness rule, arms M and N as defined, the clip draw, the first-10-steps error on the six motion dimensions, the order of the outcome cases and the descriptive items.
+The user, planning window, 2026-11-25: to the lead's description of the test ("run each model the way a rollout runs it [on training clips], and compare its actions to the demo's. Then do it again while handing the model the real future") and "Want me to write that design now?": **"2. yes sure write that"**. Not spelled out in chat, and standing only with the user's merge OK on this PR: the 1.2 and 1.5 edges, the gap-share edges, the firmness rule, arms M and N as defined, the clip draw, the first-10-steps error on the six motion dimensions, the order of the outcome cases and the descriptive items. The rollout-noise item was added after the read-only review and after the lead first asked for the merge OK; no reviewer has read it.
 
 ## Amendments
 
