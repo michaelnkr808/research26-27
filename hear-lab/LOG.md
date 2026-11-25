@@ -839,6 +839,56 @@ Planning lead's recommendation, not a decision (`speculative`): start with route
 
 **Open questions:** none
 
+## 2026-11-24 [agent, lead, planning] (slides updated by the presentations session; meeting date and RMS-AQA answered)
+**Did:** took in the presentations session's report (not checked against the deck by the planning lead). On the lead's OK in its window it changed the Google Slides deck "HEAR Lab Slides": the title slide date from 11/25 to 11/26, and four new slides after it (what changed since last week: decision `003` and the three checks; rung 1 on GN-Bench, unseen test split, first 1000 episodes, with "lower" and no "significantly" for the not-visible group; what is next: rungs 2 to 4, full fine-tuning does not fit, about 54 of 200 dollars; questions for the PI). Its pictures are in `writing/figures/2026-11-24-pi-update/` (uncommitted, its files) with a copy on the lead's Desktop; the lead inserts them by hand.
+
+**Found** (the lead's answers, as the presentations session reports them): the next PI meeting is 2026-11-26, so the date in the entries above stands. RMS-AQA: the lead said to leave it parked for now; it is not on the slides and the PI has still not been told. `PLAN.md` "For the PI" updated to match.
+
+**Not verified:** the deck itself; the lead's words (the presentations session's report). The presentations session could not find what a "5,000-step figure" in the log refers to and left it out (most likely the planning entry of 2026-11-21: "even the best case leaves about 5,000 steps per version at one seed", a budget estimate for full fine-tuning, `speculative` there).
+
+**PR:** direct.
+
+**Next:** the experiment session's rung 2 `PLAN.md`. After the 2026-11-26 meeting: the PI's answers into `PLAN.md` and the decision records.
+
+## 2026-11-24 [agent, lead, planning] (the plan's "rungs" renamed Step 1 to Step 4)
+**Did:** the lead, 2026-11-24: "okay what are the "rungs" and can we use a more intutitive name?", and on the planning lead's proposal: "yeah sure can we do step 1 to 4 insteaad and also tell the presentations agent to fix the pictures it gave me then". Renamed "the ladder" and its "rungs" in `PLAN.md`, the `README.md` status line, the reading-order heading in `literature/reading-list.md` and the brief: Step 1, reproduce the baseline (done); Step 2, make the sound and check it; Step 3, smallest training run (was "smallest training step", reworded so "step" is not used twice); Step 4, the three-version comparison. Wording only: no item changed state and no fact changed.
+- Left as they are: earlier `LOG.md` entries; decision `003`; the folder `experiments/2026-11-21-rung1-wnm3d-baseline/` and its code names (merged pull requests point at them); `data/README.md` (the experiment session's file, its call in its storage follow-up); `STANDARDS.md` (one mention, "before rung 3"; an edit there goes by pull request, so it rides with the next one).
+- Told the presentations session to redo the pictures that say "rung" or "ladder" (the planning lead's reading of "fix the pictures": `21_rung1_bars.png`, `22_ladder.png` and `README.txt` in `writing/figures/week-2026-11-26/`, the Desktop copy, and any deck text), with the lead's OK in its window before the deck changes. Told the experiment session to use "Step N" from here on, Step 2 folder name included.
+
+**PR:** direct (wording only).
+
+**Not verified:** the pictures and the deck (the presentations session's files; the planning lead read only the text in `writing/figures/week-2026-11-26/src/make_update_figures.py`).
+
+**Next:** the presentations session's redone pictures, shown to the lead in its window. The experiment session's Step 2 `PLAN.md` and the lead's answers in its window.
+
+**Open questions:** none new.
+
+## 2026-11-24 [agent, lead, planning] (Step renaming: pictures redone; the message to the experiment session was held)
+**Did:** took in the presentations session's report: the pictures are redone with no "rung" or "ladder" in them, `21_rung1_bars.png` replaced by `21_step1_bars.png` and `22_ladder.png` by `22_steps.png` in `writing/figures/week-2026-11-26/` and in the Desktop copy, `README.txt` updated. The planning lead checked the file names by listing both folders and did not open the pictures. The deck itself still says "Rung 1" to "Rung 4" (slide 12 title, the what-is-next lines, an old image title); the presentations session holds those edits for the lead's OK in its window.
+
+**Correction to the entry above:** the message to the experiment session about the renaming was held by that session and not delivered (cross-session notice), so "Told the experiment session" there is not yet true. Not resent while held. The lead was told; the brief carries the renaming for when that session next reads it.
+
+**PR:** direct.
+
+**Next:** the lead's OK for the deck text in the presentations window, and inserting the two new pictures by hand. The experiment session picks up "Step N" from the held message if it is released, or from the brief.
+
+**Open questions:** none new.
+
+## 2026-11-24 [agent, lead, planning] (status for the PI meeting; the lead's three OKs relayed)
+**Did:** the lead, late on 2026-11-24: "whats the status of this right now i have a meeting with my PI in two days and I want to bring him some results". Answered from the files (nothing run): Step 1 is done, Step 2 has not started (no experiment folder, no `PLAN.md`, no rental), no experiment with audio has run. What exists to bring, checked against the two experiment `README.md` files before saying it: the Step 1 reproduction (SR 55.0 against the paper's 53.5 on the first 1000 test_unseen episodes; target visible at start 65.0, n 220; not visible 52.2, n 780), check 1 with the measured HRTF, the check 2 training cost. The planning lead suggested trying for a small first look at Step 2 by the meeting (a few episodes with clips and a direction picture), as a bonus (`speculative` that it fits; the experiment session gives the estimate).
+
+The lead then: "1. go tell the experiment window that 2. tell literature window i give the okay to merge 3. and go tell presentations i give the ok on that too". Sent three messages with the lead's words quoted: to the experiment session (the Step naming, put the Step 2 `PLAN.md` questions to the lead now, aim for a small first look by 2026-11-26, give an honest time estimate; no rental approved by the message); to the literature session (the lead's OK to merge PR #90); to the presentations session (the lead's OK for the "Rung" to "Step" deck text and the two new pictures, nothing else).
+
+**PR:** direct.
+
+**Not verified:** that the three messages were read (they reached the sessions' inboxes; the earlier message to the experiment session was held and expired). Whether each session accepts a relayed OK or asks the lead in its own window.
+
+**Not approved:** any rental; training; audio encoder work; route B work.
+
+**Next:** the experiment session's Step 2 questions and time estimate in its window; PR #90 merged; the deck text fixed. The PI meeting is Thursday 2026-11-26.
+
+**Open questions:** whether a Step 2 first look fits before the meeting.
+
 ## 2026-11-24 [agent, literature] (what the target's sound was in prior work; PR opened)
 **Goal:** answer the experiment session's request (hear-lab-86): source signal, length, sample rate, looping, source placement, mono against binaural and window per step for papers that render a goal sound.
 **Did:** three workers read SoundSpaces 1.0 and 2.0 with the pinned repo code, SAVi, Audio-Visual World Models, AV-WaN, NaVLA2 with its repo, Hear You Are, Hear, Localize, and Reason, and BAT from raw text; the literature lead re-checked the SoundSpaces placement and continuity code, NaVLA2's looping line, HLR's mono rule, SAVi's acoustic phase and the world-models window. Landed as `literature/survey/2026-11-24-goal-sound-in-prior-work.md` by pull request.

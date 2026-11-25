@@ -20,9 +20,9 @@ Reported as read by the lead on 2026-11-15, corrected by the lead on 2026-11-19 
 ## To read
 Read-first list for the lead, from the planning lead (hear-lab-94, 2026-11-20): papers whose methods the current plan uses, in reading order. Decided or open is as in the decision records; "leading candidate" is the planning lead's reading, not a decision. Identifiers marked "metadata checked" were confirmed against the arXiv API on 2026-11-20 (title, authors, comment field); no paper was re-read for this list. Why each paper matters beyond this table is in `survey/2026-11-16-summary.md` and `survey/2026-11-19-pi-followups-simulator-audio-papers-gaps.md`.
 
-### Read in this order, by ladder rung (planning lead, 2026-11-21; replaces the 2026-11-20 order)
-The ladder is in `PLAN.md` "Now". The lead has not read any of the earlier list yet. 
-| Rung | Paper | Identifier | Part of the plan that uses it | Status |
+### Read in this order, by plan step (called rungs before 2026-11-24) (planning lead, 2026-11-21; replaces the 2026-11-20 order)
+The four steps are in `PLAN.md` "Now". The lead has not read any of the earlier list yet. 
+| Step | Paper | Identifier | Part of the plan that uses it | Status |
 |---|---|---|---|---|
 | 1 (reproduce the released WNM-3D result, in flight) | WNM-3D evaluation section, read again (already read once; `huang2026wnm`) | arXiv 2608.07267 | What the released result measures | Decided, comes with WNM-3D |
 | 1 | GN0 / GN-Bench: Toward a Unified Paradigm for Generation, Evaluation, and Policy Learning in Visual-Language Navigation (key not yet in bib; used as `li2026gn0` in the 2026-11-18 survey file) | arXiv 2606.03682 (metadata checked) | WNM-3D's own simulator and episodes | Route A chosen first, not committed |
