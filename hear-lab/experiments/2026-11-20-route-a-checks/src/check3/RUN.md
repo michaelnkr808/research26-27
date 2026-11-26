@@ -49,11 +49,14 @@ pip freeze > /root/check3_pip_freeze.txt
 
 ## 2. Code from this repo
 
-From the Mac (the lead's machine), create the folder on the machine, then copy the experiment's config and this folder:
+From the Mac (the lead's machine), create the folder on the machine, then copy the experiment's config and this folder, and the shared `hear-lab/src/` (since 2026-11-26 `c3lib.py` lives there; the scripts find it through `HEAR_LAB_SRC`):
 
 ```bash
-ssh -p <port> root@<host> mkdir -p /root/route-a-checks
+ssh -p <port> root@<host> mkdir -p /root/route-a-checks /root/hear-lab-src
 scp -P <port> -r hear-lab/experiments/2026-11-20-route-a-checks/config.yaml hear-lab/experiments/2026-11-20-route-a-checks/src root@<host>:/root/route-a-checks/
+scp -P <port> hear-lab/src/*.py root@<host>:/root/hear-lab-src/
+# on the machine, in every shell that runs the check 3 scripts:
+export HEAR_LAB_SRC=/root/hear-lab-src
 ```
 
 Record the repo commit the copy came from (`git rev-parse HEAD` on the Mac) in LOG.md; the runner cannot see it on the machine and writes "unknown" in its run metadata.

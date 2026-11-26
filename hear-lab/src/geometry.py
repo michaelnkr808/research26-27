@@ -1,4 +1,4 @@
-"""Geometry exporter for check 1: InteriorGS floor plan and boxes to a triangle mesh in GN-Bench's
+"""Geometry exporter (written for route A check 1; moved to hear-lab/src on 2026-11-26): InteriorGS floor plan and boxes to a triangle mesh in GN-Bench's
 world frame, with one RLR material category per face.
 
 Frames (see RUN.md, "Frames"):

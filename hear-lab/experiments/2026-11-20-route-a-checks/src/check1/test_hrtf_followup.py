@@ -1,6 +1,7 @@
 """Unit tests for hrtf_followup.py that need neither the RLR library nor any data (argument parsing, azimuth
 geometry, the binding's HRTF call guard). Run: python3.11 -m unittest -v test_hrtf_followup   (from this folder)
 """
+import os
 import sys
 import tempfile
 import unittest
@@ -10,6 +11,7 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+sys.path.insert(1, str(Path(os.environ.get("HEAR_LAB_SRC") or HERE.parents[3] / "src")))  # shared code in hear-lab/src (moved 2026-11-26)
 
 import hrtf_followup as hf  # noqa: E402
 import pass_tests as pt  # noqa: E402

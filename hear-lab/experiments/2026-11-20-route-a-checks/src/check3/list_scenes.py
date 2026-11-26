@@ -10,11 +10,13 @@ run_check3.py and reported, so the list has to be complete.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+sys.path.insert(1, str(Path(os.environ.get("HEAR_LAB_SRC") or HERE.parents[3] / "src")))  # shared code in hear-lab/src (moved 2026-11-26)
 import c3lib  # noqa: E402
 
 

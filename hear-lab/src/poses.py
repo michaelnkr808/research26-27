@@ -1,4 +1,4 @@
-"""Listener pose helpers for check 1.
+"""Listener pose helpers (written for route A check 1; moved to hear-lab/src on 2026-11-26).
 
 GN-Bench agent pose (GN_Bench_simulator.py, _load_initial_state from line 775 and _render_observations
 from line 912, GN-Bench-Tools 0ce8367): position (start_world_x, start_world_y, 1.3) in the world frame,
@@ -66,4 +66,33 @@ def listener_quat_wxyz(heading_deg: float, config_used: dict | None = None) -> n
     fwd, _left, right, up = agent_axes(heading_deg)
     back = -fwd
     m = np.stack([right, up, back], axis=1)  # columns: images of local x (right), y (up), z (back)
+    return matrix_to_quat_wxyz(m)
+
+
+def axes_from_forward(forward) -> tuple:
+    """Unit forward, left, right and up for a listener whose forward is the horizontal part of the given
+    vector, in a right-handed z-up frame (the same rule as agent_axes: right = forward x up, left = -right).
+    Used where the forward vector comes from a frame map (for example GN-Bench's world-to-GS transform of
+    pos and pos + forward) instead of a heading angle."""
+    f = np.asarray(forward, dtype=np.float64).reshape(3).copy()
+    f[2] = 0.0
+    n = float(np.linalg.norm(f))
+    if n < 1e-9:
+        raise ValueError("forward vector has no horizontal part")
+    fwd = f / n
+    up = np.array([0.0, 0.0, 1.0])
+    right = np.cross(fwd, up)
+    return fwd, -right, right, up
+
+
+def listener_quat_from_forward(forward, config_used: dict | None = None) -> np.ndarray:
+    """RLR listener quaternion [w, x, y, z] for a horizontal forward vector: maps the library's default local
+    axes (right +x, up +y, back +z) onto right, up (+z) and back (-forward). Equal to listener_quat_wxyz(h)
+    when forward = (cos h, sin h, 0)."""
+    if config_used is not None:
+        for k, v in DEFAULT_HRTF_AXES.items():
+            if not np.allclose(config_used[k], v):
+                raise ValueError(f"{k} is {config_used[k]}, not the default {v}; quaternion assumes defaults")
+    fwd, _left, right, up = axes_from_forward(forward)
+    m = np.stack([right, up, -fwd], axis=1)
     return matrix_to_quat_wxyz(m)

@@ -1,0 +1,24 @@
+# Run outputs derived from InteriorGS stay out of git (hear-lab/data/README.md, the user's answer of 2026-11-24;
+# hear-lab/STANDARDS.md "Results storage"). Everything is ignored except the files listed below. Folders are
+# un-ignored so git can reach the listed files. Do not force-add anything.
+*
+!*/
+!.gitignore
+# sha256 manifest of every file of a run, committed or not
+!*/manifest.sha256
+# run settings, per-episode tallies (ids, counts, timing), summary and verdict, preflight (free field, no scene data)
+!*/render/run_config.json
+!*/render/episode_records.jsonl
+!*/render/timing.json
+!*/render/preflight.json
+!*/render/summary.json
+!*/render/episode_tallies.csv
+# pose export settings, ids, frame counts and timing; alignment against route A check 2's videos
+!*/export/export_meta.json
+!*/export/alignment.json
+# environment lists, parquet hash, scene and alignment id lists
+!*/env/*.txt
+!*/env/*.sha256
+# NOT listed (local only): export/poses/ (scene coordinates), export/videos/ (renders), render/episodes/ (per-step
+# records with coordinates, impulse responses, box-derived values), render/clips/ (rendered audio), render/topdown/
+# (pictures), logs, inputs/ (the third-party telephone ring).

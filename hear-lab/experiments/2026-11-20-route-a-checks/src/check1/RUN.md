@@ -6,6 +6,8 @@ Design: `../../PLAN.md` (check 1). Parameters: `../../config.yaml` (`seed`, `che
 
 ## Files
 
+Since 2026-11-26, `rlr_binding.py`, `geometry.py`, `gnbench_copy.py` and `poses.py` live in `hear-lab/src/` (shared with Step 2); the scripts here add that folder to `sys.path` (`HERE.parents[3] / "src"`, or `$HEAR_LAB_SRC` if set). A full clone of the repository (step 2 below) has it in place.
+
 | file | what it is |
 | --- | --- |
 | `rlr_binding.py` | ctypes binding to `libRLRAudioPropagation.so`, written from `RLRAudioPropagationPkg/headers/RLRAudioPropagation.h` at `4fd446b` |

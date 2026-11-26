@@ -1,0 +1,105 @@
+# Parameters for Step 2: make the sound and check it. Design and pass bar: PLAN.md. Every value the scripts use is
+# read from here. Values marked "pending" must be filled (by a commit) before the run: render_audio.py refuses to
+# start while one is pending.
+seed: 20261126
+
+pins:
+  rlr_audio_propagation: 4fd446b5abb5c71fb7a232a083bbddd65f25fc6f   # data/README.md code pins
+  rlr_library_sha256: 31e948eef4908d8cbb403b5f445d9d0eab59fc81b05a658538f8795984f9bfb4
+  gn0: c92778118542bf1dd7d437855d06e0d822e8361d
+  gn_bench_tools: 0ce83677532591c582b0c8a2879ab431a1efff18
+  sound_spaces: 287184fd7067a0385558492716355c54875500ee         # settings reference and the sound file's source
+  gn_matrix: {repo: TeleEmbodied/GN-Matrix, revision: 50a68253b5436f0595779cd3f91baf65228a0238, file: InteriorGS/InteriorGS_train_seen.parquet}
+  interiorgs: {repo: spatialverse/InteriorGS, revision: 334dfeea4e0241033b4e5de97c01bc7c9c080530}
+
+episodes:
+  split: InteriorGS_train_seen          # no test_unseen use
+  # Source table: route A check 3 per-episode CSV (local only, gitignored, read-only; never copied into git).
+  source_csv: ../2026-11-20-route-a-checks/results/2026-11-20-check3-rerun/check3_full/check3_InteriorGS_train_seen.csv
+  source_csv_sha256: d8d87776e8257994c5fdabc68d922dccb3e3e2fe2e5a2c7f5a3d1f879fae7aca
+  scenes_jsonl: ../2026-11-20-route-a-checks/results/2026-11-20-check3-rerun/check3_full/scenes.jsonl
+  scenes_jsonl_sha256: f7931ea18109e7f45f5eaff10ed6ca681dfbd5b149fbe1212ec40717920ce0a3   # same file rung 1 pinned
+  visible_column: visible_primary       # route A check 3 flag at the 0.15 m depth tolerance
+  tolerance_column: depth_tol_primary_m
+  tolerance_m: 0.15
+  expected:                              # recounted on the Mac 2026-11-26 from the two files above
+    n_rows: 1000
+    n_mirrored_scenes: 39
+    n_rows_in_mirrored_scenes: 41
+    n_visible_in_mirrored_scenes: 8
+    n_eligible_visible: 343
+    n_eligible_not_visible: 616
+  order_seed: 20261126
+  order_file: episode_order.txt         # committed: episode ids only, one per line
+  order_length: 686                     # 2 x 343: interleaved until the visible list runs out
+  order_sha256: 953eb06c4e0585f1ba10e3ce6d0c2d221c4855c2dda566e80fa85f3fe9727bbf   # src/pick_episodes.py, 2026-11-26
+  interleave: "position 2k (0-based) is a visible start, 2k + 1 a not-visible start"
+  batch1_n: 12                          # first 12 of the order: 6 visible, 6 not
+  full_set_n: 100                       # PROPOSED (PLAN.md), flagged for the lead; first 100 of the order
+  alignment_n: 2                        # first N episodes of the released renderer's own train_seen order (check 2 rendered 0..47)
+
+poses:
+  exp_config: configs/gn_bench/interiorgs/train_seen.yaml   # relative to the GN0 root; GN0's own file
+  renderer_expected:                    # GN0 train_seen.yaml EVAL.RENDERER at c927781; export_poses.py asserts these
+    video_fps: 10.0
+    video_codec: libx264
+    smooth_window: 9
+    resample_step_m: 0.05
+    heading_lookahead_m: 0.5
+    yaw_smooth_window: 9
+  listener_height_m_expected: 1.3       # GN-Bench _load_initial_state (GN_Bench_simulator.py line 780)
+
+source:
+  placement: target_box_centre          # mean of the 8 labels.json bounding_box corners of label_ins_id (NaVLA2 convention)
+  exclude_target_box_from_mesh: true    # as route A check 1, so the source is not sealed inside its own box
+
+sound:
+  name: SoundSpaces telephone ring (data/sounds/1s_all/telephone.wav, the AudioGoal default)
+  archive_url: http://dl.fbaipublicfiles.com/SoundSpaces/sounds.tar.xz   # soundspaces/README.md at 287184f, line 14
+  archive_member: 1s_all/telephone.wav  # path under sounds/ after extraction; checked by RUN.md step 0
+  archive_sha256: pending               # recorded by the lead in RUN.md step 0, then committed
+  wav_sha256: pending                   # recorded by the lead in RUN.md step 0, then committed
+  loudness: {measure: rms_dbfs_whole_clip, target_dbfs: -14.0}   # NaVLA2's stated level; its measure is not stated
+  loop: true                            # never stops, also not on arrival
+  start_offset: seeded_uniform_first_step   # SoundSpaces 2.0: randint(sr * STEP_TIME); here default_rng(seed + episode index)
+
+rlr:
+  sample_rate_hz: 44100                 # library default; also the MIT KEMAR file's rate, so no HRTF resampling
+  overrides:                            # SoundSpaces 2.0 continuous_simulator.py lines 115 to 126 at 287184f
+    transmission: true
+    indirectRayCount: 500
+    temporalCoherence: true
+    threadCount: 1
+    sampleRate: 44100
+  materials: false                      # enableMaterials = False: default material on every face, no material database
+  hrtf:
+    file: mit_kemar_normal_pinna.sofa
+    url: https://sofacoustics.org/data/database/mit/mit_kemar_normal_pinna.sofa
+    bytes: 1171764
+    sha256: e7035994f5fd754058424c061380ee92b1d5ed58fccef2887a4266916616acdf
+  preflight:                            # free field, direct sound only, real library and HRTF, before any episode
+    distance_m: 2.0
+    headings_deg: [0, 90, 180, 270]
+
+clips:
+  crossfade_s: 0.05                     # SoundSpaces 2.0 continuous_simulator.py crossfade(): int(0.05 * sr) samples
+  gain_db: 0.0
+  format: wav_float32
+
+direction_check:
+  onset_rel: 0.1                        # onset = first sample where either ear reaches 0.1 x the larger ear peak
+  window_pre_ms: 0.25
+  window_post_ms: 2.0
+  max_lag_ms: 1.0
+  los_end_margin_m: 0.01                # as route A check 1 (run_check1.py LOS_END_MARGIN_M)
+  min_lateral_deg: 20.0                 # PROPOSED (PLAN.md), flagged for the lead
+  bar_share_correct: 0.90
+  min_counted_steps_pooled: 200         # PROPOSED (PLAN.md), flagged for the lead
+  low_wall_share_scenes: [0001_839920, 0756_840012]   # route A check 1 wall share below 0.9 (tests.json of check1-run2)
+  # The lead confirms (or changes) the PROPOSED values above (min_lateral_deg, min_counted_steps_pooled) and
+  # episodes.full_set_n by a commit that sets this to the date of the confirmation; until then the run refuses.
+  proposals_confirmed_by_lead: pending
+
+run:
+  workers: 8                            # episodes rendered in parallel processes, each with threadCount 1
+  remote_root: /workspace/step2

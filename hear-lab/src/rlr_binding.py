@@ -1,9 +1,12 @@
 """ctypes binding to libRLRAudioPropagation.so, written from the C header of the pinned copy
 (rlr-audio-propagation 4fd446b, RLRAudioPropagationPkg/headers/RLRAudioPropagation.h).
 
-Covers only what check 1 needs: context with an explicit configuration, material database, one
-triangle-mesh object with a material category per face group, sources, mono and binaural listeners,
-simulate, read impulse responses, write WAV and metrics, and ray queries for the line-of-sight test.
+Written for route A check 1 (moved here from experiments/2026-11-20-route-a-checks/src/check1/ on
+2026-11-26 so that later experiments share it). Covers: context with an explicit configuration,
+material database, one triangle-mesh object with a material category per face group (or the library's
+default material for every face, as SoundSpaces 2.0 does with materials off), sources, mono and binaural
+listeners, moving a listener (for temporal coherence), a listener HRTF file, simulate, read impulse
+responses, write WAV and metrics, and ray queries for the line-of-sight test.
 
 Struct layouts follow the header exactly: every struct is inside "#pragma pack(push,1)", so every
 ctypes Structure here has _pack_ = 1. C enums are passed as 32-bit ints (RLRA_Error,
@@ -215,9 +218,15 @@ class RLRContext:
     def set_material_database(self, path: Path):
         _check(self.lib.RLRA_SetMaterialDatabaseJSON(self.ctx, str(path).encode()), "RLRA_SetMaterialDatabaseJSON")
 
-    def add_mesh_object(self, vertices: np.ndarray, faces: np.ndarray, face_category: Sequence[str]) -> int:
+    def add_mesh_object(self, vertices: np.ndarray, faces: np.ndarray,
+                        face_category: Optional[Sequence[str]]) -> int:
         """One object at the origin with identity orientation; faces grouped by category, each group
-        passed with RLRA_AddMeshIndices(verticesPerFace=3)."""
+        passed with RLRA_AddMeshIndices(verticesPerFace=3).
+
+        face_category=None passes every face in one RLRA_AddMeshIndices call with a NULL material category,
+        which gives the library's default material: what habitat-sim's AudioSensor::loadMesh does when
+        SoundSpaces 2.0 sets enableMaterials = False (branch RLRAudioPropagationUpdate, AudioSensor.cpp,
+        "Submit the index data with default material"). No material database is needed then."""
         _check(self.lib.RLRA_AddObject(self.ctx), "RLRA_AddObject")
         idx = int(self.lib.RLRA_GetObjectCount(self.ctx)) - 1
         _check(self.lib.RLRA_SetObjectPosition(self.ctx, idx, _f3([0, 0, 0])), "RLRA_SetObjectPosition")
@@ -226,10 +235,17 @@ class RLRContext:
         v = np.ascontiguousarray(vertices, dtype=np.float32).reshape(-1)
         _check(self.lib.RLRA_AddMeshVertices(self.ctx, v.ctypes.data_as(POINTER(c_float)), len(v) // 3),
                "RLRA_AddMeshVertices")
+        self._keep = [v]
+        if face_category is None:
+            ind = np.ascontiguousarray(np.asarray(faces), dtype=np.uint32).reshape(-1)
+            self._keep.append(ind)
+            _check(self.lib.RLRA_AddMeshIndices(self.ctx, ind.ctypes.data_as(POINTER(c_uint32)), len(ind), 3, None),
+                   "RLRA_AddMeshIndices(default material)")
+            _check(self.lib.RLRA_FinalizeObjectMesh(self.ctx, idx), "RLRA_FinalizeObjectMesh")
+            return idx
         cats: Dict[str, List[int]] = {}
         for i, c in enumerate(face_category):
             cats.setdefault(c, []).append(i)
-        self._keep = [v]
         for c, ix in cats.items():
             ind = np.ascontiguousarray(np.asarray(faces)[ix], dtype=np.uint32).reshape(-1)
             self._keep.append(ind)
@@ -264,6 +280,14 @@ class RLRContext:
         _check(self.lib.RLRA_SetListenerOrientationQuaternion(self.ctx, idx, q),
                "RLRA_SetListenerOrientationQuaternion")
         return idx
+
+    def set_listener_pose(self, listener: int, position, quat_wxyz) -> None:
+        """Move an existing listener (RLRA_SetListenerPosition and RLRA_SetListenerOrientationQuaternion on the
+        same index), so that temporalCoherence can reuse the previous step's result for this listener."""
+        _check(self.lib.RLRA_SetListenerPosition(self.ctx, listener, _f3(position)), "RLRA_SetListenerPosition")
+        q = (c_float * 4)(*[float(x) for x in quat_wxyz])
+        _check(self.lib.RLRA_SetListenerOrientationQuaternion(self.ctx, listener, q),
+               "RLRA_SetListenerOrientationQuaternion")
 
     def set_listener_hrtf(self, listener: int, path) -> None:
         """RLRA_SetListenerHRTF (header line 342): call after add_listener; a ".sofa" path selects an AES SOFA
