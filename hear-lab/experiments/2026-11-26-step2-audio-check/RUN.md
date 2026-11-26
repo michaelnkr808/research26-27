@@ -29,7 +29,7 @@ The URL is `http` as the SoundSpaces README gives it (not `https`); the sha256 c
     /opt/homebrew/bin/python3.11 -m unittest -v test_step2lib test_render_smoke
     cd .. && /opt/homebrew/bin/python3.11 src/pick_episodes.py --check     # the committed order, recomputed from the check 3 files
 
-**0c. The reference videos** for the alignment check are route A check 2's renders, `../2026-11-20-route-a-checks/results/check2-render/` (local only; `<scene>/<trajectory_id>.mp4`). Check they are there: `ls ../2026-11-20-route-a-checks/results/check2-render/*/*.mp4 | wc -l` (48).
+**0c. The reference videos** for the alignment check are route A check 2's renders, `../2026-11-20-route-a-checks/results/check2-render/render_train_seen_48/` (local only; `<scene>/<trajectory_id>.mp4`). Check they are there: `find ../2026-11-20-route-a-checks/results/check2-render/render_train_seen_48 -name "*.mp4" | wc -l` (48; counted on the Mac 2026-11-26).
 
 ## 1. Machine
 
@@ -45,7 +45,7 @@ One Linux x64 instance with one NVIDIA GPU whose driver supports CUDA 12.4 (rout
     rsync -av -e "ssh -p <port>" --exclude __pycache__ --exclude results --exclude env \
       hear-lab/experiments/2026-11-20-route-a-checks root@<host>:/workspace/step2/repo/hear-lab/experiments/    # for step 3e only
     rsync -av -e "ssh -p <port>" hear-lab/experiments/2026-11-26-step2-audio-check/results/inputs/telephone.wav root@<host>:/workspace/step2/inputs/
-    rsync -av -e "ssh -p <port>" hear-lab/experiments/2026-11-20-route-a-checks/results/check2-render/ root@<host>:/workspace/step2/reference_videos/
+    rsync -av -e "ssh -p <port>" hear-lab/experiments/2026-11-20-route-a-checks/results/check2-render/render_train_seen_48/ root@<host>:/workspace/step2/reference_videos/
 
 The Hugging Face token (InteriorGS is gated) goes to tmpfs only, from the Mac's saved token file, without entering a command line or a transcript (as rung 1):
 
