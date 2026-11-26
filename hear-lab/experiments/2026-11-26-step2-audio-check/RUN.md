@@ -33,7 +33,7 @@ The URL is `http` as the SoundSpaces README gives it (not `https`); the sha256 c
 
 ## 1. Machine
 
-One Linux x64 instance with one NVIDIA GPU whose driver supports CUDA 12.4 (route A check 3 ran GN0's renderer on an RTX 3090), Ubuntu 22.04 (glibc 2.35; the RLR library ran there in route A), image `nvidia/cuda:12.4.1-devel-ubuntu22.04` or one with conda, at least 16 CPU cores for the audio workers, and about 60 GB of disk (the scenes of the batch, two conda environments, the impulse responses). On-demand. The GPU is used only by the pose export; the audio is CPU work.
+One Linux x64 instance with one NVIDIA GPU whose driver supports CUDA 12.4 (route A check 3 ran GN0's renderer on an RTX 3090), Ubuntu 22.04 (glibc 2.35; the RLR library ran there in route A), image `nvidia/cuda:12.4.1-devel-ubuntu22.04` or one with conda, at least 16 CPU cores for the audio workers, at least 32 GB of RAM (each worker holds one episode's impulse responses, about 0.4 MB per step, up to a few hundred MB for the longest paths), and about 60 GB of disk (the scenes of the batch, two conda environments, the impulse responses). On-demand. The GPU is used only by the pose export; the audio is CPU work.
 
 ## 2. Upload the code, the inputs and the token (from the Mac)
 

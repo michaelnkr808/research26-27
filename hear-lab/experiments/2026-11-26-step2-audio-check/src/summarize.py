@@ -5,7 +5,8 @@ Reads <run>/episode_records.jsonl (render_audio.py) and writes, into the same fo
   summary.json         pooled tally and the verdict against the bar, per episode, per scene, visible and not
                        visible starts, the route A low wall-share scenes if any are in the set, timing and cost
   episode_tallies.csv  one row per episode: ids, counts, shares, timing (no coordinates, labels or boxes)
-Both are committed. The verdict is computed only from counted steps; occluded steps are reported with no bar.
+Both are committed. The verdict is computed only from counted steps; occluded steps are reported with no bar. If
+any episode the run was asked for (run_config.json episode_ids) has no record, the verdict is INCOMPLETE.
 
   python3.11 src/summarize.py --run-dir results/<run> [--usd-per-hour X]
 """
@@ -45,9 +46,14 @@ def pool(records) -> dict:
     return add(t, {})
 
 
-def summarize(cfg: dict, records: list, usd_per_hour=None, wall_s=None) -> dict:
+def summarize(cfg: dict, records: list, usd_per_hour=None, wall_s=None, expected_ids=None) -> dict:
+    """expected_ids: the episode ids the run was asked for (run_config.json). If any of them has no record (a
+    failed episode), the verdict is INCOMPLETE: a pass or fail is given only for the whole planned batch."""
     dc = cfg["direction_check"]
     pooled = pool(records)
+    got = [r["episode_id"] for r in records]
+    missing = sorted(set(expected_ids) - set(got)) if expected_ids is not None else []
+    extra = sorted(set(got) - set(expected_ids)) if expected_ids is not None else []
     by_scene = defaultdict(list)
     for r in records:
         by_scene[r["scene"]].append(r)
@@ -57,7 +63,11 @@ def summarize(cfg: dict, records: list, usd_per_hour=None, wall_s=None) -> dict:
                 "min_lateral_deg": dc["min_lateral_deg"], "counted": "line of sight and |lateral angle| >= min_lateral_deg"},
         "n_episodes": len(records),
         "pooled": pooled,
-        "verdict": s2.verdict(pooled, float(dc["bar_share_correct"]), int(dc["min_counted_steps_pooled"])),
+        "verdict": ("INCOMPLETE" if missing or extra or expected_ids is None
+                    else s2.verdict(pooled, float(dc["bar_share_correct"]), int(dc["min_counted_steps_pooled"]))),
+        "episodes_expected": None if expected_ids is None else len(expected_ids),
+        "episodes_missing": missing,
+        "episodes_unexpected": extra,
         "visible_starts": pool([r for r in records if r["visible_start"]]),
         "not_visible_starts": pool([r for r in records if not r["visible_start"]]),
         "per_scene": {s: dict(pool(v), n_episodes=len(v)) for s, v in sorted(by_scene.items())},
@@ -112,11 +122,16 @@ def main(argv=None) -> int:
     cfg = yaml.safe_load(a.config.read_text(encoding="utf-8"))
     recs = [json.loads(l) for l in (a.run_dir / "episode_records.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
     timing = json.loads((a.run_dir / "timing.json").read_text(encoding="utf-8")) if (a.run_dir / "timing.json").exists() else {}
-    out = summarize(cfg, recs, a.usd_per_hour, timing.get("wall_s_all_episodes"))
+    rc_path = a.run_dir / "run_config.json"
+    expected = json.loads(rc_path.read_text(encoding="utf-8"))["episode_ids"] if rc_path.exists() else None
+    out = summarize(cfg, recs, a.usd_per_hour, timing.get("wall_s_all_episodes"), expected)
     out["failed_episodes"] = timing.get("failed", {})
     (a.run_dir / "summary.json").write_text(json.dumps(out, indent=2), encoding="utf-8")
     write_csv(recs, a.run_dir / "episode_tallies.csv")
     p = out["pooled"]
+    if out["verdict"] == "INCOMPLETE":
+        print(f"verdict INCOMPLETE: missing {out['episodes_missing']}, unexpected {out['episodes_unexpected']}"
+              + ("" if expected is not None else " (no run_config.json, so the planned episode set is unknown)"))
     print(f"verdict {out['verdict']}: {p['n_correct']} of {p['n_counted']} counted steps have the correct sign "
           f"(bar {cfg['direction_check']['bar_share_correct']}); {p['n_occluded']} occluded steps reported, no bar")
     return 0

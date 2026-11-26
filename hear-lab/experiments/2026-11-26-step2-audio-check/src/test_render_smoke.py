@@ -183,6 +183,7 @@ class RenderSmoke(unittest.TestCase):
                 self.assertEqual(np.load(out / "episodes" / eid / "brirs.npy").shape[0], 25)
                 (out / "episode_records.jsonl").write_text(json.dumps(rec) + "\n")
                 (out / "timing.json").write_text(json.dumps({"wall_s_all_episodes": 3.0, "failed": {}}))
+                (out / "run_config.json").write_text(json.dumps({"episode_ids": [eid]}))
                 self.assertEqual(sm.main(["--run-dir", str(out), "--usd-per-hour", "0.2"]), 0)
                 summ = json.loads((out / "summary.json").read_text())
                 self.assertEqual(summ["verdict"], "TOO_FEW")                 # far fewer than 200 counted steps

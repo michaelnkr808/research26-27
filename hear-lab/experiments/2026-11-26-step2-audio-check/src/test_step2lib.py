@@ -416,9 +416,13 @@ class TallyAndBar(unittest.TestCase):
                      n_counted=150, n_correct=140, share_correct=140 / 150, occluded_share_correct=None),
                 dict(base, episode_id="0001_839920_5", scene="0001_839920", order_position=1, visible_start=False,
                      n_steps=10, n_counted=60, n_correct=50, share_correct=50 / 60, occluded_share_correct=None)]
-        out = sm.summarize(cfg, recs, usd_per_hour=0.5, wall_s=36.0)
+        out = sm.summarize(cfg, recs, usd_per_hour=0.5, wall_s=36.0, expected_ids=["A_1_1", "0001_839920_5"])
         self.assertEqual(out["pooled"]["n_counted"], 210)
         self.assertEqual(out["verdict"], "PASS")           # 190 / 210 = 0.905
+        part = sm.summarize(cfg, recs, expected_ids=["A_1_1", "0001_839920_5", "B_2_9"])
+        self.assertEqual(part["verdict"], "INCOMPLETE")    # a failed episode: no pass or fail for the batch
+        self.assertEqual(part["episodes_missing"], ["B_2_9"])
+        self.assertEqual(sm.summarize(cfg, recs)["verdict"], "INCOMPLETE")   # planned set unknown
         self.assertEqual(out["low_wall_share_scenes_in_set"], ["0001_839920"])
         self.assertEqual(out["low_wall_share_scenes"]["n_counted"], 60)
         self.assertEqual(out["visible_starts"]["n_correct"], 140)
