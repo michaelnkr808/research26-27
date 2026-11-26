@@ -4,7 +4,9 @@ Run from this folder:  /opt/homebrew/bin/python3.11 -m unittest -v test_step2lib
 
 Covers: the side sign of the interaural time difference on synthetic two-ear responses with KEMAR-like delays
 (left ear first for a source on the listener's left), several headings, both sides; the azimuth and heading
-convention against the scene frame (InteriorGS x = right, y = back, z = up), at both ends; the RLR listener
+convention against the scene frame (right-handed, z up: looking along +y, +x is on the right), at both ends, and
+through the renderer's look-at rule (a point on the audio's left lands on the image's left half); the heading gate
+(camera forward against the direction of travel, and a quaternion read in the wrong order is caught); the RLR listener
 quaternion; the counting rule; the one-channel downmix; the looping and the clip synthesis; the loudness
 normalisation; the episode pick (balance, mirrored exclusion, seed); the tallies and the bar; the pose export
 record maths; the summary and the manifest.
@@ -134,7 +136,7 @@ class SideSign(unittest.TestCase):
 
 
 class Frames(unittest.TestCase):
-    """InteriorGS frame: x = right, y = back, z = up (right-handed). Both ends of every axis."""
+    """InteriorGS frame: right-handed, z up; a viewer looking along +y has +x on the right. Both ends of every axis."""
 
     def side(self, heading, src, eye=(0.0, 0.0, 1.3)):
         fwd = np.array([math.cos(math.radians(heading)), math.sin(math.radians(heading)), 0.0])
@@ -212,6 +214,83 @@ class Frames(unittest.TestCase):
             world_left_point = np.array([1.0, 2.0, 1.3]) + 2.0 * np.array([-math.sin(math.radians(yaw)), math.cos(math.radians(yaw)), 0])
             d = s2.source_direction(rec["gs_eye"], rec["gs_forward"], to_gs(world_left_point))
             self.assertEqual(d["true_side"], s2.LEFT)
+
+
+class CameraAndHeading(unittest.TestCase):
+    """PR #95 review, finding 1: the audio's left must be the picture's left, and the camera forward must follow the
+    path, whatever format the collector's rotations are in."""
+
+    def test_left_point_lands_on_the_left_half_of_the_image(self):
+        import c3lib
+        intr = c3lib.camera_intrinsics(480, 360, 70)      # GN-Bench train_seen RGB sensor
+        eye = np.array([1.0, -2.0, 1.3])
+        for h in range(0, 360, 15):
+            f = np.array([math.cos(math.radians(h)), math.sin(math.radians(h)), 0.0])
+            _f, left, right, _u = s2.listener_axes(f)
+            view = c3lib.look_at_view(eye, eye + f)          # copy of gsplat_renderer._build_look_at_matrix
+            for vec, on_left in ((left, True), (right, False)):
+                _cam, u, _v = c3lib.project_points((eye + 2 * f + vec)[None, :], view, intr)
+                self.assertEqual(float(u[0]) < intr["cx"], on_left, (h, on_left, float(u[0])))
+
+    def _path(self, n=40, step=0.05):
+        return [np.array([1.0 + k * step, 2.0, 1.3]) for k in range(n)]
+
+    def test_gate_passes_forward_along_the_path(self):
+        import export_poses as ep
+        eyes = self._path()
+        g = ep.heading_gate(eyes, [[1.0, 0.0, 0.0]] * len(eyes), 0.5, 45.0, 5)
+        self.assertTrue(g["ok"])
+        self.assertEqual(g["n_gated"], len(eyes) - 5)
+        self.assertEqual(g["n_start_blend_skipped"], 5)
+        self.assertLess(g["max_angle_deg"], 1e-6)
+
+    def test_gate_skips_start_blend_and_fails_a_sideways_camera(self):
+        import export_poses as ep
+        eyes = self._path()
+        fw = [[0.0, 1.0, 0.0]] * 5 + [[1.0, 0.0, 0.0]] * (len(eyes) - 5)   # start heading sideways: allowed
+        self.assertTrue(ep.heading_gate(eyes, fw, 0.5, 45.0, 5)["ok"])
+        fw = [[1.0, 0.0, 0.0]] * 20 + [[0.0, 1.0, 0.0]] + [[1.0, 0.0, 0.0]] * (len(eyes) - 21)
+        g = ep.heading_gate(eyes, fw, 0.5, 45.0, 5)
+        self.assertFalse(g["ok"])
+        self.assertEqual(g["n_over_limit"], 1)
+        self.assertAlmostEqual(g["max_angle_deg"], 90.0)
+
+    def test_gate_last_frame_and_not_moving(self):
+        import export_poses as ep
+        eyes = self._path(10) + [self._path(10)[-1]]       # a repeated last point: no motion there
+        fw = [[1.0, 0.0, 0.0]] * len(eyes)
+        g = ep.heading_gate(eyes, fw, 0.5, 45.0, 0)
+        self.assertTrue(g["ok"])
+        self.assertEqual(g["n_not_moving"], 1)
+        self.assertIsNone(g["angles_deg"][-1])
+        self.assertAlmostEqual(g["angles_deg"][-2], 0.0)   # second to last: lookahead clamped, uses the last step
+
+    def test_gate_allows_a_smoothed_corner(self):
+        import export_poses as ep
+        eyes = [np.array([k * 0.05, 0.0, 1.3]) for k in range(30)] + [np.array([1.45, (k + 1) * 0.05, 1.3]) for k in range(30)]
+        # heading as the collector computes it: towards the point 0.5 m ahead (before its yaw smoothing)
+        e = np.array(eyes)
+        fw = []
+        for k in range(len(e)):
+            j = min(k + 10, len(e) - 1)
+            d = e[j] - e[k] if j > k else e[k] - e[k - 1]
+            fw.append(d)
+        self.assertTrue(ep.heading_gate(eyes, fw, 0.5, 45.0, 5)["ok"])
+
+    def test_wrong_quaternion_order_is_caught(self):
+        import export_poses as ep
+        from scipy.spatial.transform import Rotation as R
+        yaw = 60.0
+        u = np.array([math.cos(math.radians(yaw)), math.sin(math.radians(yaw)), 0.0])
+        eyes = [np.array([1.0, 2.0, 1.3]) + 0.05 * k * u for k in range(40)]   # a path heading 60 degrees
+        q_xyzw = R.from_euler("z", yaw, degrees=True).as_quat()               # scipy order, as frame_records assumes
+        recs = ep.frame_records(eyes, [q_xyzw] * len(eyes), lambda p: np.asarray(p, float))
+        self.assertTrue(ep.heading_gate([r["gs_eye"] for r in recs], [r["gs_forward"] for r in recs], 0.5, 45.0, 5)["ok"])
+        q_wxyz = [q_xyzw[3], q_xyzw[0], q_xyzw[1], q_xyzw[2]]                 # the same rotation in w x y z order
+        recs = ep.frame_records(eyes, [q_wxyz] * len(eyes), lambda p: np.asarray(p, float))
+        g = ep.heading_gate([r["gs_eye"] for r in recs], [r["gs_forward"] for r in recs], 0.5, 45.0, 5)
+        self.assertFalse(g["ok"])                                             # read as x y z w, it points elsewhere
+        self.assertGreater(g["max_angle_deg"], 45.0)
 
 
 class Signals(unittest.TestCase):
@@ -372,7 +451,8 @@ class EpisodePick(unittest.TestCase):
         ids = text.split()
         self.assertEqual(len(ids), cfg["episodes"]["order_length"])
         self.assertEqual(len(set(ids)), len(ids))
-        self.assertTrue(all(cfg["episodes"]["batch1_n"] % 2 == 0 and cfg["episodes"]["full_set_n"] % 2 == 0 for _ in [0]))
+        self.assertEqual(cfg["episodes"]["batch1_n"] % 2, 0)       # even prefixes are balanced
+        self.assertEqual(cfg["episodes"]["full_set_n"] % 2, 0)
 
 
 class RunGate(unittest.TestCase):
@@ -381,8 +461,8 @@ class RunGate(unittest.TestCase):
         import yaml
         cfg = yaml.safe_load((HERE.parent / "config.yaml").read_text())
         pend = ra.pending_values(cfg)
-        for k in ("sound.archive_sha256", "sound.wav_sha256", "direction_check.proposals_confirmed_by_lead"):
-            self.assertIn(k, pend)
+        # the sound hashes were filled in from the lead's download; the lead's confirmation is still pending
+        self.assertEqual(pend, ["direction_check.proposals_confirmed_by_lead"])
         self.assertEqual(ra.pending_values({"a": {"b": "x"}, "c": 1}), [])
         with tempfile.TemporaryDirectory() as td:
             rc = ra.main(["--n", "1", "--poses-dir", td, "--scenes-root", td, "--rlr-root", td, "--hrtf", td,

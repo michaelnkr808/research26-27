@@ -147,6 +147,10 @@ def render_episode(job: dict) -> dict:
         raise RuntimeError(f"{eid}: pose export not usable (error {p['error']}, frames {p['n_frames']}, poses {p['n_poses']})")
     if abs(float(p["listener_height_m"]) - float(cfg["poses"]["listener_height_m_expected"])) > 1e-5:
         raise RuntimeError(f"{eid}: listener height {p['listener_height_m']}")
+    bad_z = [fr["frame"] for fr in p["frames"]
+             if abs(float(fr["gs_eye"][2]) - float(cfg["poses"]["listener_height_m_expected"])) > 1e-4]
+    if bad_z:
+        raise RuntimeError(f"{eid}: ear height differs from {cfg['poses']['listener_height_m_expected']} m on frames {bad_z[:5]}")
     fps = float(p["video_fps"])
     N = sr / fps
     if abs(N - round(N)) > 1e-9:

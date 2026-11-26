@@ -39,6 +39,14 @@ InteriorGS Terms of Use (below) forbid redistributing the downloaded data, in wh
 - Access date: 2026-11-20 (check 1 HRTF follow-up, rental 3). Not stored in the repo.
 - License: **license not verified.** The experiment lead found no formal license on 2026-11-20; MIT's page says the measurements are "made available to the research community". Cite Gardner and Martin 1994.
 - Filtering: none.
+- Also used by Step 2 (`experiments/2026-11-26-step2-audio-check/`, `config.yaml` `rlr.hrtf`, same file and sha256; downloaded on the rented machine for each run). Fine inside the lab; the license is to be settled before any audio rendered with it leaves the lab.
+
+### SoundSpaces sounds (telephone ring)
+- Source: `http://dl.fbaipublicfiles.com/SoundSpaces/sounds.tar.xz`, the download named in `soundspaces/README.md` (line 14) at SoundSpaces `287184fd7067a0385558492716355c54875500ee`. File used: `sounds/1s_all/telephone.wav`, the AudioGoal default sound.
+- Version: archive sha256 `84152771a1a961b8461c397ef8b825c2727bba1b627aa2a61e26a734d352d8f8` (671 MB; a plain GNU tar despite the `.xz` name); `telephone.wav` sha256 `3522b2ebadc2893d09bcff02755bee6471029579897eec750745a711673fe9bd`, 1 channel, 44,100 Hz, 32-bit float, 1.000 s.
+- Access date: 2026-11-26 (downloaded by the lead on the Mac for Step 2). Kept in the gitignored `experiments/2026-11-26-step2-audio-check/results/inputs/`, not in the repo.
+- License: SoundSpaces describes its 102 sounds as "copyright-free" (`soundspaces/README.md`); no separate license for the sounds was read. The SoundSpaces code is CC-BY-4.0 (code pins below).
+- Filtering: the one file; Step 2 loops it and normalises its RMS to -14 dBFS (`config.yaml` `sound`).
 
 ## Model checkpoints
 

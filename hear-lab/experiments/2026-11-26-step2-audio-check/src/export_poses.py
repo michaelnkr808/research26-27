@@ -16,7 +16,13 @@ Outputs under --out (all local only: they hold scene coordinates and renders):
                             ins_id, goal point, occupancy metadata, timing
   videos/<scene>/<trajectory_id>.mp4   the released renderer's video of the same frames
   export_meta.json          config, renderer settings, GN0 and GN-Bench-Tools commits, the ids, timing
-  alignment.json            (with --alignment-n) frame counts and pixel differences against reference videos
+  alignment.json            (with --alignment-n) frame counts and pixel differences against reference videos, gated
+                            by config poses.alignment (PROPOSED thresholds, PLAN.md)
+
+Per episode it also fails (error recorded, exit 1) when the renderer's camera calls do not match the frames one to
+one, when the pose computed from the collector's rotations differs from what the renderer received, when a moving
+frame's camera forward is more than poses.heading_gate.max_deg from the direction of travel (heading_gate()), or
+when an ear height differs from poses.listener_height_m_expected.
 
   python export_poses.py --step2-config <exp>/config.yaml --order <exp>/episode_order.txt --n 12 \
       --out /workspace/step2/out/batch1-v1/export [--alignment-n 2 --reference-videos DIR]
@@ -59,6 +65,57 @@ def frame_records(positions, rotations, to_gs) -> list:
             "gs_forward": (tgt - eye).tolist(),
         })
     return out
+
+
+def heading_gate(eyes, forwards, lookahead_m: float, max_deg: float, skip_first: int) -> dict:
+    """Check every frame's camera forward against the direction of travel along the path (review of PR #95, 1).
+
+    Direction of travel at frame k: from eye k to the point lookahead_m further along the polyline of eyes
+    (clamped at the end), the rule the released collector uses for its yaw (_path_yaws); at the last frame, where
+    no path is left ahead, the step from frame k - 1. Both horizontal. A frame is gated when it moves: the path
+    ahead (or the last step) is at least 1 mm long. Not gated: the first skip_first frames, whose yaw the collector
+    blends with the episode's start heading on purpose (smoothed[0] is the start yaw, and the yaw window spreads
+    it over the next frames), and frames that do not move. The collector resamples the path every 0.05 m and drops
+    repeated points, so it has no turning-in-place frames; any frame without motion is counted in
+    n_not_moving (expected 0) and left out of the gate. Returns per-frame angles (None when not gated) and the
+    counts; ok is False when any gated frame is more than max_deg off."""
+    e = np.asarray(eyes, dtype=np.float64).reshape(-1, 3)[:, :2]
+    f = np.asarray(forwards, dtype=np.float64).reshape(-1, 3)[:, :2]
+    n = len(e)
+    seg = np.linalg.norm(np.diff(e, axis=0), axis=1) if n > 1 else np.zeros(0)
+    cum = np.concatenate([[0.0], np.cumsum(seg)])
+    angles, n_gated, n_bad, n_not_moving, worst = [], 0, 0, 0, 0.0
+    for k in range(n):
+        if k < skip_first:
+            angles.append(None)
+            continue
+        s = min(cum[-1], cum[k] + lookahead_m)
+        if s > cum[k] + 1e-3:
+            j = int(np.searchsorted(cum, s, side="right") - 1)
+            j = max(0, min(j, n - 2))
+            a = (s - cum[j]) / max(cum[j + 1] - cum[j], 1e-12)
+            d = e[j] * (1 - a) + e[j + 1] * a - e[k]
+        elif k > 0 and seg[k - 1] >= 1e-3:
+            d = e[k] - e[k - 1]
+        else:
+            n_not_moving += 1
+            angles.append(None)
+            continue
+        fk = f[k]
+        if np.linalg.norm(fk) < 1e-9:
+            n_gated += 1
+            n_bad += 1
+            angles.append(180.0)
+            continue
+        cosang = float(fk @ d / (np.linalg.norm(fk) * np.linalg.norm(d)))
+        ang = math.degrees(math.acos(max(-1.0, min(1.0, cosang))))
+        angles.append(ang)
+        n_gated += 1
+        n_bad += int(ang > max_deg)
+        worst = max(worst, ang)
+    return {"angles_deg": angles, "n_frames": n, "n_gated": n_gated, "n_over_limit": n_bad,
+            "n_not_moving": n_not_moving, "n_start_blend_skipped": min(skip_first, n), "max_angle_deg": worst,
+            "max_deg": max_deg, "ok": n_bad == 0}
 
 
 def git_head(path: Path) -> str:
@@ -141,12 +198,33 @@ def main(argv=None) -> int:
     from GN_Bench.sims.GN_Bench_simulator import GN_Bench_simulator as gsim
     from gn0.collection import TrajectoryVideoCollector
 
+    # Record the eye and look-at target the renderer actually receives: GNBenchSim._render_observations calls the
+    # module-level render_camera_gsplat(gaussians, gs_pos, gs_target, ...) (GN_Bench_simulator.py lines 979 to 990 at
+    # 0ce8367; train_seen has one RGB sensor, so one call per frame). The wrapper passes every argument through
+    # unchanged and only keeps copies of gs_pos and gs_target while the collector renders.
+    renderer_calls = []
+    _orig_render = gsim.render_camera_gsplat
+
+    def _recording_render(gaussians, gs_pos, gs_target, *args, **kwargs):
+        if renderer_calls is not None and getattr(_recording_render, "active", False):
+            renderer_calls.append((np.asarray(gs_pos, dtype=np.float64).copy(),
+                                   np.asarray(gs_target, dtype=np.float64).copy()))
+        return _orig_render(gaussians, gs_pos, gs_target, *args, **kwargs)
+
+    gsim.render_camera_gsplat = _recording_render
+
     class RecordingCollector(TrajectoryVideoCollector):
-        """The released collector; _render_poses is wrapped only to keep the poses it renders."""
+        """The released collector; _render_poses is wrapped only to keep the poses it renders and to switch the
+        renderer-input recording on for exactly those renders."""
 
         def _render_poses(self, *, sim, positions, rotations):
             self.recorded = (list(positions), list(rotations))
-            return super()._render_poses(sim=sim, positions=positions, rotations=rotations)
+            renderer_calls.clear()
+            _recording_render.active = True
+            try:
+                return super()._render_poses(sim=sim, positions=positions, rotations=rotations)
+            finally:
+                _recording_render.active = False
 
     a.out.mkdir(parents=True)
     (a.out / "poses").mkdir()
@@ -182,6 +260,36 @@ def main(argv=None) -> int:
         rec.recorded = ([], [])
         to_gs = lambda p: gsim.transform_from_world_to_GS(p, sim.affine, sim.meta)  # noqa: E731
         frames = frame_records(positions, rotations, to_gs)
+        # The listener pose is taken from what the renderer received (eye, and target - eye as forward); the pose
+        # computed from the collector's rotations is kept beside it as a cross-check of the quaternion format.
+        calls = list(renderer_calls)
+        renderer_check = {"n_calls": len(calls), "n_frames": len(frames)}
+        if len(calls) == len(frames) and frames:
+            d_eye = max(float(np.abs(c[0] - np.asarray(fr["gs_eye"])).max()) for c, fr in zip(calls, frames))
+            d_fwd = max(float(np.abs((c[1] - c[0]) - np.asarray(fr["gs_forward"])).max()) for c, fr in zip(calls, frames))
+            renderer_check.update({"max_abs_diff_eye": d_eye, "max_abs_diff_forward": d_fwd})
+            for c, fr in zip(calls, frames):
+                fr["gs_eye_from_rotation"], fr["gs_forward_from_rotation"] = fr["gs_eye"], fr["gs_forward"]
+                fr["gs_eye"], fr["gs_forward"] = c[0].tolist(), (c[1] - c[0]).tolist()
+                fr["renderer_gs_target"] = c[1].tolist()
+            renderer_check["ok"] = d_eye < 1e-3 and d_fwd < 1e-3
+        else:
+            renderer_check["ok"] = False
+            if err is None:
+                err = f"renderer saw {len(calls)} camera calls for {len(frames)} frames"
+        gate = heading_gate([fr["gs_eye"] for fr in frames], [fr["gs_forward"] for fr in frames],
+                            float(pcfg["heading_gate"]["lookahead_m"]), float(pcfg["heading_gate"]["max_deg"]),
+                            int(settings["yaw_smooth_window"]) // 2 + 1)
+        if err is None and not gate["ok"]:
+            err = (f"heading gate: {gate['n_over_limit']} of {gate['n_gated']} moving frames have the camera forward "
+                   f"more than {gate['max_deg']} degrees from the direction of travel (max {gate['max_angle_deg']:.1f})")
+        if err is None and not renderer_check["ok"]:
+            err = f"renderer input differs from the pose computed from the collector's rotations: {renderer_check}"
+        if err is None:
+            bad_z = [fr["frame"] for fr in frames
+                     if abs(float(fr["gs_eye"][2]) - float(pcfg["listener_height_m_expected"])) > 1e-4]
+            if bad_z:
+                err = f"ear height differs from {pcfg['listener_height_m_expected']} m on frames {bad_z[:5]}"
         goal = ep.goal_info["world"]
         goal_gs = np.asarray(to_gs(np.array([goal["x"], goal["y"], 0.0], dtype=np.float32)), dtype=np.float64)
         out = {
@@ -191,11 +299,15 @@ def main(argv=None) -> int:
             "n_frames": n_frames, "n_poses": len(frames), "video": None if video_path is None else str(video_path),
             "error": err, "affine": [float(x) for x in sim.affine],
             "occupancy_meta": {k: sim.meta[k] for k in ("left", "top", "scale", "width", "height")},
-            "reset_s": t_reset, "render_s": t_render, "frames": frames,
+            "reset_s": t_reset, "render_s": t_render, "renderer_check": renderer_check,
+            "heading_gate": {k: v for k, v in gate.items() if k != "angles_deg"}, "frames": frames,
         }
+        for fr, ang in zip(frames, gate["angles_deg"]):
+            fr["heading_vs_travel_deg"] = ang
         (a.out / "poses" / f"{eid}.json").write_text(json.dumps(out, default=float), encoding="utf-8")
         meta["episodes"][eid] = {"n_frames": n_frames, "n_poses": len(frames), "error": err,
-                                 "reset_s": t_reset, "render_s": t_render}
+                                 "reset_s": t_reset, "render_s": t_render, "renderer_check": renderer_check,
+                                 "heading_gate": out["heading_gate"]}
         print(f"[export] {eid}: {len(frames)} poses, {n_frames} frames, render {t_render:.1f} s"
               + (f", ERROR {err}" if err else ""), flush=True)
         done.add(eid)
@@ -214,10 +326,15 @@ def main(argv=None) -> int:
                 continue
             fr, fn = video_frames(ref), video_frames(Path(p["video"]))
             mad = [float(np.abs(x - y).mean()) for x, y in zip(fr, fn)]
+            thr = pcfg["alignment"]
+            med = float(np.median(mad)) if mad else None
+            mx = max(mad) if mad else None
             al[eid] = {"reference_frames": len(fr), "new_frames": len(fn), "poses": p["n_poses"],
-                       "pass": len(fr) == len(fn) == p["n_poses"],
-                       "mean_abs_pixel_diff_max": max(mad) if mad else None,
-                       "mean_abs_pixel_diff_median": float(np.median(mad)) if mad else None}
+                       "frame_counts_equal": len(fr) == len(fn) == p["n_poses"],
+                       "mean_abs_pixel_diff_max": mx, "mean_abs_pixel_diff_median": med,
+                       "thresholds": thr,
+                       "pass": (len(fr) == len(fn) == p["n_poses"] and med is not None
+                                and med <= float(thr["max_median_frame_mad"]) and mx <= float(thr["max_frame_mad"]))}
         (a.out / "alignment.json").write_text(json.dumps(al, indent=2), encoding="utf-8")
         print("[alignment] " + json.dumps(al), flush=True)
         if not all(v["pass"] for v in al.values()):

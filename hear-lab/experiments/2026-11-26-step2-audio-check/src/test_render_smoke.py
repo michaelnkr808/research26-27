@@ -181,6 +181,13 @@ class RenderSmoke(unittest.TestCase):
                 self.assertEqual(two.shape, (25 * sr // 10, 2))
                 np.testing.assert_allclose(one, two.mean(axis=1), atol=1e-6)
                 self.assertEqual(np.load(out / "episodes" / eid / "brirs.npy").shape[0], 25)
+                # every frame's ear height is checked, not only the first (PR #95 review, finding 4)
+                bad = json.loads((td / "export" / "poses" / f"{eid}.json").read_text())
+                bad["frames"][7]["gs_eye"][2] = 1.6
+                (td / "export" / "poses" / "SCN_000001_43.json").write_text(json.dumps(dict(bad, episode_id="SCN_000001_43")))
+                with self.assertRaises(RuntimeError):
+                    ra.render_episode(dict(job, episode_id="SCN_000001_43",
+                                           poses_file=str(td / "export" / "poses" / "SCN_000001_43.json")))
                 (out / "episode_records.jsonl").write_text(json.dumps(rec) + "\n")
                 (out / "timing.json").write_text(json.dumps({"wall_s_all_episodes": 3.0, "failed": {}}))
                 (out / "run_config.json").write_text(json.dumps({"episode_ids": [eid]}))

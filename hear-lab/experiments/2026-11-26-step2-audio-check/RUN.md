@@ -8,20 +8,20 @@ Placeholders: `<REPO>` the research26-27 main checkout on the Mac (not a worktre
 
 ## 0. On the Mac, before renting
 
-**0a. The telephone ring** (third-party file, not in git). The SoundSpaces sounds archive is about 13 MB (`soundspaces/README.md` at `287184f`). The file name inside it is the AudioGoal default, `telephone.wav` under `sounds/1s_all/` (README tree, lines 51 to 53); the listing below confirms it before anything is extracted.
+**0a. The telephone ring** (third-party file, not in git). Done by the lead on 2026-11-26; the hashes are in `config.yaml` (`sound.archive_sha256`, `sound.wav_sha256`). The file name is the AudioGoal default, `telephone.wav` under `sounds/1s_all/` (SoundSpaces README tree, lines 51 to 53, at `287184f`). The archive is 671 MB, not the 13 MB the README says, and it is a plain GNU tar despite the `.xz` name, so it is listed and extracted with `tar -tf` / `tar -xf` (no `-J`). To repeat or check it:
 
     mkdir -p <REPO>/hear-lab/experiments/2026-11-26-step2-audio-check/results/inputs/ss-sounds
     cd <REPO>/hear-lab/experiments/2026-11-26-step2-audio-check/results/inputs/ss-sounds
     curl -fL -o sounds.tar.xz http://dl.fbaipublicfiles.com/SoundSpaces/sounds.tar.xz
-    ls -l sounds.tar.xz && file sounds.tar.xz             # expect "XZ compressed data", about 13 MB
-    shasum -a 256 sounds.tar.xz                           # -> config.yaml sound.archive_sha256
-    tar -tJf sounds.tar.xz | grep -i telephone            # expect sounds/1s_all/telephone.wav; if not, stop and tell the lead
-    tar -xJf sounds.tar.xz sounds/1s_all/telephone.wav
-    file sounds/1s_all/telephone.wav                      # expect RIFF WAVE audio; note the rate and channels
-    shasum -a 256 sounds/1s_all/telephone.wav             # -> config.yaml sound.wav_sha256
+    ls -l sounds.tar.xz && file sounds.tar.xz             # about 671 MB, "POSIX tar archive (GNU)"
+    shasum -a 256 sounds.tar.xz                           # 84152771a1a961b8461c397ef8b825c2727bba1b627aa2a61e26a734d352d8f8
+    tar -tf sounds.tar.xz | grep -i telephone             # sounds/1s_all/telephone.wav
+    tar -xf sounds.tar.xz sounds/1s_all/telephone.wav
+    file sounds/1s_all/telephone.wav                      # RIFF WAVE, 1 channel, 44100 Hz, 32-bit float, 1.000 s
+    shasum -a 256 sounds/1s_all/telephone.wav             # 3522b2ebadc2893d09bcff02755bee6471029579897eec750745a711673fe9bd
     cp sounds/1s_all/telephone.wav ../telephone.wav
 
-The URL is `http` as the SoundSpaces README gives it (not `https`); the sha256 check is what makes the download trustworthy. Write the two hashes into `config.yaml` (`sound.archive_sha256`, `sound.wav_sha256`, replacing `pending`) and commit that before the run, together with the lead's confirmation of the PROPOSED values (`direction_check.proposals_confirmed_by_lead`, PLAN.md): `render_audio.py` refuses to start while any value is `pending`, and it checks the wav's sha256 on the machine. If the listing has no telephone file, or the wav is not 1 s long, stop and tell the lead (PLAN.md names this file). `results/` is gitignored except its allow list, so the archive and the wav stay out of git. Licence: SoundSpaces calls its 102 sounds "copyright-free"; the code is CC-BY-4.0 (`data/README.md`); no separate licence for the sounds was read.
+The URL is `http` as the SoundSpaces README gives it (not `https`); the sha256 check is what makes the download trustworthy, and `render_audio.py` checks the wav's sha256 again on the machine. Before the run, the lead's confirmation of the PROPOSED values is committed too (`direction_check.proposals_confirmed_by_lead`, PLAN.md): `render_audio.py` refuses to start while any value is `pending`. `results/` is gitignored except its allow list, so the archive and the wav stay out of git. Licence: `../../data/README.md`, "SoundSpaces sounds".
 
 **0b. Unit tests** (Mac interpreter with numpy, `/opt/homebrew/bin/python3.11`):
 
@@ -132,24 +132,40 @@ Any hash or `file` result that differs: stop and tell the lead. (`render_audio.p
 
 The alignment ids are printed by GN0's own episode order (`select_render_episodes(split, 0, 2)`); each must have a reference video `/workspace/step2/reference_videos/<scene>/<trajectory_id>.mp4` (route A check 2 rendered indices 0 to 47 of the same order). If the 429 rate limit of Hugging Face stops the loop, wait 5 minutes and run it again (it resumes).
 
-**3e. Unit tests on the machine**
+**3e. Unit tests on the machine** (both required; a failure stops the run and goes to the lead)
 
     conda activate step2audio
     cd $EXP/src && python -m unittest -v test_step2lib test_render_smoke 2>&1 | tail -3
-    conda deactivate
 
-Route A's check 1 local test on one downloaded scene, which exercises the shared code moved to `hear-lab/src/` on 2026-11-26 against real InteriorGS files (it could not run on the Mac, which no longer holds the check 1 scenes). It only filters the parquet by the scene, so the train_seen parquet and a train_seen scene serve:
+Route A's check 1 local test on one downloaded scene, which exercises the shared code moved to `hear-lab/src/` on 2026-11-26 against real InteriorGS files (it cannot run on the Mac, which no longer holds the check 1 scenes). It only filters the parquet by the scene, so the train_seen parquet and a train_seen scene serve. It runs in `step2audio`, which has pandas, pyarrow, pillow and pyyaml at route A's versions (`requirements-step2.txt`):
 
-    conda activate bae
     cd /workspace/step2/repo/hear-lab/experiments/2026-11-20-route-a-checks/src/check1
     S=$(head -1 /workspace/step2/scenes.txt)
     CHECK1_SCENE_DIR=/workspace/step2/GN0/data/scene_datasets/InteriorGS/$S \
     CHECK1_PARQUET=/workspace/step2/GN0/data/datasets/GN_Matrix/InteriorGS/InteriorGS_train_seen.parquet \
     CHECK1_RLR_ROOT=/workspace/step2/rlr-audio-propagation CHECK1_OUT=/workspace/step2/routea-test-out \
-    python -c "import pandas, PIL, yaml" && python -m unittest -v test_local 2>&1 | tail -5   # expect OK; a failure is a finding for the lead
+    python -m unittest -v test_local 2>&1 | tee /workspace/step2/out/<RUN>/env/routea-test-local.txt | tail -5   # must end in OK
     conda deactivate
 
-This check is optional: if `bae` lacks pandas, skip it and say so in LOG.md (do not install into `bae` after its package list was saved).
+**3f. SoundSpaces settings, read from the source** (for the lead to read in the log; nothing is run from it)
+
+    cd /workspace/step2
+    git clone https://github.com/facebookresearch/sound-spaces.git
+    git -C sound-spaces checkout 287184fd7067a0385558492716355c54875500ee
+    ( cd sound-spaces && git rev-parse HEAD
+      echo "== continuous_simulator.py 115-126: audio sensor (materials, threadCount, indirectRayCount, temporalCoherence, transmission)"
+      sed -n '115,126p' soundspaces/continuous_simulator.py
+      echo "== continuous_simulator.py 47-53: crossfade()"
+      sed -n '47,53p' soundspaces/continuous_simulator.py
+      echo "== continuous_simulator.py 341-344: source height offset, random start index"
+      sed -n '341,344p' soundspaces/continuous_simulator.py
+      echo "== ss_baselines/av_nav/config/default.py 116, 121, 127 and 219-222: STEP_TIME, SOURCE_SOUND_DIR, CROSSFADE"
+      sed -n '116p;121p;127p;219,222p' ss_baselines/av_nav/config/default.py
+      echo "== soundspaces/README.md 14 and 51-53: sounds download and folder"
+      sed -n '14p;51,53p' soundspaces/README.md
+    ) 2>&1 | tee /workspace/step2/out/<RUN>/env/soundspaces-settings-287184f.txt
+
+What to see (read through the GitHub API on 2026-11-26, not on the machine): `enableMaterials = False`, `threadCount = 1`, `indirectRayCount = 500`, `temporalCoherence = True`, `transmission = True`; `crossfade_samples = int(0.05 * sr)`; `STEP_TIME = 0.25` and `CROSSFADE = True` in the continuous branch. If any line differs from that, stop and tell the lead.
 
 ## 4. Pose export and videos (GPU, `bae` environment)
 
@@ -157,11 +173,14 @@ This check is optional: if `bae` lacks pandas, skip it and say so in LOG.md (do 
     python $EXP/src/export_poses.py --step2-config $EXP/config.yaml --order $EXP/episode_order.txt --n <N> \
       --alignment-n 2 --reference-videos /workspace/step2/reference_videos \
       --out /workspace/step2/out/<RUN>/export 2>&1 | tee /workspace/step2/out/<RUN>/export.log
-    echo "exit $?"
+    echo "exit ${PIPESTATUS[0]}"
     cat /workspace/step2/out/<RUN>/export/alignment.json
+    python -c "import json; m = json.load(open('/workspace/step2/out/<RUN>/export/export_meta.json')); [print(k, v['n_frames'], v['error'], v['heading_gate']['n_gated'], round(v['heading_gate']['max_angle_deg'], 1), v['renderer_check'].get('max_abs_diff_forward')) for k, v in m['episodes'].items()]"
     conda deactivate
 
-It stops if the renderer settings differ from `config.yaml` `poses.renderer_expected`, or if an id is not in the dataset. Exit 1 means an episode failed, a frame count differs from the pose count, or the alignment check failed (a frame count different from route A's video): stop and tell the lead. Watch `nvidia-smi` once a minute in: the export renders at roughly the speed route A check 2 did (48 episodes in about 5 minutes).
+It stops if the renderer settings differ from `config.yaml` `poses.renderer_expected`, or if an id is not in the dataset. Exit 1 means an episode failed: the renderer did not see one camera call per frame, the pose computed from the collector's rotations differs from what the renderer received, the heading gate failed (a moving frame's camera forward more than 45 degrees from the direction of travel), an ear height is not 1.3 m, a frame count differs from the pose count, or the alignment check failed. Stop and tell the lead.
+
+**The lead reads the alignment numbers before step 5 is run**, whatever the gate says: for each of the 2 alignment episodes, the frame counts (new render, route A's video, poses) and the median and largest per-frame mean absolute pixel difference against route A check 2's video, against the PROPOSED limits in `config.yaml` `poses.alignment`. Step 5 starts only after the lead says so. Watch `nvidia-smi` once a minute in: the export renders at roughly the speed route A check 2 did (48 episodes in about 5 minutes).
 
 ## 5. Audio, direction check, pictures, summary (CPU, `step2audio` environment)
 
@@ -170,7 +189,7 @@ It stops if the renderer settings differ from `config.yaml` `poses.renderer_expe
     REPO_COMMIT=<COMMIT> python src/render_audio.py --n <N> --poses-dir $R/export --scenes-root /workspace/step2/GN0/data/scene_datasets/InteriorGS \
       --rlr-root /workspace/step2/rlr-audio-propagation --hrtf /workspace/step2/hrtf/mit_kemar_normal_pinna.sofa \
       --sound /workspace/step2/inputs/telephone.wav --out $R/render --workers <W> 2>&1 | tee $R/render-console.log
-    echo "exit $?"
+    echo "exit ${PIPESTATUS[0]}"
 
 Exit 2: refused (a pending config value, an order or file hash mismatch); exit 3: the preflight failed (the free-field side sign was wrong at some heading; no episode was rendered); exit 1: some episode failed (listed in `timing.json`). In each case stop and tell the lead. The first lines printed are the 8 preflight cases, each with its ITD (about +0.7 ms for a left source, -0.7 ms for a right one, if the library behaves as in route A).
 

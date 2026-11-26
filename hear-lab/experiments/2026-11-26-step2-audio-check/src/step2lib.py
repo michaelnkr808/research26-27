@@ -4,8 +4,10 @@ Everything that decides a number in the direction check lives here, so it is uni
 (test_step2lib.py). The scripts that need the rented machine (export_poses.py, render_audio.py) call these.
 
 Frames and signs (PLAN.md, "Frames"):
-- All audio geometry is in the InteriorGS ("GS") frame: right-handed, x = right, y = back, z = up, metres
-  (InteriorGS dataset card). The scene mesh, the source (target box centre) and the listener are all in it.
+- All audio geometry is in the InteriorGS ("GS") frame: right-handed, z up, metres. Literally: a viewer looking
+  along +y has +x on the right; looking along -y, +x is on the left. (The dataset card's names "x right, y back"
+  are not relied on; the side rule is fixed by GN-Bench's look-at rule, image right = forward x up, and
+  test_step2lib.CameraAndHeading checks it through c3lib.look_at_view.) The scene mesh, the source (target box centre) and the listener are all in it.
   The listener pose of each step is the video camera's: eye = GN-Bench transform_from_world_to_GS(position),
   forward = transform_from_world_to_GS(position + world forward) - eye (exactly what GN-Bench's
   _render_observations does for the camera), horizontal part, normalised.

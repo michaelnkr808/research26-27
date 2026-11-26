@@ -16,7 +16,7 @@ Runs go to `results/<what>-v<N>/` in the main checkout. `results/.gitignore` ign
 
 ## Licences and terms to settle before audio leaves the lab
 - MIT KEMAR HRTF (`mit_kemar_normal_pinna.sofa`): the licence is **not verified**. MIT's KEMAR page says the measurements are "made available to the research community"; no formal licence was found (route A, 2026-11-20). Fine inside the lab; settle it before any rendered audio leaves the lab (a paper's supplementary audio, a released dataset). Cite Gardner and Martin 1994.
-- SoundSpaces telephone ring: SoundSpaces calls its sounds "copyright-free"; the SoundSpaces code is CC-BY-4.0. No licence file for the sounds themselves was read.
+- SoundSpaces telephone ring: SoundSpaces calls its sounds "copyright-free"; the SoundSpaces code is CC-BY-4.0. No licence file for the sounds themselves was read (`../../data/README.md`, "SoundSpaces sounds").
 - InteriorGS-derived outputs (clips, pictures): may appear only as paper figures with a citation (`../../data/README.md`).
 - RLR-Audio-Propagation is CC BY-NC 4.0 (`../../data/README.md`).
 
