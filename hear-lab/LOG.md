@@ -914,3 +914,22 @@ The lead then: "1. go tell the experiment window that 2. tell literature window 
 **Next:** the experiment session's Step 2 questions and time estimate in its window. The PI meeting is Thursday 2026-11-26.
 
 **Open questions:** whether a Step 2 first look fits before the meeting.
+
+## 2026-11-26 [agent, lead, planning] (status recap for the PI meeting; Step 2 PLAN choices taken in)
+**Did:**
+- The lead, 2026-11-26 (meeting day): "where does this research stand I'm a bit behind on what we've done here and I have a meeting with my PI today". Recapped from the files, nothing run: Step 1 reproduced; the route A checks (check 1 with the measured HRTF, check 2 training cost, check 3 visible starts); no experiment with audio has run; nothing landed in `hear-lab/` on main between 2026-11-24 and this entry, so there was no Step 2 first look for the meeting. Listed the open PI questions from `PLAN.md`.
+- Took in the experiment session's report (not checked by the planning lead; no experiment `PLAN.md` is on main yet): the lead approved all seven Step 2 recommendations in the experiment window on 2026-11-26. (1) Episodes from the GN-Bench train_seen sample of check 3, no test-set use, half visible and half not visible at the start, first batch about 12 episodes. (2) Source at the centre of the target object's label box (NaVLA2's convention), not the GN-Matrix goal point; sound a telephone ring looped for the whole episode, no stop on arrival (SoundSpaces and AVWM convention, PR #90). (3) One channel is the average of the two ears of the same two-ear render. (4) Direction check: per step, the sign of the time difference between the ears against the true side of the target, counted on steps with line of sight and the target clearly off-centre, proposed bar at least 9 in 10 correct; occluded steps reported without a bar; front and back not tested; clips and a top-down picture for the lead's own judgment. (5) The 39 possibly mirrored scenes are excluded from Step 2; resolving them is its own task before Step 3 data. (6) SoundSpaces 2.0 ray settings (transmission on, 500 indirect rays, materials off, temporal coherence on), MIT KEMAR HRTF; the wall-share misses do not block, the check is reported per scene. (7) Per-step room impulse responses are saved so Step 3 can pick any audio window. Shared route A code moves to `src/`; the KEMAR licence is noted as unverified.
+
+**Found:** nothing measured.
+
+**Decided by the lead** (in the experiment window, the experiment session's report): the seven choices above.
+
+**Planning's note for Step 4** (`speculative`, not a change to the lead's choice): with the source at the object's box and success still counted at the benchmark goal point, a model that follows the sound goes to the object, which check 3 found a median 1.26 m and in a quarter of test_unseen episodes more than 3.6 m from the goal point. The Step 4 `PLAN.md` has to say how success is counted so this does not hide or fake an audio effect. Added to `PLAN.md` "Next".
+
+**PR:** direct.
+
+**Not approved:** any rental; training; audio encoder work; route B work.
+
+**Next:** the experiment session's implementation plan to the lead, a worker, then a rental only on the lead's OK in its window. The lead's notes from the PI meeting of 2026-11-26 (the PI's answers on the research question, the sound engine condition, LoRA, "long-form").
+
+**Open questions:** the PI's answers; how Step 4 counts success given the source position.
