@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import ast
 import json
+import os
 import sys
 import typing
 from pathlib import Path
@@ -50,6 +51,7 @@ def load_sim_functions(src_path: Path) -> dict:
 
 def main():
     sys.path.insert(0, str(HERE))
+    sys.path.insert(1, str(Path(os.environ.get("HEAR_LAB_SRC") or HERE.parents[3] / "src")))  # shared code in hear-lab/src (moved 2026-11-26)
     import c3lib
     import pyarrow.parquet as pq
     from PIL import Image

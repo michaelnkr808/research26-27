@@ -1,4 +1,6 @@
-"""Pure-numpy helpers for check 3 (target visible at the start), route A checks.
+"""Pure-numpy helpers for check 3 (target visible at the start), route A checks. Moved from
+experiments/2026-11-20-route-a-checks/src/check3/ to hear-lab/src on 2026-11-26 (Step 2 uses the box helpers);
+load_config still reads the route A config's check3 block and its tests stay in route A's src/check3.
 
 Everything here runs without torch, gsplat or the simulator, so the projection,
 visibility rule and episode selection can be unit-tested on a laptop

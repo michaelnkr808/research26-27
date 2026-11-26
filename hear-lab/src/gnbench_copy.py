@@ -1,4 +1,5 @@
-"""Verbatim copies of GN-Bench's coordinate code, for check 1 (see PLAN.md, check 1).
+"""Verbatim copies of GN-Bench's coordinate code, written for route A check 1 (its PLAN.md, check 1); moved to
+hear-lab/src on 2026-11-26 so that later experiments share it.
 
 Source: GN-Bench-Tools at commit 0ce8367 (the GN0 submodule pinned in config.yaml, pins.gn_bench_tools),
 file GN_Bench/sims/GN_Bench_simulator/GN_Bench_simulator.py.
