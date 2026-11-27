@@ -1,0 +1,243 @@
+# FIRST-FRAME FEATURE CHECK, FULL RUN (40 clean LIBERO tasks x init states 0-4 = 200 live frames; frame 0 of every training
+# episode of those tasks). Submit only after the dry run (job-first-frame-check-dryrun.yaml) passed and its PNGs were looked at.
+# Plan (fixed, merged): ../diagnosis/2026-11-25-first-frame-check-plan.md, with its amendment of 2026-11-25 (per-channel value
+#   ranges). The feature-path note: ../diagnosis/2026-11-25-feature-path.md section 3. Steps and the plan-item map:
+#   RUN-first-frame-check.md. Test-set use: first frames of clean LIBERO evaluation init states, no rollout, no success
+#   outcome (plan "Test-set use"); logged in the stage 2 LOG.md at submit.
+# NOT SUBMITTED (written 2026-11-26 on the Mac by a worker; no kubectl run). Submitting needs the user's go in the lead's window.
+#   Render before submit (RUN-first-frame-check.md step 4): SRC_GIT_COMMIT (the merged commit that holds
+#   src/first_frame_check.py; the script is merged before the Job runs) and the 12 /src sha256 (FILL_ placeholders).
+# PINS (also written into result.json "pins"):
+#   source commit  SRC_GIT_COMMIT, filled at submit
+#   image          pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime (the stage 2 evaluation image), env bundle 9182f8131559
+#   environment    LIBERO-Plus 4976dc30028e805ff8094b55501d532c48fec182 (src/setup_sim.sh LP_COMMIT, checked in the pod, exit 10)
+#   dataset        /mnt/proxy/data/lerobot_v30/<suite>_no_noops_lerobot; caches /mnt/proxy/feats (meta, vae, vae_b, dinov3,
+#                  c-radiov4, siglip2); VAE /mnt/proxy/models/Wan2.2_VAE.safetensors; clean task list /mnt/proxy/lp_tasks.json
+#   checkpoints    (sha256 checked in the pod before use, exit 13; from each training pod's "=== MODEL" line, as the eval Jobs)
+#                  /mnt/runs/runs/pairings-dinov3-s0/model.pt     81356eb8c77e99cd5fb8bfe6264e3df57c849a5b28f0627a58e66d988d4d59fa
+#                  /mnt/runs/runs/pairings-c-radiov4-s0/model.pt  3a6ce690e34d1123fb9ff32d9b4519ed3cc52450ac5fc181c61ca24f9ed8adab
+#                  /mnt/runs/runs/pairings-siglip2-s0/model.pt    d916ba2fc6b53bc33b7558310170514644fb2f091bbf0df4ce640ebddd2e9fca
+#                  Only each config's feature_stats is read (torch.load mmap); the model weights are not used.
+# BASED ON: jobs/rendered/job-smoke-dinov3-s0.yaml (simulator + rollout.Featurizer on an L4: env bundle restore, PVC mounts, HF
+#   Secret, model.pt sha pin, exit trap, GPU sampler, file printing) and jobs/rendered/job-cache-fresh-check.yaml (an L4 Job that
+#   recomputed encoder features against the caches: /src hash pins, the three encoders loaded at once). Same card rule (NVIDIA
+#   L4 by gpu.product, driver > 569, us-west, the two fault hosts excluded), no tolerations, no priority class, no named
+#   resources. Differences: the three model.pt hashes run in parallel with the env restore (each took about 5 min alone in
+#   the smoke pods: PHASE model-sha to PHASE restore, results/smoke/*/ logs); outputs go to a NEW dated folder
+#   /mnt/proxy/first-frame-check/<tag>-<date> (the script refuses an existing folder; nothing existing is overwritten).
+# OUTPUT: /mnt/proxy/first-frame-check/first-frame-check-full-try<TRY>-<date>/result.json, the pod log
+#   /mnt/proxy/logs/first-frame-check-full-try<TRY>-<date>.log and a GPU csv. The trap prints result.json between
+#   "=== FILE result.json sha256 ..." and "=== END result.json".
+# SIZING (sources; limits within 1.2x of requests):
+#   CPU 4 / 4800m: the smoke's values (3 simulator processes here + the main process; the smoke ran 4 envs + main on 4 CPUs,
+#     "pod cpu 1.56-1.67 cores of 4" in its resource lines). OMP_NUM_THREADS 4 (= the request).
+#   memory 12Gi / 14Gi: job-cache-fresh-check ran the three encoders loaded at once plus one decoded episode inside 10Gi /
+#     12Gi to exit 0 (results/cache-fresh-check/...-rw7pl.log; its peak was not printed); the smoke's main process (one
+#     config's model + encoders) used 2.5-3.7 GB RSS ("main rss" lines) and each simulator worker about 2.0 GB peak
+#     (worker_peak_rss_mb 2053 in the clean records). Here the 3 simulator processes exist only before the encoders load;
+#     the live features are about 1.0 GB (200 x 3,248 channels x 392 positions x 4 bytes, arithmetic) and one task's
+#     training arrays about 0.25 GB. Expected anon peak about 6-8 GB (speculative); the pod prints memory.peak and anon.
+#   ephemeral 50Gi / 58Gi, /work 58Gi, /dev/shm 4Gi: the smoke's values (env bundle + unzipped assets + HF files).
+#   GPU 1 x L4 (23 GB): three encoders took 6.2 GB in the cache-fresh-check pod ([gpu] lines), plus the VAE.
+# TIME (estimate, unpadded; sources): model sha 3 x 6.8 GB in parallel, 5 to 16 min (one file alone: 4.7-6.3 min in the smoke
+#   pods; parallel reads may share CephFS bandwidth: speculative), overlapping the restore (measured 2.2-9.4 min, TIMING
+#   restore lines); encoder + VAE load about 1-2 min (the three encoders 66 s in cache-fresh-check's [load] lines).
+#   Full run: 200 live frames (env build + reset + 30 steps each, not measured separately: speculative 3-10 s, over 3
+#   processes 3-11 min) and 1,712 training frame 0s (frame-0 decode of 2 cameras + 4 cache reads + one VAE encode, not
+#   measured: speculative 0.2-1 s each, 6-29 min), distances and statistics a few minutes: about 25-65 min of pod time
+#   (speculative). The dry run measures the per-frame and per-episode times (result.json "timing"); recompute this estimate
+#   from them before submitting (RUN step 6). Caps: setup 1,800 s (the sha timeout), the check 5400 s.
+#   Pod activeDeadlineSeconds 7500 (1,800 + 5400 + 60 kill grace + trap, rounded up). Job activeDeadlineSeconds 79,200 (22 h, the
+#   smoke's: L4 queue included). ttlSecondsAfterFinished 86,400.
+# GPU USE (_standards/08): this check needs the GPU only for batch-1 encoder calls on 200 frames and one-frame VAE encodes, so the
+#   whole-pod GPU mean will be LOW, likely well under 40% (speculative); the plan requires the L4 for the live features
+#   (feature-path note item 13: a CPU run would add its own rounding). The pod should end far under the portal's 180-minute
+#   minimum runtime for the idle warning (_standards/08 [NRP code] item 2); the L4 hosts nautilus-it-gpu05/06 export no DCGM
+#   (proxy LOG 2026-11-07 (h)). A sampler writes [gpu] lines every 30 s and the trap prints per-phase means.
+# Exit codes: 0 done; 1 Python died outside main / restore failed / nvidia-smi failed (retried); 2 the script failed (traceback;
+#   fatal); 3 a pipeline check failed (fatal: cache file missing or wrong length, checkpoint config not the expected
+#   single-encoder seed 0 run, encoder revision, not an L4, frame-0 decode check, existing output folder); 10 not rendered or
+#   LIBERO-Plus commit differs (fatal); 13 a model.pt sha256 differs from the pin (fatal); 15 a model.pt is missing (fatal);
+#   16 the sha step or the check timed out (retried); 19 a /src key differs from the rendered hash (fatal).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stacking-encoders-pairings-first-frame-check
+  namespace: aria-world
+  labels: {experiment: stacking-pairings, kind: first-frame-check, mode: full}
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 79200
+  ttlSecondsAfterFinished: 86400
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes:
+        containerName: main
+        operator: In
+        values: [2, 3, 10, 13, 15, 19]
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+        status: "True"
+  template:
+    metadata:
+      labels: {experiment: stacking-pairings, kind: first-frame-check, mode: full}
+    spec:
+      restartPolicy: Never
+      activeDeadlineSeconds: 7500
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: [NVIDIA-L4]
+              - {key: nvidia.com/cuda.driver.major, operator: Gt, values: ["569"]}
+              - {key: topology.kubernetes.io/region, operator: In, values: [us-west]}
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [k8s-chase-ci-07.calit2.optiputer.net, ry-gpu-08.sdsc.optiputer.net]}  # GPU faults, 2026-11-03
+      containers:
+      - name: main
+        image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          SMI=""; DECLARED=0; PIDS=""
+          fail() { DECLARED=1; exit $1; }
+          R=/mnt/proxy; D=$(date +%Y%m%d-%H%M%S); TAG=first-frame-check-$MODE-try$TRY
+          OUT=$R/first-frame-check/$TAG-$D
+          LOG=$R/logs/$TAG-$D.log; GPUCSV=$R/logs/$TAG-gpu-$D.csv
+          mkdir -p $R/logs $R/first-frame-check
+          exec > >(tee -a $LOG) 2>&1
+          TEE=$!
+          : > $GPUCSV
+          phase() { echo "=== PHASE $1 $(date -u +%H:%M:%S)"; echo "#phase $1" >> $GPUCSV; }
+          finish() {
+            rc=$?; set +e
+            case $rc in 2|3|10|13|15|19) [ "$DECLARED" = 1 ] || { echo "[exit] code $rc came from a tool, not a decision of this script; reporting 1"; rc=1; } ;; esac
+            for p in $PIDS; do kill $p 2>/dev/null; done
+            [ -n "$SMI" ] && { kill $SMI 2>/dev/null; wait $SMI 2>/dev/null; }
+            echo "#phase end" >> $GPUCSV
+            awk -F', ' 'BEGIN{p="start"} /^#phase/{p=$0; sub(/^#phase /,"",p); next} {v=$2; sub(/ %/,"",v); s[p]+=v; n[p]++; S+=v; N++} END{for(k in n) printf "[gpu-summary] %s: %d samples, mean %.1f%%\n", k, n[k], s[k]/n[k]; if(N) printf "[gpu-summary] all: %d samples, mean %.1f%%\n", N, S/N}' $GPUCSV
+            echo "[cgroup] memory.peak $(cat /sys/fs/cgroup/memory.peak 2>/dev/null || echo n/a) bytes, memory.current $(cat /sys/fs/cgroup/memory.current 2>/dev/null || echo n/a) bytes"
+            echo "[cgroup] $(grep -E '^anon ' /sys/fs/cgroup/memory.stat 2>/dev/null || echo 'anon n/a') (bytes, at exit); $(grep -E '^file ' /sys/fs/cgroup/memory.stat 2>/dev/null || echo 'file n/a') (page cache)"
+            f=$OUT/result.json
+            if [ -f $f ]; then
+              echo "=== FILE result.json sha256 $(sha256sum < $f | cut -d' ' -f1) bytes $(stat -c %s $f) path $f"
+              cat $f; echo
+              echo "=== END result.json"
+            fi
+            date -u; echo "=== exit $rc"
+            exec 1>&- 2>&-; wait $TEE 2>/dev/null
+            exit $rc
+          }
+          trap finish EXIT
+          echo "=== FIRST-FRAME FEATURE CHECK ($MODE) on L4 -> $OUT"; date -u
+          echo "SRC_GIT_COMMIT=$SRC_GIT_COMMIT IMAGE=$IMAGE LP_COMMIT=$LP_COMMIT TRY=$TRY CHECK_CAP_S=$CHECK_CAP_S SIM_WORKERS=$SIM_WORKERS"
+          [[ "$SRC_GIT_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "ABORT: SRC_GIT_COMMIT is not a 40-hex commit (not filled at submit?)"; fail 10; }
+          [[ "$MODE" = full || "$MODE" = dryrun ]] || { echo "ABORT: MODE '$MODE' is not full or dryrun"; fail 10; }
+          for v in "$SHA_DINOV3" "$SHA_CRADIOV4" "$SHA_SIGLIP2"; do [[ "$v" =~ ^[0-9a-f]{64}$ ]] || { echo "ABORT: a pinned model.pt sha256 is not 64-hex"; fail 13; }; done
+          echo "/src = ConfigMap stacking-encoders-pairings-firstframe-src; checking its 12 keys against the hashes rendered into this manifest (RUN-first-frame-check.md step 4):"
+          ( cd /src && sha256sum -c - <<'EOF'
+          FILL_SHA_first_frame_check.py  first_frame_check.py
+          FILL_SHA_rollout.py  rollout.py
+          FILL_SHA_lp_eval.py  lp_eval.py
+          FILL_SHA_proxy_wam.py  proxy_wam.py
+          FILL_SHA_t5_cache.py  t5_cache.py
+          FILL_SHA_diagnostics.py  diagnostics.py
+          FILL_SHA_extract_fastwam.py  extract_fastwam.py
+          FILL_SHA_extract_features.py  extract_features.py
+          FILL_SHA_fastwam_data.py  fastwam_data.py
+          FILL_SHA_setup_env.sh  setup_env.sh
+          FILL_SHA_setup_sim.sh  setup_sim.sh
+          FILL_SHA_env_bundle.sh  env_bundle.sh
+          EOF
+          ) || { echo "ABORT: a /src key differs from the hash rendered at submit (the ConfigMap changed after the render, or the render did not run)"; fail 19; }
+          grep -q "^LP_COMMIT=$LP_COMMIT$" /src/setup_sim.sh || { echo "ABORT: /src/setup_sim.sh does not pin LIBERO-Plus $LP_COMMIT"; fail 10; }
+          echo "env bundle key: $(cat /src/setup_env.sh /src/setup_sim.sh /src/env_bundle.sh | sha256sum | cut -c1-12) (the prebuilt bundle is 9182f8131559)"
+          for f in $CK_DINOV3 $CK_CRADIOV4 $CK_SIGLIP2; do [ -f $f ] || { echo "ABORT: $f is missing"; fail 15; }; ls -la $f; done
+          [ ! -e $OUT ] || { echo "ABORT: $OUT exists"; fail 3; }
+          nvidia-smi || { echo "ABORT: nvidia-smi failed (a faulty GPU node; retryable)"; exit 1; }
+          nproc; df -h $R /mnt/runs /work
+          nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv,noheader -l 30 > >(tee -a $GPUCSV | sed -u 's/^/[gpu] /') &
+          SMI=$!
+          phase model-sha-and-restore
+          timeout --kill-after=60 1800 sha256sum $CK_DINOV3 > /work/sha-dinov3.txt & PIDS="$PIDS $!"
+          timeout --kill-after=60 1800 sha256sum $CK_CRADIOV4 > /work/sha-c-radiov4.txt & PIDS="$PIDS $!"
+          timeout --kill-after=60 1800 sha256sum $CK_SIGLIP2 > /work/sha-siglip2.txt & PIDS="$PIDS $!"
+          . /src/env_bundle.sh restore    # as the smoke and the eval Jobs; sourced, so it cannot be wrapped in `timeout`; a failure exits via set -e
+          for p in $PIDS; do wait $p || { echo "ABORT: a model.pt sha256 failed or timed out (1800 s; retryable)"; PIDS=""; exit 16; }; done
+          PIDS=""
+          check_sha() {   # $1 encoder, $2 file, $3 pinned sha256
+            local got; got=$(cut -d' ' -f1 /work/sha-$1.txt)
+            echo "=== MODEL $got  $2"
+            [ "$got" = "$3" ] || { echo "ABORT: $2 sha256 $got differs from the pinned $3"; fail 13; }
+          }
+          check_sha dinov3 $CK_DINOV3 $SHA_DINOV3
+          check_sha c-radiov4 $CK_CRADIOV4 $SHA_CRADIOV4
+          check_sha siglip2 $CK_SIGLIP2 $SHA_SIGLIP2
+          echo "the three model.pt sha256 equal the pinned values"
+          phase check
+          DRY=""; [ "$MODE" = dryrun ] && DRY="--dry-run"
+          FLAGS="--data-root $R/data/lerobot_v30 --feats $R/feats --tasks $R/lp_tasks.json --vae-path $R/models/Wan2.2_VAE.safetensors --ckpt dinov3=$CK_DINOV3 --ckpt c-radiov4=$CK_CRADIOV4 --ckpt siglip2=$CK_SIGLIP2 --ckpt-sha dinov3=$SHA_DINOV3 --ckpt-sha c-radiov4=$SHA_CRADIOV4 --ckpt-sha siglip2=$SHA_SIGLIP2 --lp-commit $LP_COMMIT --sim-workers $SIM_WORKERS --device cuda --out-dir $OUT $DRY"
+          echo "FLAGS: python /src/first_frame_check.py run $FLAGS"
+          rc=0; T1=$SECONDS
+          timeout --kill-after=60 $CHECK_CAP_S python /src/first_frame_check.py run $FLAGS || rc=$?
+          echo "[check] rc $rc, $(( SECONDS - T1 )) s wall"
+          case $rc in
+            0) ;;
+            2) echo "ABORT: first_frame_check.py failed (traceback above; deterministic)"; fail 2 ;;
+            3) echo "ABORT: a pipeline check failed (CHECK FAILED line above)"; fail 3 ;;
+            124) echo "ABORT: the check hit its $CHECK_CAP_S s cap"; exit 16 ;;
+            137) if [ $(( SECONDS - T1 )) -ge $CHECK_CAP_S ]; then echo "ABORT: the check hit its $CHECK_CAP_S s cap (killed after the grace)"; exit 16; fi; exit 137 ;;
+            *) exit $rc ;;
+          esac
+          echo "=== done"
+        env:
+        - {name: SRC_GIT_COMMIT, value: FILL_AT_SUBMIT}       # the merged commit holding src/first_frame_check.py
+        - {name: MODE, value: "full"}
+        - {name: TRY, value: "1"}                            # names the output folder and log; a new value for a resubmit
+        - {name: CHECK_CAP_S, value: "5400"}
+        - {name: SIM_WORKERS, value: "3"}
+        - {name: IMAGE, value: "pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime"}   # recorded in result.json; = the image above
+        - {name: LP_COMMIT, value: 4976dc30028e805ff8094b55501d532c48fec182}
+        - {name: CK_DINOV3, value: /mnt/runs/runs/pairings-dinov3-s0/model.pt}
+        - {name: SHA_DINOV3, value: 81356eb8c77e99cd5fb8bfe6264e3df57c849a5b28f0627a58e66d988d4d59fa}
+        - {name: CK_CRADIOV4, value: /mnt/runs/runs/pairings-c-radiov4-s0/model.pt}
+        - {name: SHA_CRADIOV4, value: 3a6ce690e34d1123fb9ff32d9b4519ed3cc52450ac5fc181c61ca24f9ed8adab}
+        - {name: CK_SIGLIP2, value: /mnt/runs/runs/pairings-siglip2-s0/model.pt}
+        - {name: SHA_SIGLIP2, value: d916ba2fc6b53bc33b7558310170514644fb2f091bbf0df4ce640ebddd2e9fca}
+        - name: HF_TOKEN                               # encoder weights from Hugging Face (DINOv3 is gated)
+          valueFrom:
+            secretKeyRef: {name: stacking-encoders-hf, key: HF_TOKEN}
+        - {name: HF_HOME, value: /work/hf}
+        - {name: PYTHONUNBUFFERED, value: "1"}
+        - {name: PYTHONPATH, value: /src}
+        - {name: OMP_NUM_THREADS, value: "4"}
+        - {name: MALLOC_ARENA_MAX, value: "2"}
+        - {name: SIM_DIR, value: /work/sim}
+        - {name: MUJOCO_GL, value: egl}
+        - {name: PYOPENGL_PLATFORM, value: egl}
+        - {name: NVIDIA_DRIVER_CAPABILITIES, value: "compute,utility,graphics"}
+        resources:                    # limits <= 1.2x requests; sources in the header
+          requests: {cpu: "4", memory: 12Gi, nvidia.com/gpu: "1", ephemeral-storage: 50Gi}
+          limits:   {cpu: "4800m", memory: 14Gi, nvidia.com/gpu: "1", ephemeral-storage: 58Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: src, mountPath: /src, readOnly: true}
+        - {name: proxy, mountPath: /mnt/proxy}           # read: data, caches, VAE, env bundle; write: the new output folder and logs
+        - {name: dshm, mountPath: /dev/shm}
+        - {name: runs, mountPath: /mnt/runs, readOnly: true}
+      volumes:
+      - name: work
+        emptyDir: {sizeLimit: 58Gi}   # env bundle, LIBERO-Plus + unzipped assets, HF files
+      - name: src
+        configMap: {name: stacking-encoders-pairings-firstframe-src}
+      - name: proxy
+        persistentVolumeClaim: {claimName: stacking-encoders-proxy}
+      - name: dshm
+        emptyDir: {medium: Memory, sizeLimit: 4Gi}
+      - name: runs
+        persistentVolumeClaim: {claimName: stacking-encoders-runs, readOnly: true}
