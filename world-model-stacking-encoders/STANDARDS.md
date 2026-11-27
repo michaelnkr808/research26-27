@@ -55,7 +55,7 @@
     - Short jobs only.
     - Long training stays on Nautilus.
   - Proposed by the planning lead, accepted by the user's merge OK on PR #26 (2026-11-12):
-    - No paid launch without the user's go in chat in the launching session, with the hourly price and the estimated total stated first.
+    - No paid launch without the user's go, as set out in "Rules for every agent" in the workspace `CLAUDE.md`, with the hourly price and the estimated total stated first.
     - Log estimated vs. actual dollars per run in the experiment `LOG.md`.
     - Stop or delete paid resources when the run ends.
   - Candidate providers: Runpod, Modal, Vast.ai. Vast.ai: the user has an account (user in chat, 2026-11-12), nothing set up or billed, no prices read.

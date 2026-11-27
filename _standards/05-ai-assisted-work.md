@@ -28,7 +28,7 @@ Most of the work here is done by AI agents (Claude Code and subagents). These ru
 ## Verification gates (human checks before proceeding)
 An agent pauses and asks before:
 - Treating a result as a **finding**, meaning it goes into `README.md` key findings or into any writeup
-- Large compute jobs, beyond the budget set in the direction's `STANDARDS.md`
+- Large compute jobs, beyond the budget set in the direction's `STANDARDS.md`. Within budget, every paid or shared compute job still needs the owner's OK, per "Rules for every agent" in the workspace `CLAUDE.md`
 - Deleting data, overwriting results, rewriting git history, or force-pushing
 - Changing the research question, scope, or evaluation protocol
 - Anything that leaves the machine: pushing to a remote, publishing, emailing, uploading. Exceptions: pushing a task branch to open a pull request (and later fixes on it), and pushing `main` right after a merge (see Git).
@@ -46,7 +46,7 @@ An agent pauses and asks before:
 - **`main` moves only by pull request** for any change that feeds a research conclusion: experiment code, analysis scripts, outcome rules and thresholds, decision records (`decisions/`), pre-committed memos in `writing/`, review reports in `reviews/`, experiment `PLAN.md` amendments, edits to `_standards/` or a direction `STANDARDS.md`, and anything that changes `README.md` key findings.
 - **Direct merges to `main` (no PR) only for** `LOG.md` entries, `PLAN.md` Now/Next/Parked/Recently-done moves, `README.md` status lines, reading-list leads, and wording or typo fixes that change no fact. When in doubt, open a PR. Nobody makes a non-merge commit on `main`; a direct-merge chore is committed on a short-lived branch first.
 - **The PR is the paper trail.** Its description carries the task as it was given; a fresh read-only reviewer posts findings as a PR comment; fixes land as new commits on the same branch; the `LOG.md` entry for the work names the PR number. The direction `LOG.md` entry is not committed on the task branch: it merges directly once the PR number exists. Experiment `LOG.md` entries ride with the work on the task branch.
-- **Merging a PR needs the user's OK in chat,** in the session that opened it. GitHub cannot record an approval from the same account, so reviewer comment plus the user's OK is the approval. Merge on GitHub with a merge commit (`gh pr merge --merge --delete-branch`; no squash, no rebase), then `git pull --ff-only` local `main` before anything else.
+- **A PR merges without asking** once a fresh read-only reviewer has posted its findings, every must-fix is fixed, and the checks pass (CI where the repo has it, otherwise the task's done check rerun by the lead). The session that opened it merges and tells the user after. Still ask the user first when the PR deletes data or results, spends money, or changes what a result is claimed to mean. Merge on GitHub with a merge commit (`gh pr merge --merge --delete-branch`; no squash, no rebase), then `git pull --ff-only` local `main` before anything else.
 - **After any merge to local `main`,** PR or direct, the merging session fast-forward pushes `main` to the remote in the same step.
 - **The repo is public.** A pushed branch is visible at once, so it must satisfy "Never commit" (below) before it is pushed.
 - **Never commit** secrets, API keys, `.env` files, raw datasets, checkpoints, or large binaries (see `.gitignore`).
