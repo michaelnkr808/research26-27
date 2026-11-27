@@ -980,3 +980,11 @@ The lead then: "1. go tell the experiment window that 2. tell literature window 
 **Next:** the lead's decision on the small Step 2 batch (experiment window); the literature survey; the baseline evaluation plan.
 
 **Open questions:** render cost per step; licensed sound clips for speech and other classes; the PI's answers (navigation kept or dropped, "world audio model", audio only or with video).
+
+## 2026-11-26 [agent, literature] (long-form spatial audio question answering: baselines, benchmarks, metrics; PR opened)
+**Goal:** answer the planning lead's (hear-lab-15) questions A to E for the baseline evaluation plan (the PI's 2026-11-26 direction, kept outside the repo).
+**Did:** three workers (one per question group) read papers, model cards, APIs and some code; the literature lead checked that all 15 core arXiv ids exist and match title and first author on the arXiv API, and did not re-read the papers. Wrote `literature/survey/2026-11-26-long-form-spatial-audio-qa-baselines.md`.
+**Found** (`verified` by the workers, see the file for read depth): four models with weights and code are usable as short-clip baselines (MiDashengLM-Spatial up to 60 s, BAT, ST-AudioLM, Spatial-Omni); Audio Flamingo 3 is mono only; Hear You Are and HLR-LLM are paper only as far as found. No benchmark tests the three scenarios; all spatial question answering clips are at most 10 s. No spatial question answering paper reports identity switches or re-identification; Iatariene et al. (arXiv 2506.11145) adapt HOTA to intermittent speakers. Moving sources in prior datasets are made by time-variant convolution over per-position impulse responses (DCASE 2020, SpatialScaper). "World audio model" is not an established term.
+**Not re-checked by the lead:** everything except the arXiv ids; ids marked "same caveat" in the file; RMS-AQA question templates (gated). No fact-check reviewer yet.
+**PR:** opened, not merged.
+**Next:** the planning lead's baseline evaluation plan; the lead's OK to merge in this window.
