@@ -1043,3 +1043,22 @@ The lead then: "1. go tell the experiment window that 2. tell literature window 
 **Fact-check (2026-11-27, two fresh reviewers, on the planning lead's request):** corrected in the file: Spatial-Omni code is Apache-2.0; Spatial-AST LICENSE file is CC BY-NC; LLaMA-2 is manually gated; ST-AudioLM adapter-only weights and H100 inference note; ST-AudioLM was read in full and covers none of the three scenarios (no crossing, no stop-and-return, no same-class); the claim that SoundSpaces sources are never moving was wrong (ST-AudioQA, ST-OmniQA, Sonic-Bench render moving sources with it); SonicWorld (arXiv 2610.17131) reports an "ID retention" number, so the "no identity metric" sentence was reworded; SAVVY-Bench has 30 to 300 s videos. Still not re-checked: sections B to E outside those claims; RMS-AQA question templates (gated).
 **PR:** opened, not merged.
 **Next:** the planning lead's baseline evaluation plan; the lead's OK to merge in this window.
+
+## 2026-11-26 [agent, lead, planning] (the lead's decisions: Steps 3 and 4 parked, Step 2 goes ahead; PRs #98 and #99 merged)
+**Did:**
+- The lead answered the four open items: "1. yes but we should still move forward with step 2 2. ill check there 3. ill tell it to merge 4. good to merge. So what changed in our plan?". That is: park the navigation plan's Steps 3 and 4, keep Step 2; the Step 2 rental is the lead's to decide in the experiment window; PR #98 merges in the literature window; PR #99 merges here.
+- Merged PR #99 (`gh pr merge --merge --delete-branch`, merge commit a8b499a) and pulled main. The literature session reported PR #98 merged on the lead's OK in its window (merge commit 93f46ac; checked here: on main, the survey file is there, no conflict markers in `LOG.md`).
+- Rewrote `PLAN.md` "Now", "Next" and "Parked": the baseline evaluation (stage 1 of the PI's direction) is the working plan, with the small Step 2 batch as its first item; Steps 3 and 4 and what went with them are parked with their state. `README.md` status line updated; the README question is left for decision `004`.
+- Told the experiment session (Step 2 goes ahead, the rental is the lead's OK in its window; what the evaluation plan needs from the batch; what follows as direction once it reports) and the presentations session (the direction change, for the next deck; the PI's figure stays off slides and out of the repo).
+
+**Decided by the lead:** Steps 3 and 4 parked; Step 2 continues; PR #99 merged; the PI's full text and figure stay out of the public repo for now (earlier today).
+
+**PR:** #99 merged; #98 merged (the literature session's). This entry, `PLAN.md` and the `README.md` status: direct.
+
+**Not approved:** any rental (the Step 2 batch is decided in the experiment window); any build beyond Step 2; access requests; training.
+
+**Not verified:** that the two messages were read.
+
+**Next:** the Step 2 batch (experiment window). Then the hand-over of the evaluation plan's items 2 to 5. The lead takes the plan's section 9 questions to the PI. Decision record `004` once the PI says whether navigation is dropped or kept.
+
+**Open questions:** the evaluation plan's section 9.
