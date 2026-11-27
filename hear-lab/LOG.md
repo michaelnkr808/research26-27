@@ -1020,3 +1020,18 @@ The lead then: "1. go tell the experiment window that 2. tell literature window 
 **Next:** the fact-check on PR #98; the lead's answers (park Steps 3 and 4; the small Step 2 batch); then the baseline evaluation plan by pull request.
 
 **Open questions:** as in the entry above.
+
+## 2026-11-26 [agent, lead, planning] (PR #98 fact-check taken in; baseline evaluation plan drafted, PR #99)
+**Did:**
+- Took in the literature session's fact-check report on PR #98 and read the changed file on its branch (commit f6801ce). Changes that matter for the plan: BAT's encoder licence is non-commercial and LLaMA-2-7B has a manual-approval gate; ST-AudioLM's weights are an adapter on a separately fetched base, tested by its authors on one H100; Spatial-Omni's code is Apache-2.0, weights non-commercial; MiDashengLM-Spatial's 60 s is its training length, with no enforced cap. ST-AudioLM read in full covers none of the PI's three scenarios (they are its listed future work). Two corrections: SoundSpaces 2.0 is used with moving sources in ST-AudioQA, ST-OmniQA and Sonic-Bench; SonicWorld reports an "ID retention" number on two example clips, so "no identity metric" is a search result with that exception.
+- Wrote draft 1 of the baseline evaluation plan, `writing/2026-11-26-baseline-evaluation-plan.md`, and opened PR #99 for it. A fresh read-only reviewer is checking it against the survey file and the LOG entries. The lead has not read the draft yet; the planning lead gave its four main choices in chat beforehand.
+
+**Found:** nothing measured.
+
+**PR:** #99 open (the plan); #98 open (the survey, the literature session's; the lead's merge OK in its window). This entry: direct.
+
+**Not approved:** any build, rental or access request.
+
+**Next:** the reviewer's findings on PR #99 and the fixes; the lead reads the draft; the lead's answers (park Steps 3 and 4; the small Step 2 batch; merge OKs for #98 and #99). Then the questions in the draft's section 9 go to the PI.
+
+**Open questions:** the draft's section 9.
