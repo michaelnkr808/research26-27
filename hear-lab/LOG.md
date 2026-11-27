@@ -1062,3 +1062,16 @@ The lead then: "1. go tell the experiment window that 2. tell literature window 
 **Next:** the Step 2 batch (experiment window). Then the hand-over of the evaluation plan's items 2 to 5. The lead takes the plan's section 9 questions to the PI. Decision record `004` once the PI says whether navigation is dropped or kept.
 
 **Open questions:** the evaluation plan's section 9.
+
+## 2026-11-27 [agent, lead, planning] (relayed: the lead says navigation stays; the plan is unchanged until settled in the planning window)
+**Did:** took in a message from the experiment session quoting the lead in its window on 2026-11-27: "yeah i think navigation stays i dont think the PI meant to take out navigation", and earlier there: "i don't think we should move away from navigation at all". The Step 2 rental was not OK'd there yet (its report).
+
+**Found:** this does not match the entry above, where the lead answered "yes but we should still move forward with step 2" to parking the navigation plan's Steps 3 and 4. The PI's message of 2026-11-26 does not mention navigation in either direction (`verified`, the saved text); whether he meant to drop it is the open question already listed for him.
+
+**Decided:** nothing. `PLAN.md` is unchanged: a relayed quote is not the lead's decision in the planning window. What holds under either reading: the small Step 2 batch, and the baseline evaluation the PI asked for as the first milestone.
+
+**PR:** direct.
+
+**Next:** the lead says in the planning window whether Steps 3 and 4 stay parked until the PI answers, or come back now; the planning lead recommends asking the PI the one question first.
+
+**Open questions:** does the PI's direction replace the navigation work, sit beside it, or is navigation meant to be where the long-form audio reasoning gets used.
