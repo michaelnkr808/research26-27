@@ -959,3 +959,24 @@ The lead then: "1. go tell the experiment window that 2. tell literature window 
 **Next:** the lead's answer on holding Step 2 and on where the PI's text goes; the lead's questions back to the PI; the literature survey; then the baseline evaluation plan (the planning lead writes it, by pull request).
 
 **Open questions:** as under "Not known"; whether Interspeech 2027 stays the target; what happens to decisions `001` to `003`.
+
+## 2026-11-26 [agent, lead, planning] (the experiment session's answer on the engine; Step 2 is built, not rented)
+**Did:** took in the experiment session's answer to the question in the entry above (its report; nothing was run for these cases, and the planning lead did not read the code). GitHub shows PR #95: 95 | OPEN | hear-lab: Step 2 audio check, built and ready for a rental (PLAN, render, direction check, shared code to src/) | hear-lab-step2-audio-check | 2026-11-26T21:59:32Z.
+
+**Found** (its report, with its own labels):
+- Several sources at once: yes. The binding (`src/rlr_binding.py` on the PR #95 branch) adds any number of sources to a scene and returns one two-ear impulse response per source; a mixture is each source's sound convolved with its response and summed (`verified` in code by the experiment session; summing as standard practice is `recalled`).
+- Moving sources: yes in the way Step 2 handles a moving listener: a source position per time step, one response per step, crossfade between steps as SoundSpaces 2.0 does. No Doppler shift (`speculative`, not checked in the engine).
+- A source that stops and restarts: silence in that source's signal, no engine change.
+- Minute-long recordings: cost grows with the number of positions per source (about 10 per second at Step 2's 0.1 s steps). The per-step render time is what Step 2's first batch would measure, so there is no cost figure yet.
+- Speech or animal sounds need clips with clear licences (the telephone ring is SoundSpaces').
+- Step 2 is built (PR #95, reviewed, fixes in) and not rented. The experiment session holds it until the lead decides in its window.
+
+**The planning lead's reading** (`speculative`): the first small Step 2 batch now serves the PI's stage 1 too: it shows whether the simulator's direction cue is right, and it gives the render time per step that sizes minute-long scenes. The entry above recommended holding the Step 2 build on the belief that it was not built; with it built, the open choice is only the small rental, which is the lead's in the experiment window.
+
+**PR:** direct.
+
+**Not approved:** any rental.
+
+**Next:** the lead's decision on the small Step 2 batch (experiment window); the literature survey; the baseline evaluation plan.
+
+**Open questions:** render cost per step; licensed sound clips for speech and other classes; the PI's answers (navigation kept or dropped, "world audio model", audio only or with video).
