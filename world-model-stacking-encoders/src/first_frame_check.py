@@ -435,12 +435,26 @@ def ranges_report(stats):
 # Assembling the statistics from per-task results (pure; used by run and by the tests)
 # ---------------------------------------------------------------------------
 
+def task_order_key(t):
+    """Fixed task order of the statistics and the bootstrap: suite in SUITES order, then the clean task index (the order
+    run() processes the tasks in)."""
+    return SUITES.index(t["suite"]), int(t["task_index"])
+
+
+def no757_ref_check(t):
+    """A kept task (enough episodes, ref > 0 in the four groups) whose DINOv3-without-757 reference is 0 stops the check
+    (planning amendment, PR #101: a failed check, no statistic). run() calls this per task inside its loop, so the
+    failure comes before the rest of the pass is spent; assemble() repeats it."""
+    if all(t["ratios"][g]["n_train"] >= 2 and t["ratios"][g]["ref"] for g in GROUPS) and t["ratios"][NO757]["r"] is None:
+        raise CheckFailed(f"{t['suite']} task {t['task_index']}: ref = 0 for DINOv3 without channel 757")
+
+
 def assemble(tasks):
     """tasks: [{suite, task_index, name, ratios: {group: task_ratios(...)}, live_suite}] -> statistics dict.
     Leaves out tasks with fewer than 2 training episodes or ref == 0 in any of the four groups (Design 4); the
     DINOv3-without-757 variant uses the same tasks."""
     kept, left_out = [], []
-    for t in tasks:
+    for t in sorted(tasks, key=task_order_key):         # the bootstrap's task order: by suite (SUITES), then task index
         bad = [g for g in GROUPS if t["ratios"][g]["n_train"] < 2 or not t["ratios"][g]["ref"]]
         if bad:
             left_out.append({"suite": t["suite"], "task_index": t["task_index"], "name": t["name"],
@@ -450,8 +464,7 @@ def assemble(tasks):
     if not kept:
         raise CheckFailed("every task was left out")
     for t in kept:
-        if t["ratios"][NO757]["r"] is None:
-            raise CheckFailed(f"{t['suite']} task {t['task_index']}: ref = 0 for DINOv3 without channel 757")
+        no757_ref_check(t)
     allg = GROUPS + (NO757,)
     per_task_r = {g: [t["ratios"][g]["r"] for t in kept] for g in allg}
     m = {g: pooled_median(per_task_r[g]) for g in allg}
@@ -772,6 +785,8 @@ def run(args):
     live_757 = []
     checks["frame0_decode"] = {}
     checks["train_episodes"] = {}
+    checks["train_episodes_matched"] = {}
+    clean_all = json.loads(Path(args.tasks).read_text())["clean"]
     pool = ThreadPoolExecutor(max_workers=args.read_threads)
     t_train = time.time()
     n_eps = 0
@@ -787,6 +802,13 @@ def run(args):
             if str(task) != by_id[i]["task"] or int(n) != by_id[i]["length"]:
                 raise CheckFailed(f"{s} ep {i}: meta task/length differ from the dataset's")
         checks["train_episodes"][s] = len(ids)
+        # every training episode of the suite must belong to exactly one of its 10 clean tasks (by instruction)
+        matched = {n: int(sum(str(t) == rollout.base_language(n) for t in meta["tasks"])) for n in clean_all[s]}
+        checks["train_episodes_matched"][s] = {"suite_total": len(ids), "matched_to_clean_tasks": sum(matched.values()),
+                                               "per_task": matched}
+        if sum(matched.values()) != len(ids):
+            raise CheckFailed(f"{s}: {sum(matched.values())} training episodes matched to the clean tasks, the meta file "
+                              f"has {len(ids)}")
         suite_tasks = [x for x in tasks if x[0] == s]
         first = True
         for _, ti, name in suite_tasks:
@@ -832,6 +854,7 @@ def run(args):
                      "train_episodes": [e["episode_index"] for e in tep], "init_states": list(INIT_STATES),
                      "ratios": ratios}
             per_task.append(entry)
+            no757_ref_check(entry)                      # fail now, not after the whole pass
             included = all(ratios[g]["n_train"] >= 2 and ratios[g]["ref"] for g in GROUPS)
             if included:                                # a left-out task is left out of both range sets too
                 for g in GROUPS:
@@ -841,6 +864,14 @@ def run(args):
             log(f"{s} task {ti} ({name[:40]}): {len(tep)} training episodes; {n_eps} episodes so far "
                 f"({time.time() - t_train:.0f}s)")
     pool.shutdown()
+    meta_total = sum(checks["train_episodes"].values())
+    matched_total = sum(v["matched_to_clean_tasks"] for v in checks["train_episodes_matched"].values())
+    checks["train_episodes_total"] = {"meta_total": meta_total, "matched_total": matched_total,
+                                      "plan_expects": 1712, "equals_plan": meta_total == 1712}
+    if matched_total != meta_total:
+        raise CheckFailed(f"{matched_total} training episodes matched to clean tasks, the meta files have {meta_total}")
+    checks["frame0_decode_scope"] = (f"a sample: the first used episode of each suite ({len(checks['frame0_decode'])} "
+                                     f"episodes), not every training episode")
     timing["train_s"] = time.time() - t_train
     timing["train_episodes"] = n_eps
     checks["n_live_frames"] = len(lives)
@@ -859,8 +890,7 @@ def run(args):
     if args.dry_run:      # no number of the check is written or printed: pipeline checks, shapes and timings only
         red = {"check": result["check"], "pins": pins, "pipeline_checks": checks, "timing": timing,
                "dry_run_note": "statistics computed end to end and withheld (plan Hand-off: no number of this check "
-                               "is read before the full run)", "statistics_keys": sorted(st),
-               "statistics_json_bytes": len(text)}
+                               "is read before the full run)", "statistics_keys": sorted(st)}
         text = json.dumps(red, indent=1, allow_nan=False)
     (out_dir / "result.json").write_text(text)
     log(f"wrote {out_dir / 'result.json'} ({len(text)} bytes, sha256 {hashlib.sha256(text.encode()).hexdigest()})")
@@ -872,6 +902,11 @@ def run(args):
 def print_summary(result):
     st = result["statistics"]
     print("=== SUMMARY (plan reading rule; descriptive items below it carry no decision)")
+    pc = result["pipeline_checks"]
+    print(f"frame-0 decode guard: {pc['frame0_decode_scope']}: {sorted(pc['frame0_decode'])}")
+    tot = pc["train_episodes_total"]
+    print(f"training episodes: {tot['matched_total']} matched to the 40 clean tasks = the meta files' {tot['meta_total']} "
+          f"(plan expects 1,712: {'yes' if tot['equals_plan'] else 'NO'})")
     print(f"tasks {st['n_tasks']}, live frames {st['n_live_frames']}, left out: {st['left_out_tasks'] or 'none'}")
     print("m: " + ", ".join(f"{g} {v:.4f}" for g, v in st["m"].items()))
     for e, rd in st["reading"].items():

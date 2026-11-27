@@ -145,6 +145,54 @@ def test_bootstrap_resamples_tasks_with_ref_fixed():
     assert set(F.bootstrap(one, ["a"], n_boot=20)["a"]["draws"]) == {1.5}
 
 
+def test_bootstrap_pins_draws_seed_order_and_call():
+    # PR #101 pins the bootstrap as written: 1,000 draws, numpy default_rng(0), tasks in suite (SUITES) then task-index
+    # order, each draw rng.integers(0, K, K). Any change to one of these changes the draws and fails here.
+    assert F.N_BOOT == 1000 and F.BOOT_SEED == 0 and F.CI == (2.5, 97.5)
+    rng = np.random.default_rng(7)
+    tasks = []
+    for s in F.SUITES:
+        for ti in range(3):
+            tr = {g: list(rng.uniform(0, 5, size=4)) for g in F.GROUPS}
+            lv = {g: list(rng.uniform(0, 5, size=5)) for g in F.GROUPS}
+            tasks.append(_task(s, ti, tr, lv))
+    canonical = sorted(tasks, key=lambda t: (F.SUITES.index(t["suite"]), t["task_index"]))
+    shuffled = [tasks[i] for i in np.random.default_rng(1).permutation(len(tasks))]
+    st = F.assemble(shuffled)                                 # input order does not matter: assemble sorts
+    assert [(f["suite"], f["task_index"]) for f in st["frames"][::5]] == [(t["suite"], t["task_index"]) for t in canonical]
+    per_task = {g: [np.asarray(t["ratios"][g]["r"]) for t in canonical] for g in F.GROUPS + (F.NO757,)}
+    K = len(canonical)
+    r = np.random.default_rng(0)
+    want = {e: [] for e in list(F.ENCODERS) + [F.NO757]}
+    for _ in range(1000):
+        idx = r.integers(0, K, K)
+        mv = np.median(np.concatenate([per_task[F.VAE][k] for k in idx]))
+        for e in want:
+            want[e].append(np.median(np.concatenate([per_task[e][k] for k in idx])) / mv)
+    for e in want:
+        assert len(st["bootstrap"]["draws"][e]) == 1000
+        assert np.array_equal(st["bootstrap"]["draws"][e], want[e]), e
+    # a different task order gives different draws (so the order pin above is not vacuous)
+    rev = {g: v[::-1] for g, v in per_task.items()}
+    assert not np.array_equal(F.bootstrap(rev, ["dinov3"])["dinov3"]["draws"], want["dinov3"])
+
+
+def test_no757_zero_ref_fails_per_task():
+    tr = {g: [0, 1, 3] for g in F.GROUPS}
+    lv = {g: [1, 2] for g in F.GROUPS}
+    ok = _task("libero_goal", 0, tr, lv)
+    F.no757_ref_check(ok)
+    bad = _task("libero_goal", 1, {**tr, F.NO757: [4, 4, 4]}, {**lv, F.NO757: [1, 2]})
+    for fn in (F.no757_ref_check, lambda t: F.assemble([ok, t])):
+        try:
+            fn(bad)
+            raise AssertionError("zero 757-less reference not caught")
+        except F.CheckFailed:
+            pass
+    left_out = _task("libero_goal", 2, {**tr, F.VAE: [4, 4, 4], F.NO757: [4, 4, 4]}, lv)
+    F.no757_ref_check(left_out)                               # already left out by the four groups: no failure
+
+
 def test_zones_and_borderline_wording():
     assert F.zone(0.7) == F.NEAR and F.zone(1.2) == F.NEAR
     assert F.zone(1.2000001) == F.UNCLEAR and F.zone(1.4999) == F.UNCLEAR
