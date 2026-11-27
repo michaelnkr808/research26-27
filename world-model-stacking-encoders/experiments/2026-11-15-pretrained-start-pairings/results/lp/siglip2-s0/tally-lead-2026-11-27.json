@@ -1,0 +1,317 @@
+{
+ "cfgk": "siglip2",
+ "shards": {
+  "0": {
+   "log": "pairings-lp-siglip2-s0-shard0of16-try1-20261123-231545.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard0of16-try1.jsonl",
+   "lines": 1881,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "1": {
+   "log": "pairings-lp-siglip2-s0-shard1of16-try1-20261123-200857.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard1of16-try1.jsonl",
+   "lines": 1881,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "2": {
+   "log": "pairings-lp-siglip2-s0-shard2of16-try1-20261123-163239.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard2of16-try1.jsonl",
+   "lines": 1881,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "3": {
+   "log": "pairings-lp-siglip2-s0-shard3of16-try1-20261123-203558.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard3of16-try1.jsonl",
+   "lines": 1881,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "4": {
+   "log": "pairings-lp-siglip2-s0-shard4of16-try1-20261124-050403.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard4of16-try1.jsonl",
+   "lines": 1881,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "5": {
+   "log": "pairings-lp-siglip2-s0-shard5of16-try1-20261124-041245.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard5of16-try1.jsonl",
+   "lines": 1881,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "6": {
+   "log": "pairings-lp-siglip2-s0-shard6of16-try1-20261125-062514.log",
+   "attempts": 2,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: resume (records file exists, 1276 lines already)",
+   "no_errors_file": true,
+   "file": "lp-shard6of16-try1.jsonl",
+   "lines": 1881,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "7": {
+   "log": "pairings-lp-siglip2-s0-shard7of16-try1-20261124-072053.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard7of16-try1.jsonl",
+   "lines": 1881,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "8": {
+   "log": "pairings-lp-siglip2-s0-shard8of16-try1-20261124-151343.log",
+   "attempts": 2,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: resume (records file exists, 575 lines already)",
+   "no_errors_file": true,
+   "file": "lp-shard8of16-try1.jsonl",
+   "lines": 1881,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "9": {
+   "log": "pairings-lp-siglip2-s0-shard9of16-try1-20261124-150544.log",
+   "attempts": 2,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: resume (records file exists, 193 lines already)",
+   "no_errors_file": true,
+   "file": "lp-shard9of16-try1.jsonl",
+   "lines": 1881,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "10": {
+   "log": "pairings-lp-siglip2-s0-shard10of16-try1-20261124-192825.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard10of16-try1.jsonl",
+   "lines": 1880,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "11": {
+   "log": "pairings-lp-siglip2-s0-shard11of16-try1-20261125-004354.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard11of16-try1.jsonl",
+   "lines": 1880,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "12": {
+   "log": "pairings-lp-siglip2-s0-shard12of16-try1-20261125-105705.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard12of16-try1.jsonl",
+   "lines": 1880,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "13": {
+   "log": "pairings-lp-siglip2-s0-shard13of16-try1-20261125-120929.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard13of16-try1.jsonl",
+   "lines": 1880,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "14": {
+   "log": "pairings-lp-siglip2-s0-shard14of16-try1-20261125-124004.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard14of16-try1.jsonl",
+   "lines": 1880,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  },
+  "15": {
+   "log": "pairings-lp-siglip2-s0-shard15of16-try1-20261125-161247.log",
+   "attempts": 1,
+   "exit0": true,
+   "model_ok": true,
+   "mode": "MODE: fresh",
+   "no_errors_file": true,
+   "file": "lp-shard15of16-try1.jsonl",
+   "lines": 1880,
+   "sha_ok": true,
+   "bytes_ok": true,
+   "lines_ok": true,
+   "timing_rows": 0
+  }
+ },
+ "n_shards_with_records": 16,
+ "all_ok": true,
+ "tally": {
+  "rows": 30090,
+  "unique_keys": 30090,
+  "dup_keys": 0,
+  "meta": {
+   "('libero_plus', 'siglip2', 0, '/mnt/runs/runs/pairings-siglip2-s0')": 30090
+  },
+  "by_eval_seed": {
+   "41": [
+    3703,
+    10030,
+    36.919
+   ],
+   "42": [
+    4066,
+    10030,
+    40.538
+   ],
+   "43": [
+    4746,
+    10030,
+    47.318
+   ]
+  },
+  "Y": 41.592,
+  "sd_eval_seed": 5.279,
+  "by_suite": {
+   "libero_10": [
+    2074,
+    7557,
+    27.445
+   ],
+   "libero_goal": [
+    2942,
+    7773,
+    37.849
+   ],
+   "libero_object": [
+    4120,
+    7554,
+    54.541
+   ],
+   "libero_spatial": [
+    3379,
+    7206,
+    46.891
+   ]
+  },
+  "by_category": {
+   "Background Textures": [
+    834,
+    3228,
+    25.836
+   ],
+   "Camera Viewpoints": [
+    919,
+    4797,
+    19.158
+   ],
+   "Language Instructions": [
+    2569,
+    4611,
+    55.715
+   ],
+   "Light Conditions": [
+    1905,
+    3426,
+    55.604
+   ],
+   "Objects Layout": [
+    2667,
+    4575,
+    58.295
+   ],
+   "Robot Initial States": [
+    2129,
+    4650,
+    45.785
+   ],
+   "Sensor Noise": [
+    1492,
+    4803,
+    31.064
+   ]
+  }
+ }
+}
