@@ -2336,3 +2336,19 @@ On the user's go ("yep start it", then "ok, dispatch"), four workers wrote the s
 **Found:** no result. **Test-set use:** none. **PR:** none; this entry: direct (chore).
 
 **Next:** the user's account of the advisor meeting; the merge OK on PR #94; the user's go-aheads in the experiment window (first-frame check; `dinov3+c-radiov4` LIBERO-Plus). After the two diagnostics report: the user's pick of the next training experiment (candidates named so far: PCA-reduced features, a small annealed feature weight, a deeper model, more seeds).
+
+## 2026-11-27 [agent, lead, planning] (first-frame check: eight readings of the arithmetic confirmed, PR #101; seed 0 results nearly complete)
+
+**Goal:** the experiment session's message of 2026-11-27: its first-frame check script is up as PR #100 (the user's go on preparation in its window; nothing run), and its implementer took a reading at eight places where the plan does not spell out the arithmetic; "confirm or correct each ... before the full run".
+
+**Did:**
+- Read the plan (`experiments/2026-11-15-pretrained-start-pairings/diagnosis/2026-11-25-first-frame-check-plan.md`) against the eight readings and the relevant parts of the script at PR #100 head `8952520` (`assemble`, `bootstrap`, `rankdata`, `spearman`; not the whole script). All eight confirmed as the reading of the design: (a) the DINOv3-without-channel-757 variant is its own group with its own reference distance; (b) only the four groups can leave a task out, and a zero reference distance in the variant stops the run; (c) "crosses" means the interval's ends fall in different zones; (d) numpy's default percentiles and median; (e) relative L2 against the cached clip-encoded latent; (f) one bootstrap task list per draw for all groups; (g) the frame-0-only decode with its bit-for-bit guard on one episode per suite; (h) the Spearman item on the Mac from the committed clean records.
+- Written as a dated amendment to the plan, **PR #101** (open). Read-only review (sonnet, fresh): no must-fix; all eight consistent with the plan and with the script. Two should-fixes: the bootstrap generator and task order pinned in the text (applied, with two notes); and a script point passed to the experiment session for PR #100 (the stop for the variant fires only after the whole pass, so a stop would lose the run; no number changes). No second review round. The reviewer's answer on reach: only (a) can move a zone, through the plan's own channel 757 rule.
+- **Seed 0 results reported by the experiment session (stage 2 `LOG.md`, entries of 2026-11-27; its numbers, not re-read line by line by the planning lead):** `siglip2` LIBERO-Plus Y = 41.592 (evaluation seeds 41 / 42 / 43: 36.919 / 40.538 / 47.318, SD 5.279); `dinov3+siglip2` clean LIBERO 83.45 (gate G1 passed). Evaluation seed 41, the only clean seed, is `siglip2`'s lowest LIBERO-Plus draw and `dinov3`'s highest. `dinov3+c-radiov4` LIBERO-Plus running since 04:44 UTC (the user's go there); `dinov3+siglip2` LIBERO-Plus asked of the user. One training seed each, no verdict.
+- Told the presentations session of the two results (for the next deck; the advisor meeting has happened).
+
+**The lead's reading (speculative):** all three single encoders are now below `none` on LIBERO-Plus (44.6, 41.7, 41.6 against 50.8) where the paper has all three above. Two of the three (`dinov3`, `siglip2`) move 10 to 15 points between evaluation seeds and `c-radiov4` does not; the clean comparison between encoders rests on one evaluation seed that favours `dinov3` and disfavours `siglip2`, so the clean ordering of the encoders is not to be read.
+
+**Found:** no result of the lead's own. **Test-set use:** none by the lead. **PR:** #101 open (needs the user's merge OK); #94 open (still needs the user's merge OK); this entry: direct (chore).
+
+**Next:** the user's merge OK on PR #101 (before the first-frame full run) and on PR #94; the user's account of the advisor meeting.
