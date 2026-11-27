@@ -19,7 +19,7 @@ Entries marked **open** are not decided yet. An open entry is filled by a pull r
 - Metrics (and why): **open.**
 - Required statistical tests or number of runs: the general rule applies (`../_standards/07-ml-practices.md`: at least 3 seeds for any reported comparison).
 - Known pitfalls in this field (leakage, confounds, etc.): **open**, filled from the literature survey.
-- **Faithful experiments.** When reproducing a paper, stay as close to the original method as compute allows. No stand-in model, smaller dataset, or shortcut is used without the lead's OK first, and any that is used is named in the experiment's `README.md` with how it could change the result. A cheap test that does not represent the real experiment is not run in its place.
+- **Faithful experiments.** When reproducing a paper, stay as close to the original method as compute allows. No stand-in model, smaller dataset, or shortcut is used without the owner's OK first, and any that is used is named in the experiment's `README.md` with how it could change the result. A cheap test that does not represent the real experiment is not run in its place.
 
 ## Tools and environment
 - Languages, libraries, hardware: **open** as a direction-wide list. Until it is set, each experiment records its own: the pinned repository commits, the checkpoint and dataset revisions and their checksums in its `config.yaml` and setup script, and the machine of each rental in its `LOG.md`.
@@ -43,17 +43,17 @@ Only the experiment lead session (`hear-lab-experiment`) rents, submits, or mana
 
 **Vast.ai**
 - Compute budget: 200 US dollars of credit on the HEAR Lab team account. The planning lead read this balance from the account with the `vastai` tool on 2026-11-15 (`verified`), and the lead said the same day that it is the whole compute budget for now. The lead, 2026-11-19: work within this credit before asking for more.
-- Every rental needs the lead's OK first, as set out in "Rules for every agent" in the workspace `CLAUDE.md`. Before asking, the experiment lead states the machine (GPU, memory, disk, the host's reliability score), the hourly price, the expected hours, and the total. The time estimate comes from a real timed batch. One OK covers one rental.
-- On-demand instances by default. An interruptible instance, which can be taken away mid-run, needs the lead's OK.
+- Every rental needs the owner's OK first, as set out in "Rules for every agent" in the workspace `CLAUDE.md`. Before asking, the experiment lead states the machine (GPU, memory, disk, the host's reliability score), the hourly price, the expected hours, and the total. The time estimate comes from a real timed batch. One OK covers one rental.
+- On-demand instances by default. An interruptible instance, which can be taken away mid-run, needs the owner's OK.
 - Hosts can go offline, and destroying an instance deletes everything on it. Long runs save checkpoints, and results and logs are copied off the instance and checked before it is destroyed.
-- A stopped instance still bills for its disk. An instance is destroyed once its work is saved, unless the lead says to keep it.
+- A stopped instance still bills for its disk. An instance is destroyed once its work is saved, unless the owner says to keep it.
 - No session stops or destroys an instance it did not create.
 - The experiment's `LOG.md` records, for each run: GPU type, hourly price, hours, and total cost, with the estimate next to the actual (`../_standards/07-ml-practices.md`, "Estimate before launching").
 - API keys and other tokens never go in the repo or in chat.
 
 **Nautilus**
 - `../_standards/08-compute-nautilus.md` applies in full to any run that uses the cluster, and is read before any cluster work. It does not apply to Vast.ai runs.
-- Every new cluster Job needs the lead's OK first, as set out in "Rules for every agent" in the workspace `CLAUDE.md`.
+- Every new cluster Job needs the owner's OK first, as set out in "Rules for every agent" in the workspace `CLAUDE.md`.
 - The namespace is shared with other directions in this repo. No session deletes a Job it did not create.
 - PVC + storage class, image, allowed GPU types: **open**, set when the first cluster run is planned.
 

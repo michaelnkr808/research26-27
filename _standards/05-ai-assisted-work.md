@@ -28,7 +28,7 @@ Most of the work here is done by AI agents (Claude Code and subagents). These ru
 ## Verification gates (human checks before proceeding)
 An agent pauses and asks before:
 - Treating a result as a **finding**, meaning it goes into `README.md` key findings or into any writeup
-- Large compute jobs, beyond the budget set in the direction's `STANDARDS.md`
+- Large compute jobs, beyond the budget set in the direction's `STANDARDS.md`. Within budget, every paid or shared compute job still needs the owner's OK, per "Rules for every agent" in the workspace `CLAUDE.md`
 - Deleting data, overwriting results, rewriting git history, or force-pushing
 - Changing the research question, scope, or evaluation protocol
 - Anything that leaves the machine: pushing to a remote, publishing, emailing, uploading. Exceptions: pushing a task branch to open a pull request (and later fixes on it), and pushing `main` right after a merge (see Git).
