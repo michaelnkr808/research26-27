@@ -2366,3 +2366,16 @@ On the user's go ("yep start it", then "ok, dispatch"), four workers wrote the s
 **Found:** no result. **Test-set use:** none. **PR:** #101 and #94 merged; this entry: direct (chore).
 
 **Next:** in the experiment window, the user's go for the first-frame check's dry run and full run, and later for the imagined-future test's Job. The user's account of the advisor meeting of 2026-11-25 is still not with the lead. After the two diagnostics report: the user's pick of the next training experiment (named so far: PCA-reduced features and a small annealed feature weight, both from the DreamWorld read; a deeper model; more seeds).
+
+## 2026-11-27 [agent, lead, planning] (later: status read for the user; PR #28 merged on the user's word)
+
+**Goal:** the user: "where do we stand for the vis lab", then "can u merge pr 28? is that unmerged?".
+
+**Did:**
+- **Status read** (the project brief, `README.md`, `PLAN.md`, the last entries of this LOG and of the stage 2 `LOG.md`, `git log`, `gh pr list`; verified at 2026-11-27 22:57 UTC): nothing new on `main` since the previous planning entry. Told to the user in plain words; the cluster was not checked by the lead.
+- **PR #28 merged** (`094a095`, 2026-11-27 23:04 UTC): the paper draft's short clean-frame tests section and its supplement detail (`writing/paper/sec/4_clean_tests.tex`, `writing/paper/sec/X_suppl.tex`), opened 2026-11-13 by the draft session. Checked before the merge (verified this session): GitHub state mergeable and clean; three commits, the last (`8efc5c2`) after the round 2 review; the round 2 must-fix phrase ("does not otherwise order") is gone from the branch and its replacement is sourced in a comment; `tectonic main.tex` in the PR's worktree wrote `main.pdf` with only the warnings already on `main` (lineno UTF-8, two overfull boxes in `sec/1_intro.tex`). The two optional round 2 nits were not checked one by one.
+- **Whose merge:** PR #28 was the draft session's, and `_standards/05` puts the OK in the session that opened the PR. `ListAgents` showed no draft session for this direction (verified 23:03 UTC), so the user's request in the planning window, naming the PR, was taken as the OK. The remote branch is deleted; the local branch and the worktree `.claude/worktrees/agent-a1778b4a5dfc17fa3` were gone after `gh pr merge --delete-branch` (its only ignored file was the rebuilt `main.pdf`).
+
+**Found:** no result. **Test-set use:** none. **PR:** #28 merged; this entry: direct (chore).
+
+**Next:** unchanged. In the experiment window, the user's go for the first-frame check's dry run and full run, and for writing the imagined-future test's script. The user's account of the advisor meeting of 2026-11-25 is still not with the lead. The two literature notes (novelty check, DreamWorld fusion details) still need their PR and fact-check. The section merged here still has red TODO slots (blind baselines, control partners) and was written before the stage 2 results; it is supporting material under decision 006, not the paper's framing.
