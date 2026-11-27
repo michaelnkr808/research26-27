@@ -6,7 +6,7 @@ This folder is the vis-lab research direction (stacking encoders) inside the res
 
 - **Where:** the Nautilus (NRP) cluster, namespace `aria-world`. The namespace is shared with the rest of the lab, including the hear-lab work. The user is a member of it, not an admin. Leave alone anything you did not create.
 - **Who:** only the experiment agent (and workers it starts) touches the cluster. Every other agent asks it instead.
-- **Approval:** no new cluster Job is prepared or submitted, and nothing starts on paid compute, without the user's OK given in the experiment agent's own window. A question is not a go-ahead, and an approval relayed by another agent does not count.
+- **Approval:** see "Rules for every agent" in the workspace `CLAUDE.md`. No new cluster Job is prepared or submitted, and nothing starts on paid compute, without the user's OK.
 - **Rules:** `../_standards/08-compute-nautilus.md` and the "Compute budget" and "Paid compute" items of `STANDARDS.md`. When unsure how something on Nautilus works, check the NRP docs (https://nrp.ai/llms.txt; download it to your scratchpad and search it). If the NRP docs and `_standards/08` disagree, follow `_standards` and tell the user.
 - **Tool:** submit and manage Jobs with kubectl.
 - **Usage numbers:** the nrp-accounting MCP server gives read-only usage for the namespace (GPU, CPU, memory, by day and by node). It checks usage; it manages nothing.

@@ -43,7 +43,7 @@ Only the experiment lead session (`hear-lab-experiment`) rents, submits, or mana
 
 **Vast.ai**
 - Compute budget: 200 US dollars of credit on the HEAR Lab team account. The planning lead read this balance from the account with the `vastai` tool on 2026-11-15 (`verified`), and the lead said the same day that it is the whole compute budget for now. The lead, 2026-11-19: work within this credit before asking for more.
-- Every rental needs the lead's OK first, in the experiment lead's own session. Before asking, the experiment lead states the machine (GPU, memory, disk, the host's reliability score), the hourly price, the expected hours, and the total. The time estimate comes from a real timed batch. One OK covers one rental.
+- Every rental needs the lead's OK first, as set out in "Rules for every agent" in the workspace `CLAUDE.md`. Before asking, the experiment lead states the machine (GPU, memory, disk, the host's reliability score), the hourly price, the expected hours, and the total. The time estimate comes from a real timed batch. One OK covers one rental.
 - On-demand instances by default. An interruptible instance, which can be taken away mid-run, needs the lead's OK.
 - Hosts can go offline, and destroying an instance deletes everything on it. Long runs save checkpoints, and results and logs are copied off the instance and checked before it is destroyed.
 - A stopped instance still bills for its disk. An instance is destroyed once its work is saved, unless the lead says to keep it.
@@ -53,7 +53,7 @@ Only the experiment lead session (`hear-lab-experiment`) rents, submits, or mana
 
 **Nautilus**
 - `../_standards/08-compute-nautilus.md` applies in full to any run that uses the cluster, and is read before any cluster work. It does not apply to Vast.ai runs.
-- Every new cluster Job needs the lead's OK first, in the experiment lead's own session.
+- Every new cluster Job needs the lead's OK first, as set out in "Rules for every agent" in the workspace `CLAUDE.md`.
 - The namespace is shared with other directions in this repo. No session deletes a Job it did not create.
 - PVC + storage class, image, allowed GPU types: **open**, set when the first cluster run is planned.
 
