@@ -2352,3 +2352,17 @@ On the user's go ("yep start it", then "ok, dispatch"), four workers wrote the s
 **Found:** no result of the lead's own. **Test-set use:** none by the lead. **PR:** #101 open (needs the user's merge OK); #94 open (still needs the user's merge OK); this entry: direct (chore).
 
 **Next:** the user's merge OK on PR #101 (before the first-frame full run) and on PR #94; the user's account of the advisor meeting.
+
+## 2026-11-27 [agent, lead, planning] (later: PR #101 and PR #94 merged on the user's "yes to both"; imagined-future test handed to the experiment session)
+
+**Goal:** the lead's two questions, "Merge PR #101 (the eight details)?" and "Merge PR #94 (the imagined-future test design)?"; the user: **"yes to both"**.
+
+**Did:**
+- **PR #101 merged** (`41b6cb3`): the first-frame check plan's amendment of 2026-11-27, eight readings of the arithmetic fixed before any run. The script itself was merged by the experiment session as PR #100 (`2c94d36`).
+- **PR #94 merged** (`dc4f6a9`): `experiments/2026-11-15-pretrained-start-pairings/diagnosis/2026-11-25-imagined-future-test-plan.md` and the pointer amendment in that experiment's `PLAN.md`. It includes the descriptive rollout-noise item added after its review (commit `49aac8c`), which no reviewer read; the lead said so when asking for the merge.
+- Both PR worktrees and local branches removed (no untracked or ignored files in either).
+- Handed the imagined-future test to the experiment session (script by PR in the diagnosis folder, the plan's done checks and pins, submit only on the user's go in its window) and told it PR #101 is in. Told the presentations session PR #94 is merged (its plan slide).
+
+**Found:** no result. **Test-set use:** none. **PR:** #101 and #94 merged; this entry: direct (chore).
+
+**Next:** in the experiment window, the user's go for the first-frame check's dry run and full run, and later for the imagined-future test's Job. The user's account of the advisor meeting of 2026-11-25 is still not with the lead. After the two diagnostics report: the user's pick of the next training experiment (named so far: PCA-reduced features and a small annealed feature weight, both from the DreamWorld read; a deeper model; more seeds).
