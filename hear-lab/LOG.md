@@ -980,3 +980,25 @@ The lead then: "1. go tell the experiment window that 2. tell literature window 
 **Next:** the lead's decision on the small Step 2 batch (experiment window); the literature survey; the baseline evaluation plan.
 
 **Open questions:** render cost per step; licensed sound clips for speech and other classes; the PI's answers (navigation kept or dropped, "world audio model", audio only or with video).
+
+## 2026-11-26 [agent, lead, planning] (the PI's text stays out of the repo; literature survey PR #98 taken in)
+**Did:**
+- The lead on the PI's message and figure: "yeah have it stay out of th epublic repo for now". They stay in the Arbor project folder; the repo carries short summaries only. The lead also asked how the direction changes; the planning lead answered in chat and asked whether to park Steps 3 and 4 (no answer yet).
+- Took in the literature session's report and read the survey file on the PR #98 branch (`literature/survey/2026-11-26-long-form-spatial-audio-qa-baselines.md`; not merged, the lead's OK in the literature window is pending; no fact-check reviewer has run, per the file). Asked the literature session for a fact-check of section A's model rows, ST-AudioLM's question families and the two "nothing found" sentences before the merge. Asked the experiment session whether the engine can return first-order ambisonics.
+
+**Found** (the survey's findings, read depth as stated in the file; none re-read by the planning lead against sources):
+- Released models that answer questions about spatial audio, weights and code available: MiDashengLM-Spatial (two-ear, up to 60 s), BAT (two-ear, 10 s), ST-AudioLM (first-order ambisonics, 10 s, gated weights), Spatial-Omni (first-order ambisonics, 20 s). Audio Flamingo 3 takes up to 10 min but one channel only. Hear You Are and HLR-LLM (the two papers the PI linked on 2026-11-19): no released model found.
+- No benchmark read tests the PI's three scenarios as spatial audio questions with identity ground truth; every spatial question answering benchmark read uses clips of at most 10 s (RMS-AQA cuts 60 s scenes into 10 s clips). RMS-AQA's trajectory question templates were not seen (gated card).
+- No spatial question answering paper read reports identity switches or re-identification. The metrics are defined in tracking papers (IDF1, HOTA, LOCATA swap and fragmentation rates); arXiv 2506.11145 adapts HOTA to intermittent, moving speakers.
+- Prior datasets make moving sources by time-variant convolution over per-position impulse responses (DCASE 2020, SpatialScaper); the same approach the experiment session described for our engine.
+- "World audio model" is not an established term.
+
+**The planning lead's reading for the evaluation plan** (`speculative`): models = the four released ones plus Audio Flamingo 3 as a one-channel control; a recording longer than a model's limit has to be fed in pieces, which is itself a choice to state; question types can follow RMS-AQA's six dimensions, with identity questions added by us; identity metrics have to be adapted by us from the tracking papers, since no question answering paper has done it. Two of the four models need first-order ambisonics, so the simulator has to produce both formats or the list shrinks.
+
+**Decided by the lead:** the PI's full text and figure stay out of the public repo for now.
+
+**PR:** #98 open (the literature session's). This entry: direct.
+
+**Next:** the fact-check on PR #98 and the lead's merge OK in the literature window; the experiment session's answer on ambisonics; the lead's answers (park Steps 3 and 4; the small Step 2 batch, in the experiment window); then the baseline evaluation plan by pull request.
+
+**Open questions:** for the PI: is feeding a long recording in pieces an acceptable baseline; navigation kept or dropped; "world audio model"; audio only or with video. Licensed sound clips for speech and other classes.
