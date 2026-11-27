@@ -933,3 +933,29 @@ The lead then: "1. go tell the experiment window that 2. tell literature window 
 **Next:** the experiment session's implementation plan to the lead, a worker, then a rental only on the lead's OK in its window. The lead's notes from the PI meeting of 2026-11-26 (the PI's answers on the research question, the sound engine condition, LoRA, "long-form").
 
 **Open questions:** the PI's answers; how Step 4 counts success given the source position.
+
+## 2026-11-26 [agent, lead, planning] (the PI's written direction after the 2026-11-26 meeting; the plan is under review)
+**Goal:** record the PI's direction and start what its first milestone needs.
+
+**Did:**
+- The lead gave the planning lead the PI's written message after the 2026-11-26 meeting, with one figure. The paste ends mid-sentence. The full text and the figure are kept outside this public repo (the Arbor project folder for hear-lab, `pi-direction-2026-11-26.md` and `pi-direction-2026-11-26-figure.png`) until the lead says whether they go in: the message sketches a method idea that is the PI's and unpublished.
+- Asked the literature session for one survey file for the first milestone: released models that answer questions about spatial audio and the input each expects; benchmarks for spatial audio question answering, long recordings and moving sources; where identity and localization metrics for sound sources are defined; whether "world audio model" is an established term; how prior datasets simulate moving and intermittent sources.
+- Told the experiment session, as planning's recommendation and not the lead's decision: do not start the Step 2 worker or a rental until the lead says what happens to Steps 2 to 4.
+
+**Found** (from the PI's message, the planning lead's summary; the method sketch is left out here):
+- The goal, quoted: "Our main goal is to improve long-form spatial audio reasoning using world audio model, particularly when understanding a scene requires tracking individual sound sources over time."
+- Three stages: measure where existing models fail, in "our simulation environment", on scenarios where source identity over time matters (a source stops and is heard again later; two sources cross; several sources of one class), against simpler controls and with growing audio length; then a method for the failures actually seen; then controlled experiments with question-answering accuracy plus identity switches, re-identification accuracy and localization error, with ablations.
+- First milestone, quoted: "please prepare a baseline evaluation plan covering the models, test scenarios, question types, and metrics."
+- The figure is question answering over a 60 second scene by a language model. It has no navigation, no video and no world action model in it.
+
+**The planning lead's reading** (`speculative`): this is a different project from decision `001` (three audio versions of a navigation world action model), which the PI never confirmed. The PI's earlier steps point the same way: RMS-AQA as the first task, the two linked question-answering papers, and "long-form processing" (`LOG.md` 2026-11-19, PI feedback), which decision `001` deferred. What probably carries over is the audio rendering side of route A (the sound engine in 3D scenes with a measured HRTF) and the survey of spatial audio language models; the Step 1 baseline and Steps 3 and 4 are not on the PI's path as written. Not known: whether the PI wants the navigation work dropped or kept beside this; what "world audio model" means; whether the task is audio only.
+
+**Decided by the lead:** nothing yet.
+
+**PR:** direct.
+
+**Not approved:** any rental; any Step 2 build; training.
+
+**Next:** the lead's answer on holding Step 2 and on where the PI's text goes; the lead's questions back to the PI; the literature survey; then the baseline evaluation plan (the planning lead writes it, by pull request).
+
+**Open questions:** as under "Not known"; whether Interspeech 2027 stays the target; what happens to decisions `001` to `003`.
