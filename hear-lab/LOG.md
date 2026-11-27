@@ -1002,3 +1002,21 @@ The lead then: "1. go tell the experiment window that 2. tell literature window 
 **Next:** the fact-check on PR #98 and the lead's merge OK in the literature window; the experiment session's answer on ambisonics; the lead's answers (park Steps 3 and 4; the small Step 2 batch, in the experiment window); then the baseline evaluation plan by pull request.
 
 **Open questions:** for the PI: is feeding a long recording in pieces an acceptable baseline; navigation kept or dropped; "world audio model"; audio only or with video. Licensed sound clips for speech and other classes.
+
+## 2026-11-26 [agent, lead, planning] (the experiment session's answer on first-order ambisonics)
+**Did:** took in the experiment session's answer (its report from the engine's header and our binding; nothing run; not re-read by the planning lead).
+
+**Found** (its report, its labels):
+- The pinned RLR header (rlr-audio-propagation 4fd446b, `RLRAudioPropagation.h` lines 61 to 90) has an ambisonics channel layout; the order follows the channel count, so 4 channels is first order; N3D normalization, "the same coordinate convention as world space" (`verified`, header text).
+- One simulation can hold several listeners, so a two-ear (KEMAR) listener and a 4-channel ambisonic listener at the same pose could give both renders from the same ray tracing (several listeners `verified` in the binding; both in one call `speculative` until run).
+- Caveats: our binding (`src/rlr_binding.py`) wraps only one-channel and two-ear layouts, so the ambisonic layout is a small, untested code change; released first-order ambisonics models usually expect AmbiX (ACN order, SN3D), so the output needs a rescale and a channel and axis mapping per model (`recalled`), with its own known-answer test like Step 2's left/right test; whether the ambisonic output turns with the listener's heading or is fixed to the world is unchecked (`speculative`: world-fixed).
+
+**The planning lead's reading** (`speculative`): all four released models can stay on the evaluation plan's list, with the two ambisonic ones marked as needing a format check before any of their scores count.
+
+**PR:** direct.
+
+**Not approved:** any build or rental.
+
+**Next:** the fact-check on PR #98; the lead's answers (park Steps 3 and 4; the small Step 2 batch); then the baseline evaluation plan by pull request.
+
+**Open questions:** as in the entry above.
